@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Encomendas.Servidor/Encomendas.Servidor.csproj" />
+  </Folder>
+</Solution>
