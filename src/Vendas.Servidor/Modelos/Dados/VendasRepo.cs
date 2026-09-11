@@ -9,9 +9,9 @@ public class VendasRepo : IVendasRepo
     public VendasRepo()
     {
         // Adiciona algumas vendas de exemplo
-        _vendas.Add(new Venda(1, "Cliente A", "Produto X", 100.0m, 2, DateTime.Now));
-        _vendas.Add(new Venda(2, "Cliente B", "Produto Y", 50.0m, 1, DateTime.Now));
-        _vendas.Add(new Venda(3, "Cliente C", "Produto Z", 75.0m, 3, DateTime.Now));
+        _vendas.Add(new Venda(1, "Cliente A", "Produto X", 100.0m, 2, 200.0m, DateTime.Now.AddDays(-10)));
+        _vendas.Add(new Venda(2, "Cliente B", "Produto Y", 50.0m, 1, 50.0m, DateTime.Now.AddDays(-5)));
+        _vendas.Add(new Venda(3, "Cliente A", "Produto Z", 75.0m, 3, 225.0m, DateTime.Now.AddDays(-2)));
     }
 
     public Task<IReadOnlyList<Venda>> ListarVendasAsync(CancellationToken cancellationToken = default)
@@ -21,7 +21,7 @@ public class VendasRepo : IVendasRepo
 
     public Task<Venda?> ObterporIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var venda = _vendas.FirstOrDefault(v => v.Id == id);
+        var venda = _vendas.FirstOrDefault(v => v.NumeroEncomenda == id);
         return Task.FromResult(venda);
     }
 
@@ -48,7 +48,7 @@ public class VendasRepo : IVendasRepo
 
     public Task AtualizarVendaAsync(Venda venda, CancellationToken cancellationToken = default)
     {
-        var index = _vendas.FindIndex(v => v.Id == venda.Id);
+        var index = _vendas.FindIndex(v => v.NumeroEncomenda == venda.NumeroEncomenda);
         if (index != -1)
         {
             _vendas[index] = venda;
@@ -58,7 +58,7 @@ public class VendasRepo : IVendasRepo
 
     public Task ExcluirVendaAsync(int id)
     {
-        var venda = _vendas.FirstOrDefault(v => v.Id == id);
+        var venda = _vendas.FirstOrDefault(v => v.NumeroEncomenda == id);
         if (venda != null)
         {
             _vendas.Remove(venda);
