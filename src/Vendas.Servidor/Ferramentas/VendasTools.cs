@@ -11,6 +11,7 @@ public sealed class VendasTools(
 {
     private readonly IVendasRepo _vendasRepo = vendasRepo;
 
+    // Ferramenta para listar vendas detalhadas com filtro opcional por cliente
     [McpServerTool(Name = "listar-vendas-detalhadas")]
     [Description("Devolve a lista detalhada de vendas (produto, quantidade, valor e data), com filtro opcional por cliente.")]
     public async Task<IReadOnlyList<Venda>> ListarVendasAsync(
