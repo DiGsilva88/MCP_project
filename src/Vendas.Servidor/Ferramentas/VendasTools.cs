@@ -20,6 +20,7 @@ public sealed class VendasTools(
     {
         var vendas = await _vendasRepo.ListarVendasAsync(cancellationToken);
 
+        // Se o filtro for nulo ou vazio, retorna todas as vendas
         if (string.IsNullOrWhiteSpace(filtro))
         {
             return vendas;
