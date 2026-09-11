@@ -2,7 +2,7 @@ namespace Vendas.Servidor.Modelos;
 
 
 public record Venda(
-    int Id, 
+    int id, 
     String Cliente, 
     string Produto, 
     decimal Valor, 

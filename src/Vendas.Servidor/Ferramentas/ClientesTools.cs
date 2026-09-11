@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Vendas.Servidor.Modelos;
 using Vendas.Servidor.Modelos.Dados;
 using ModelContextProtocol.Protocol;
 using System.Text;
@@ -26,10 +27,21 @@ public sealed class ClientesTools(
     [McpServerTool(Name = "listar-clientes")]
     [Description("Devolve uma lista de clientes registados no sistema")]
 
-    public async Task<List<ClientesTools>> ListarClientesAsync(string filtro)
+    public async Task<IReadOnlyList<VendaPorCliente>> ListarClientesAsync(
+        [Description("Texto opcional para filtrar por nome do cliente.")] string? filtro = null,
+        CancellationToken cancellationToken = default)
     {
-        await Task.CompletedTask;
-        return new List<ClientesTools>();
+        var clientes = await _vendasRepo.ObterTopClientesAsync(MaxClientes, cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(filtro))
+        {
+            return clientes;
+        }
+
+        var filtroNormalizado = filtro.Trim();
+        return clientes
+            .Where(c => c.Cliente.Contains(filtroNormalizado, StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
 }
 
