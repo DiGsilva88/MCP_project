@@ -1,7 +1,7 @@
 using Vendas.Servidor.Modelos;
 using Vendas.Servidor.Modelos.Dados;
 
-namespace Vendas.Servidor.Dados;
+namespace Vendas.Servidor.Modelos.Dados;
 
 public class RepoMemoria : IVendasRepo
 {
@@ -49,10 +49,38 @@ public class RepoMemoria : IVendasRepo
     {
         return Task.FromResult<IReadOnlyList<Venda>>(_venda);
     }
-     }
 
-       
+    // Implementação do método ObterInativosAsync
+    public Task<IReadOnlyList<ClienteInativo>> ObterInativosAsync(
+        int dias,
+        CancellationToken cancellationToken = default)
+    {
+        var agora = DateTime.Now;
 
+        var resultado = _venda
+            .GroupBy(v => v.Cliente)
+            .Select(g =>
+            {
+                var ultimaCompra = g.Max(v => v.DataVenda);
+                return new ClienteInativo(g.Key, ultimaCompra, (agora - ultimaCompra).Days);
+            })
+            .Where(c => c.DiasSemComprar >= dias)
+            .OrderBy(c => c.UltimaCompra)
+            .ToList();
 
-    
+        return Task.FromResult<IReadOnlyList<ClienteInativo>>(resultado);
+    }
 
+    // Implementação do método ObterNomesClientesAsync
+    public Task<IReadOnlyList<string>> ObterNomesClientesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var resultado = _venda
+            .Select(v => v.Cliente)
+            .Distinct()
+            .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<string>>(resultado);
+    }
+}
