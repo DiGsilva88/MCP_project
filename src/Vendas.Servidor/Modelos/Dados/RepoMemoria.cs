@@ -8,6 +8,7 @@ public class RepoMemoria : IVendasRepo
     private static readonly DateTime Base = new DateTime(2026, 3, 15);
     private  readonly List<Venda> _venda = 
     [
+        // Adiciona algumas vendas de exemplo
       new Venda(1, "Cliente A", "Produto X", 100.0m, 2, 200.0m, Base.AddDays(-10)),
       new Venda(2, "Cliente B", "Produto Y", 50.0m, 1, 50.0m, Base.AddDays(-5)),
       new Venda(3, "Cliente A", "Produto Z", 75.0m, 3, 225.0m, Base.AddDays(-2)),
@@ -27,7 +28,7 @@ public class RepoMemoria : IVendasRepo
         CancellationToken cancellationToken = default)
 
 
-    {
+    { // Agrupa as vendas por cliente, calcula o número de vendas e o total vendido, ordena pelo total vendido e retorna os top clientes
        var resultado = _venda
             .GroupBy(v => v.Cliente)
             .Select(g => new VendaPorCliente(
@@ -41,7 +42,12 @@ public class RepoMemoria : IVendasRepo
 
 
         return Task.FromResult<IReadOnlyList<VendaPorCliente>>(resultado);
-   
+
+    }
+    // Implementação do método AdicionarVendaAsync
+    public Task<IReadOnlyList<Venda>> ListarVendasAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyList<Venda>>(_venda);
     }
      }
 
