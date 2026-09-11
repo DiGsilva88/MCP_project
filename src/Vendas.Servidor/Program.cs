@@ -1,23 +1,18 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
-
-var builder=Host.CreateApplicationBuilder(args);
-// Add services to the container.
+var builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging.AddConsole(opcoes =>
 {
-    
-    opcoes.LogToStandardErrorThreshold = LogLevel.Trace; 
-    //opcoes.FormatterName = "json";
+    opcoes.LogToStandardErrorThreshold = LogLevel.Trace;
 });
 
-builder.Services 
-    .AddMcpServer().WithStdioServerTransport().WithToolsFromAssembly();// Add your services here
+builder.Services
+    .AddMcpServer()
+    .WithStdioServerTransport()
+    .WithToolsFromAssembly();
 
 await builder.Build().RunAsync();
-
-    
-
 
