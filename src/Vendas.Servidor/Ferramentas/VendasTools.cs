@@ -11,22 +11,22 @@ public sealed class VendasTools(
 {
     private readonly IVendasRepo _vendasRepo = vendasRepo;
 
-    [McpServerTool(Name = "listar-vendas-por-cliente")]
-    [Description("Devolve as vendas agregadas por cliente.")]
-    public async Task<IReadOnlyList<VendaPorCliente>> ListarClientesAsync(
+    [McpServerTool(Name = "listar-vendas-detalhadas")]
+    [Description("Devolve a lista detalhada de vendas (produto, quantidade, valor e data), com filtro opcional por cliente.")]
+    public async Task<IReadOnlyList<Venda>> ListarVendasAsync(
         [Description("Texto opcional para filtrar por nome do cliente.")] string? filtro = null,
         CancellationToken cancellationToken = default)
     {
-        var clientes = await _vendasRepo.ObterTopClientesAsync(50, cancellationToken);
+        var vendas = await _vendasRepo.ListarVendasAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(filtro))
         {
-            return clientes;
+            return vendas;
         }
 
         var filtroNormalizado = filtro.Trim();
-        return clientes
-            .Where(c => c.Cliente.Contains(filtroNormalizado, StringComparison.OrdinalIgnoreCase))
+        return vendas
+            .Where(v => v.Cliente.Contains(filtroNormalizado, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
 }
