@@ -33,6 +33,7 @@ public sealed class ClientesTools(
 
             foreach (var l in linhas)
             {
+                
                 sb.AppendLine(string.Create(CultureInfo.InvariantCulture,
                     $"{l.Cliente},{l.UltimaCompra:yyyy-MM-dd},{l.DiasSemComprar}"));
             }

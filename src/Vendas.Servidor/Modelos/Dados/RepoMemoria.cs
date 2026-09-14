@@ -1,3 +1,4 @@
+using System.Runtime.Intrinsics;
 using Vendas.Servidor.Modelos;
 using Vendas.Servidor.Modelos.Dados;
 
@@ -114,6 +115,7 @@ public sealed class RepoMemoria : IVendasRepo
     public Task<IReadOnlyList<VendaPorCliente>> ObterTopClientesAsync(int limite,int dias, CancellationToken ct = default)
     {
 
+
         var desde = DateTime.Today.AddDays(-dias);
 
         var resultado = _venda
@@ -131,18 +133,24 @@ public sealed class RepoMemoria : IVendasRepo
     }
 
     // Agrupa as vendas por produto, calcula o número de vendas e o total vendido, ordena pelo total vendido e retorna os top produtos
-    public Task<IReadOnlyList<VendaPorProduto>> ObterTopProdutosAsync(int limite, CancellationToken ct = default)
-    {
-        var resultado = _venda
-            .GroupBy(v => v.Produto)
-            .Select(g => new VendaPorProduto(
-                g.Key,
-                g.Count(),
-                g.Sum(v => v.ValorLinha)))
-            .OrderByDescending(v => v.TotalVendido)
-            .Take(limite)
-            .ToList();
+    
 
-        return Task.FromResult<IReadOnlyList<VendaPorProduto>>(resultado);
-    }
+    public Task<IReadOnlyList<VendaPorProduto>> ObterTopProdutosAsync(
+    int limite, int dias, CancellationToken ct = default)
+{
+    var limiar = DateTime.Today.AddDays(-dias);
+
+    var resultado = _venda
+        .Where(v => v.DataVenda >= limiar)
+        .GroupBy(v => v.Produto)
+        .Select(g => new VendaPorProduto(
+            g.Key,
+            g.Select(v => v.NumeroEncomenda).Distinct().Count(),
+            g.Sum(v => v.ValorLinha)))
+        .OrderByDescending(l => l.TotalVendido)
+        .Take(limite)
+        .ToList();
+
+    return Task.FromResult<IReadOnlyList<VendaPorProduto>>(resultado);
+}
 }

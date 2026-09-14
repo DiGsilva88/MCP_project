@@ -8,11 +8,13 @@ public interface IVendasRepo
         int limite,int dias, CancellationToken ct = default);
 
     Task<IReadOnlyList<VendaPorProduto>> ObterTopProdutosAsync(
-        int limite, CancellationToken ct = default);
+        int limite,int dias, CancellationToken ct = default);
 
     Task<IReadOnlyList<ClienteInativo>> ObterInativosAsync(
         int dias, CancellationToken ct = default);
 
     Task<IReadOnlyList<string>> ObterNomesClientesAsync(
         CancellationToken ct = default);
+
+    
 }
