@@ -8,8 +8,10 @@
     ".NETCoreApp,Version=v10.0": {
       "Vendas.Servidor/1.0.0": {
         "dependencies": {
+          "Anthropic.SDK": "5.10.0",
           "Dapper": "2.1.79",
           "Microsoft.Data.SqlClient": "7.0.2",
+          "Microsoft.Extensions.AI": "10.10.0",
           "Microsoft.Extensions.Hosting": "10.0.12",
           "ModelContextProtocol": "2.2.0"
         },
@@ -17,11 +19,31 @@
           "Vendas.Servidor.dll": {}
         }
       },
+      "Anthropic.SDK/5.10.0": {
+        "dependencies": {
+          "Microsoft.Bcl.AsyncInterfaces": "10.0.3",
+          "Microsoft.Extensions.AI.Abstractions": "10.10.0"
+        },
+        "runtime": {
+          "lib/net10.0/Anthropic.SDK.dll": {
+            "assemblyVersion": "5.5.0.0",
+            "fileVersion": "5.10.0.0"
+          }
+        }
+      },
       "Dapper/2.1.79": {
         "runtime": {
           "lib/net10.0/Dapper.dll": {
             "assemblyVersion": "2.0.0.0",
             "fileVersion": "2.1.79.29349"
+          }
+        }
+      },
+      "Microsoft.Bcl.AsyncInterfaces/10.0.3": {
+        "runtime": {
+          "lib/netstandard2.1/Microsoft.Bcl.AsyncInterfaces.dll": {
+            "assemblyVersion": "10.0.0.3",
+            "fileVersion": "10.0.326.7603"
           }
         }
       },
@@ -146,28 +168,43 @@
           }
         }
       },
-      "Microsoft.Extensions.AI.Abstractions/10.8.3": {
+      "Microsoft.Extensions.AI/10.10.0": {
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.10.0",
+          "Microsoft.Extensions.Caching.Abstractions": "10.0.12",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
+          "System.Numerics.Tensors": "10.0.12"
+        },
         "runtime": {
-          "lib/net10.0/Microsoft.Extensions.AI.Abstractions.dll": {
-            "assemblyVersion": "10.8.0.0",
-            "fileVersion": "10.800.326.37702"
+          "lib/net10.0/Microsoft.Extensions.AI.dll": {
+            "assemblyVersion": "10.10.0.0",
+            "fileVersion": "10.1000.26.45902"
           }
         }
       },
-      "Microsoft.Extensions.Caching.Abstractions/10.0.10": {
+      "Microsoft.Extensions.AI.Abstractions/10.10.0": {
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.AI.Abstractions.dll": {
+            "assemblyVersion": "10.10.0.0",
+            "fileVersion": "10.1000.26.45902"
+          }
+        }
+      },
+      "Microsoft.Extensions.Caching.Abstractions/10.0.12": {
         "dependencies": {
           "Microsoft.Extensions.Primitives": "10.0.12"
         },
         "runtime": {
           "lib/net10.0/Microsoft.Extensions.Caching.Abstractions.dll": {
             "assemblyVersion": "10.0.0.0",
-            "fileVersion": "10.0.1026.32716"
+            "fileVersion": "10.0.1226.42308"
           }
         }
       },
       "Microsoft.Extensions.Caching.Memory/9.0.13": {
         "dependencies": {
-          "Microsoft.Extensions.Caching.Abstractions": "10.0.10",
+          "Microsoft.Extensions.Caching.Abstractions": "10.0.12",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
           "Microsoft.Extensions.Options": "10.0.12",
@@ -615,7 +652,7 @@
       },
       "ModelContextProtocol/2.2.0": {
         "dependencies": {
-          "Microsoft.Extensions.Caching.Abstractions": "10.0.10",
+          "Microsoft.Extensions.Caching.Abstractions": "10.0.12",
           "Microsoft.Extensions.Hosting.Abstractions": "10.0.12",
           "ModelContextProtocol.Core": "2.2.0"
         },
@@ -628,7 +665,7 @@
       },
       "ModelContextProtocol.Core/2.2.0": {
         "dependencies": {
-          "Microsoft.Extensions.AI.Abstractions": "10.8.3",
+          "Microsoft.Extensions.AI.Abstractions": "10.10.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.12"
         },
         "runtime": {
@@ -684,6 +721,14 @@
           }
         }
       },
+      "System.Numerics.Tensors/10.0.12": {
+        "runtime": {
+          "lib/net10.0/System.Numerics.Tensors.dll": {
+            "assemblyVersion": "10.0.0.12",
+            "fileVersion": "10.0.1226.42308"
+          }
+        }
+      },
       "System.Security.Cryptography.Pkcs/9.0.13": {
         "runtime": {
           "lib/net9.0/System.Security.Cryptography.Pkcs.dll": {
@@ -716,12 +761,26 @@
       "serviceable": false,
       "sha512": ""
     },
+    "Anthropic.SDK/5.10.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-UQyZsDMcFy5pBNfEQXwNS5916dogqKSO76J4aynmdtR2q0QB3Ey/vB3vwll9/neAmH7IpKH7KpbzQ+SaYncxyQ==",
+      "path": "anthropic.sdk/5.10.0",
+      "hashPath": "anthropic.sdk.5.10.0.nupkg.sha512"
+    },
     "Dapper/2.1.79": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-8YijbzgTfmqmQOnVNorYM6K++pxqnW3nJ4aC1sRHzxUA2CcuoJ9gsTem3kgBnPRMc38zZHl4Esb6hAezXIEEuw==",
       "path": "dapper/2.1.79",
       "hashPath": "dapper.2.1.79.nupkg.sha512"
+    },
+    "Microsoft.Bcl.AsyncInterfaces/10.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-TV62UsrJZPX6gbt3c4WrtXh7bmaDIcMqf9uft1cc4L6gJXOU07hDGEh+bFQh/L2Az0R1WVOkiT66lFqS6G2NmA==",
+      "path": "microsoft.bcl.asyncinterfaces/10.0.3",
+      "hashPath": "microsoft.bcl.asyncinterfaces.10.0.3.nupkg.sha512"
     },
     "Microsoft.Bcl.Cryptography/9.0.13": {
       "type": "package",
@@ -758,19 +817,26 @@
       "path": "microsoft.data.sqlclient.sni.runtime/6.0.2",
       "hashPath": "microsoft.data.sqlclient.sni.runtime.6.0.2.nupkg.sha512"
     },
-    "Microsoft.Extensions.AI.Abstractions/10.8.3": {
+    "Microsoft.Extensions.AI/10.10.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-K0B05oApxmviWalNHPMBBcRC7erKiDATz3ENNR/jqTR9JwIwLRefgDhj2jCRwL1aca99pXUe0qyQC73/xIuZig==",
-      "path": "microsoft.extensions.ai.abstractions/10.8.3",
-      "hashPath": "microsoft.extensions.ai.abstractions.10.8.3.nupkg.sha512"
+      "sha512": "sha512-XKvtDUD3KySkvA5UpS+UF67M5rcqiXjAQchTZZ26WnavVKXxwlUTVdK/Ju0tc/25+16AVUdNl8cnVVGX/tx03A==",
+      "path": "microsoft.extensions.ai/10.10.0",
+      "hashPath": "microsoft.extensions.ai.10.10.0.nupkg.sha512"
     },
-    "Microsoft.Extensions.Caching.Abstractions/10.0.10": {
+    "Microsoft.Extensions.AI.Abstractions/10.10.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-4ZFBNE+jzR+CrWWlhOesnmywCW7pYKT0dxyAQRdL11yJwxe4jvcAu31eorFtEkoFeCDcUTeNssgPv2yaRRptaQ==",
-      "path": "microsoft.extensions.caching.abstractions/10.0.10",
-      "hashPath": "microsoft.extensions.caching.abstractions.10.0.10.nupkg.sha512"
+      "sha512": "sha512-frBHj2ckpevA+KdDLikxv8oxGPrJiyTvaiblYp+vtVEt0q6J73XP5m2SICm86nFK6rl+L1GCKxIy4S5Lb3p2kQ==",
+      "path": "microsoft.extensions.ai.abstractions/10.10.0",
+      "hashPath": "microsoft.extensions.ai.abstractions.10.10.0.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Caching.Abstractions/10.0.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-sI3A6MUAyZwccLnwq0cXuRmC3WBtXieimBWafXSfhRJ4jnM2uGVXrqImDDVyW27u4vVaTOGlJxNJd8d1FGvCNQ==",
+      "path": "microsoft.extensions.caching.abstractions/10.0.12",
+      "hashPath": "microsoft.extensions.caching.abstractions.10.0.12.nupkg.sha512"
     },
     "Microsoft.Extensions.Caching.Memory/9.0.13": {
       "type": "package",
@@ -1051,6 +1117,13 @@
       "sha512": "sha512-rrs2u7DRMXQG2yh0oVyF/vLwosfRv20Ld2iEpYcKwQWXHjfV+gFXNQsQ9p008kR9Ou4pxBs68Q6/9zC8Gi1wjg==",
       "path": "system.identitymodel.tokens.jwt/8.16.0",
       "hashPath": "system.identitymodel.tokens.jwt.8.16.0.nupkg.sha512"
+    },
+    "System.Numerics.Tensors/10.0.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-17brFrnQHV/XMMazXNqFq4GkvzWy8yzDPo5Gb8TT8zJtMFbUqDycOCyPCp9F+eMc4L75kcCKRZqaeBHMwLCL9Q==",
+      "path": "system.numerics.tensors/10.0.12",
+      "hashPath": "system.numerics.tensors.10.0.12.nupkg.sha512"
     },
     "System.Security.Cryptography.Pkcs/9.0.13": {
       "type": "package",

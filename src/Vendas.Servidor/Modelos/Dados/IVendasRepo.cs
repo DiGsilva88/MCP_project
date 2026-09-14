@@ -5,9 +5,14 @@ namespace Vendas.Servidor.Modelos.Dados;
 public interface IVendasRepo
 {
     Task<IReadOnlyList<VendaPorCliente>> ObterTopClientesAsync(
-        int limite,
-        CancellationToken cancellationToken = default);
+        int limite,int dias, CancellationToken ct = default);
 
-    Task<IReadOnlyList<Venda>> ListarVendasAsync(
-        CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<VendaPorProduto>> ObterTopProdutosAsync(
+        int limite, CancellationToken ct = default);
+
+    Task<IReadOnlyList<ClienteInativo>> ObterInativosAsync(
+        int dias, CancellationToken ct = default);
+
+    Task<IReadOnlyList<string>> ObterNomesClientesAsync(
+        CancellationToken ct = default);
 }
