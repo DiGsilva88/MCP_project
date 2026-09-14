@@ -85,3 +85,7 @@ C:\Users\Diana.Silva\Documents\Estágio-docs\Estágio\MCP\projeto_Mcp\src\Vendas
 C:\Users\Diana.Silva\Documents\Estágio-docs\Estágio\MCP\projeto_Mcp\src\Vendas.Servidor\obj\Debug\net10.0\Vendas.Servidor.pdb
 C:\Users\Diana.Silva\Documents\Estágio-docs\Estágio\MCP\projeto_Mcp\src\Vendas.Servidor\obj\Debug\net10.0\Vendas.Servidor.genruntimeconfig.cache
 C:\Users\Diana.Silva\Documents\Estágio-docs\Estágio\MCP\projeto_Mcp\src\Vendas.Servidor\obj\Debug\net10.0\ref\Vendas.Servidor.dll
+C:\Users\Diana.Silva\Documents\Estágio-docs\Estágio\MCP\projeto_Mcp\src\Vendas.Servidor\bin\Debug\net10.0\Anthropic.SDK.dll
+C:\Users\Diana.Silva\Documents\Estágio-docs\Estágio\MCP\projeto_Mcp\src\Vendas.Servidor\bin\Debug\net10.0\Microsoft.Bcl.AsyncInterfaces.dll
+C:\Users\Diana.Silva\Documents\Estágio-docs\Estágio\MCP\projeto_Mcp\src\Vendas.Servidor\bin\Debug\net10.0\Microsoft.Extensions.AI.dll
+C:\Users\Diana.Silva\Documents\Estágio-docs\Estágio\MCP\projeto_Mcp\src\Vendas.Servidor\bin\Debug\net10.0\System.Numerics.Tensors.dll
