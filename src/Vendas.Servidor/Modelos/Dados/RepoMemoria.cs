@@ -3,46 +3,72 @@ using Vendas.Servidor.Modelos.Dados;
 
 namespace Vendas.Servidor.Modelos.Dados;
 
-public class RepoMemoria : IVendasRepo
+public sealed class RepoMemoria : IVendasRepo
 {
-    private static readonly DateTime Base = new DateTime(2026, 3, 15);
-    private  readonly List<Venda> _venda = 
-    [
-        // Adiciona algumas vendas de exemplo
-      new Venda(1, "Cliente A", "Produto X", 100.0m, 2, 200.0m, Base.AddDays(-10)),
-      new Venda(2, "Cliente B", "Produto Y", 50.0m, 1, 50.0m, Base.AddDays(-5)),
-      new Venda(3, "Cliente A", "Produto Z", 75.0m, 3, 225.0m, Base.AddDays(-2)),
-      new Venda(4, "Cliente C", "Produto X", 100.0m, 1, 100.0m, Base.AddDays(-1)),
-      new Venda(5, "Cliente B", "Produto Z", 75.0m, 2, 150.0m, Base.AddDays(-3)),
-      new Venda(6, "Cliente D", "Produto Y", 50.0m, 4, 200.0m, Base.AddDays(-7)),
-      new Venda(7, "Cliente E", "Produto X", 100.0m, 1, 100.0m, Base.AddDays(-4)),
-      new Venda(8, "Cliente A", "Produto Y", 50.0m, 2, 100.0m, Base.AddDays(-6)),
-      new Venda(9, "Cliente C", "Produto Z", 75.0m, 1, 75.0m, Base.AddDays(-8)),
-      new Venda(10, "Cliente D", "Produto X", 100.0m, 3, 300.0m, Base.AddDays(-9))
+    private static readonly List<Venda> _venda = Gerar();
 
-    ];
+    private static List<Venda> Gerar()
+    {
+
+        string[] clientes =
+         [
+            "Padaria Central", "Supermercado Bom Preço", "Restaurante Saboroso", "Loja de Roupas Fashion", 
+        "Farmácia Saúde", "Cafeteria Aroma", "Mercado Verde", "Pizzaria Delicatium", "Livraria Cultura", "Academia Fitness"
+        ] ;
+
+        string[] produtos =
+         [
+            "Pão integral", "Leite Integral", "Arroz Branco", "Frango Congelado", "Café Torrado",
+        "Macarrão Espaguete", "Queijo", "Chocolate", "Refrigerante", "Suco Natural"
+        ];
+
+        
+
+    int[] inativoHaMeses = [0, 0, 0, 0, 0, 0, 0, 4, 8, 14];
+
+
+        var random = new Random(42);
+        var hoje = DateTime.Today;
+        var vendas = new List<Venda>();
+        var id = 1;
+        
+        for (var mes =23; mes >= 0; mes--)
+
+        {
+         var inicioMes = new DateTime(hoje.Year, hoje.Month, 1).AddMonths(-mes);
+         var diasNoMes = DateTime.DaysInMonth(inicioMes.Year, inicioMes.Month);
+
+        var elegiveis = Enumerable.Range(0, clientes.Length)
+                .Where(c => inativoHaMeses[c] == 0 || mes >= inativoHaMeses[c])
+                .ToArray();
+
+
+         var vendasNoMes = random.Next(5, 21); // Entre 5 e 20 vendas por mês, depois é alterado mediante o cliente
+
+
+            for (var i = 0; i < vendasNoMes; i++)
+            {
+                var data =inicioMes.AddDays(random.Next(diasNoMes));
+                if (data > hoje) continue;
+
+                var valorUnitario = Math.Round((decimal)random.NextDouble() * 100m + 5m, 2); // Valor entre 5 e 105
+                var quantidade = random.Next(1, 6);
+
+            vendas.Add(new Venda(
+                    id++,
+                    clientes[elegiveis[random.Next(elegiveis.Length)]],
+                    produtos[random.Next(produtos.Length)],
+                    valorUnitario,
+                    quantidade,
+                    valorUnitario * quantidade,
+                    data));
+            }
     
-    // Implementação do método ObterTopClientesAsync
-    public Task<IReadOnlyList<VendaPorCliente>> ObterTopClientesAsync(
-        int limite, 
-        CancellationToken cancellationToken = default)
+    }
 
+        Console.Error.WriteLine($"{vendas.Count} vendas | clientes distintos: {vendas.Select(v => v.Cliente).Distinct().Count()}");
 
-    { // Agrupa as vendas por cliente, calcula o número de vendas e o total vendido, ordena pelo total vendido e retorna os top clientes
-       var resultado = _venda
-            .GroupBy(v => v.Cliente)
-            .Select(g => new VendaPorCliente(
-                g.Key,
-                g.Count(),
-                g.Sum(v => v.Valor)))
-            .OrderByDescending(v => v.TotalVendido)
-            .Take(limite)
-            .ToList();
-
-
-
-        return Task.FromResult<IReadOnlyList<VendaPorCliente>>(resultado);
-
+        return vendas;
     }
     // Implementação do método AdicionarVendaAsync
     public Task<IReadOnlyList<Venda>> ListarVendasAsync(CancellationToken cancellationToken = default)
@@ -82,5 +108,41 @@ public class RepoMemoria : IVendasRepo
             .ToList();
 
         return Task.FromResult<IReadOnlyList<string>>(resultado);
+    }
+
+    // Agrupa as vendas por cliente, calcula o número de vendas e o total vendido, ordena pelo total vendido e retorna os top clientes
+    public Task<IReadOnlyList<VendaPorCliente>> ObterTopClientesAsync(int limite,int dias, CancellationToken ct = default)
+    {
+
+        var desde = DateTime.Today.AddDays(-dias);
+
+        var resultado = _venda
+        .Where(v => v.DataVenda >= desde)
+            .GroupBy(v => v.Cliente)
+            .Select(g => new VendaPorCliente(
+                g.Key,
+                g.Count(),
+                g.Sum(v => v.ValorLinha)))
+            .OrderByDescending(v => v.TotalVendido)
+            .Take(limite)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<VendaPorCliente>>(resultado);
+    }
+
+    // Agrupa as vendas por produto, calcula o número de vendas e o total vendido, ordena pelo total vendido e retorna os top produtos
+    public Task<IReadOnlyList<VendaPorProduto>> ObterTopProdutosAsync(int limite, CancellationToken ct = default)
+    {
+        var resultado = _venda
+            .GroupBy(v => v.Produto)
+            .Select(g => new VendaPorProduto(
+                g.Key,
+                g.Count(),
+                g.Sum(v => v.ValorLinha)))
+            .OrderByDescending(v => v.TotalVendido)
+            .Take(limite)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<VendaPorProduto>>(resultado);
     }
 }
