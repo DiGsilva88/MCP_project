@@ -153,4 +153,8 @@ public sealed class RepoMemoria : IVendasRepo
 
     return Task.FromResult<IReadOnlyList<VendaPorProduto>>(resultado);
 }
+
+public Task<IReadOnlyList<ContagemCliente>> ContarClientesAsync(
+    DimensaoCliente agrupar, int limite, CancellationToken cancellationToken = default)
+    => Task.FromResult<IReadOnlyList<ContagemCliente>>([]);
 }

@@ -16,5 +16,9 @@ public interface IVendasRepo
     Task<IReadOnlyList<string>> ObterNomesClientesAsync(
         CancellationToken ct = default);
 
+    Task<IReadOnlyList<ContagemCliente>> ContarClientesAsync(
+
+        DimensaoCliente agrupar, int limite, CancellationToken cancellationToken = default);
+
     
 }

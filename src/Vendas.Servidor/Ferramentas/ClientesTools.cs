@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using Vendas.Servidor.Modelos.Dados;
+using Vendas.Servidor.Modelos;
 
 namespace Vendas.Servidor.Ferramentas;
 
@@ -63,5 +64,50 @@ public sealed class ClientesTools(
             _log.LogError(ex, "Falha em clientes_nomes");
             return "Não foi possível obter os clientes neste momento.";
         }
+
+
+        
     }
+    [McpServerTool(Name ="clientes_por")]
+        [Description("Quantos clientes existem, agrupados por zona, vendedor , tipo de cliente," +
+        "atividade ou distrito. DEvolve CSV com o valor e o numero de clientes.")]
+
+    public async Task<string> ClientesPorAsync(
+        [Description("O atributo pelo qual vai agrupar")] DimensaoCliente agrupar = DimensaoCliente.Zona,
+        [Description("Quantas linhas a devolver(1 a 50).")] int limite = 20,
+        CancellationToken cancellationToken = default)
+
+        {
+        limite = Math.Clamp(limite, 1 , 50);
+
+        try
+
+        {
+            var todas = await _vendasRepo.ContarClientesAsync(agrupar, limite +1 , cancellationToken);
+            if 
+            (todas.Count == 0) 
+            
+            return $"Não há clientes com {agrupar} preenchido.";
+
+            var sb =new StringBuilder();
+            sb.AppendLine("valor, clientes");
+            foreach (var l in todas.Take(limite))
+            sb.AppendLine($"{Escapar(l.Valor)},{l.Clientes}");
+
+            if (todas.Count > limite) sb.AppendLine("# existem mais valores para além destes");
+            return sb.ToString();
+        }
+
+        catch (OperationCanceledException) {throw;}
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[clientes_por] {ex}");
+            return "Não foi possivel obter os dados de clientes neste momento";
+        }
+    }
+
+    private static string Escapar(string valor) =>
+        valor.Contains(',') || valor.Contains('"')
+            ? $"\"{valor.Replace("\"", "\"\"")}\""
+            : valor;
 }
