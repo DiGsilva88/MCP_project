@@ -14,7 +14,7 @@ public interface IVendasRepo
         int dias, CancellationToken ct = default);
 
     Task<IReadOnlyList<string>> ObterNomesClientesAsync(
-        CancellationToken ct = default);
+        int limite, CancellationToken ct = default);
 
     Task<IReadOnlyList<ContagemCliente>> ContarClientesAsync(
 

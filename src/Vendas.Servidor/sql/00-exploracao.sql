@@ -19,14 +19,5 @@ SELECT COUNT(*)                            AS Linhas,
 FROM dbo.VCliente;
 
 
-EXEC sys.sp_executesql N'
-CREATE OR ALTER VIEW dbo.ViewMCP_cliente AS
-SELECT ClienteID, NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito
-FROM (
-    SELECT ClienteID, NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito,
-           ROW_NUMBER() OVER (PARTITION BY ClienteID
-                              ORDER BY NomeCliente, Vendedor) AS rn
-    FROM dbo.VCliente
-) AS x
-WHERE rn = 1;';
+
 GO

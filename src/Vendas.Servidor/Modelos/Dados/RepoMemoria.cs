@@ -100,12 +100,13 @@ public sealed class RepoMemoria : IVendasRepo
 
     // Implementação do método ObterNomesClientesAsync
     public Task<IReadOnlyList<string>> ObterNomesClientesAsync(
-        CancellationToken cancellationToken = default)
+       int limite, CancellationToken cancellationToken = default)
     {
         var resultado = _venda
-            .Select(v => v.Cliente)
-            .Distinct()
+            .Select(v => v.Cliente.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
+            .Take(limite)
             .ToList();
 
         return Task.FromResult<IReadOnlyList<string>>(resultado);
