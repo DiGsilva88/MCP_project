@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using Vendas.Servidor.Modelos.Dados;
 using Vendas.Servidor.Modelos;
+using System.Linq.Expressions;
 
 namespace Vendas.Servidor.Ferramentas;
 
@@ -49,16 +50,26 @@ public sealed class ClientesTools(
     // }
 
     [McpServerTool(Name = "clientes_nomes")]
-    [Description("Nomes de todos os clientes com vendas registadas, por ordem alfabética. Um nome por linha.")]
-    public async Task<string> NomesAsync(CancellationToken ct = default)
+    [Description("Nomes de todos os clientes da ficha de clientes, por ordem alfabética. Um nome por linha.")]
+    public async Task<string> NomesAsync(
+        [Description("Quantos nomes devolver(1 a 500).")] int limite = 200,
+        CancellationToken ct = default)
     {
+        limite= Math.Clamp(limite,1, 500);
         try
         {
-            var nomes = await _vendasRepo.ObterNomesClientesAsync(ct);
-            return nomes.Count == 0
-                ? "Sem clientes registados."
-                : string.Join("\n", nomes);
+            var nomes = await _vendasRepo.ObterNomesClientesAsync(limite +1,ct);
+            if (nomes.Count == 0)
+            
+            return "Sem clientes registados.";
+
+            var texto = string.Join("\n", nomes.Take(limite));
+            return nomes.Count > limite
+                ? $"{texto}\n# mostrados os primeiros {limite} nomes; existem mais."
+                : texto;
+
         }
+        catch(OperationCanceledException) {throw;}
         catch (Exception ex)
         {
             _log.LogError(ex, "Falha em clientes_nomes");
@@ -90,10 +101,14 @@ public sealed class ClientesTools(
             
             return $"Não há clientes com {agrupar} preenchido.";
 
-            var sb =new StringBuilder();
-            sb.AppendLine("valor,clientes");
+            var sb = new StringBuilder();
+            var nome = Dimensoes.Cabecalho(agrupar); //agrupa por tipo
+            var total = todas[0].Total;                 //total
+            sb.AppendLine($"Clientes por {nome.Replace('_', ' ')}: {total} clientes em {todas[0].Grupos} grupos.");
+            sb.AppendLine($"{nome},clientes,%");
             foreach (var l in todas.Take(limite))
-            sb.AppendLine($"{Escapar(l.Valor)},{l.Clientes}");
+                sb.AppendLine(string.Create(CultureInfo.InvariantCulture, 
+                $"{Escapar(l.Valor)},{l.Clientes},{100.0 * l.Clientes / total:0.0}"));
 
             if (todas.Count > limite) sb.AppendLine("# existem mais valores para além destes");
             return sb.ToString();

@@ -15,27 +15,31 @@ public sealed class RepoSql(string ligação):IVendasRepo
 
         await using var ligacaoSql = new SqlConnection(ligação);
         await using var cmd = new SqlCommand($"""
-            SELECT TOP (@limite) {coluna} AS Valor, COUNT(*) 
-            AS Clientes
+            SELECT TOP (@limite)
+            {coluna} AS Valor,
+            COUNT(*) AS Clientes,
+            SUM(COUNT(*)) OVER() AS Total,
+            COUNT(*) OVER () AS Grupos
             FROM [dbo].[ViewMCP_cliente]
-            GROUP BY {coluna}
-            ORDER BY COUNT(*) DESC, {coluna};
+            GROUP BY [{coluna}]
+            ORDER BY COUNT(*) DESC, Valor;
             """, ligacaoSql);
             cmd.Parameters.AddWithValue("@limite", limite);
 
         await ligacaoSql.OpenAsync(cancellationToken);
         await using var leitor = await cmd.ExecuteReaderAsync(cancellationToken);
-
+//
         var linhas = new List<ContagemCliente>();
-        while (await leitor. ReadAsync(cancellationToken))
+        while (await leitor.ReadAsync(cancellationToken))
         {
             linhas.Add(new ContagemCliente(
-                leitor.IsDBNull(0) ? "(sem valor)" : leitor.GetString(0),
-                leitor.GetInt32(1)));
-
+                leitor.IsDBNull(0) ? "(sem valor)" : leitor.GetString(0).Trim(),
+                leitor.GetInt32(1),
+                leitor.GetInt32(2),
+                leitor.GetInt32(3)));
         }
-            return linhas;
-        }
+        return linhas;
+    }
     
 
     //Ainda não existe View para vendas no SQL server
@@ -56,11 +60,30 @@ public sealed class RepoSql(string ligação):IVendasRepo
         => throw new NotImplementedException(
             "ObterInativosAsync : ainda não existe/view de vendas configuradas no SQL server.");
 
-    public Task<IReadOnlyList<string>> ObterNomesClientesAsync(
-         CancellationToken cancellationToken = default)
-        => throw new NotImplementedException(
-            "ObterNomesClientesAsync : ainda não existe/view de vendas configuradas no SQL server.");
+    public async Task<IReadOnlyList<string>> ObterNomesClientesAsync(
+        int limite, CancellationToken cancellationToken = default)
+    {
+        
+        await using var ligacaoSql = new SqlConnection(ligação);
+        await using var cmd = new SqlCommand("""
+            SELECT DISTINCT TOP(@limite) LTRIM(RTRIM([NomeCliente]))
+            AS Nome
+            FROM [dbo].[ViewMCP_cliente]
+            WHERE NULLIF(LTRIM(RTRIM([NomeCliente])),'') IS NOT NULL
+            ORDER BY Nome;
+            """, ligacaoSql);
+        cmd.Parameters.AddWithValue("@limite", limite);
+          
+
+        await ligacaoSql.OpenAsync(cancellationToken);
+        await using var leitor = await cmd.ExecuteReaderAsync(cancellationToken);
+//
+        var nomes = new List<string>();
+        while (await leitor.ReadAsync(cancellationToken))
+            nomes.Add(leitor.GetString(0).Trim());
+        return nomes;
+    }
+    }
 
 
-}
 

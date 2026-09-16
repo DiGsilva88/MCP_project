@@ -12,7 +12,7 @@ public enum DimensaoCliente
     Distrito
 }
 
-public record ContagemCliente(string Valor, int Clientes);
+public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos);
 
 
     public  static class Dimensoes 
@@ -26,6 +26,16 @@ public record ContagemCliente(string Valor, int Clientes);
         DimensaoCliente.TipoCliente => "TipoCliente",
         DimensaoCliente.Actividade => "Actividade",
         DimensaoCliente.Distrito => "Distrito",
+        _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
+    };
+
+    public static string Cabecalho(DimensaoCliente dimensao) => dimensao switch
+   {
+        DimensaoCliente.Zona => "zona",
+        DimensaoCliente.Vendendor => "vendedor",
+        DimensaoCliente.TipoCliente => "tipo_cliente",
+        DimensaoCliente.Actividade => "actividade",
+        DimensaoCliente.Distrito => "distrito",
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
     };
 
