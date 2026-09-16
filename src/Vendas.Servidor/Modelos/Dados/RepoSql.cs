@@ -1,19 +1,17 @@
-
 using Vendas.Servidor.Modelos;
 using Microsoft.Data.SqlClient;
-using Microsoft.IdentityModel.Tokens;
+using Vendas.Servidor.Modelos.Dados;
 
 namespace Vendas.Servidor.Dados;
 
-public sealed class Repoql(string ligação)
+public sealed class RepoSql(string ligação):IVendasRepo
 
 {
-    public async Task<IReadOnlyList<ContagemCliente>> 
-    ContarPorAsync(
-    DimensaoCliente dimensao, int limite, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ContagemCliente>> ContarClientesAsync(
+    DimensaoCliente agrupar , int limite, CancellationToken cancellationToken = default)
     {
         //lista em branco: o nome da coluna nunca vem do texto do modelo
-        var coluna = Dimensoes.Coluna(dimensao);
+        var coluna = Dimensoes.Coluna(agrupar);
 
         await using var ligacaoSql = new SqlConnection(ligação);
         await using var cmd = new SqlCommand($"""
@@ -27,6 +25,7 @@ public sealed class Repoql(string ligação)
 
         await ligacaoSql.OpenAsync(cancellationToken);
         await using var leitor = await cmd.ExecuteReaderAsync(cancellationToken);
+
         var linhas = new List<ContagemCliente>();
         while (await leitor. ReadAsync(cancellationToken))
         {
@@ -37,5 +36,31 @@ public sealed class Repoql(string ligação)
         }
             return linhas;
         }
-    }
+    
+
+    //Ainda não existe View para vendas no SQL server
+    //quando existir trocar cada metodo por uma query real
+
+    public Task<IReadOnlyList<VendaPorCliente>> ObterTopClientesAsync(
+        int limite, int dias, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException(
+            "ObterTopClientesAsync : ainda não existe/view de vendas configuradas no SQL server.");
+
+    public Task<IReadOnlyList<VendaPorProduto>> ObterTopProdutosAsync(
+        int limite, int dias, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException(
+            "ObterTopProdutosAsync : ainda não existe/view de vendas configuradas no SQL server.");
+
+    public Task<IReadOnlyList<ClienteInativo>> ObterInativosAsync(
+        int dias, CancellationToken cancellationToken = default)
+        => throw new NotImplementedException(
+            "ObterInativosAsync : ainda não existe/view de vendas configuradas no SQL server.");
+
+    public Task<IReadOnlyList<string>> ObterNomesClientesAsync(
+         CancellationToken cancellationToken = default)
+        => throw new NotImplementedException(
+            "ObterNomesClientesAsync : ainda não existe/view de vendas configuradas no SQL server.");
+
+
+}
 
