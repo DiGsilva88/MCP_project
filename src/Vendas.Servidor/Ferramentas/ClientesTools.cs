@@ -17,36 +17,36 @@ public sealed class ClientesTools(
     private readonly IVendasRepo _vendasRepo = vendasRepo;
     private readonly ILogger<ClientesTools> _log = log;
 
-    [McpServerTool(Name = "clientes_inativos")]
-    [Description("Clientes que não compram há pelo menos N dias, do mais antigo para o mais recente. Devolve CSV com cliente, data da última compra e dias sem comprar.")]
-    public async Task<string> InativosAsync(
-        [Description("Número mínimo de dias sem comprar (1 a 3650).")] int dias = 90,
-        CancellationToken ct = default)
-    {
-        var diasEfetivo = Math.Clamp(dias, 1, 3650);
+    // [McpServerTool(Name = "clientes_inativos")]
+    // [Description("Clientes que não compram há pelo menos N dias, do mais antigo para o mais recente. Devolve CSV com cliente, data da última compra e dias sem comprar.")]
+    // public async Task<string> InativosAsync(
+    //     [Description("Número mínimo de dias sem comprar (1 a 3650).")] int dias = 90,
+    //     CancellationToken ct = default)
+    // {
+    //     var diasEfetivo = Math.Clamp(dias, 1, 3650);
 
-        try
-        {
-            var linhas = await _vendasRepo.ObterInativosAsync(diasEfetivo, ct);
+    //     try
+    //     {
+    //         var linhas = await _vendasRepo.ObterInativosAsync(diasEfetivo, ct);
 
-            var sb = new StringBuilder();
-            sb.AppendLine("cliente,ultima_compra,dias_sem_comprar");
+    //         var sb = new StringBuilder();
+    //         sb.AppendLine("cliente,ultima_compra,dias_sem_comprar");
 
-            foreach (var l in linhas)
-            {
+    //         foreach (var l in linhas)
+    //         {
                 
-                sb.AppendLine(string.Create(CultureInfo.InvariantCulture,
-                    $"{l.Cliente},{l.UltimaCompra:yyyy-MM-dd},{l.DiasSemComprar}"));
-            }
+    //             sb.AppendLine(string.Create(CultureInfo.InvariantCulture,
+    //                 $"{l.Cliente},{l.UltimaCompra:yyyy-MM-dd},{l.DiasSemComprar}"));
+    //         }
 
-            return sb.ToString();
-        }
-        catch (Exception ex)
-        {
-            _log.LogError(ex, "Falha em clientes_inativos");
-            return "Não foi possível obter os dados de clientes neste momento.";
-        }
-    }
+    //         return sb.ToString();
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _log.LogError(ex, "Falha em clientes_inativos");
+    //         return "Não foi possível obter os dados de clientes neste momento.";
+    //     }
+    // }
 
     [McpServerTool(Name = "clientes_nomes")]
     [Description("Nomes de todos os clientes com vendas registadas, por ordem alfabética. Um nome por linha.")]
@@ -73,7 +73,8 @@ public sealed class ClientesTools(
         "atividade ou distrito. DEvolve CSV com o valor e o numero de clientes.")]
 
     public async Task<string> ClientesPorAsync(
-        [Description("O atributo pelo qual vai agrupar")] DimensaoCliente agrupar = DimensaoCliente.Zona,
+        [Description("O atributo pelo qual vai agrupar")]
+         DimensaoCliente agrupar = DimensaoCliente.Zona,
         [Description("Quantas linhas a devolver(1 a 50).")] int limite = 20,
         CancellationToken cancellationToken = default)
 
@@ -90,7 +91,7 @@ public sealed class ClientesTools(
             return $"Não há clientes com {agrupar} preenchido.";
 
             var sb =new StringBuilder();
-            sb.AppendLine("valor, clientes");
+            sb.AppendLine("valor,clientes");
             foreach (var l in todas.Take(limite))
             sb.AppendLine($"{Escapar(l.Valor)},{l.Clientes}");
 
@@ -106,8 +107,10 @@ public sealed class ClientesTools(
         }
     }
 
-    private static string Escapar(string valor) =>
-        valor.Contains(',') || valor.Contains('"')
-            ? $"\"{valor.Replace("\"", "\"\"")}\""
-            : valor;
+
+    
+   private static string Escapar(string valor) =>
+    valor.AsSpan().IndexOfAny(",\"\n\r") >= 0
+        ? $"\"{valor.Replace("\"", "\"\"")}\""
+        : valor;
 }
