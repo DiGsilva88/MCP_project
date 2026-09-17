@@ -29,5 +29,13 @@ SELECT EscalaoPlafond, COUNT(*) AS clientes
 FROM dbo.ViewMCP_cliente_faturacao
 GROUP BY EscalaoPlafond ORDER BY EscalaoPlafond;
 
+
+GO
+SELECT TOP (21) [Pagamento] AS Valor, COUNT(*) AS Clientes,
+       SUM(COUNT(*)) OVER () AS Total, COUNT(*) OVER () AS Grupos
+FROM   dbo.ViewMCP_cliente_faturacao
+GROUP BY [Pagamento]
+ORDER BY Clientes DESC, Valor;
+
 GRANT SELECT ON OBJECT::[dbo].[ViewMCP_cliente_faturacao] TO mcp_leitor;
 GO

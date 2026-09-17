@@ -7,6 +7,7 @@ using ModelContextProtocol.Server;
 using Vendas.Servidor.Modelos.Dados;
 using Vendas.Servidor.Modelos;
 using System.Linq.Expressions;
+using Anthropic.SDK;
 
 namespace Vendas.Servidor.Ferramentas;
 
@@ -122,8 +123,56 @@ public sealed class ClientesTools(
         }
     }
 
+//adicionar a ferramenta faturação condições
+[McpServerTool(Name = "faturacao_condicoes")]
+[Description 
+("Quantos clientes existem por condição de pagamento, forma de cobrança,situação financeira ou escalaão de plafond, " +
+"Devolve uma linha com o total e um CSV com o valor, número de clientes e a percentagem. "+
+"Não devolve valores faturados")]
 
+public async Task<string> FaturacaoCondicoesAsync(
+    [Description("A condição pela qual vai agrupar.")] 
+    DimensaoFaturacao agrupar = DimensaoFaturacao.Pagamento,
+    [Description("Quantas linhas devolver( 1 a 50).")] int limite = 20,
+    CancellationToken cancellationToken= default)
+
+    {
+        limite = Math.Clamp(limite, 1, 50);
+        try
+        {
+            var todas= await _vendasRepo.ContarFaturacaoAsync(
+                agrupar,limite +1,cancellationToken);
+                return todas.Count ==0
+                ? "Sem dados de condições de faturação."
+                : FormatarContagem(Dimensoes.Cabecalho(agrupar), todas, limite);
+        }
+        catch (OperationCanceledException) {throw;}
+        catch(Exception ex)
+        {
+            _log.LogError(ex, "Falha em faturacao_condicoes");
+            return "Não foi possivel obter as condicões de faturação neste momento.";
+        }
+    }
+
+    private static string FormatarContagem(string nome, IReadOnlyList<ContagemCliente> todas, int limite)
+
+    {
+        var(total, grupos) =(todas[0].Total,todas[0].Grupos);
+        var sb = new StringBuilder();
+        sb.AppendLine($"Clientes por {nome.Replace('_', ' ')}:{total} clientes em {grupos} grupos.");
+        sb.AppendLine($"{nome}, clientes, % total");
+        foreach (var l in todas.Take(limite))
+            sb.AppendLine(string.Create(CultureInfo.InvariantCulture,
+            $"{Escapar(l.Valor)}, {l.Clientes},{100.0 * l.Clientes/total:0.0}"));
+
+            if (todas.Count> limite)
+            
+                sb.AppendLine($" #mostra {limite} , {grupos} de grupos, aumente o limite para ver os restantes.");
+                return sb.ToString();
+            
     
+    }
+
    private static string Escapar(string valor) =>
     valor.AsSpan().IndexOfAny(",\"\n\r") >= 0
         ? $"\"{valor.Replace("\"", "\"\"")}\""
