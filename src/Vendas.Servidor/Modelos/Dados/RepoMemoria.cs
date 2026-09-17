@@ -158,4 +158,9 @@ public sealed class RepoMemoria : IVendasRepo
 public Task<IReadOnlyList<ContagemCliente>> ContarClientesAsync(
     DimensaoCliente agrupar, int limite, CancellationToken cancellationToken = default)
     => Task.FromResult<IReadOnlyList<ContagemCliente>>([]);
+
+public Task<IReadOnlyList<ContagemCliente>> ContarFaturacaoAsync(
+    DimensaoFaturacao agrupar, int limite, CancellationToken cancellationToken = default)
+    => throw new NotImplementedException("Condicoes de faturacao só existe no SQL server.");
+    
 }

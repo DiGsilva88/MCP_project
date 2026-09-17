@@ -20,5 +20,8 @@ public interface IVendasRepo
 
         DimensaoCliente agrupar, int limite, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<ContagemCliente>> ContarFaturacaoAsync(
+    DimensaoFaturacao agrupar, int limite, CancellationToken cancellationToken = default);
+
     
 }
