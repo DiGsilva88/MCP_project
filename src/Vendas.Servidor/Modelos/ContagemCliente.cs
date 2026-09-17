@@ -46,10 +46,10 @@ public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos)
          public static string Coluna(DimensaoFaturacao dimensao) => dimensao switch
     
     {
-        DimensaoFaturacao.Pagamento => "condicao_pagamento",
-        DimensaoFaturacao.Cobranca => "cobranca",
-        DimensaoFaturacao.SituacaoFinanceira => "situacao_financeira",
-        DimensaoFaturacao.EscalaoPlafond => "escalao_plafond",
+        DimensaoFaturacao.Pagamento => "Pagamento",
+        DimensaoFaturacao.Cobranca => "Cobranca",
+        DimensaoFaturacao.SituacaoFinanceira => "SitFinanceira",
+        DimensaoFaturacao.EscalaoPlafond => "EscalaoPlafond",
         
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
     };
