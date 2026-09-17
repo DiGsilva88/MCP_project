@@ -4,20 +4,36 @@ GO
 SELECT @@VERSION AS Versao, DB_NAME() AS BaseDados;
 GO
 
--- 1) Qualidade de dados na origem: quantos valores preenchidos há em cada coluna
-SELECT COUNT(*)                            AS Linhas,
-       COUNT(NULLIF(TRIM(NomeCliente),'')) AS NomeCliente,
-       COUNT(NULLIF(TRIM(Zona),''))        AS Zona,
-       COUNT(ZonaID)                       AS ZonaID,
-       COUNT(NULLIF(TRIM(Vendedor),''))    AS Vendedor,
-       COUNT(VendedorID)                   AS VendedorID,
-       COUNT(NULLIF(TRIM(TipoCliente),'')) AS TipoCliente,
-       COUNT(NULLIF(TRIM(Actividade),''))  AS Actividade,
-       COUNT(NULLIF(TRIM(Distrito),''))    AS Distrito,
-       COUNT(ConcelhoID)                   AS ConcelhoID,
-       COUNT(GrupoContab)                  AS GrupoContab
-FROM dbo.VCliente;
 
 
+- Quanto está por preencher na view de clientes 
 
-GO
+SELECT COUNT(*) AS clientes, 
+
+  SUM(CASE WHEN Zona        = '(sem zona)'       THEN 1 ELSE 0 END) AS sem_zona, 
+
+  SUM(CASE WHEN Vendedor    = '(sem vendedor)'   THEN 1 ELSE 0 END) AS sem_vendedor, 
+
+  SUM(CASE WHEN TipoCliente = '(sem tipo)'       THEN 1 ELSE 0 END) AS sem_tipo, 
+
+  SUM(CASE WHEN Actividade  = '(sem actividade)' THEN 1 ELSE 0 END) AS sem_actividade, 
+
+  SUM(CASE WHEN Distrito    = '(sem distrito)'   THEN 1 ELSE 0 END) AS sem_distrito 
+
+FROM dbo.ViewMCP_cliente; 
+
+  
+
+-- Clientes repetidos na origem: as linhas diferem nas colunas que usamos? 
+
+SELECT c.ClienteID, c.NomeCliente, c.Pagamento, c.Cobranca, c.SitFinanceira, 
+
+       c.Plafond, c.Zona, c.Vendedor 
+
+FROM dbo.VCliente AS c 
+
+WHERE c.ClienteID IN (SELECT ClienteID FROM dbo.VCliente 
+
+                      GROUP BY ClienteID HAVING COUNT(*) > 1) 
+
+ORDER BY c.ClienteID;

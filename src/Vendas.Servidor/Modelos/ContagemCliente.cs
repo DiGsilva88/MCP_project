@@ -21,7 +21,7 @@ public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos)
 
     public  static class Dimensoes 
     {
-
+        //Nome da coluna na VIEW.
         public static string Coluna(DimensaoCliente dimensao) => dimensao switch
     
     {
@@ -32,7 +32,7 @@ public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos)
         DimensaoCliente.Distrito => "Distrito",
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
     };
-
+    //nome da coluna no CSV devolvido ao modelo
     public static string Cabecalho(DimensaoCliente dimensao) => dimensao switch
    {
         DimensaoCliente.Zona => "zona",
@@ -42,7 +42,7 @@ public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos)
         DimensaoCliente.Distrito => "distrito",
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
     };
-
+        
          public static string Coluna(DimensaoFaturacao dimensao) => dimensao switch
     
     {

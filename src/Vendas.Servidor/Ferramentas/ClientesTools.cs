@@ -82,7 +82,7 @@ public sealed class ClientesTools(
     }
     [McpServerTool(Name ="clientes_por")]
         [Description("Quantos clientes existem, agrupados por zona, vendedor , tipo de cliente," +
-        "atividade ou distrito. DEvolve CSV com o valor e o numero de clientes.")]
+        "atividade ou distrito. Devolve CSV com o valor e o numero de clientes.")]
 
     public async Task<string> ClientesPorAsync(
         [Description("O atributo pelo qual vai agrupar")]
