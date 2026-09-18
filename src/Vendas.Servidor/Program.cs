@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Vendas.Servidor.Dados;
 using Vendas.Servidor.Modelos.Dados;
 
 // Cria o construtor do host da aplicação

@@ -6,14 +6,19 @@ namespace Vendas.Servidor.Modelos;
 public enum DimensaoCliente
 {
     Zona,
-    Vendendor,
+    Vendedor,
     TipoCliente,
     Actividade,
-    Distrito
+    Distrito,
+    
 }
 
 public enum DimensaoFaturacao {
-    Pagamento, Cobranca, SituacaoFinanceira,EscalaoPlafond
+    Pagamento, 
+    Cobranca, 
+    SituacaoFinanceira,
+    EscalaoPlafond,
+    EscalaoVolumeVendas
     }
 
 public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos);
@@ -26,7 +31,7 @@ public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos)
     
     {
         DimensaoCliente.Zona => "Zona",
-        DimensaoCliente.Vendendor => "Vendedor",
+        DimensaoCliente.Vendedor => "Vendedor",
         DimensaoCliente.TipoCliente => "TipoCliente",
         DimensaoCliente.Actividade => "Actividade",
         DimensaoCliente.Distrito => "Distrito",
@@ -36,7 +41,7 @@ public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos)
     public static string Cabecalho(DimensaoCliente dimensao) => dimensao switch
    {
         DimensaoCliente.Zona => "zona",
-        DimensaoCliente.Vendendor => "vendedor",
+        DimensaoCliente.Vendedor => "vendedor",
         DimensaoCliente.TipoCliente => "tipo_cliente",
         DimensaoCliente.Actividade => "actividade",
         DimensaoCliente.Distrito => "distrito",
@@ -50,6 +55,7 @@ public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos)
         DimensaoFaturacao.Cobranca => "Cobranca",
         DimensaoFaturacao.SituacaoFinanceira => "SitFinanceira",
         DimensaoFaturacao.EscalaoPlafond => "EscalaoPlafond",
+        DimensaoFaturacao.EscalaoVolumeVendas => "EscalaoVolumeVendas",
         
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
     };
@@ -60,6 +66,7 @@ public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos)
         DimensaoFaturacao.Cobranca => "cobranca",
         DimensaoFaturacao.SituacaoFinanceira => "situacao_financeira",
         DimensaoFaturacao.EscalaoPlafond => "escalao_plafond",
+        DimensaoFaturacao.EscalaoVolumeVendas => "escalao_volume_declarado",
         
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
     };

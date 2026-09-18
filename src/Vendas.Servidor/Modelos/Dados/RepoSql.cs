@@ -2,7 +2,7 @@ using Vendas.Servidor.Modelos;
 using Microsoft.Data.SqlClient;
 using Vendas.Servidor.Modelos.Dados;
 
-namespace Vendas.Servidor.Dados;
+namespace Vendas.Servidor.Modelos.Dados;
 
 public sealed class RepoSql(string ligação):IVendasRepo
 

@@ -7,7 +7,6 @@ using ModelContextProtocol.Server;
 using Vendas.Servidor.Modelos.Dados;
 using Vendas.Servidor.Modelos;
 using System.Linq.Expressions;
-using Anthropic.SDK;
 
 namespace Vendas.Servidor.Ferramentas;
 
@@ -118,7 +117,7 @@ public sealed class ClientesTools(
         catch (OperationCanceledException) {throw;}
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"[clientes_por] {ex}");
+            _log.LogError(ex,"Falha em clientes_por");
             return "Não foi possivel obter os dados de clientes neste momento";
         }
     }
@@ -126,9 +125,11 @@ public sealed class ClientesTools(
 //adicionar a ferramenta faturação condições
 [McpServerTool(Name = "faturacao_condicoes")]
 [Description 
-("Quantos clientes existem por condição de pagamento, forma de cobrança,situação financeira ou escalaão de plafond, " +
-"Devolve uma linha com o total e um CSV com o valor, número de clientes e a percentagem. "+
-"Não devolve valores faturados")]
+("Quantos clientes existem por condição de pagamento, forma de cobrança, " +
+                 "expedição, situação financeira, escalão de plafond ou escalão de volume de " +
+                 "vendas. Devolve uma frase com o total e um CSV com o valor, o número de " +
+                 "clientes e a percentagem. O volume de vendas é o valor DECLARADO na ficha do " +
+                 "cliente, não a faturação real; esta ferramenta não devolve valores faturados.")]
 
 public async Task<string> FaturacaoCondicoesAsync(
     [Description("A condição pela qual vai agrupar.")] 
