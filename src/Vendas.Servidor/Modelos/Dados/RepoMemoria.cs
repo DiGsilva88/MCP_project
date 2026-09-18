@@ -157,7 +157,7 @@ public sealed class RepoMemoria : IVendasRepo
 
 public Task<IReadOnlyList<ContagemCliente>> ContarClientesAsync(
     DimensaoCliente agrupar, int limite, CancellationToken cancellationToken = default)
-    => Task.FromResult<IReadOnlyList<ContagemCliente>>([]);
+     => throw new NotImplementedException(" Contagens por dimensão só existem no SQL Server.");
 
 public Task<IReadOnlyList<ContagemCliente>> ContarFaturacaoAsync(
     DimensaoFaturacao agrupar, int limite, CancellationToken cancellationToken = default)

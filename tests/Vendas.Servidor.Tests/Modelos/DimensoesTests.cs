@@ -6,7 +6,7 @@ public class DimensoesTests
 {
     [Theory]
     [InlineData(DimensaoCliente.Zona, "Zona")]
-    [InlineData(DimensaoCliente.Vendendor, "Vendedor")]
+    [InlineData(DimensaoCliente.Vendedor, "Vendedor")]
     [InlineData(DimensaoCliente.TipoCliente, "TipoCliente")]
     [InlineData(DimensaoCliente.Actividade, "Actividade")]
     [InlineData(DimensaoCliente.Distrito, "Distrito")]
@@ -17,7 +17,7 @@ public class DimensoesTests
 
     [Theory]
     [InlineData(DimensaoCliente.Zona, "zona")]
-    [InlineData(DimensaoCliente.Vendendor, "vendedor")]
+    [InlineData(DimensaoCliente.Vendedor, "vendedor")]
     [InlineData(DimensaoCliente.TipoCliente, "tipo_cliente")]
     [InlineData(DimensaoCliente.Actividade, "actividade")]
     [InlineData(DimensaoCliente.Distrito, "distrito")]

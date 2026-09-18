@@ -100,7 +100,7 @@ public class RepoMemoriaTests
 
     [Theory]
     [InlineData(DimensaoCliente.Zona)]
-    [InlineData(DimensaoCliente.Vendendor)]
+    [InlineData(DimensaoCliente.Vendedor)]
     [InlineData(DimensaoCliente.Distrito)]
     public async Task ContarClientesAsync_DevolveSempreListaVazia(DimensaoCliente dimensao)
     {
