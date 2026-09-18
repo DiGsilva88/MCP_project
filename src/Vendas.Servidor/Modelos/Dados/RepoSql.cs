@@ -88,7 +88,11 @@ public sealed class RepoSql(string ligação):IVendasRepo
             nomes.Add(leitor.GetString(0).Trim());
         return nomes;
     }
-    }
+
+
+    
+}
+    
 
 
 
