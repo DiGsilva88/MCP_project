@@ -1,10 +1,8 @@
-using Vendas.Servidor.Modelos;
 using Microsoft.Data.SqlClient;
-using Vendas.Servidor.Modelos.Dados;
 
 namespace Vendas.Servidor.Modelos.Dados;
 
-public sealed class RepoSql(string ligação):IVendasRepo
+public sealed class RepoSql(string ligação) : IVendasRepo
 
 {
     public Task<IReadOnlyList<ContagemCliente>> ContarClientesAsync(
@@ -44,8 +42,7 @@ public sealed class RepoSql(string ligação):IVendasRepo
                 leitor.GetInt32(3)));
         return linhas;
     }
-    
-    
+
 
     //Ainda não existe View para vendas no SQL server
     //quando existir trocar cada metodo por uma query real
@@ -68,7 +65,7 @@ public sealed class RepoSql(string ligação):IVendasRepo
     public async Task<IReadOnlyList<string>> ObterNomesClientesAsync(
         int limite, CancellationToken cancellationToken = default)
     {
-        
+
         await using var ligacaoSql = new SqlConnection(ligação);
         await using var cmd = new SqlCommand("""
             SELECT DISTINCT TOP(@limite) LTRIM(RTRIM([NomeCliente]))
@@ -78,11 +75,11 @@ public sealed class RepoSql(string ligação):IVendasRepo
             ORDER BY Nome;
             """, ligacaoSql);
         cmd.Parameters.AddWithValue("@limite", limite);
-          
+
 
         await ligacaoSql.OpenAsync(cancellationToken);
         await using var leitor = await cmd.ExecuteReaderAsync(cancellationToken);
-//
+        //
         var nomes = new List<string>();
         while (await leitor.ReadAsync(cancellationToken))
             nomes.Add(leitor.GetString(0).Trim());
@@ -90,9 +87,46 @@ public sealed class RepoSql(string ligação):IVendasRepo
     }
 
 
+//metodo Listar Clientes (nome e valor) -- continuar segunda 
+    //   public Task<(IReadOnlyList<(string Cliente, string Valor)> Linhas, int Total)> ListarClientesPorAsync(
+    //     DimensaoCliente agrupar, string valor, int limite, CancellationToken cancellationToken = default)
+    //     => ListarAsync("ViewMCP_cliente", Dimensoes.Coluna(agrupar), valor, limite, cancellationToken);
+
+    // public Task<(IReadOnlyList<(string Cliente, string Valor)> Linhas, int Total)> ListarFaturacaoPorAsync(
+    //     DimensaoFaturacao agrupar, string valor, int limite, CancellationToken cancellationToken = default)
+    //     => ListarAsync("ViewMCP_cliente_faturacao", Dimensoes.Coluna(agrupar), valor, limite, cancellationToken);
+
+    // private async Task<(IReadOnlyList<(string Cliente, string Valor)> Linhas, int Total)> ListarAsync(
+    //     string view, string coluna, string valor, int limite, CancellationToken cancellationToken)
+    // {
+    //     await using var ligacaoSql = new SqlConnection(ligação);
+    //     await using var cmd = new SqlCommand($"""
+    //         SELECT TOP (@limite)
+    //                [NomeCliente],
+    //                [{coluna}]       AS Valor,
+    //                COUNT(*) OVER () AS Total
+    //         FROM   [dbo].[{view}]
+    //         WHERE  [{coluna}] = @valor
+    //         ORDER BY [NomeCliente];
+    //         """, ligacaoSql);
+    //     cmd.Parameters.AddWithValue("@limite", limite);
+    //     cmd.Parameters.AddWithValue("@valor", valor);
+
+    //     await ligacaoSql.OpenAsync(cancellationToken);
+    //     await using var leitor = await cmd.ExecuteReaderAsync(cancellationToken);
+
+    //     var linhas = new List<(string Cliente, string Valor)>();
+    //     var total = 0;
+    //     while (await leitor.ReadAsync(cancellationToken))
+    //     {
+    //         linhas.Add((leitor.GetString(0).Trim(), leitor.GetString(1).Trim()));
+    //         total = leitor.GetInt32(2);   // igual em todas as linhas
+    //     }
+    //     return (linhas, total);
+    // }
+
     
-}
-    
+ }
 
 
-
+      

@@ -14,8 +14,8 @@ public enum DimensaoCliente
 }
 
 public enum DimensaoFaturacao {
-    Pagamento, 
-    Cobranca, 
+    Pagamento,
+    Cobranca,
     SituacaoFinanceira,
     EscalaoPlafond,
     EscalaoVolumeVendas
@@ -60,19 +60,19 @@ public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos)
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
     };
 
-    public static string Cabecalho(DimensaoFaturacao dimensao) => dimensao switch
-   {
-       DimensaoFaturacao.Pagamento => "condicao_pagamento",
-        DimensaoFaturacao.Cobranca => "cobranca",
-        DimensaoFaturacao.SituacaoFinanceira => "situacao_financeira",
-        DimensaoFaturacao.EscalaoPlafond => "escalao_plafond",
-        DimensaoFaturacao.EscalaoVolumeVendas => "escalao_volume_declarado",
-        
-        _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
-    };
+    public static string Cabecalho(DimensaoFaturacao dimensao)
+    {
+        return dimensao switch
+        {
+            DimensaoFaturacao.Pagamento => "condicao_pagamento",
+            DimensaoFaturacao.Cobranca => "cobranca",
+            DimensaoFaturacao.SituacaoFinanceira => "situacao_financeira",
+            DimensaoFaturacao.EscalaoPlafond => "escalao_plafond",
+            DimensaoFaturacao.EscalaoVolumeVendas => "escalao_volume_declarado",
 
-
-
+            _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao, null)
+        };
     }
+}
 
 

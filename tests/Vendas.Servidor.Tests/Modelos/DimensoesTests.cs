@@ -31,6 +31,7 @@ public class DimensoesTests
     [InlineData(DimensaoFaturacao.Cobranca, "Cobranca")]
     [InlineData(DimensaoFaturacao.SituacaoFinanceira, "SitFinanceira")]
     [InlineData(DimensaoFaturacao.EscalaoPlafond, "EscalaoPlafond")]
+    [InlineData(DimensaoFaturacao.EscalaoVolumeVendas, "EscalaoVolumeVendas")]
     public void Coluna_DimensaoFaturacao_DevolveNomeDaColunaNaView(DimensaoFaturacao dimensao, string colunaEsperada)
     {
         Assert.Equal(colunaEsperada, Dimensoes.Coluna(dimensao));
@@ -41,6 +42,7 @@ public class DimensoesTests
     [InlineData(DimensaoFaturacao.Cobranca, "cobranca")]
     [InlineData(DimensaoFaturacao.SituacaoFinanceira, "situacao_financeira")]
     [InlineData(DimensaoFaturacao.EscalaoPlafond, "escalao_plafond")]
+    [InlineData(DimensaoFaturacao.EscalaoVolumeVendas, "escalao_volume_declarado")]
     public void Cabecalho_DimensaoFaturacao_DevolveNomeParaOCsv(DimensaoFaturacao dimensao, string cabecalhoEsperado)
     {
         Assert.Equal(cabecalhoEsperado, Dimensoes.Cabecalho(dimensao));
