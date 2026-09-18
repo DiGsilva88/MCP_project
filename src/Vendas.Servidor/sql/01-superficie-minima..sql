@@ -1,6 +1,12 @@
 USE [IAVSGIX];
 GO
 
+SELECT DATA_TYPE, NUMERIC_PRECISION
+FROM   INFORMATION_SCHEMA.COLUMNS
+WHERE  TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'VCliente' AND COLUMN_NAME = 'VolumeVendas';
+
+
+GO
 CREATE OR ALTER VIEW [dbo].[ViewMCP_cliente] AS
 SELECT ClienteID, NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito
 FROM (
