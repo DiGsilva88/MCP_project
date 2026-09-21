@@ -9,50 +9,33 @@ namespace Vendas.Servidor.Tests.Dados;
 /// </summary>
 internal sealed class FakeVendasRepo : IVendasRepo
 {
-    public IReadOnlyList<string> Nomes { get; set; } = [];
+    public PaginaVista Pagina { get; set; } = new([], [], 0);
     public IReadOnlyList<ContagemCliente> Contagens { get; set; } = [];
     public Exception? LancarExcecao { get; set; }
 
-    public int? UltimoLimiteNomes { get; private set; }
-    public int? UltimoLimiteContagem { get; private set; }
-    public DimensaoCliente? UltimaDimensaoCliente { get; private set; }
-    public DimensaoFaturacao? UltimaDimensaoFaturacao { get; private set; }
+    public int? UltimoLimite { get; private set; }
+    public string? UltimoValor { get; private set; }
+    public string? UltimaColuna { get; private set; }
+    public Vista? UltimaVista { get; private set; }
 
-    public Task<IReadOnlyList<string>> ObterNomesClientesAsync(
-        int limite, CancellationToken cancellationToken = default)
+    public Task<PaginaVista> ConsultarAsync(
+        Vista vista, string? colunaFiltro, string? valor, int limite, CancellationToken ct = default)
     {
-        UltimoLimiteNomes = limite;
+        UltimaVista = vista;
+        UltimaColuna = colunaFiltro;
+        UltimoValor = valor;
+        UltimoLimite = limite;
         if (LancarExcecao is not null) throw LancarExcecao;
-        return Task.FromResult(Nomes);
+        return Task.FromResult(Pagina);
     }
 
-    public Task<IReadOnlyList<ContagemCliente>> ContarClientesAsync(
-        DimensaoCliente agrupar, int limite, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<ContagemCliente>> ContarAsync(
+        Vista vista, string coluna, int limite, CancellationToken ct = default)
     {
-        UltimaDimensaoCliente = agrupar;
-        UltimoLimiteContagem = limite;
-        if (LancarExcecao is not null) throw LancarExcecao;
-        return Task.FromResult(Contagens);
-    }
-
-    public Task<IReadOnlyList<ContagemCliente>> ContarFaturacaoAsync(
-        DimensaoFaturacao agrupar, int limite, CancellationToken cancellationToken = default)
-    {
-        UltimaDimensaoFaturacao = agrupar;
-        UltimoLimiteContagem = limite;
+        UltimaVista = vista;
+        UltimaColuna = coluna;
+        UltimoLimite = limite;
         if (LancarExcecao is not null) throw LancarExcecao;
         return Task.FromResult(Contagens);
     }
-
-    public Task<IReadOnlyList<VendaPorCliente>> ObterTopClientesAsync(
-        int limite, int dias, CancellationToken ct = default) =>
-        throw new NotSupportedException("Não é usado pelas ferramentas testadas.");
-
-    public Task<IReadOnlyList<VendaPorProduto>> ObterTopProdutosAsync(
-        int limite, int dias, CancellationToken ct = default) =>
-        throw new NotSupportedException("Não é usado pelas ferramentas testadas.");
-
-    public Task<IReadOnlyList<ClienteInativo>> ObterInativosAsync(
-        int dias, CancellationToken ct = default) =>
-        throw new NotSupportedException("Não é usado pelas ferramentas testadas.");
 }

@@ -2,26 +2,16 @@ using Vendas.Servidor.Modelos;
 
 namespace Vendas.Servidor.Modelos.Dados;
 
+//O "contrato" entre as ferramentas e a origem dos dados.
+// As colunas recebidas já vêm validadas por Vistas.Coluna.
+
 public interface IVendasRepo
 {
-    Task<IReadOnlyList<VendaPorCliente>> ObterTopClientesAsync(
-        int limite,int dias, CancellationToken ct = default);
+    // Linhas da view (todas as colunas), opcionalmente filtradas por coluna = valor exato.
+    Task<PaginaVista> ConsultarAsync(
+        Vista vista, string? colunaFiltro, string? valor, int limite, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<VendaPorProduto>> ObterTopProdutosAsync(
-        int limite,int dias, CancellationToken ct = default);
-
-    Task<IReadOnlyList<ClienteInativo>> ObterInativosAsync(
-        int dias, CancellationToken ct = default);
-
-    Task<IReadOnlyList<string>> ObterNomesClientesAsync(
-        int limite, CancellationToken ct = default);
-
-    Task<IReadOnlyList<ContagemCliente>> ContarClientesAsync(
-
-        DimensaoCliente agrupar, int limite, CancellationToken cancellationToken = default);
-
-    Task<IReadOnlyList<ContagemCliente>> ContarFaturacaoAsync(
-    DimensaoFaturacao agrupar, int limite, CancellationToken cancellationToken = default);
-
-    
+    // Quantas linhas há em cada valor da coluna. Ex.: Lisboa 120, Porto 95
+    Task<IReadOnlyList<ContagemCliente>> ContarAsync(
+        Vista vista, string coluna, int limite, CancellationToken cancellationToken = default);
 }
