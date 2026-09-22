@@ -4,7 +4,7 @@ GO
 SELECT @@VERSION AS Versao, DB_NAME() AS BaseDados;
 GO
 
-
+SELECT CONNECTIONPROPERTY('local_tcp_port') AS Porta;
 
 -- Quanto está por preencher na view de clientes 
 
@@ -17,7 +17,7 @@ SELECT COUNT(*) AS clientes,
 
 FROM dbo.ViewMCP_cliente; 
 
-  
+SELECT CONNECTIONPROPERTY('local_tcp_port') AS Porta;
 
 -- Clientes repetidos na origem: as linhas diferem nas colunas que usamos? 
 

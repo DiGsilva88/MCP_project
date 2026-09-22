@@ -60,24 +60,10 @@ WHERE  TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'VCliente';
 USE [IAVSGIX];
 GO
 
-SELECT name, is_disabled, is_policy_checked,
-       LOGINPROPERTY(name, 'IsLocked') AS Bloqueado,
-       create_date
-FROM   sys.sql_logins
-WHERE  name = 'mcp_leitor';
-
 -- A minha conta pode ver e gerir logins? (1 = sim, 0 = não)
 
 SELECT IS_SRVROLEMEMBER('sysadmin')                 AS SouAdmin,
        HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY LOGIN') AS PossoGerirLogins;
-
--- Existe o user mcp_leitor dentro da IAVSGIX?
--- (sendo db_owner, esta lista vê-a sempre toda)
-
-USE IAVSGIX;
-SELECT name, create_date
-FROM   sys.database_principals
-WHERE  name = 'mcp_leitor';
 
 
 
@@ -88,20 +74,29 @@ WHERE  name = 'mcp_leitor';
 -- ============  O USER  ============
 USE IAVSGIX;
 GO
-IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'mcp_leitor')
-    CREATE USER mcp_leitor FOR LOGIN mcp_leitor WITH DEFAULT_SCHEMA = dbo;
+
+USE IAVSGIX;
+SELECT dp.name AS UserNaBase, dp.authentication_type_desc, SUSER_SNAME(dp.sid) AS Login,
+       r.name AS Papel
+FROM   sys.database_principals AS dp
+LEFT JOIN sys.database_role_members AS m ON m.member_principal_id = dp.principal_id
+LEFT JOIN sys.database_principals  AS r ON r.principal_id = m.role_principal_id
+WHERE  dp.name = 'mcpserver';
+
+USE IAVSGIX;
+GO
+-- IS_ROLEMEMBER evita o erro "x não é membro de y", que abortava o batch
+-- e deixava os GRANT seguintes por executar.
+IF IS_ROLEMEMBER('db_datareader', 'mcpserver') = 1
+    ALTER ROLE db_datareader DROP MEMBER mcpserver;   -- deixa de ler tudo
+IF IS_ROLEMEMBER('db_denydatawriter', 'mcpserver') = 0
+    ALTER ROLE db_denydatawriter ADD MEMBER mcpserver;   -- nunca escreve
+GRANT SELECT ON OBJECT::dbo.ViewMCP_cliente           TO mcpserver;
+GRANT SELECT ON OBJECT::dbo.ViewMCP_cliente_faturacao TO mcpserver;  -- apague se a view não existir
 GO
 
-
--- ============ 4C. AS PERMISSÕES (a gaveta) ============
-ALTER ROLE db_denydatawriter ADD MEMBER mcp_leitor;           -- nunca consegue escrever
-GRANT SELECT ON OBJECT::dbo.ViewMCP_cliente TO mcp_leitor;    -- lê só esta view
--- Quando a view de faturação existir, acrescenta-se:
--- GRANT SELECT ON OBJECT::dbo.ViewMCP_cliente_faturacao TO mcp_leitor;
-GO
-
-GRANT SELECT ON OBJECT::[dbo].[ViewMCP_cliente_faturacao] TO mcp_leitor;
-GO
-GRANT SELECT ON OBJECT::[dbo].[ViewMCP_cliente] TO mcp_leitor;
-GO
+-- Confirmar: tem de dizer INSTANCE
+SELECT name, authentication_type_desc
+FROM   sys.database_principals
+WHERE  name = 'mcpserver';
 
