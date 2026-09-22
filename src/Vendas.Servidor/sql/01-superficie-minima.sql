@@ -60,6 +60,46 @@ WHERE  TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'VCliente';
 USE [IAVSGIX];
 GO
 
+SELECT name, is_disabled, is_policy_checked,
+       LOGINPROPERTY(name, 'IsLocked') AS Bloqueado,
+       create_date
+FROM   sys.sql_logins
+WHERE  name = 'mcp_leitor';
+
+-- A minha conta pode ver e gerir logins? (1 = sim, 0 = não)
+
+SELECT IS_SRVROLEMEMBER('sysadmin')                 AS SouAdmin,
+       HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER ANY LOGIN') AS PossoGerirLogins;
+
+-- Existe o user mcp_leitor dentro da IAVSGIX?
+-- (sendo db_owner, esta lista vê-a sempre toda)
+
+USE IAVSGIX;
+SELECT name, create_date
+FROM   sys.database_principals
+WHERE  name = 'mcp_leitor';
+
+
+
+
+
+
+
+-- ============  O USER  ============
+USE IAVSGIX;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'mcp_leitor')
+    CREATE USER mcp_leitor FOR LOGIN mcp_leitor WITH DEFAULT_SCHEMA = dbo;
+GO
+
+
+-- ============ 4C. AS PERMISSÕES (a gaveta) ============
+ALTER ROLE db_denydatawriter ADD MEMBER mcp_leitor;           -- nunca consegue escrever
+GRANT SELECT ON OBJECT::dbo.ViewMCP_cliente TO mcp_leitor;    -- lê só esta view
+-- Quando a view de faturação existir, acrescenta-se:
+-- GRANT SELECT ON OBJECT::dbo.ViewMCP_cliente_faturacao TO mcp_leitor;
+GO
+
 GRANT SELECT ON OBJECT::[dbo].[ViewMCP_cliente_faturacao] TO mcp_leitor;
 GO
 GRANT SELECT ON OBJECT::[dbo].[ViewMCP_cliente] TO mcp_leitor;

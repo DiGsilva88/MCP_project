@@ -6,7 +6,14 @@ using ModelContextProtocol.Server;
 using Vendas.Servidor.Modelos;
 using Vendas.Servidor.Modelos.Dados;
 
+#nullable enable
+
 namespace Vendas.Servidor.Ferramentas;
+
+// Colunas que cada tool aceita: mesmos nomes do Campo, mas cada tool só vê o seu subconjunto
+// (uma para os dados do cliente, outra para as condições de faturação).
+public enum ColunaCliente { Zona, Vendedor, TipoCliente, Actividade, Distrito }
+public enum ColunaFaturacao { Pagamento, Cobranca, Expedicao, SituacaoFinanceira, EscalaoPlafond, EscalaoVolumeVendas }
 
 // Uma tool por view, cada uma só com as colunas da sua view (as views não se misturam).
 
@@ -18,24 +25,31 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     // Frase devolvida ao modelo quando algo falha. Não revela nada do SQL.
     private const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
 
+    private static readonly IReadOnlyList<Campo> ColunasCliente =
+        Enum.GetValues<ColunaCliente>().Select(c => Enum.Parse<Campo>(c.ToString())).ToArray();
+
+    private static readonly IReadOnlyList<Campo> ColunasFaturacao =
+        Enum.GetValues<ColunaFaturacao>().Select(c => Enum.Parse<Campo>(c.ToString())).ToArray();
+
     private const string Modo =
         " Sem coluna: todas as colunas. Só com coluna: NomeCliente e essa coluna. " +
         "Com coluna e valor: só as linhas com esse valor exato. " +
         "Com contar=true e coluna: conta clientes por valor da coluna, com percentagens. Devolve CSV.";
 
     [McpServerTool(Name = "clientes_consultar")]
-    [Description("Dados gerais dos clientes: ClienteID, NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito." + Modo)]
+    [Description("Dados gerais dos clientes: NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito." + Modo)]
     public Task<string> ClientesAsync(
         [Description("Opcional: coluna a mostrar/filtrar/contar.")] ColunaCliente? coluna = null,
         [Description("Opcional, só com coluna: valor exato, ex.: Lisboa")] string? valor = null,
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
         [Description("Máximo de linhas ou grupos, 1 a 100")] int limite = 50,
         CancellationToken ct = default)
-        => ConsultarAsync(Vista.Clientes, coluna?.ToString(), valor, contar, limite, ct);
+        => ConsultarAsync(
+            coluna is null ? null : Enum.Parse<Campo>(coluna.ToString()!), ColunasCliente, valor, contar, limite, ct);
 
     [McpServerTool(Name = "faturacao_consultar")]
-    [Description("Condições de faturação dos clientes: ClienteID, NomeCliente, Pagamento, Cobranca, Expedicao, " +
-        "SitFinanceira, EscalaoPlafond, EscalaoVolumeVendas. O escalão de volume de vendas é o valor DECLARADO " +
+    [Description("Condições de faturação dos clientes: NomeCliente, Pagamento, Cobranca, Expedicao, " +
+        "SituacaoFinanceira, EscalaoPlafond, EscalaoVolumeVendas. O escalão de volume de vendas é o valor DECLARADO " +
         "na ficha do cliente, não a faturação real; não devolve valores faturados." + Modo)]
     public Task<string> FaturacaoAsync(
         [Description("Opcional: coluna a mostrar/filtrar/contar.")] ColunaFaturacao? coluna = null,
@@ -43,32 +57,38 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
         [Description("Máximo de linhas ou grupos, 1 a 100")] int limite = 50,
         CancellationToken ct = default)
-        => ConsultarAsync(Vista.Faturacao, coluna?.ToString(), valor, contar, limite, ct);
+        => ConsultarAsync(
+            coluna is null ? null : Enum.Parse<Campo>(coluna.ToString()!), ColunasFaturacao, valor, contar, limite, ct);
 
-    // A coluna já vem validada pelo enum da tool; o nome da view vem de Vistas.
+    // O campo já vem validado pelo enum da tool.
     private async Task<string> ConsultarAsync(
-        Vista vista, string? coluna, string? valor, bool contar, int limite, CancellationToken ct)
+        Campo? campo, IReadOnlyList<Campo> todasAsColunas, string? valor, bool contar, int limite, CancellationToken ct)
     {
         limite = Math.Clamp(limite, 1, MaxLinhas);
 
-        if (coluna is null && (contar || !string.IsNullOrWhiteSpace(valor)))
+        if (campo is null && (contar || !string.IsNullOrWhiteSpace(valor)))
             return "Indique uma coluna para contar ou filtrar.";
+
+        var filtros = campo is null || string.IsNullOrWhiteSpace(valor)
+            ? new Dictionary<Campo, string>()
+            : new Dictionary<Campo, string> { [campo.Value] = valor.Trim() };
 
         try
         {
             return contar
-                ? FormatarContagem(coluna!, await repo.ContarAsync(vista, coluna!, limite, ct))
-                : FormatarDados(await repo.ConsultarAsync(vista, coluna, valor, limite, ct));
+                ? FormatarContagem(campo!.Value.ToString(), await repo.ContarAsync(campo.Value, filtros, limite, ct))
+                : FormatarDados(await repo.ListarAsync(
+                    campo is null ? todasAsColunas : [campo.Value], filtros, null, limite, ct));
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
         catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
         {
-            log.LogError(ex, "Falha em {Vista}_consultar", vista);
+            log.LogError(ex, "Falha em {Campo}_consultar", campo);
             return ErroNeutro;
         }
     }
 
-    private static string FormatarDados(PaginaVista pagina)
+    private static string FormatarDados(PaginaClientes pagina)
     {
         if (pagina.Linhas.Count == 0)
             return "Nenhuma linha encontrada com esse filtro.";

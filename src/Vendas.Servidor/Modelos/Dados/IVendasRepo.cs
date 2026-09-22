@@ -3,15 +3,23 @@ using Vendas.Servidor.Modelos;
 namespace Vendas.Servidor.Modelos.Dados;
 
 //O "contrato" entre as ferramentas e a origem dos dados.
-// As colunas recebidas já vêm validadas por Vistas.Coluna.
+// Os filtros já chegam validados (só campos da lista branca)
 
 public interface IVendasRepo
 {
-    // Linhas da view (todas as colunas), opcionalmente filtradas por coluna = valor exato.
-    Task<PaginaVista> ConsultarAsync(
-        Vista vista, string? colunaFiltro, string? valor, int limite, CancellationToken cancellationToken = default);
-
-    // Quantas linhas há em cada valor da coluna. Ex.: Lisboa 120, Porto 95
+   
+   //quantos clientes existem em cada valor no campo, só entra os que cumprem os filtros
+   //exemplo agrupar= vendendor , filtros {zona: norte} - clientes do norte agrupados por vendendor
     Task<IReadOnlyList<ContagemCliente>> ContarAsync(
-        Vista vista, string coluna, int limite, CancellationToken cancellationToken = default);
+        Campo agrupar, IReadOnlyDictionary<Campo, string> filtros, int limite,
+        CancellationToken cancellationToken = default);
+    
+
+    //clientes que cumprem os filtros, com os campos pedidos
+
+    Task<PaginaClientes> ListarAsync(
+        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, string? nome, int limite, CancellationToken cancellationToken = default);
+        
+        
+    
 }
