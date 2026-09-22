@@ -15,22 +15,27 @@ public class VistasToolsTests
     private static string NL(params string[] linhas) =>
         string.Concat(linhas.Select(l => l + Environment.NewLine));
 
-    // ---------- cada tool lê a sua view ----------
+    // ---------- cada tool lê as suas colunas ----------
 
     [Fact]
-    public async Task ClientesAsync_LeAVistaClientes()
+    public async Task ClientesAsync_MostraAsColunasDeCliente()
     {
         var repo = new FakeVendasRepo();
         await CriarSut(repo).ClientesAsync();
-        Assert.Equal(Vista.Clientes, repo.UltimaVista);
+        Assert.Equal(
+            [Campo.Zona, Campo.Vendedor, Campo.TipoCliente, Campo.Actividade, Campo.Distrito],
+            repo.UltimoMostrar);
     }
 
     [Fact]
-    public async Task FaturacaoAsync_LeAVistaFaturacao()
+    public async Task FaturacaoAsync_MostraAsColunasDeFaturacao()
     {
         var repo = new FakeVendasRepo();
         await CriarSut(repo).FaturacaoAsync();
-        Assert.Equal(Vista.Faturacao, repo.UltimaVista);
+        Assert.Equal(
+            [Campo.Pagamento, Campo.Cobranca, Campo.Expedicao, Campo.SituacaoFinanceira,
+             Campo.EscalaoPlafond, Campo.EscalaoVolumeVendas],
+            repo.UltimoMostrar);
     }
 
     // ---------- dados ----------
@@ -53,8 +58,8 @@ public class VistasToolsTests
         var resultado = await CriarSut(repo).ClientesAsync(ColunaCliente.Distrito, "Lisboa");
 
         Assert.Equal("NomeCliente,Distrito\nAna,Lisboa\n\"Bento, Filhos\",Porto\n", resultado);
-        Assert.Equal("Distrito", repo.UltimaColuna);
-        Assert.Equal("Lisboa", repo.UltimoValor);
+        Assert.Equal("Lisboa", Assert.Single(repo.UltimosFiltros!)!.Value);
+        Assert.Equal(Campo.Distrito, Assert.Single(repo.UltimosFiltros!).Key);
     }
 
     [Fact]
@@ -65,8 +70,8 @@ public class VistasToolsTests
         var resultado = await CriarSut(repo).ClientesAsync(ColunaCliente.Zona);
 
         Assert.Equal("NomeCliente,Zona\nAna,Norte\n", resultado);
-        Assert.Equal("Zona", repo.UltimaColuna);
-        Assert.Null(repo.UltimoValor);
+        Assert.Equal([Campo.Zona], repo.UltimoMostrar);
+        Assert.Empty(repo.UltimosFiltros!);
     }
 
     [Fact]
@@ -77,7 +82,7 @@ public class VistasToolsTests
         var resultado = await CriarSut(repo).FaturacaoAsync(valor: "x");
 
         Assert.Equal("Indique uma coluna para contar ou filtrar.", resultado);
-        Assert.Null(repo.UltimaVista);
+        Assert.Null(repo.UltimoMostrar);
     }
 
     [Fact]
@@ -100,7 +105,7 @@ public class VistasToolsTests
         var resultado = await CriarSut(repo).ClientesAsync(contar: true);
 
         Assert.Equal("Indique uma coluna para contar ou filtrar.", resultado);
-        Assert.Null(repo.UltimaVista);
+        Assert.Null(repo.UltimoAgrupar);
     }
 
     [Fact]
@@ -129,14 +134,13 @@ public class VistasToolsTests
     }
 
     [Fact]
-    public async Task FaturacaoAsync_Contar_UsaAColunaEAVistaPedidas()
+    public async Task FaturacaoAsync_Contar_UsaAColunaPedida()
     {
         var repo = new FakeVendasRepo();
 
         await CriarSut(repo).FaturacaoAsync(ColunaFaturacao.Pagamento, contar: true);
 
-        Assert.Equal(Vista.Faturacao, repo.UltimaVista);
-        Assert.Equal("Pagamento", repo.UltimaColuna);
+        Assert.Equal(Campo.Pagamento, repo.UltimoAgrupar);
     }
 
     [Fact]

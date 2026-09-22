@@ -29,17 +29,9 @@ WHERE c.ClienteID IN (SELECT ClienteID FROM dbo.VCliente
 ORDER BY c.ClienteID;
 
 
-SELECT name, type_desc, is_disabled, default_database_name
-FROM sys.server_principals
-WHERE name = 'mcp_leitor'; -- o login (servidor)
-USE [IAVSGIX];
-SELECT name, type_desc
-FROM sys.database_principals
-WHERE name = 'mcp_leitor'; -- o utilizador (base de dados)
--- As permissões que tem: devem aparecer só as 2 views, com SELECT / GRANT.
-SELECT OBJECT_NAME(p.major_id) AS objeto, p.permission_name, p.state_desc
-FROM sys.database_permissions AS p
-WHERE USER_NAME(p.grantee_principal_id) = 'mcp_leitor';
+SELECT USER_NAME() AS login, USER_NAME() AS utilizador, DB_NAME() AS base;
 
+SELECT permission_name
+FROM fn_my_permissions('dbo.ViewMCP_cliente', 'OBJECT')
 
 

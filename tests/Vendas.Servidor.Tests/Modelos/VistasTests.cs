@@ -14,7 +14,7 @@ public class VistasTests
     [InlineData("0 - sem volume declarado")]
     public void Limpar_SemValor_DevolveSemDados(string? entrada)
     {
-        Assert.Equal("sem dados", Vistas.Limpar(entrada));
+        Assert.Equal("sem dados", Campos.Limpar(entrada));
     }
 
     [Theory]
@@ -23,6 +23,6 @@ public class VistasTests
     [InlineData("1 - até 50 mil", "1 - até 50 mil")]
     public void Limpar_ComValor_MantemOValor(string entrada, string esperado)
     {
-        Assert.Equal(esperado, Vistas.Limpar(entrada));
+        Assert.Equal(esperado, Campos.Limpar(entrada));
     }
 }

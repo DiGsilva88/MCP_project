@@ -9,33 +9,35 @@ namespace Vendas.Servidor.Tests.Dados;
 /// </summary>
 internal sealed class FakeVendasRepo : IVendasRepo
 {
-    public PaginaVista Pagina { get; set; } = new([], [], 0);
+    public PaginaClientes Pagina { get; set; } = new([], [], 0);
     public IReadOnlyList<ContagemCliente> Contagens { get; set; } = [];
     public Exception? LancarExcecao { get; set; }
 
     public int? UltimoLimite { get; private set; }
-    public string? UltimoValor { get; private set; }
-    public string? UltimaColuna { get; private set; }
-    public Vista? UltimaVista { get; private set; }
-
-    public Task<PaginaVista> ConsultarAsync(
-        Vista vista, string? colunaFiltro, string? valor, int limite, CancellationToken ct = default)
-    {
-        UltimaVista = vista;
-        UltimaColuna = colunaFiltro;
-        UltimoValor = valor;
-        UltimoLimite = limite;
-        if (LancarExcecao is not null) throw LancarExcecao;
-        return Task.FromResult(Pagina);
-    }
+    public string? UltimoNome { get; private set; }
+    public IReadOnlyDictionary<Campo, string>? UltimosFiltros { get; private set; }
+    public Campo? UltimoAgrupar { get; private set; }
+    public IReadOnlyList<Campo>? UltimoMostrar { get; private set; }
 
     public Task<IReadOnlyList<ContagemCliente>> ContarAsync(
-        Vista vista, string coluna, int limite, CancellationToken ct = default)
+        Campo agrupar, IReadOnlyDictionary<Campo, string> filtros, int limite, CancellationToken ct = default)
     {
-        UltimaVista = vista;
-        UltimaColuna = coluna;
+        UltimoAgrupar = agrupar;
+        UltimosFiltros = filtros;
         UltimoLimite = limite;
         if (LancarExcecao is not null) throw LancarExcecao;
         return Task.FromResult(Contagens);
+    }
+
+    public Task<PaginaClientes> ListarAsync(
+        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, string? nome, int limite,
+        CancellationToken ct = default)
+    {
+        UltimoMostrar = mostrar;
+        UltimosFiltros = filtros;
+        UltimoNome = nome;
+        UltimoLimite = limite;
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult(Pagina);
     }
 }
