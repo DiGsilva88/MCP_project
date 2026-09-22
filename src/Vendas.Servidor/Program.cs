@@ -18,16 +18,11 @@ builder.Logging.AddConsole(opcoes =>
  var cs = Environment.GetEnvironmentVariable("VENDAS_SQL");
    
 
-    if (string.IsNullOrWhiteSpace(cs))
-    {
-        Console.Error.WriteLine("[Vendas.Servidor] VENDAS_SQL não definida — a usar RepoMemoria (dados em memória).");
-        builder.Services.AddSingleton<IVendasRepo, RepoMemoria>();
-    }
-    else
-    {
-        Console.Error.WriteLine("[Vendas.Servidor] VENDAS_SQL definida — a usar RepoSql (SQL Server).");
-        builder.Services.AddSingleton<IVendasRepo>(_ => new RepoSql(cs));
-    }
+    var ligacao = Environment.GetEnvironmentVariable("VENDAS_SQL")
+        ?? throw new InvalidOperationException(
+            "Vendas_Sql não definida. Defina a ligação ao SQL antes de arrancar o servidor");
+    
+    builder.Services.AddSingleton<IVendasRepo>(_ => new RepoSql(ligacao));
 
     builder.Services
     .AddMcpServer()

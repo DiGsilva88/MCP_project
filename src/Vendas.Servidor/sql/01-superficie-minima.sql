@@ -60,9 +60,8 @@ WHERE  TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'VCliente';
 USE [IAVSGIX];
 GO
 
-
-
 GRANT SELECT ON OBJECT::[dbo].[ViewMCP_cliente_faturacao] TO mcp_leitor;
-GO;
+GO
 GRANT SELECT ON OBJECT::[dbo].[ViewMCP_cliente] TO mcp_leitor;
 GO
+

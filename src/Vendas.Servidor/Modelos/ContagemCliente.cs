@@ -1,78 +1,53 @@
-
-
-
 namespace Vendas.Servidor.Modelos;
 
-public enum DimensaoCliente
+// As views que o MCP pode ler. Para expor uma nova view: novo valor aqui + entrada em Vistas.
+public enum Vista
 {
-    Zona,
-    Vendedor,
-    TipoCliente,
-    Actividade,
-    Distrito,
-    
+    Clientes,
+    Faturacao,
 }
 
-public enum DimensaoFaturacao {
-    Pagamento, 
-    Cobranca, 
-    SituacaoFinanceira,
-    EscalaoPlafond,
-    EscalaoVolumeVendas
-    }
+// Colunas selecionáveis de cada view (aparecem como lista fechada no schema da tool).
+// Os nomes têm de coincidir com as colunas em Vistas.
+public enum ColunaCliente
+{
+    ClienteID, NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito,
+}
+
+public enum ColunaFaturacao
+{
+    ClienteID, NomeCliente, Pagamento, Cobranca, Expedicao, SitFinanceira, EscalaoPlafond, EscalaoVolumeVendas,
+}
 
 public record ContagemCliente(string Valor, int Clientes, int Total, int Grupos);
 
+// Linhas de uma view (todas as colunas, como texto) + total que cumpre o filtro.
+public sealed record PaginaVista(IReadOnlyList<string> Colunas, IReadOnlyList<string[]> Linhas, int Total);
 
-    public  static class Dimensoes 
+public static class Vistas
+{
+    // Nome da view e colunas permitidas: única fonte do que entra no SQL (nunca texto do modelo).
+    private static readonly Dictionary<Vista, (string Nome, string[] Colunas)> Todas = new()
     {
-        //Nome da coluna na VIEW.
-        public static string Coluna(DimensaoCliente dimensao) => dimensao switch
-    
+        [Vista.Clientes] = ("ViewMCP_cliente",
+            ["ClienteID", "NomeCliente", "Zona", "Vendedor", "TipoCliente", "Actividade", "Distrito"]),
+        [Vista.Faturacao] = ("ViewMCP_cliente_faturacao",
+            ["ClienteID", "NomeCliente", "Pagamento", "Cobranca", "Expedicao", "SitFinanceira",
+             "EscalaoPlafond", "EscalaoVolumeVendas"]),
+    };
+
+    public const string SemDados = "sem dados";
+
+    // NULL, vazio e os marcadores das views ("(sem distrito)", "0 - sem plafond", ...) -> "sem dados".
+    public static string Limpar(string? valor)
     {
-        DimensaoCliente.Zona => "Zona",
-        DimensaoCliente.Vendedor => "Vendedor",
-        DimensaoCliente.TipoCliente => "TipoCliente",
-        DimensaoCliente.Actividade => "Actividade",
-        DimensaoCliente.Distrito => "Distrito",
-        _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
-    };
-    //nome da coluna no CSV devolvido ao modelo
-    public static string Cabecalho(DimensaoCliente dimensao) => dimensao switch
-   {
-        DimensaoCliente.Zona => "zona",
-        DimensaoCliente.Vendedor => "vendedor",
-        DimensaoCliente.TipoCliente => "tipo_cliente",
-        DimensaoCliente.Actividade => "actividade",
-        DimensaoCliente.Distrito => "distrito",
-        _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
-    };
-        
-         public static string Coluna(DimensaoFaturacao dimensao) => dimensao switch
-    
-    {
-        DimensaoFaturacao.Pagamento => "Pagamento",
-        DimensaoFaturacao.Cobranca => "Cobranca",
-        DimensaoFaturacao.SituacaoFinanceira => "SitFinanceira",
-        DimensaoFaturacao.EscalaoPlafond => "EscalaoPlafond",
-        DimensaoFaturacao.EscalaoVolumeVendas => "EscalaoVolumeVendas",
-        
-        _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
-    };
-
-    public static string Cabecalho(DimensaoFaturacao dimensao) => dimensao switch
-   {
-       DimensaoFaturacao.Pagamento => "condicao_pagamento",
-        DimensaoFaturacao.Cobranca => "cobranca",
-        DimensaoFaturacao.SituacaoFinanceira => "situacao_financeira",
-        DimensaoFaturacao.EscalaoPlafond => "escalao_plafond",
-        DimensaoFaturacao.EscalaoVolumeVendas => "escalao_volume_declarado",
-        
-        _ => throw new ArgumentOutOfRangeException(nameof(dimensao), dimensao , null)
-    };
-
-
-
+        var v = valor?.Trim();
+        return string.IsNullOrEmpty(v) || v.StartsWith("(sem ", StringComparison.OrdinalIgnoreCase)
+            || v.StartsWith("0 - sem ", StringComparison.OrdinalIgnoreCase) ? SemDados : v;
     }
 
+    public static string Nome(Vista vista) => Todas[vista].Nome;
 
+    public static IReadOnlyList<string> Colunas(Vista vista) => Todas[vista].Colunas;
+
+}

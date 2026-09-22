@@ -1,0 +1,116 @@
+using System.ComponentModel;
+using System.Globalization;
+using System.Text;
+using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
+using Vendas.Servidor.Modelos;
+using Vendas.Servidor.Modelos.Dados;
+
+namespace Vendas.Servidor.Ferramentas;
+
+// Uma tool por view, cada uma só com as colunas da sua view (as views não se misturam).
+
+[McpServerToolType]
+public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
+{
+    private const int MaxLinhas = 100;
+
+    // Frase devolvida ao modelo quando algo falha. Não revela nada do SQL.
+    private const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
+
+    private const string Modo =
+        " Sem coluna: todas as colunas. Só com coluna: NomeCliente e essa coluna. " +
+        "Com coluna e valor: só as linhas com esse valor exato. " +
+        "Com contar=true e coluna: conta clientes por valor da coluna, com percentagens. Devolve CSV.";
+
+    [McpServerTool(Name = "clientes_consultar")]
+    [Description("Dados gerais dos clientes: ClienteID, NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito." + Modo)]
+    public Task<string> ClientesAsync(
+        [Description("Opcional: coluna a mostrar/filtrar/contar.")] ColunaCliente? coluna = null,
+        [Description("Opcional, só com coluna: valor exato, ex.: Lisboa")] string? valor = null,
+        [Description("true para contar clientes por valor da coluna.")] bool contar = false,
+        [Description("Máximo de linhas ou grupos, 1 a 100")] int limite = 50,
+        CancellationToken ct = default)
+        => ConsultarAsync(Vista.Clientes, coluna?.ToString(), valor, contar, limite, ct);
+
+    [McpServerTool(Name = "faturacao_consultar")]
+    [Description("Condições de faturação dos clientes: ClienteID, NomeCliente, Pagamento, Cobranca, Expedicao, " +
+        "SitFinanceira, EscalaoPlafond, EscalaoVolumeVendas. O escalão de volume de vendas é o valor DECLARADO " +
+        "na ficha do cliente, não a faturação real; não devolve valores faturados." + Modo)]
+    public Task<string> FaturacaoAsync(
+        [Description("Opcional: coluna a mostrar/filtrar/contar.")] ColunaFaturacao? coluna = null,
+        [Description("Opcional, só com coluna: valor exato, ex.: 0 - sem plafond")] string? valor = null,
+        [Description("true para contar clientes por valor da coluna.")] bool contar = false,
+        [Description("Máximo de linhas ou grupos, 1 a 100")] int limite = 50,
+        CancellationToken ct = default)
+        => ConsultarAsync(Vista.Faturacao, coluna?.ToString(), valor, contar, limite, ct);
+
+    // A coluna já vem validada pelo enum da tool; o nome da view vem de Vistas.
+    private async Task<string> ConsultarAsync(
+        Vista vista, string? coluna, string? valor, bool contar, int limite, CancellationToken ct)
+    {
+        limite = Math.Clamp(limite, 1, MaxLinhas);
+
+        if (coluna is null && (contar || !string.IsNullOrWhiteSpace(valor)))
+            return "Indique uma coluna para contar ou filtrar.";
+
+        try
+        {
+            return contar
+                ? FormatarContagem(coluna!, await repo.ContarAsync(vista, coluna!, limite, ct))
+                : FormatarDados(await repo.ConsultarAsync(vista, coluna, valor, limite, ct));
+        }
+        catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
+        catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
+        {
+            log.LogError(ex, "Falha em {Vista}_consultar", vista);
+            return ErroNeutro;
+        }
+    }
+
+    private static string FormatarDados(PaginaVista pagina)
+    {
+        if (pagina.Linhas.Count == 0)
+            return "Nenhuma linha encontrada com esse filtro.";
+
+        var csv = new StringBuilder(string.Join(',', pagina.Colunas)).Append('\n');
+        foreach (var linha in pagina.Linhas)
+            csv.Append(string.Join(',', linha.Select(Campo))).Append('\n');
+
+        //Avisa o modelo quando a lista foi cortada para ele não pensar que já viu a info toda
+        if (pagina.Total > pagina.Linhas.Count)
+            csv.Append($"#Mostrados {pagina.Linhas.Count} de {pagina.Total}.Filtre por valor ou aumente o limite.\n");
+
+        return csv.ToString();
+    }
+
+    private static string FormatarContagem(string nome, IReadOnlyList<ContagemCliente> linhas)
+    {
+        if (linhas.Count == 0)
+            return "Sem dados para esta coluna";
+
+        //Total e grupos são iguais em todas as linhas (o SQL calcula-os com OVER() )
+        var (total, grupos) = (linhas[0].Total, linhas[0].Grupos);
+
+        var csv = new StringBuilder()
+            .AppendLine($"Clientes por {nome}:{total} clientes em {grupos} grupos.")
+            .AppendLine($"{nome}, clientes, percentagem");
+
+        // InvariantCulture garante ponto decimal (14.1).
+        // Com a cultura portuguesa sairia 14,1 e a vírgula partia o CSV
+        foreach (var linha in linhas)
+            csv.AppendLine(string.Create(CultureInfo.InvariantCulture,
+                $"{Campo(linha.Valor)}, {linha.Clientes},{100.0 * linha.Clientes / total:0.0}"));
+
+        // Mais grupos na base de dados do que linhas mostradas: a lista foi cortada.
+        if (grupos > linhas.Count)
+            csv.AppendLine($" #mostrados {linhas.Count} , {grupos} de grupos, aumente o limite para ver os restantes.");
+
+        return csv.ToString();
+    }
+
+    //Protege o CSV: um valor com vírgula, aspas ou quebra de linha vai entre aspas.
+    // Ex.: Bento, Filhos  ->  "Bento, Filhos"
+    private static string Campo(string texto)
+        => texto.IndexOfAny([',', '"', '\n', '\r']) < 0 ? texto : $"\"{texto.Replace("\"", "\"\"")}\"";
+}
