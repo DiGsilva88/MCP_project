@@ -3,6 +3,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Vendas.Servidor.Modelos.Dados;
 
+
+
 // Cria o construtor do host da aplicação
 var builder = Host.CreateApplicationBuilder(args);
 
