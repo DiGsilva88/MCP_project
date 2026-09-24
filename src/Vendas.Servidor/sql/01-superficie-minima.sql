@@ -26,7 +26,9 @@ GO
 
 SELECT MAX(LEN(Actividade)) AS len, MAX(DATALENGTH(Actividade)) AS bytes
 FROM dbo.ViewMCP_cliente;
-
+SELECT TOP 10 NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito
+FROM   dbo.ViewMCP_cliente
+ORDER  BY NomeCliente;
 
 SELECT COUNT(*)                    AS Linhas,
        COUNT(DISTINCT ClienteID)   AS Clientes,
