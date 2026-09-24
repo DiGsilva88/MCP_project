@@ -26,8 +26,7 @@ projeto_Mcp/
         ├── ContagemCliente.cs       (record ContagemCliente, enum DimensaoCliente, Dimensoes)
         └── Dados/
             ├── IVendasRepo.cs       Contrato do repositório
-            ├── RepoMemoria.cs       Implementação em memória (dados fictícios)
-            └── RepoSql.cs           Implementação em SQL Server
+            └── RepoSql.cs           Implementação em SQL Server (única — sem fallback em memória)
 ```
 
 ## Como funciona
@@ -41,39 +40,27 @@ projeto_Mcp/
    ```
    `WithToolsFromAssembly()` percorre o assembly à procura de classes marcadas com `[McpServerToolType]` e regista automaticamente os métodos marcados com `[McpServerTool]` como tools MCP — não é preciso registar cada tool manualmente.
 
-2. **Qual repositório é usado (`IVendasRepo`) depende da variável de ambiente `VENDAS_SQL`**, lida uma única vez no arranque do processo:
+2. **`IVendasRepo` liga sempre ao SQL Server via `RepoSql`**, usando a connection string da variável de ambiente `VENDAS_SQL`, lida uma única vez no arranque do processo:
    ```csharp
-   var cs = Environment.GetEnvironmentVariable("VENDAS_SQL");
-   if (string.IsNullOrWhiteSpace(cs))
-       builder.Services.AddSingleton<IVendasRepo, RepoMemoria>();   // sem VENDAS_SQL
-   else
-       builder.Services.AddSingleton<IVendasRepo>(_ => new RepoSql(cs)); // com VENDAS_SQL
+   var ligacao = Environment.GetEnvironmentVariable("VENDAS_SQL")
+       ?? throw new InvalidOperationException(
+           "Vendas_Sql não definida. Defina a ligação ao SQL antes de arrancar o servidor");
+   builder.Services.AddSingleton<IVendasRepo>(_ => new RepoSql(ligacao));
    ```
-   Isto é decidido **apenas no arranque** — não há reconexão nem verificação em tempo real. Se o processo for lançado sem `VENDAS_SQL` no ambiente (ex.: `dotnet run` direto, ou um cliente/config diferente do que define a variável), o servidor cai sempre para `RepoMemoria`, mesmo que já tenha corrido com SQL Server antes. Confirma no stderr qual foi usado:
-   ```
-   [Vendas.Servidor] VENDAS_SQL não definida — a usar RepoMemoria (dados em memória).
-   [Vendas.Servidor] VENDAS_SQL definida — a usar RepoSql (SQL Server).
-   ```
+   **Não há fallback em memória.** Se o processo for lançado sem `VENDAS_SQL` no ambiente, o servidor lança `InvalidOperationException` e não chega a arrancar o host MCP.
 
-3. **As classes em `Ferramentas/`** definem as tools. Atualmente só `ClientesTools` está ativa (marcada com `[McpServerToolType]`):
-   - `ClientesTools.NomesAsync()` — tool `clientes_nomes`, devolve os nomes de todos os clientes com vendas, em ordem alfabética. **Só implementado em `RepoMemoria`** — em `RepoSql` lança `NotImplementedException` (ainda não há view/query para isto no SQL Server).
-   - `ClientesTools.ClientesPorAsync(agrupar, limite)` — tool `clientes_por`, devolve CSV com a contagem de clientes agrupados por `DimensaoCliente` (`Zona`, `Vendendor`, `TipoCliente`, `Actividade`, `Distrito`). **Só implementado em `RepoSql`** (consulta a view `[dbo].[ViewMCP_cliente]`) — em `RepoMemoria` devolve sempre lista vazia.
-   - `ClientesTools.InativosAsync(dias)` — tool `clientes_inativos`, está comentada no código (por implementar/ativar).
+3. **`Ferramentas/VistasTools.cs`** define as tools ativas (marcada com `[McpServerToolType]`), uma por view SQL:
+   - `ClientesAsync` — tool `clientes_consultar`, dados gerais dos clientes (`NomeCliente`, `Zona`, `Vendedor`, `TipoCliente`, `Actividade`, `Distrito`).
+   - `FaturacaoAsync` — tool `faturacao_consultar`, condições de faturação (`NomeCliente`, `Pagamento`, `Cobranca`, `Expedicao`, `SituacaoFinanceira`, `EscalaoPlafond`, `EscalaoVolumeVendas`).
 
-   `VendasTools` existe mas não tem `[McpServerToolType]` nem nenhum método ativo — todos os métodos (`vendas_top_clientes`, `vendas_top_produtos`) estão comentados, por isso não aparecem como tools no cliente MCP neste momento.
+   Ambas aceitam uma coluna opcional a mostrar/filtrar/contar, um `valor` exato para filtrar, `contar=true` para agrupar com percentagens, e `limite` (1–100, por omissão 50). Devolvem CSV; erros de SQL nunca são expostos ao modelo — a tool devolve sempre uma mensagem genérica e regista o detalhe no log.
 
-   > Nota: como `clientes_nomes` só funciona em memória e `clientes_por` só funciona em SQL Server, o modo de arranque (com ou sem `VENDAS_SQL`) determina qual das duas tools responde com dados e qual devolve erro/lista vazia.
-
-4. **`Modelos/Dados/IVendasRepo.cs`** define o contrato de acesso a dados (`ObterTopClientesAsync`, `ObterTopProdutosAsync`, `ObterInativosAsync`, `ObterNomesClientesAsync`, `ContarClientesAsync`). Há duas implementações:
-   - **`RepoMemoria`** — mantém uma lista de `Venda` gerada em memória (dados fictícios, ~24 meses), perdida quando o processo termina.
-   - **`RepoSql`** — liga a um SQL Server real via `Microsoft.Data.SqlClient`, usando a connection string recebida em `VENDAS_SQL`. Só `ContarClientesAsync` está implementado; os restantes métodos lançam `NotImplementedException` até existirem views equivalentes no SQL Server.
+4. **`Modelos/Dados/IVendasRepo.cs`** define o contrato de acesso a dados: `ContarAsync` (contagem de clientes agrupados por `Campo`, com filtros) e `ListarAsync` (linhas de clientes com as colunas pedidas). A única implementação é **`RepoSql`**, que consulta `[dbo].[ViewMCP_cliente]` e `[dbo].[ViewMCP_cliente_faturacao]` via `Microsoft.Data.SqlClient`, usando a connection string recebida em `VENDAS_SQL`.
 
 ## Modelos de dados
 
-- **`Venda`** — uma venda individual.
-- **`VendaPorCliente`** / **`VendaPorProduto`** — agregações de vendas por cliente/produto.
-- **`ClienteInativo`** — cliente e há quantos dias não compra.
-- **`ContagemCliente`** — contagem de clientes por dimensão (`Valor`, `Clientes`, `Total`, `Grupos`), devolvida pela tool `clientes_por`.
+- **`ContagemCliente`** — contagem de clientes por valor de um `Campo` (`Valor`, `Clientes`, `Total`, `Grupos`), devolvida quando `clientes_consultar`/`faturacao_consultar` são chamadas com `contar=true`.
+- **`PaginaClientes`** — linhas de clientes devolvidas por `ListarAsync`, com o total de resultados (antes do `limite`).
 
 ## Como correr e testar
 
@@ -84,23 +71,9 @@ Requisitos: .NET SDK 10, e Node.js (`npx`) se quiseres usar o MCP Inspector.
 dotnet build Vendas.slnx
 ```
 
-### Modo memória (sem SQL Server)
+### Arrancar o servidor
 
-Não é preciso nenhuma variável de ambiente — é o modo por omissão.
-
-```powershell
-dotnet run --project src/Vendas.Servidor
-
-# ou com o MCP Inspector
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
-$env:PORT=6280; npx @modelcontextprotocol/inspector "dotnet run --project src/Vendas.Servidor --no-build"
-```
-
-Neste modo, `clientes_nomes` devolve dados; `clientes_por` devolve sempre "Não há clientes...".
-
-### Modo SQL Server
-
-É preciso a variável `VENDAS_SQL` **no mesmo processo que lança o servidor**. A forma mais simples é usar o `inspector.json` (ficheiro local, no `.gitignore` — não é partilhado nem commitado porque tem a connection string):
+É preciso a variável `VENDAS_SQL` **no mesmo processo que lança o servidor** — não há modo sem SQL Server; sem ela, o servidor lança `InvalidOperationException` no arranque e não chega a expor as tools. A forma mais simples é usar o `inspector.json` (ficheiro local, no `.gitignore` — não é partilhado nem commitado porque tem a connection string):
 
 ```json
 {
@@ -126,9 +99,7 @@ setx VENDAS_SQL "Server=...;Database=...;User Id=...;Password=...;TrustServerCer
 ```
 (depois de `setx`, é preciso abrir um terminal/processo novo para a variável ficar disponível.)
 
-Neste modo, `clientes_por` devolve dados reais da view `[dbo].[ViewMCP_cliente]`; `clientes_nomes` devolve erro (`NotImplementedException`).
-
-No Inspector: liga ao servidor, usa "List Tools" para ver as tools disponíveis (atualmente `clientes_nomes` e `clientes_por`), e invoca cada uma para validar a resposta.
+No Inspector: liga ao servidor, usa "List Tools" para ver as tools disponíveis (atualmente `clientes_consultar` e `faturacao_consultar`), e invoca cada uma para validar a resposta.
 
 > Nota: como a ligação é por stdio, cada sessão do cliente corresponde a um processo do servidor. Se alterares o código, é preciso recompilar **e** reiniciar a ligação no cliente (o processo antigo continua a correr com o código anterior até ser terminado).
 

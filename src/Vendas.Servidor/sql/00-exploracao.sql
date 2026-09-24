@@ -29,6 +29,11 @@ WHERE c.ClienteID IN (SELECT ClienteID FROM dbo.VCliente
 ORDER BY c.ClienteID;
 
 
+SELECT Zona, COUNT(*) AS clientes
+FROM   dbo.ViewMCP_cliente
+GROUP  BY Zona
+ORDER  BY clientes DESC;
+
 SELECT USER_NAME() AS login, USER_NAME() AS utilizador, DB_NAME() AS base;
 
 SELECT permission_name
