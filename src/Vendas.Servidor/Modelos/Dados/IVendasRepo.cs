@@ -18,7 +18,7 @@ public interface IVendasRepo
     //clientes que cumprem os filtros, com os campos pedidos
 
     Task<PaginaClientes> ListarAsync(
-        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, string? nome, int limite, CancellationToken cancellationToken = default);
+        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, string? nome, int deslocamento, int limite, CancellationToken cancellationToken = default);
         
         
     

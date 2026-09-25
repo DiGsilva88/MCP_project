@@ -33,52 +33,67 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
     private const string Modo =
         " Sem coluna: todas as colunas. Só com coluna: NomeCliente e essa coluna. " +
-        "Com coluna e valor: só as linhas com esse valor exato. " +
-        "Com contar=true e coluna: conta clientes por valor da coluna, com percentagens. Devolve CSV.";
+        "Com coluna e valor: só as linhas com esse valor exato (valor=\"sem dados\" filtra quem não tem valor nessa coluna). " +
+        "Com contar=true e coluna: conta clientes por valor da coluna, com percentagens. Devolve CSV. " +
+        "Se a lista de linhas (não a de grupos) for cortada, use pagina=2, 3... para ver o resto.";
 
     [McpServerTool(Name = "clientes_consultar")]
     [Description("Dados gerais dos clientes: NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito." + Modo)]
     public Task<string> ClientesAsync(
         [Description("Opcional: coluna a mostrar/filtrar/contar.")] ColunaCliente? coluna = null,
-        [Description("Opcional, só com coluna: valor exato, ex.: Lisboa")] string? valor = null,
+        [Description("Opcional, só com coluna: valor exato, ex.: Lisboa, ou \"sem dados\"")] string? valor = null,
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
         [Description("Máximo de linhas ou grupos, 1 a 100")] int limite = 50,
+        [Description("Página das linhas, 1 é a primeira (não pagina contagens/grupos).")] int pagina = 1,
         CancellationToken ct = default)
         => ConsultarAsync(
-            coluna is null ? null : Enum.Parse<Campo>(coluna.ToString()!), ColunasCliente, valor, contar, limite, ct);
+            coluna is null ? null : Enum.Parse<Campo>(coluna.ToString()!), ColunasCliente, valor, contar,
+            null, null, limite, pagina, ct);
 
     [McpServerTool(Name = "faturacao_consultar")]
     [Description("Condições de faturação dos clientes: NomeCliente, Pagamento, Cobranca, Expedicao, " +
         "SituacaoFinanceira, EscalaoPlafond, EscalaoVolumeVendas. O escalão de volume de vendas é o valor DECLARADO " +
-        "na ficha do cliente, não a faturação real; não devolve valores faturados." + Modo)]
+        "na ficha do cliente, não a faturação real; não devolve valores faturados." + Modo +
+        " Para cruzar duas colunas (ex.: contar por Cobranca só dos clientes com um Pagamento), use cruzarCom/valorCruzado.")]
     public Task<string> FaturacaoAsync(
         [Description("Opcional: coluna a mostrar/filtrar/contar.")] ColunaFaturacao? coluna = null,
-        [Description("Opcional, só com coluna: valor exato, ex.: 0 - sem plafond")] string? valor = null,
+        [Description("Opcional, só com coluna: valor exato, ex.: 0 - sem plafond, ou \"sem dados\"")] string? valor = null,
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
+        [Description("Opcional: segunda coluna para cruzar, filtrando o resultado por ela também.")] ColunaFaturacao? cruzarCom = null,
+        [Description("Opcional, só com cruzarCom: valor exato dessa segunda coluna.")] string? valorCruzado = null,
         [Description("Máximo de linhas ou grupos, 1 a 100")] int limite = 50,
+        [Description("Página das linhas, 1 é a primeira (não pagina contagens/grupos).")] int pagina = 1,
         CancellationToken ct = default)
         => ConsultarAsync(
-            coluna is null ? null : Enum.Parse<Campo>(coluna.ToString()!), ColunasFaturacao, valor, contar, limite, ct);
+            coluna is null ? null : Enum.Parse<Campo>(coluna.ToString()!), ColunasFaturacao, valor, contar,
+            cruzarCom is null ? null : Enum.Parse<Campo>(cruzarCom.ToString()!), valorCruzado, limite, pagina, ct);
 
     // O campo já vem validado pelo enum da tool.
     private async Task<string> ConsultarAsync(
-        Campo? campo, IReadOnlyList<Campo> todasAsColunas, string? valor, bool contar, int limite, CancellationToken ct)
+        Campo? campo, IReadOnlyList<Campo> todasAsColunas, string? valor, bool contar,
+        Campo? campoCruzado, string? valorCruzado, int limite, int pagina, CancellationToken ct)
     {
         limite = Math.Clamp(limite, 1, MaxLinhas);
+        var deslocamento = (Math.Max(1, pagina) - 1) * limite;
 
         if (campo is null && (contar || !string.IsNullOrWhiteSpace(valor)))
             return "Indique uma coluna para contar ou filtrar.";
 
-        var filtros = campo is null || string.IsNullOrWhiteSpace(valor)
-            ? new Dictionary<Campo, string>()
-            : new Dictionary<Campo, string> { [campo.Value] = valor.Trim() };
+        if (campoCruzado is null && !string.IsNullOrWhiteSpace(valorCruzado))
+            return "Indique cruzarCom para filtrar por valorCruzado.";
+
+        var filtros = new Dictionary<Campo, string>();
+        if (campo is not null && !string.IsNullOrWhiteSpace(valor))
+            filtros[campo.Value] = valor.Trim();
+        if (campoCruzado is not null && !string.IsNullOrWhiteSpace(valorCruzado))
+            filtros[campoCruzado.Value] = valorCruzado.Trim();
 
         try
         {
             return contar
                 ? FormatarContagem(campo!.Value.ToString(), await repo.ContarAsync(campo.Value, filtros, limite, ct))
                 : FormatarDados(await repo.ListarAsync(
-                    campo is null ? todasAsColunas : [campo.Value], filtros, null, limite, ct));
+                    campo is null ? todasAsColunas : [campo.Value], filtros, null, deslocamento, limite, ct));
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
         catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
@@ -99,7 +114,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
         //Avisa o modelo quando a lista foi cortada para ele não pensar que já viu a info toda
         if (pagina.Total > pagina.Linhas.Count)
-            csv.Append($"#Mostrados {pagina.Linhas.Count} de {pagina.Total}.Filtre por valor ou aumente o limite.\n");
+            csv.Append($"#Mostrados {pagina.Linhas.Count} de {pagina.Total}.Filtre por valor ou use pagina=2,3... para ver o resto.\n");
 
         return csv.ToString();
     }
