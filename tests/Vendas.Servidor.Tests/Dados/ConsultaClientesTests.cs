@@ -33,7 +33,7 @@ public class ConsultaClientesTests
         var filtros = new Dictionary<Campo, string> { [Campo.Zona] = "Lisboa" };
         var (sql, aplicarParametros) = ConsultaClientes.Listar([Campo.Zona], filtros, nome: null, deslocamento: 0);
 
-        Assert.Contains("AND c.[Zona] = @filtro0", sql);
+        Assert.Contains("AND c.[Zona] COLLATE Latin1_General_CI_AI = @filtro0", sql);
         Assert.Equal("Lisboa", Aplicar(aplicarParametros)["@filtro0"].Value);
     }
 
@@ -67,7 +67,7 @@ public class ConsultaClientesTests
         var filtros = new Dictionary<Campo, string> { [Campo.Cobranca] = "Débito Direto" };
         var (sql, aplicarParametros) = ConsultaClientes.Contar(Campo.Pagamento, filtros);
 
-        Assert.Contains("WHERE f.[Cobranca] = @filtro0", sql);
+        Assert.Contains("WHERE f.[Cobranca] COLLATE Latin1_General_CI_AI = @filtro0", sql);
         Assert.Equal("Débito Direto", Aplicar(aplicarParametros)["@filtro0"].Value);
     }
 }

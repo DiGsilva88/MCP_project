@@ -41,7 +41,7 @@ internal static class ConsultaClientes
             SELECT c.NomeCliente, {colunas},
                    COUNT(*) OVER () AS Total
             FROM   {Origem}
-            WHERE  (@nome IS NULL OR c.NomeCliente LIKE @nome)
+            WHERE  (@nome IS NULL OR c.NomeCliente COLLATE Latin1_General_CI_AI LIKE @nome)
             {filtrosWhere}
             ORDER BY c.NomeCliente
             OFFSET @deslocamento ROWS FETCH NEXT @limite ROWS ONLY;
@@ -88,7 +88,8 @@ internal static class ConsultaClientes
         var pares = filtros.ToArray();
         var condicoes = pares.Select((par, i) => EhSemDados(par.Value)
             ? CondicaoSemDados(par.Key)
-            : $"{Coluna(par.Key)} = @filtro{i}");
+            // COLLATE accent/case-insensitive: o modelo (e o utilizador) escreve "Setubal", a BD guarda "Setúbal".
+            : $"{Coluna(par.Key)} COLLATE Latin1_General_CI_AI = @filtro{i}");
         var sql = prefixo + string.Join(" AND ", condicoes);
 
         void Parametros(SqlParameterCollection p)
