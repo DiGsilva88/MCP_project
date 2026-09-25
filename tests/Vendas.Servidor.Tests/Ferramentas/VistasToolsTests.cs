@@ -92,7 +92,7 @@ public class VistasToolsTests
 
         var resultado = await CriarSut(repo).ClientesAsync(limite: 2);
 
-        Assert.EndsWith("#Mostrados 2 de 3.Filtre por valor ou aumente o limite.\n", resultado);
+        Assert.EndsWith("#Mostrados 2 de 3.Filtre por valor ou use pagina=2,3... para ver o resto.\n", resultado);
     }
 
     // ---------- contar ----------

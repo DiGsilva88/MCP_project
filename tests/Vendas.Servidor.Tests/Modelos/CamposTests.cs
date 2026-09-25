@@ -2,7 +2,7 @@ using Vendas.Servidor.Modelos;
 
 namespace Vendas.Servidor.Tests.Modelos;
 
-public class VistasTests
+public class CamposTests
 {
     [Theory]
     [InlineData(null)]
