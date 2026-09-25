@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 namespace Vendas.Servidor.Modelos.Dados;
 
 // Constrói o SQL e os parâmetros das consultas a clientes.
-// As colunas vêm sempre de Campos.Coluna (lista branca), nunca de texto do modelo.
+// As colunas vêm sempre de Coluna() (lista branca, definida aqui), nunca de texto do modelo.
 internal static class ConsultaClientes
 {
     private const string Origem =
@@ -13,7 +13,7 @@ internal static class ConsultaClientes
     public static (string Sql, Action<SqlParameterCollection> Parametros) Contar(
         Campo agrupar, IReadOnlyDictionary<Campo, string> filtros)
     {
-        var coluna = Campos.Coluna(agrupar);
+        var coluna = Coluna(agrupar);
         var (whereSql, aplicarFiltros) = FiltrosWhere(filtros);
 
         var sql = $"""
@@ -34,7 +34,7 @@ internal static class ConsultaClientes
     public static (string Sql, Action<SqlParameterCollection> Parametros) Listar(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, string? nome, int deslocamento)
     {
-        var colunas = string.Join(", ", mostrar.Select(Campos.Coluna));
+        var colunas = string.Join(", ", mostrar.Select(Coluna));
         var (filtrosWhere, aplicarFiltros) = FiltrosWhere(filtros, prefixo: "AND ");
 
         var sql = $"""
@@ -58,9 +58,27 @@ internal static class ConsultaClientes
         return (sql, Parametros);
     }
 
+    // Tradução de Campo para coluna SQL (lista branca). Só esta camada conhece os aliases
+    // c./f. do JOIN em Origem — o enum Campo, no modelo de domínio, não sabe disto.
+    private static string Coluna(Campo campo) => campo switch
+    {
+        Campo.Zona => "c.[Zona]",
+        Campo.Vendedor => "c.[Vendedor]",
+        Campo.TipoCliente => "c.[TipoCliente]",
+        Campo.Actividade => "c.[Actividade]",
+        Campo.Distrito => "c.[Distrito]",
+        Campo.Pagamento => "f.[Pagamento]",
+        Campo.Cobranca => "f.[Cobranca]",
+        Campo.Expedicao => "f.[Expedicao]",
+        Campo.SituacaoFinanceira => "f.[SitFinanceira]",
+        Campo.EscalaoPlafond => "f.[EscalaoPlafond]",
+        Campo.EscalaoVolumeVendas => "f.[EscalaoVolumeVendas]",
+        _ => throw new ArgumentOutOfRangeException(nameof(campo), campo, null)
+    };
+
     // WHERE parametrizado a partir dos filtros (colunas de lista branca, valores como parâmetro).
-    // valor "sem dados" não existe como texto na BD (a view guarda "(sem ...)" ou "0 - sem ...",
-    // conforme a coluna) por isso vira NULL/vazio/marcador em vez de comparação exata.
+    // valor "sem dados" não existe como texto na BD (a view guarda o marcador da coluna: "(sem ...)"
+    // ou "0 - sem ...") por isso vira NULL/vazio/marcador em vez de comparação exata.
     private static (string Sql, Action<SqlParameterCollection> Parametros) FiltrosWhere(
         IReadOnlyDictionary<Campo, string> filtros, string prefixo = "WHERE ")
     {
@@ -70,7 +88,7 @@ internal static class ConsultaClientes
         var pares = filtros.ToArray();
         var condicoes = pares.Select((par, i) => EhSemDados(par.Value)
             ? CondicaoSemDados(par.Key)
-            : $"{Campos.Coluna(par.Key)} = @filtro{i}");
+            : $"{Coluna(par.Key)} = @filtro{i}");
         var sql = prefixo + string.Join(" AND ", condicoes);
 
         void Parametros(SqlParameterCollection p)
@@ -88,7 +106,7 @@ internal static class ConsultaClientes
 
     private static string CondicaoSemDados(Campo campo)
     {
-        var coluna = Campos.Coluna(campo);
-        return $"({coluna} IS NULL OR {coluna} = '' OR {coluna} LIKE '(sem %' OR {coluna} LIKE '0 - sem %')";
+        var coluna = Coluna(campo);
+        return $"({coluna} IS NULL OR {coluna} = '' OR {coluna} LIKE '{Campos.PrefixoSemTexto}%' OR {coluna} LIKE '{Campos.PrefixoSemNumero}%')";
     }
 }

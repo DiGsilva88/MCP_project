@@ -19,13 +19,16 @@ projeto_Mcp/
     │   ├── Ferramentas/
     │   │   └── VistasTools.cs       Tools clientes_consultar e faturacao_consultar
     │   └── Modelos/
-    │       ├── ContagemCliente.cs   enum Campo, record ContagemCliente
-    │       ├── ClienteGrupo.cs      record PaginaClientes
+    │       ├── Campo.cs             enum Campo (colunas permitidas nas views)
+    │       ├── Campos.cs            normalização de valores ("sem dados") e leitura de filtros
+    │       ├── ContagemCliente.cs   record ContagemCliente
+    │       ├── PaginaClientes.cs    record PaginaClientes
     │       ├── Vendas.cs, VendasPorCliente.cs, VendasPorProduto.cs, ClientesInativos.cs
+    │       │                        (ainda por ligar — fase de vendas, a aguardar a view)
     │       └── Dados/
     │           ├── IVendasRepo.cs       Contrato do repositório
     │           ├── RepoSql.cs           Implementação em SQL Server (única — sem fallback em memória)
-    │           └── ConsultaClientes.cs  Construção das queries
+    │           └── ConsultaClientes.cs  Construção das queries; só aqui se traduz Campo -> coluna SQL
     └── Vendas.Agente/               Host de consola: Ollama (qwen2.5) + servidor MCP
         ├── Program.cs               Lança o servidor, liga o modelo às tools, ciclo de perguntas
         └── PoliticasSeguranca.cs    Regras de segurança (prompt de sistema)

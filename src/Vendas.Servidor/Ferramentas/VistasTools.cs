@@ -37,6 +37,12 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "Com contar=true e coluna: conta clientes por valor da coluna, com percentagens. Devolve CSV. " +
         "Se a lista de linhas (não a de grupos) for cortada, use pagina=2, 3... para ver o resto.";
 
+    // Parâmetros de uma chamada às tools de consulta, já traduzidos para Campo.
+    // Agrupados num único tipo para não passar 8-9 argumentos soltos entre os métodos privados.
+    private sealed record PedidoConsulta(
+        Campo? Coluna, IReadOnlyList<Campo> TodasAsColunas, string? Valor, bool Contar,
+        Campo? ColunaCruzada, string? ValorCruzado, int Limite, int Pagina);
+
     [McpServerTool(Name = "clientes_consultar")]
     [Description("Dados gerais dos clientes: NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito." + Modo)]
     public Task<string> ClientesAsync(
@@ -46,9 +52,9 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Máximo de linhas ou grupos, 1 a 100")] int limite = 50,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens/grupos).")] int pagina = 1,
         CancellationToken ct = default)
-        => ConsultarAsync(
+        => ConsultarAsync(new PedidoConsulta(
             coluna is null ? null : Enum.Parse<Campo>(coluna.ToString()!), ColunasCliente, valor, contar,
-            null, null, limite, pagina, ct);
+            null, null, limite, pagina), ct);
 
     [McpServerTool(Name = "faturacao_consultar")]
     [Description("Condições de faturação dos clientes: NomeCliente, Pagamento, Cobranca, Expedicao, " +
@@ -64,41 +70,43 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Máximo de linhas ou grupos, 1 a 100")] int limite = 50,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens/grupos).")] int pagina = 1,
         CancellationToken ct = default)
-        => ConsultarAsync(
+        => ConsultarAsync(new PedidoConsulta(
             coluna is null ? null : Enum.Parse<Campo>(coluna.ToString()!), ColunasFaturacao, valor, contar,
-            cruzarCom is null ? null : Enum.Parse<Campo>(cruzarCom.ToString()!), valorCruzado, limite, pagina, ct);
+            cruzarCom is null ? null : Enum.Parse<Campo>(cruzarCom.ToString()!), valorCruzado, limite, pagina), ct);
 
-    // O campo já vem validado pelo enum da tool.
-    private async Task<string> ConsultarAsync(
-        Campo? campo, IReadOnlyList<Campo> todasAsColunas, string? valor, bool contar,
-        Campo? campoCruzado, string? valorCruzado, int limite, int pagina, CancellationToken ct)
+    private async Task<string> ConsultarAsync(PedidoConsulta pedido, CancellationToken ct)
     {
-        limite = Math.Clamp(limite, 1, MaxLinhas);
-        var deslocamento = (Math.Max(1, pagina) - 1) * limite;
+        var limite = Math.Clamp(pedido.Limite, 1, MaxLinhas);
+        var deslocamento = (Math.Max(1, pedido.Pagina) - 1) * limite;
 
-        if (campo is null && (contar || !string.IsNullOrWhiteSpace(valor)))
+        if (pedido.Coluna is null && (pedido.Contar || !string.IsNullOrWhiteSpace(pedido.Valor)))
             return "Indique uma coluna para contar ou filtrar.";
 
-        if (campoCruzado is null && !string.IsNullOrWhiteSpace(valorCruzado))
+        if (pedido.ColunaCruzada is null && !string.IsNullOrWhiteSpace(pedido.ValorCruzado))
             return "Indique cruzarCom para filtrar por valorCruzado.";
 
+        // contar agrupa pela coluna; filtrar a mesma coluna por um valor deixaria sempre um único
+        // grupo a 100%. Para filtrar enquanto conta, usa-se cruzarCom noutra coluna.
+        if (pedido.Contar && !string.IsNullOrWhiteSpace(pedido.Valor))
+            return "Não faz sentido contar e filtrar pela mesma coluna. Para filtrar e contar, use cruzarCom/valorCruzado.";
+
         var filtros = new Dictionary<Campo, string>();
-        if (campo is not null && !string.IsNullOrWhiteSpace(valor))
-            filtros[campo.Value] = valor.Trim();
-        if (campoCruzado is not null && !string.IsNullOrWhiteSpace(valorCruzado))
-            filtros[campoCruzado.Value] = valorCruzado.Trim();
+        if (pedido.Coluna is not null && !string.IsNullOrWhiteSpace(pedido.Valor))
+            filtros[pedido.Coluna.Value] = pedido.Valor.Trim();
+        if (pedido.ColunaCruzada is not null && !string.IsNullOrWhiteSpace(pedido.ValorCruzado))
+            filtros[pedido.ColunaCruzada.Value] = pedido.ValorCruzado.Trim();
 
         try
         {
-            return contar
-                ? FormatarContagem(campo!.Value.ToString(), await repo.ContarAsync(campo.Value, filtros, limite, ct))
+            return pedido.Contar
+                ? FormatarContagem(pedido.Coluna!.Value.ToString(), await repo.ContarAsync(pedido.Coluna.Value, filtros, limite, ct))
                 : FormatarDados(await repo.ListarAsync(
-                    campo is null ? todasAsColunas : [campo.Value], filtros, null, deslocamento, limite, ct));
+                    pedido.Coluna is null ? pedido.TodasAsColunas : [pedido.Coluna.Value], filtros, null, deslocamento, limite, ct));
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
         catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
         {
-            log.LogError(ex, "Falha em {Campo}_consultar", campo);
+            log.LogError(ex, "Falha em {Campo}_consultar", pedido.Coluna);
             return ErroNeutro;
         }
     }
