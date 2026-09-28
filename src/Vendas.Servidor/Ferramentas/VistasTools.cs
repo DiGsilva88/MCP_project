@@ -44,17 +44,20 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         Campo? ColunaCruzada, string? ValorCruzado, int Limite, int Pagina);
 
     [McpServerTool(Name = "clientes_consultar")]
-    [Description("Dados gerais dos clientes: NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito." + Modo)]
+    [Description("Dados gerais dos clientes: NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito." + Modo +
+        " Para cruzar duas colunas (ex.: contar por Zona só dos clientes de um Vendedor), use cruzarCom/valorCruzado.")]
     public Task<string> ClientesAsync(
         [Description("Opcional: coluna a mostrar/filtrar/contar.")] ColunaCliente? coluna = null,
         [Description("Opcional, só com coluna: valor exato, ex.: Lisboa, ou \"sem dados\"")] string? valor = null,
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
+        [Description("Opcional: segunda coluna para cruzar, filtrando o resultado por ela também.")] ColunaCliente? cruzarCom = null,
+        [Description("Opcional, só com cruzarCom: valor exato dessa segunda coluna.")] string? valorCruzado = null,
         [Description("Máximo de linhas ou grupos, 1 a 100")] int limite = 50,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens/grupos).")] int pagina = 1,
         CancellationToken ct = default)
         => ConsultarAsync(new PedidoConsulta(
             coluna is null ? null : Enum.Parse<Campo>(coluna.ToString()!), ColunasCliente, valor, contar,
-            null, null, limite, pagina), ct);
+            cruzarCom is null ? null : Enum.Parse<Campo>(cruzarCom.ToString()!), valorCruzado, limite, pagina), ct);
 
     [McpServerTool(Name = "faturacao_consultar")]
     [Description("Condições de faturação dos clientes: NomeCliente, Pagamento, Cobranca, Expedicao, " +

@@ -152,7 +152,7 @@ async Task ModoMenuAsync(McpClient mcp)
         Console.Write("> ");
         switch (Console.ReadLine()?.Trim())
         {
-            case "1": await ConsultarAsync(mcp, "clientes_consultar", colunasCliente, permiteCruzar: false); break;
+            case "1": await ConsultarAsync(mcp, "clientes_consultar", colunasCliente, permiteCruzar: true); break;
             case "2": await ConsultarAsync(mcp, "faturacao_consultar", colunasFaturacao, permiteCruzar: true); break;
             case "3" or null or "": return;
             default: Console.WriteLine("Opção inválida."); break;
