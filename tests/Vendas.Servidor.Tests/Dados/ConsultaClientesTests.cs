@@ -17,31 +17,39 @@ public class ConsultaClientesTests
     public void Listar_SemFiltros_NaoTemWhereEPaginaComOffset()
     {
         var (sql, aplicarParametros) = ConsultaClientes.Listar(
-            [Campo.Zona], new Dictionary<Campo, string>(), nome: null, deslocamento: 20);
+            [Campo.Zona], new Dictionary<Campo, string>(), deslocamento: 20);
 
-        Assert.DoesNotContain("AND", sql);
+        Assert.DoesNotContain("WHERE", sql);
         Assert.Contains("OFFSET @deslocamento ROWS FETCH NEXT @limite ROWS ONLY", sql);
-
-        var parametros = Aplicar(aplicarParametros);
-        Assert.Equal(DBNull.Value, parametros["@nome"].Value);
-        Assert.Equal(20, parametros["@deslocamento"].Value);
+        Assert.Equal(20, Aplicar(aplicarParametros)["@deslocamento"].Value);
     }
 
     [Fact]
     public void Listar_ComFiltro_UsaAColunaCorretaEParametrizaOValor()
     {
         var filtros = new Dictionary<Campo, string> { [Campo.Zona] = "Lisboa" };
-        var (sql, aplicarParametros) = ConsultaClientes.Listar([Campo.Zona], filtros, nome: null, deslocamento: 0);
+        var (sql, aplicarParametros) = ConsultaClientes.Listar([Campo.Zona], filtros, deslocamento: 0);
 
-        Assert.Contains("AND c.[Zona] COLLATE Latin1_General_CI_AI = @filtro0", sql);
+        Assert.Contains("WHERE c.[Zona] COLLATE Latin1_General_CI_AI = @filtro0", sql);
         Assert.Equal("Lisboa", Aplicar(aplicarParametros)["@filtro0"].Value);
+    }
+
+    [Fact]
+    public void Contar_CruzadoComColunaDaOutraView_AgrupaNumaEFiltraNaOutra()
+    {
+        var filtros = new Dictionary<Campo, string> { [Campo.Pagamento] = "30 dias" };
+        var (sql, aplicarParametros) = ConsultaClientes.Contar(Campo.Zona, filtros);
+
+        Assert.Contains("GROUP BY c.[Zona]", sql);
+        Assert.Contains("WHERE f.[Pagamento] COLLATE Latin1_General_CI_AI = @filtro0", sql);
+        Assert.Equal("30 dias", Aplicar(aplicarParametros)["@filtro0"].Value);
     }
 
     [Fact]
     public void Listar_FiltroSemDados_GeraCondicaoDeNuloOuMarcadorSemParametro()
     {
         var filtros = new Dictionary<Campo, string> { [Campo.Distrito] = Campos.SemDados };
-        var (sql, aplicarParametros) = ConsultaClientes.Listar([Campo.Distrito], filtros, nome: null, deslocamento: 0);
+        var (sql, aplicarParametros) = ConsultaClientes.Listar([Campo.Distrito], filtros, deslocamento: 0);
 
         Assert.Contains("c.[Distrito] IS NULL", sql);
         Assert.Contains("c.[Distrito] = ''", sql);

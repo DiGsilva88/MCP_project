@@ -1,9 +1,9 @@
 namespace Vendas.Servidor.Modelos;
 
-// As views que o MCP pode ler. Para expor uma nova view: novo valor aqui + entrada em ConsultaClientes.Coluna.
+// Colunas das views que o MCP pode ler. Para expor uma nova coluna: novo valor aqui + entrada em ConsultaClientes.Coluna.
 public enum Campo
 {
-    //ficha cliente -viewmcp_cliente
+    //ficha do cliente
     Zona,
     Vendedor,
     TipoCliente,

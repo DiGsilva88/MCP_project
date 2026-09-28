@@ -19,10 +19,10 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     }
 
     public async Task<PaginaClientes> ListarAsync(
-        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, string? nome, int deslocamento, int limite,
+        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
         CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaClientes.Listar(mostrar, filtros, nome, deslocamento);
+        var (sql, parametros) = ConsultaClientes.Listar(mostrar, filtros, deslocamento);
         var colunas = new[] { "NomeCliente" }.Concat(mostrar.Select(c => c.ToString())).ToArray();
         var total = 0;
 

@@ -19,16 +19,15 @@ if (!Directory.Exists(caminhoServidor))
 
 var transporte = new StdioClientTransport(new StdioClientTransportOptions
 {
-    Name= "vendas",
+    Name = "vendas",
     Command = "dotnet",
-Arguments = ["run", "--project", caminhoServidor],
-    //a ligação a BD é passada ao servidor. O agente só a reencaminha
-    //nunca imprime nem envia nada ao modelo
-
-EnvironmentVariables = new Dictionary<string, string?>
-{
-    ["VENDAS_SQL"] = Environment.GetEnvironmentVariable("VENDAS_SQL"),
-},
+    Arguments = ["run", "--project", caminhoServidor],
+    // a ligação à BD é passada ao servidor. O agente só a reencaminha,
+    // nunca a imprime nem a envia ao modelo
+    EnvironmentVariables = new Dictionary<string, string?>
+    {
+        ["VENDAS_SQL"] = Environment.GetEnvironmentVariable("VENDAS_SQL"),
+    },
 });
 
 McpClient mcp;
@@ -114,159 +113,129 @@ while(true)
         continue;
     }
 
-    //transparencia : mostra que ferramentas foram usadas na resposta
+    // transparência: mostra que ferramentas foram usadas na resposta
+    foreach (var chamada in resposta.Messages.SelectMany(m => m.Contents).OfType<FunctionCallContent>())
+        Console.WriteLine($"[usou {chamada.Name}]");
 
-foreach(var chamada in resposta.Messages
-    .SelectMany(m => m.Contents)
-    .OfType<FunctionCallContent>())
-Console.WriteLine($"[usou {chamada.Name}]");
+    Console.WriteLine(resposta.Text);
+    historico.AddMessages(resposta);
 
-Console.WriteLine(resposta.Text);
-historico.AddMessages(resposta);
-
-//regras +ultimas 20 mensagens
-//para evitar que as respostas fiquem caras
-
-if(historico.Count > 21)
-    historico = [historico[0], ..historico[^20..]];
+    // regras + últimas 20 mensagens, para evitar que as respostas fiquem caras.
+    // Não pode começar num resultado de ferramenta órfão (sem a chamada que o pediu).
+    if (historico.Count > 21)
+        historico = [historico[0], .. historico[^20..]];
 
     while (historico.Count > 1 && historico[1].Role == ChatRole.Tool)
-    historico.RemoveAt(1);
+        historico.RemoveAt(1);
 }
 
-// ---- Modo menu: sem modelo, chama as ferramentas MCP diretamente a partir de escolhas numeradas.
-// As colunas abaixo espelham os enums ColunaCliente/ColunaFaturacao do Vendas.Servidor
+// ---- Modo menu: sem modelo, chama a ferramenta MCP "consultar" diretamente a partir de escolhas numeradas.
+// As colunas abaixo espelham o enum Campo do Vendas.Servidor (ficha do cliente + faturação)
 // (o agente não referencia o projeto do servidor, só fala com ele por MCP).
 
 async Task ModoMenuAsync(McpClient mcp)
 {
-    string[] colunasCliente = ["Zona", "Vendedor", "TipoCliente", "Actividade", "Distrito"];
-    string[] colunasFaturacao = ["Pagamento", "Cobranca", "Expedicao", "SituacaoFinanceira", "EscalaoPlafond", "EscalaoVolumeVendas"];
-
     while (true)
     {
         Console.WriteLine();
         Console.WriteLine("1) Consultar clientes");
-        Console.WriteLine("2) Consultar faturação");
-        Console.WriteLine("3) Sair");
+        Console.WriteLine("2) Sair");
         Console.Write("> ");
         switch (Console.ReadLine()?.Trim())
         {
-            case "1": await ConsultarAsync(mcp, "clientes_consultar", colunasCliente, permiteCruzar: true); break;
-            case "2": await ConsultarAsync(mcp, "faturacao_consultar", colunasFaturacao, permiteCruzar: true); break;
-            case "3" or null or "": return;
+            case "1": await ConsultarAsync(mcp); break;
+            case "2" or null or "": return;
             default: Console.WriteLine("Opção inválida."); break;
         }
     }
 }
 
-async Task ConsultarAsync(McpClient mcp, string ferramenta, IReadOnlyList<string> colunas, bool permiteCruzar)
+async Task ConsultarAsync(McpClient mcp)
 {
-    var coluna = EscolherColuna("Coluna (Enter = todas as colunas):", colunas);
+    string[] colunas =
+    [
+        "Zona", "Vendedor", "TipoCliente", "Actividade", "Distrito",
+        "Pagamento", "Cobranca", "Expedicao", "SituacaoFinanceira", "EscalaoPlafond", "EscalaoVolumeVendas",
+    ];
 
-    string? valor = null;
-    var contar = false;
-    string? cruzarCom = null;
-    string? valorCruzado = null;
+    var argumentos = new Dictionary<string, object?>();
 
+    var coluna = Escolher("Coluna (Enter = todas as colunas):", colunas);
     if (coluna is not null)
     {
-        Console.Write("Contar clientes por esta coluna? (s/n): ");
-        contar = (Console.ReadLine()?.Trim() ?? "").Equals("s", StringComparison.OrdinalIgnoreCase);
+        argumentos["coluna"] = coluna;
 
-        if (!contar)
+        if (PerguntarSimNao("Contar clientes por esta coluna?"))
+            argumentos["contar"] = true;
+        else if (PerguntarSimNao("Filtrar por um valor?"))
+            argumentos["valor"] = Escolher($"Valor de {coluna}:", await ValoresAsync(mcp, coluna));
+
+        // Cruzamento: a segunda coluna pode ser de qualquer view (ex.: contar por Zona só de quem paga a 30 dias).
+        if (PerguntarSimNao("Cruzar com outra coluna?"))
         {
-            Console.Write("Filtrar por um valor? (s/n): ");
-            if ((Console.ReadLine()?.Trim() ?? "").Equals("s", StringComparison.OrdinalIgnoreCase))
-                valor = EscolherValor($"Valor de {coluna}:", await ValoresAsync(mcp, ferramenta, coluna));
-        }
-        else if (permiteCruzar)
-        {
-            var outrasColunas = colunas.Where(c => c != coluna).ToArray();
-            Console.Write("Cruzar com outra coluna para filtrar a contagem? (s/n): ");
-            if ((Console.ReadLine()?.Trim() ?? "").Equals("s", StringComparison.OrdinalIgnoreCase))
+            var cruzarCom = Escolher("Cruzar com:", colunas.Where(c => c != coluna).ToArray());
+            var valorCruzado = cruzarCom is null ? null : Escolher($"Valor de {cruzarCom}:", await ValoresAsync(mcp, cruzarCom));
+            if (valorCruzado is not null)
             {
-                cruzarCom = EscolherColuna("Cruzar com:", outrasColunas);
-                if (cruzarCom is not null)
-                    valorCruzado = EscolherValor($"Valor de {cruzarCom}:", await ValoresAsync(mcp, ferramenta, cruzarCom));
+                argumentos["cruzarCom"] = cruzarCom;
+                argumentos["valorCruzado"] = valorCruzado;
             }
         }
     }
 
-    var argumentos = new Dictionary<string, object?>();
-    if (coluna is not null) argumentos["coluna"] = coluna;
-    if (!string.IsNullOrWhiteSpace(valor)) argumentos["valor"] = valor;
-    if (contar) argumentos["contar"] = true;
-    if (cruzarCom is not null) argumentos["cruzarCom"] = cruzarCom;
-    if (!string.IsNullOrWhiteSpace(valorCruzado)) argumentos["valorCruzado"] = valorCruzado;
-
     Console.WriteLine("A consultar...");
     try
     {
-        var resultado = await mcp.CallToolAsync(ferramenta, argumentos, cancellationToken: default);
+        var resultado = await mcp.CallToolAsync("consultar", argumentos);
         foreach (var bloco in resultado.Content.OfType<TextContentBlock>())
             Console.WriteLine(bloco.Text);
     }
     catch (Exception ex)
     {
-        Console.Error.WriteLine($"Falha ao chamar {ferramenta}: {ex.Message}");
+        Console.Error.WriteLine($"Falha ao consultar: {ex.Message}");
     }
 }
 
 // Valores reais da coluna, pedidos à própria tool com contar=true (mesmo CSV que o modelo recebe).
-async Task<IReadOnlyList<string>> ValoresAsync(McpClient mcp, string ferramenta, string coluna)
+async Task<IReadOnlyList<string>> ValoresAsync(McpClient mcp, string coluna)
 {
     var argumentos = new Dictionary<string, object?> { ["coluna"] = coluna, ["contar"] = true, ["limite"] = 100 };
-    var resultado = await mcp.CallToolAsync(ferramenta, argumentos, cancellationToken: default);
+    var resultado = await mcp.CallToolAsync("consultar", argumentos);
     var texto = string.Concat(resultado.Content.OfType<TextContentBlock>().Select(b => b.Text));
     var linhas = texto.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-    // linha 0 é o título ("Clientes por X:..."), linha 1 é o cabeçalho do CSV; o resto são os valores.
+    // linha 0 é o título ("Clientes por X: ..."), linha 1 é o cabeçalho do CSV; o resto são os valores.
     // ponytail: split pela primeira vírgula não trata valores com vírgula (ex.: "Bento, Filhos") — raro nestas colunas.
     return linhas.Skip(2).Where(l => !l.StartsWith('#')).Select(l => l.Split(',')[0].Trim()).ToArray();
 }
 
-// Enter -> null (sem filtro). Escolha inválida -> pergunta outra vez.
-string? EscolherValor(string titulo, IReadOnlyList<string> valores)
+bool PerguntarSimNao(string pergunta)
 {
-    if (valores.Count == 0)
+    Console.Write($"{pergunta} (s/n): ");
+    return (Console.ReadLine()?.Trim() ?? "").Equals("s", StringComparison.OrdinalIgnoreCase);
+}
+
+// Enter -> null (não escolher). Escolha inválida -> pergunta outra vez.
+string? Escolher(string titulo, IReadOnlyList<string> opcoes)
+{
+    if (opcoes.Count == 0)
     {
-        Console.WriteLine("Sem valores para filtrar nesta coluna.");
+        Console.WriteLine("Sem valores para escolher.");
         return null;
     }
 
     while (true)
     {
         Console.WriteLine(titulo);
-        for (var i = 0; i < valores.Count; i++)
-            Console.WriteLine($"{i + 1}) {valores[i]}");
-        Console.Write("> (Enter = não filtrar) ");
+        for (var i = 0; i < opcoes.Count; i++)
+            Console.WriteLine($"{i + 1}) {opcoes[i]}");
+        Console.Write("> (Enter = nenhum) ");
 
         var escolha = Console.ReadLine();
         if (string.IsNullOrWhiteSpace(escolha)) return null;
 
-        if (int.TryParse(escolha, out var indice) && indice >= 1 && indice <= valores.Count)
-            return valores[indice - 1];
-
-        Console.WriteLine("Opção inválida.");
-    }
-}
-
-// Enter -> null (sem coluna). Escolha inválida -> pergunta outra vez.
-string? EscolherColuna(string titulo, IReadOnlyList<string> colunas)
-{
-    while (true)
-    {
-        Console.WriteLine(titulo);
-        for (var i = 0; i < colunas.Count; i++)
-            Console.WriteLine($"{i + 1}) {colunas[i]}");
-        Console.Write("> ");
-
-        var escolha = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(escolha)) return null;
-
-        if (int.TryParse(escolha, out var indice) && indice >= 1 && indice <= colunas.Count)
-            return colunas[indice - 1];
+        if (int.TryParse(escolha, out var indice) && indice >= 1 && indice <= opcoes.Count)
+            return opcoes[indice - 1];
 
         Console.WriteLine("Opção inválida.");
     }
