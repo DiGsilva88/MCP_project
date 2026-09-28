@@ -15,7 +15,6 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public int? UltimoLimite { get; private set; }
     public int? UltimoDeslocamento { get; private set; }
-    public string? UltimoNome { get; private set; }
     public IReadOnlyDictionary<Campo, string>? UltimosFiltros { get; private set; }
     public Campo? UltimoAgrupar { get; private set; }
     public IReadOnlyList<Campo>? UltimoMostrar { get; private set; }
@@ -31,12 +30,11 @@ internal sealed class FakeVendasRepo : IVendasRepo
     }
 
     public Task<PaginaClientes> ListarAsync(
-        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, string? nome, int deslocamento, int limite,
+        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
         CancellationToken ct = default)
     {
         UltimoMostrar = mostrar;
         UltimosFiltros = filtros;
-        UltimoNome = nome;
         UltimoDeslocamento = deslocamento;
         UltimoLimite = limite;
         if (LancarExcecao is not null) throw LancarExcecao;
