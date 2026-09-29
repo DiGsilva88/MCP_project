@@ -5,6 +5,7 @@ public enum Campo
 {
     //ficha do cliente
     Zona,
+    Localidade,
     Vendedor,
     TipoCliente,
     Actividade,

@@ -108,6 +108,30 @@ public class VistasToolsTests
     }
 
     [Fact]
+    public async Task Listar_Cruzado_MostraOsDoisFiltrosNoTexto()
+    {
+        var repo = new FakeVendasRepo { Pagina = new(["NomeCliente", "Actividade"], [["Ana", "Oficina Independente"]], 1) };
+
+        var resultado = await CriarSut(repo).ConsultarAsync(
+            Campo.Actividade, "Oficina Independente", cruzarCom: Campo.Distrito, valorCruzado: "Setúbal");
+
+        Assert.Equal(
+            "Clientes com Actividade = Oficina Independente e Distrito = Setúbal: 1 clientes.\n" +
+            "NomeCliente,Actividade\nAna,Oficina Independente\n", resultado);
+    }
+
+    [Fact]
+    public async Task Contar_Cruzado_MostraOFiltroCruzadoNoTitulo()
+    {
+        var repo = new FakeVendasRepo { Contagens = [new("Norte", 4, 4, 1)] };
+
+        var resultado = await CriarSut(repo).ConsultarAsync(
+            Campo.Zona, contar: true, cruzarCom: Campo.Pagamento, valorCruzado: "30 dias");
+
+        Assert.StartsWith("Clientes por Zona, com Pagamento = 30 dias: 4 clientes em 1 grupos.", resultado);
+    }
+
+    [Fact]
     public async Task CruzarComAMesmaColuna_Recusa()
     {
         var repo = new FakeVendasRepo();
@@ -142,6 +166,26 @@ public class VistasToolsTests
 
         Assert.Equal("Indique uma coluna para contar ou filtrar.", resultado);
         Assert.Null(repo.UltimoAgrupar);
+    }
+
+    [Fact]
+    public async Task Contar_ComValor_ContaOsClientesComEsseValor()
+    {
+        var repo = new FakeVendasRepo { Contagens = [new("60 dias", 7, 7, 1)] };
+
+        var resultado = await CriarSut(repo).ConsultarAsync(Campo.Pagamento, "60 dias", contar: true);
+
+        Assert.Equal(Campo.Pagamento, repo.UltimoAgrupar);
+        Assert.Equal("60 dias", repo.UltimosFiltros![Campo.Pagamento]);
+        Assert.Contains("7 clientes", resultado);
+    }
+
+    [Fact]
+    public async Task Contar_ComValorSemResultados_SugereVerOsValoresExistentes()
+    {
+        var resultado = await CriarSut(new FakeVendasRepo()).ConsultarAsync(Campo.Pagamento, "60 dias", contar: true);
+
+        Assert.Contains("contar=true (sem valor)", resultado);
     }
 
     [Fact]

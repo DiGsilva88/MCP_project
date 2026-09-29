@@ -30,7 +30,7 @@ public class ConsultaClientesTests
         var filtros = new Dictionary<Campo, string> { [Campo.Zona] = "Lisboa" };
         var (sql, aplicarParametros) = ConsultaClientes.Listar([Campo.Zona], filtros, deslocamento: 0);
 
-        Assert.Contains("WHERE c.[Zona] COLLATE Latin1_General_CI_AI = @filtro0", sql);
+        Assert.Contains("WHERE (c.[Zona] COLLATE Latin1_General_CI_AI = @filtro0", sql);
         Assert.Equal("Lisboa", Aplicar(aplicarParametros)["@filtro0"].Value);
     }
 
@@ -41,7 +41,7 @@ public class ConsultaClientesTests
         var (sql, aplicarParametros) = ConsultaClientes.Contar(Campo.Zona, filtros);
 
         Assert.Contains("GROUP BY c.[Zona]", sql);
-        Assert.Contains("WHERE f.[Pagamento] COLLATE Latin1_General_CI_AI = @filtro0", sql);
+        Assert.Contains("WHERE (f.[Pagamento] COLLATE Latin1_General_CI_AI = @filtro0", sql);
         Assert.Equal("30 dias", Aplicar(aplicarParametros)["@filtro0"].Value);
     }
 
@@ -75,7 +75,18 @@ public class ConsultaClientesTests
         var filtros = new Dictionary<Campo, string> { [Campo.Cobranca] = "Débito Direto" };
         var (sql, aplicarParametros) = ConsultaClientes.Contar(Campo.Pagamento, filtros);
 
-        Assert.Contains("WHERE f.[Cobranca] COLLATE Latin1_General_CI_AI = @filtro0", sql);
+        Assert.Contains("WHERE (f.[Cobranca] COLLATE Latin1_General_CI_AI = @filtro0", sql);
         Assert.Equal("Débito Direto", Aplicar(aplicarParametros)["@filtro0"].Value);
+    }
+
+    [Fact]
+    public void Listar_Filtro_AceitaInicioDoValorEEscapaWildcards()
+    {
+        var filtros = new Dictionary<Campo, string> { [Campo.Pagamento] = "30 dias" };
+        var (sql, aplicarParametros) = ConsultaClientes.Listar([Campo.Pagamento], filtros, deslocamento: 0);
+
+        // "30 dias" tem de apanhar "30 Dias Fim do Mês": prefixo + espaço, com [ % _ escapados.
+        Assert.Contains("f.[Pagamento] COLLATE Latin1_General_CI_AI LIKE REPLACE(REPLACE(REPLACE(@filtro0, '[', '[[]'), '%', '[%]'), '_', '[_]') + ' %'", sql);
+        Assert.Equal("30 dias", Aplicar(aplicarParametros)["@filtro0"].Value);
     }
 }
