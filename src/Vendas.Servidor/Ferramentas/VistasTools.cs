@@ -38,10 +38,10 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "Devolve CSV. Se a lista de linhas for cortada, use pagina=2, 3... para ver o resto.")]
     public async Task<string> ConsultarAsync(
         [Description("Opcional: coluna a mostrar/filtrar/contar.")] Campo? coluna = null,
-        [Description("Opcional, só com coluna: valor exato, ex.: Lisboa, ou \"sem dados\".")] string valor = null,
+        [Description("Opcional, só com coluna: valor exato, ex.: Lisboa, ou \"sem dados\".")] string? valor = null,
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
         [Description("Opcional: segunda coluna (diferente de coluna) para filtrar o resultado.")] Campo? cruzarCom = null,
-        [Description("Obrigatório com cruzarCom: valor exato dessa segunda coluna.")] string valorCruzado = null,
+        [Description("Obrigatório com cruzarCom: valor exato dessa segunda coluna.")] string? valorCruzado = null,
         [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 50,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens).")] int pagina = 1,
         CancellationToken ct = default)
