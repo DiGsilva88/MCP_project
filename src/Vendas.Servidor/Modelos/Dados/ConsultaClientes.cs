@@ -42,7 +42,7 @@ internal static class ConsultaClientes
                    COUNT(*) OVER () AS Total
             FROM   {Origem}
             {whereSql}
-            ORDER BY c.NomeCliente
+            ORDER BY c.NomeCliente, c.ClienteID
             OFFSET @deslocamento ROWS FETCH NEXT @limite ROWS ONLY;
             """;
 
@@ -60,6 +60,7 @@ internal static class ConsultaClientes
     private static string Coluna(Campo campo) => campo switch
     {
         Campo.Zona => "c.[Zona]",
+        Campo.Localidade => "c.[Localidade]",
         Campo.Vendedor => "c.[Vendedor]",
         Campo.TipoCliente => "c.[TipoCliente]",
         Campo.Actividade => "c.[Actividade]",
@@ -86,7 +87,11 @@ internal static class ConsultaClientes
         var condicoes = pares.Select((par, i) => EhSemDados(par.Value)
             ? CondicaoSemDados(par.Key)
             // COLLATE accent/case-insensitive: o modelo (e o utilizador) escreve "Setubal", a BD guarda "Setúbal".
-            : $"{Coluna(par.Key)} COLLATE Latin1_General_CI_AI = @filtro{i}");
+            // Também aceita o início do valor por palavras inteiras: "30 dias" apanha "30 Dias Fim do Mês".
+            // Os REPLACE escapam [ % _ para o valor do modelo nunca funcionar como wildcard.
+            : $"({Coluna(par.Key)} COLLATE Latin1_General_CI_AI = @filtro{i} " +
+              $"OR {Coluna(par.Key)} COLLATE Latin1_General_CI_AI LIKE " +
+              $"REPLACE(REPLACE(REPLACE(@filtro{i}, '[', '[[]'), '%', '[%]'), '_', '[_]') + ' %')");
         var sql = "WHERE " + string.Join(" AND ", condicoes);
 
         void Parametros(SqlParameterCollection p)

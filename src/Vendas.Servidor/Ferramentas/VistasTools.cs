@@ -18,25 +18,30 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     // Frase devolvida ao modelo quando algo falha. Não revela nada do SQL.
     private const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
 
+    // O filtro é por valor exato; sem match, o modelo desistia em vez de ir ver os valores que existem.
+    private const string DicaValores =
+        " O valor tem de ser exato: chame consultar com coluna=<coluna>, contar=true (sem valor) para ver os valores existentes e tente de novo.";
+
     private static readonly IReadOnlyList<Campo> TodasAsColunas = Enum.GetValues<Campo>();
 
     [McpServerTool(Name = "consultar")]
     [Description(
-        "Dados dos clientes. Colunas da ficha: Zona, Vendedor, TipoCliente, Actividade, Distrito. " +
+        "Dados dos clientes. Colunas da ficha: Zona, Localidade, Vendedor, TipoCliente, Actividade, Distrito. " +
         "Colunas de faturação: Pagamento, Cobranca, Expedicao, SituacaoFinanceira, EscalaoPlafond, EscalaoVolumeVendas " +
         "(o escalão de volume de vendas é o valor DECLARADO na ficha, não a faturação real; não há valores faturados). " +
         "Sem coluna: NomeCliente e todas as colunas. Só com coluna: NomeCliente e essa coluna. " +
-        "Com coluna e valor: só as linhas com esse valor exato (valor=\"sem dados\" filtra quem não tem valor). " +
-        "Com contar=true: conta clientes por valor da coluna, com percentagens. " +
+        "Com coluna e valor: só as linhas com esse valor (exato ou o início, ex.: \"30 dias\" apanha \"30 Dias Fim do Mês\"; valor=\"sem dados\" filtra quem não tem valor). " +
+        "Com contar=true: conta clientes por valor da coluna, com percentagens; com contar=true e valor: quantos clientes têm esse valor. " +
+        "Os valores têm de ser exatos: se não souber os valores existentes, chame primeiro coluna=X, contar=true (sem valor). " +
         "cruzarCom/valorCruzado filtra também por outra coluna, de qualquer grupo " +
         "(ex.: coluna=Zona, contar=true, cruzarCom=Pagamento, valorCruzado=\"30 dias\"). " +
         "Devolve CSV. Se a lista de linhas for cortada, use pagina=2, 3... para ver o resto.")]
     public async Task<string> ConsultarAsync(
         [Description("Opcional: coluna a mostrar/filtrar/contar.")] Campo? coluna = null,
-        [Description("Opcional, só com coluna: valor exato, ex.: Lisboa, ou \"sem dados\".")] string? valor = null,
+        [Description("Opcional, só com coluna: valor exato, ex.: Lisboa, ou \"sem dados\".")] string valor = null,
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
         [Description("Opcional: segunda coluna (diferente de coluna) para filtrar o resultado.")] Campo? cruzarCom = null,
-        [Description("Obrigatório com cruzarCom: valor exato dessa segunda coluna.")] string? valorCruzado = null,
+        [Description("Obrigatório com cruzarCom: valor exato dessa segunda coluna.")] string valorCruzado = null,
         [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 50,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens).")] int pagina = 1,
         CancellationToken ct = default)
@@ -53,10 +58,6 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         if (cruzarCom is not null && cruzarCom == coluna)
             return "Escolha uma coluna diferente para cruzar.";
 
-        // contar agrupa pela coluna; filtrar a mesma coluna deixaria sempre um único grupo a 100%.
-        if (contar && temValor)
-            return "Não faz sentido contar e filtrar pela mesma coluna. Para filtrar e contar, use cruzarCom/valorCruzado.";
-
         var filtros = new Dictionary<Campo, string>();
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
         if (temValorCruzado) filtros[cruzarCom!.Value] = valorCruzado!.Trim();
@@ -67,9 +68,9 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         try
         {
             return contar
-                ? FormatarContagem(coluna!.Value.ToString(), await repo.ContarAsync(coluna.Value, filtros, limite, ct))
+                ? FormatarContagem(coluna!.Value.ToString(), await repo.ContarAsync(coluna.Value, filtros, limite, ct), filtros)
                 : FormatarDados(await repo.ListarAsync(
-                    coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, ct));
+                    coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, ct), filtros);
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
         catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
@@ -79,12 +80,24 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         }
     }
 
-    private static string FormatarDados(PaginaClientes pagina)
+    // Num cruzamento, a coluna filtrada que não é mostrada ficava invisível no resultado.
+    // Nesse caso devolve todos os filtros ("Actividade = X e Distrito = Y"); senão, vazio.
+    private static string FiltrosEscondidos(Dictionary<Campo, string> filtros, IEnumerable<string> mostradas)
+        => filtros.Keys.Any(k => !mostradas.Contains(k.ToString()))
+            ? string.Join(" e ", filtros.Select(f => $"{f.Key} = {f.Value}"))
+            : "";
+
+    private static string FormatarDados(PaginaClientes pagina, Dictionary<Campo, string> filtros)
     {
         if (pagina.Linhas.Count == 0)
-            return "Nenhuma linha encontrada com esse filtro.";
+            return "Nenhuma linha encontrada com esse filtro." + (filtros.Count > 0 ? DicaValores : "");
 
-        var csv = new StringBuilder(string.Join(',', pagina.Colunas)).Append('\n');
+        var csv = new StringBuilder();
+        var cruzados = FiltrosEscondidos(filtros, pagina.Colunas);
+        if (cruzados.Length > 0)
+            csv.Append($"Clientes com {cruzados}: {pagina.Total} clientes.\n");
+
+        csv.Append(string.Join(',', pagina.Colunas)).Append('\n');
         foreach (var linha in pagina.Linhas)
             csv.Append(string.Join(',', linha.Select(Campo))).Append('\n');
 
@@ -95,16 +108,17 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         return csv.ToString();
     }
 
-    private static string FormatarContagem(string nome, IReadOnlyList<ContagemCliente> linhas)
+    private static string FormatarContagem(string nome, IReadOnlyList<ContagemCliente> linhas, Dictionary<Campo, string> filtros)
     {
         if (linhas.Count == 0)
-            return "Sem dados para esta coluna.";
+            return "Sem dados para esta coluna." + (filtros.Count > 0 ? DicaValores : "");
 
         // Total e grupos são iguais em todas as linhas (o SQL calcula-os com OVER())
         var (total, grupos) = (linhas[0].Total, linhas[0].Grupos);
 
+        var cruzados = FiltrosEscondidos(filtros, [nome]);
         var csv = new StringBuilder()
-            .AppendLine($"Clientes por {nome}: {total} clientes em {grupos} grupos.")
+            .AppendLine($"Clientes por {nome}{(cruzados.Length > 0 ? $", com {cruzados}" : "")}: {total} clientes em {grupos} grupos.")
             .AppendLine($"{nome},clientes,percentagem");
 
         // InvariantCulture garante ponto decimal (14.1).

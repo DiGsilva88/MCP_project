@@ -154,7 +154,7 @@ async Task ConsultarAsync(McpClient mcp)
 {
     string[] colunas =
     [
-        "Zona", "Vendedor", "TipoCliente", "Actividade", "Distrito",
+        "Zona", "Localidade", "Vendedor", "TipoCliente", "Actividade", "Distrito",
         "Pagamento", "Cobranca", "Expedicao", "SituacaoFinanceira", "EscalaoPlafond", "EscalaoVolumeVendas",
     ];
 

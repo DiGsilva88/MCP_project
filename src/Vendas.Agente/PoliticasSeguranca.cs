@@ -47,6 +47,12 @@ public static class PoliticasSeguranca
         - Se uma ferramenta indicar erro de permissões ou acesso negado, comunica isso
           de forma genérica ("não tenho permissão para aceder a esses dados") sem
           expor o motivo técnico.
+        - "Prazo de pagamento" / "condições de pagamento" é a coluna Pagamento (não
+          a SituacaoFinanceira). Para "quantos clientes têm X" usa contar=true com
+          coluna e valor. Os valores são exatos e não os sabes de cor: se não houver
+          resultados, chama primeiro a ferramenta com contar=true na coluna (sem valor)
+          para ver os valores existentes, e só depois responde. Nunca digas que não
+          tens informação sem teres feito isto.
           -Nunca repitas na resposta a lista completa devolvida por uma ferramenta.
           Resume: diz o total e mostra no máximo 10 exemplos.
         """;

@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, Fase-2 ]
   pull_request:
-    branches: [ main, Fase-2 ]
+    branches: [ main]
 
 jobs:
   build:
@@ -24,3 +24,9 @@ jobs:
 
       - name: Build
         run: dotnet build Vendas.slnx --no-restore --configuration Release --warnaserror
+
+      - name: Test
+        run: dotnet test Vendas.slnx --no-restore --configuration Release --filter "Categoria!=Integração"
+
+
+        
