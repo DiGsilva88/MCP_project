@@ -15,6 +15,8 @@ builder.Logging.AddConsole(opcoes =>
 {
     opcoes.LogToStandardErrorThreshold = LogLevel.Trace;
 });
+builder.Logging.SetMinimumLevel(LogLevel.Information); // Trace/Debug do host só gastam tempo
+
 // Repositório de vendas: liga sempre ao SQL Server via RepoSql.
 // Requer a variável de ambiente VENDAS_SQL (connection string) — não há fallback em memória.
 var ligacao = new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("VENDAS_SQL")

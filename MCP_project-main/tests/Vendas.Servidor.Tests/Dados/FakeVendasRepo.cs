@@ -13,11 +13,6 @@ internal sealed class FakeVendasRepo : IVendasRepo
     public IReadOnlyList<ContagemCliente> Contagens { get; set; } = [];
     public Exception? LancarExcecao { get; set; }
 
-    // Resultado de ContarAsync por chamada (p.ex. vazio com filtros, valores existentes sem filtros).
-    // Sem isto, todas as chamadas devolvem Contagens.
-    public Func<Campo, IReadOnlyDictionary<Campo, string>, IReadOnlyList<ContagemCliente>>? ContagensPor { get; set; }
-    public List<(Campo Agrupar, IReadOnlyDictionary<Campo, string> Filtros, int Limite)> ChamadasContar { get; } = [];
-
     public int? UltimoLimite { get; private set; }
     public int? UltimoDeslocamento { get; private set; }
     public IReadOnlyDictionary<Campo, string>? UltimosFiltros { get; private set; }
@@ -30,9 +25,8 @@ internal sealed class FakeVendasRepo : IVendasRepo
         UltimoAgrupar = agrupar;
         UltimosFiltros = filtros;
         UltimoLimite = limite;
-        ChamadasContar.Add((agrupar, filtros, limite));
         if (LancarExcecao is not null) throw LancarExcecao;
-        return Task.FromResult(ContagensPor?.Invoke(agrupar, filtros) ?? Contagens);
+        return Task.FromResult(Contagens);
     }
 
     public Task<PaginaClientes> ListarAsync(

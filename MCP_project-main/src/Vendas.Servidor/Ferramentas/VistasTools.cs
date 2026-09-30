@@ -41,7 +41,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
         [Description("Opcional: segunda coluna (diferente de coluna) para filtrar o resultado.")] Campo? cruzarCom = null,
         [Description("Obrigatório com cruzarCom: valor exato dessa segunda coluna.")] string? valorCruzado = null,
-        [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 50,
+        [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 20,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens).")] int pagina = 1,
         CancellationToken ct = default)
     {
@@ -75,11 +75,11 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
                     : FormatarContagem(coluna.Value.ToString(), contagens, filtros);
             }
 
-            var resultado = await repo.ListarAsync(
+            var pagina1 = await repo.ListarAsync(
                 coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, ct);
-            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0
+            return pagina1.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0
                 ? await SemCorrespondenciaAsync(filtros, ct)
-                : FormatarDados(resultado, filtros);
+                : FormatarDados(pagina1, filtros);
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
         catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
@@ -95,25 +95,15 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
     // Filtro sem match: devolve já os valores existentes de cada coluna filtrada, para o modelo
     // não gastar outra chamada só a descobri-los.
-    // Com um só filtro o valor não existe. Num cruzamento os valores podem existir e simplesmente não ter
-    // clientes em comum, por isso não se diz ao modelo que o valor é inválido.
     private async Task<string> SemCorrespondenciaAsync(Dictionary<Campo, string> filtros, CancellationToken ct)
     {
-        var texto = new StringBuilder(filtros.Count == 1
-            ? "Nenhuma correspondência. O valor tem de ser um dos existentes (entre parênteses, nº de clientes):\n"
-            : "Nenhuma linha com esta combinação. Pode ser um valor inexistente ou uma combinação sem clientes: " +
-              "se os valores pedidos constam das listas abaixo (ou são o início de um valor), a resposta é 0 clientes. " +
-              "Entre parênteses, nº de clientes:\n");
-
+        var csv = new StringBuilder("Nenhuma correspondência. O valor tem de ser um dos existentes (entre parênteses, nº de clientes):\n");
         foreach (var campo in filtros.Keys)
         {
             var valores = await repo.ContarAsync(campo, new Dictionary<Campo, string>(), MaxValores, ct);
-            texto.Append($"{campo}: {string.Join("; ", valores.Select(v => $"{Campo(v.Valor)} ({v.Clientes})"))}");
-            if (valores.Count > 0 && valores[0].Grupos > valores.Count)
-                texto.Append($" (mostrados {valores.Count} de {valores[0].Grupos})");
-            texto.Append('\n');
+            csv.Append($"{campo}: {string.Join("; ", valores.Select(v => $"{Campo(v.Valor)} ({v.Clientes})"))}\n");
         }
-        return texto.ToString();
+        return csv.ToString();
     }
 
     // Num cruzamento, a coluna filtrada que não é mostrada ficava invisível no resultado.
