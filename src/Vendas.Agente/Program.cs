@@ -1,4 +1,6 @@
 ﻿
+using System.Diagnostics;
+using System.Text;
 using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -17,11 +19,15 @@ if (!Directory.Exists(caminhoServidor))
     throw new DirectoryNotFoundException($"Não encontrei o servidor em {caminhoServidor}");
 
 
+var dllServidor = Path.Combine(caminhoServidor, "bin", "Debug", "net10.0", "Vendas.Servidor.dll");
+
 var transporte = new StdioClientTransport(new StdioClientTransportOptions
 {
     Name = "vendas",
     Command = "dotnet",
-    Arguments = ["run", "--project", caminhoServidor],
+    // dll já compilado arranca em <1 s; "dotnet run" reavalia/compila sempre. Se não houver dll, cai no run.
+    // ponytail: dll pode ficar desatualizada se o servidor mudar — voltar a fazer build do Vendas.Servidor.
+    Arguments = File.Exists(dllServidor) ? [dllServidor] : ["run", "--project", caminhoServidor],
     // a ligação à BD é passada ao servidor. O agente só a reencaminha,
     // nunca a imprime nem a envia ao modelo
     EnvironmentVariables = new Dictionary<string, string?>
@@ -46,6 +52,39 @@ catch (Exception ex)
 }
 await using var _ = mcp;
 
+var http = new HttpClient
+{
+    BaseAddress = new Uri("http://localhost:11434"),
+    Timeout = TimeSpan.FromMinutes(10),   // modelo local é lento a arrancar
+};
+
+IChatClient ollama = new OllamaApiClient(http, "qwen2.5");
+IChatClient modelo = ollama
+    .AsBuilder()
+    .UseFunctionInvocation(null, c => c.MaximumIterationsPerRequest = 5)
+    .Build();
+
+// Opções comuns: modelo fica carregado 30 min (sem re-load a frio) e respostas determinísticas.
+var opcoes = new ChatOptions
+{
+    Temperature = 0,
+    RawRepresentationFactory = o => new OllamaSharp.Models.Chat.ChatRequest { KeepAlive = "30m" },
+};
+
+var regras = PoliticasSeguranca.Regras;
+
+// Aquece o Ollama enquanto o utilizador escolhe o modo: carrega o modelo e o prefixo do prompt (regras).
+// Falhas ignoram-se: a 1.ª pergunta real mostra o erro.
+var aquecimento = Task.Run(async () =>
+{
+    try
+    {
+        await ollama.GetResponseAsync([new(ChatRole.System, regras), new(ChatRole.User, "ola")],
+            new ChatOptions { MaxOutputTokens = 1, RawRepresentationFactory = opcoes.RawRepresentationFactory });
+    }
+    catch { }
+});
+
 foreach (var f in ferramentas)
     Console.WriteLine($"- {f.Name}: {f.Description}");
 
@@ -60,31 +99,9 @@ if (Console.ReadLine()?.Trim() == "2")
     return;
 }
 
-////--------Bloco 2
-////o modelo funções que tornam isto um agente
-////executa as ferramentas que o modelo pede e devolve o resultado
-
-var http = new HttpClient
-{
-    BaseAddress = new Uri("http://localhost:11434"),
-    Timeout = TimeSpan.FromMinutes(10),   // modelo local é lento a arrancar
-};
-
-IChatClient ollama = new OllamaApiClient(http, "qwen2.5");
-IChatClient modelo = ollama
-    .AsBuilder()
-    .UseFunctionInvocation(null, c => c.MaximumIterationsPerRequest = 5)
-    .Build();
-
-
-// //bloco 3 - regras (políticas de segurança em PoliticasSeguranca.cs)
-
-var regras = PoliticasSeguranca.Regras;
-
-
 //--bloco 4 - o ciclo de resposta, lê no teclado, pergunta ao modelo e imprime a resposta
 
-var opcoes = new ChatOptions { Tools = [.. ferramentas]};
+opcoes.Tools = [.. ferramentas];
 List<ChatMessage> historico = [new(ChatRole.System, regras)];
 
 Console.WriteLine(" Escreva a sua pergunta ( Enter vazio termina).");
@@ -97,12 +114,23 @@ while(true)
 
     historico.Add(new(ChatRole.User, pergunta));
 
-    Console.WriteLine("A pensar... (o modelo local pode demorar a arrancar)");
-
-    ChatResponse resposta;
+    var relogio = Stopwatch.StartNew();
+    var texto = new StringBuilder();
+    long? primeiroToken = null;
     try
     {
-        resposta = await modelo.GetResponseAsync(historico, opcoes);
+        // streaming: o texto aparece à medida que o modelo o gera (o tempo até ao 1.º token é o que o utilizador sente)
+        await foreach (var parte in modelo.GetStreamingResponseAsync(historico, opcoes))
+        {
+            foreach (var chamada in parte.Contents.OfType<FunctionCallContent>())
+                Console.WriteLine($"[usou {chamada.Name}]"); // transparência: ferramentas usadas
+            if (parte.Text.Length == 0) continue;
+            primeiroToken ??= relogio.ElapsedMilliseconds;
+            Console.Write(parte.Text);
+            texto.Append(parte.Text);
+        }
+        Console.WriteLine();
+        Console.WriteLine($"[1.º token {primeiroToken ?? 0} ms · total {relogio.ElapsedMilliseconds} ms]");
     }
     catch (Exception ex)
     {
@@ -113,20 +141,11 @@ while(true)
         continue;
     }
 
-    // transparência: mostra que ferramentas foram usadas na resposta
-    foreach (var chamada in resposta.Messages.SelectMany(m => m.Contents).OfType<FunctionCallContent>())
-        Console.WriteLine($"[usou {chamada.Name}]");
-
-    Console.WriteLine(resposta.Text);
-    historico.AddMessages(resposta);
-
-    // regras + últimas 20 mensagens, para evitar que as respostas fiquem caras.
-    // Não pode começar num resultado de ferramenta órfão (sem a chamada que o pediu).
-    if (historico.Count > 21)
-        historico = [historico[0], .. historico[^20..]];
-
-    while (historico.Count > 1 && historico[1].Role == ChatRole.Tool)
-        historico.RemoveAt(1);
+    // Guarda só pergunta + resposta final: os CSVs das ferramentas não voltam a ser enviados ao modelo
+    // (cada token do histórico é reprocessado em todas as perguntas). Regras + últimas 5 trocas.
+    historico.Add(new(ChatRole.Assistant, texto.ToString()));
+    if (historico.Count > 11)
+        historico = [historico[0], .. historico[^10..]];
 }
 
 // ---- Modo menu: sem modelo, chama a ferramenta MCP "consultar" diretamente a partir de escolhas numeradas.
