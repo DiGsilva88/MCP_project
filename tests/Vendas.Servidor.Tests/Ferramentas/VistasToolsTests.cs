@@ -86,7 +86,7 @@ public class VistasToolsTests
     [Fact]
     public async Task Listar_CruzadoComOutraView_AplicaOsDoisFiltros()
     {
-        var repo = new FakeVendasRepo();
+        var repo = new FakeVendasRepo { Pagina = new(["NomeCliente"], [["Ana"]], 1) };
 
         await CriarSut(repo).ConsultarAsync(Campo.Zona, "Norte", cruzarCom: Campo.Pagamento, valorCruzado: "30 dias");
 
@@ -97,7 +97,7 @@ public class VistasToolsTests
     [Fact]
     public async Task Contar_CruzadoComOutraView_AgrupaPelaColunaEFiltraPelaCruzada()
     {
-        var repo = new FakeVendasRepo();
+        var repo = new FakeVendasRepo { Contagens = [new("Norte", 4, 4, 1)] };
 
         await CriarSut(repo).ConsultarAsync(Campo.Zona, contar: true, cruzarCom: Campo.Pagamento, valorCruzado: "30 dias");
 
@@ -181,11 +181,23 @@ public class VistasToolsTests
     }
 
     [Fact]
-    public async Task Contar_ComValorSemResultados_SugereVerOsValoresExistentes()
+    public async Task Contar_ComValorSemResultados_DevolveOsValoresExistentes()
     {
-        var resultado = await CriarSut(new FakeVendasRepo()).ConsultarAsync(Campo.Pagamento, "60 dias", contar: true);
+        var repo = new FakeVendasRepo { Contagens = [] };
+        var resultado = await CriarSut(repo).ConsultarAsync(Campo.Pagamento, "60 dias", contar: true);
 
-        Assert.Contains("contar=true (sem valor)", resultado);
+        Assert.Contains("Nenhuma correspondência", resultado);
+        Assert.Contains("Pagamento:", resultado);
+        Assert.Empty(repo.UltimosFiltros!); // 2.ª chamada: valores existentes, sem filtro
+    }
+
+    [Fact]
+    public async Task Listar_ComValorSemResultados_DevolveOsValoresExistentes()
+    {
+        var resultado = await CriarSut(new FakeVendasRepo()).ConsultarAsync(Campo.Distrito, "Xyz");
+
+        Assert.Contains("Nenhuma correspondência", resultado);
+        Assert.Contains("Distrito:", resultado);
     }
 
     [Fact]

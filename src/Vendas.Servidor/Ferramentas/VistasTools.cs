@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -18,9 +19,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     // Frase devolvida ao modelo quando algo falha. Não revela nada do SQL.
     private const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
 
-    // O filtro é por valor exato; sem match, o modelo desistia em vez de ir ver os valores que existem.
-    private const string DicaValores =
-        " O valor tem de ser exato: chame consultar com coluna=<coluna>, contar=true (sem valor) para ver os valores existentes e tente de novo.";
+    // Máximo de valores existentes devolvidos quando o filtro não bate (poupa um turno ao modelo).
+    private const int MaxValores = 30;
 
     private static readonly IReadOnlyList<Campo> TodasAsColunas = Enum.GetValues<Campo>();
 
@@ -28,21 +28,20 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     [Description(
         "Dados dos clientes. Colunas da ficha: Zona, Localidade, Vendedor, TipoCliente, Actividade, Distrito. " +
         "Colunas de faturação: Pagamento, Cobranca, Expedicao, SituacaoFinanceira, EscalaoPlafond, EscalaoVolumeVendas " +
-        "(o escalão de volume de vendas é o valor DECLARADO na ficha, não a faturação real; não há valores faturados). " +
-        "Sem coluna: NomeCliente e todas as colunas. Só com coluna: NomeCliente e essa coluna. " +
-        "Com coluna e valor: só as linhas com esse valor (exato ou o início, ex.: \"30 dias\" apanha \"30 Dias Fim do Mês\"; valor=\"sem dados\" filtra quem não tem valor). " +
-        "Com contar=true: conta clientes por valor da coluna, com percentagens; com contar=true e valor: quantos clientes têm esse valor. " +
-        "Os valores têm de ser exatos: se não souber os valores existentes, chame primeiro coluna=X, contar=true (sem valor). " +
-        "cruzarCom/valorCruzado filtra também por outra coluna, de qualquer grupo " +
-        "(ex.: coluna=Zona, contar=true, cruzarCom=Pagamento, valorCruzado=\"30 dias\"). " +
-        "Devolve CSV. Se a lista de linhas for cortada, use pagina=2, 3... para ver o resto.")]
+        "(escalão de volume de vendas = valor DECLARADO na ficha; não há valores faturados). " +
+        "Sem coluna: NomeCliente e todas as colunas. Com coluna: NomeCliente e essa coluna. " +
+        "Com valor: só as linhas com esse valor (exato ou o início, ex.: \"30 dias\"; \"sem dados\" filtra quem não tem valor). " +
+        "contar=true: conta clientes por valor da coluna, com percentagens; com valor: quantos têm esse valor. " +
+        "Se o valor não existir, a resposta lista os valores existentes. " +
+        "cruzarCom/valorCruzado filtra também por outra coluna (ex.: coluna=Zona, contar=true, cruzarCom=Pagamento, valorCruzado=\"30 dias\"). " +
+        "Devolve CSV; se cortado, use pagina=2, 3...")]
     public async Task<string> ConsultarAsync(
         [Description("Opcional: coluna a mostrar/filtrar/contar.")] Campo? coluna = null,
         [Description("Opcional, só com coluna: valor exato, ex.: Lisboa, ou \"sem dados\".")] string? valor = null,
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
         [Description("Opcional: segunda coluna (diferente de coluna) para filtrar o resultado.")] Campo? cruzarCom = null,
         [Description("Obrigatório com cruzarCom: valor exato dessa segunda coluna.")] string? valorCruzado = null,
-        [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 50,
+        [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 20,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens).")] int pagina = 1,
         CancellationToken ct = default)
     {
@@ -65,12 +64,22 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         limite = Math.Clamp(limite, 1, MaxLinhas);
         var deslocamento = (Math.Max(1, pagina) - 1) * limite;
 
+        var relogio = Stopwatch.StartNew();
         try
         {
-            return contar
-                ? FormatarContagem(coluna!.Value.ToString(), await repo.ContarAsync(coluna.Value, filtros, limite, ct), filtros)
-                : FormatarDados(await repo.ListarAsync(
-                    coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, ct), filtros);
+            if (contar)
+            {
+                var contagens = await repo.ContarAsync(coluna!.Value, filtros, limite, ct);
+                return contagens.Count == 0 && filtros.Count > 0
+                    ? await SemCorrespondenciaAsync(filtros, ct)
+                    : FormatarContagem(coluna.Value.ToString(), contagens, filtros);
+            }
+
+            var pagina1 = await repo.ListarAsync(
+                coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, ct);
+            return pagina1.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0
+                ? await SemCorrespondenciaAsync(filtros, ct)
+                : FormatarDados(pagina1, filtros);
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
         catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
@@ -78,6 +87,23 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             log.LogError(ex, "Falha em consultar ({Coluna})", coluna);
             return ErroNeutro;
         }
+        finally
+        {
+            log.LogInformation("consultar {Coluna} em {Ms} ms", coluna, relogio.ElapsedMilliseconds);
+        }
+    }
+
+    // Filtro sem match: devolve já os valores existentes de cada coluna filtrada, para o modelo
+    // não gastar outra chamada só a descobri-los.
+    private async Task<string> SemCorrespondenciaAsync(Dictionary<Campo, string> filtros, CancellationToken ct)
+    {
+        var csv = new StringBuilder("Nenhuma correspondência. O valor tem de ser um dos existentes (entre parênteses, nº de clientes):\n");
+        foreach (var campo in filtros.Keys)
+        {
+            var valores = await repo.ContarAsync(campo, new Dictionary<Campo, string>(), MaxValores, ct);
+            csv.Append($"{campo}: {string.Join("; ", valores.Select(v => $"{Campo(v.Valor)} ({v.Clientes})"))}\n");
+        }
+        return csv.ToString();
     }
 
     // Num cruzamento, a coluna filtrada que não é mostrada ficava invisível no resultado.
@@ -90,7 +116,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     private static string FormatarDados(PaginaClientes pagina, Dictionary<Campo, string> filtros)
     {
         if (pagina.Linhas.Count == 0)
-            return "Nenhuma linha encontrada com esse filtro." + (filtros.Count > 0 ? DicaValores : "");
+            return "Nenhuma linha encontrada com esse filtro.";
 
         var csv = new StringBuilder();
         var cruzados = FiltrosEscondidos(filtros, pagina.Colunas);
@@ -111,7 +137,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     private static string FormatarContagem(string nome, IReadOnlyList<ContagemCliente> linhas, Dictionary<Campo, string> filtros)
     {
         if (linhas.Count == 0)
-            return "Sem dados para esta coluna." + (filtros.Count > 0 ? DicaValores : "");
+            return "Sem dados para esta coluna.";
 
         // Total e grupos são iguais em todas as linhas (o SQL calcula-os com OVER())
         var (total, grupos) = (linhas[0].Total, linhas[0].Grupos);
