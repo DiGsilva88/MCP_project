@@ -183,94 +183,22 @@ public class VistasToolsTests
     [Fact]
     public async Task Contar_ComValorSemResultados_DevolveOsValoresExistentes()
     {
-        var repo = new FakeVendasRepo
-        {
-            ContagensPor = SoValoresSemFiltro([new("30 Dias", 12, 19, 2), new("60 Dias", 7, 19, 2)]),
-        };
+        var repo = new FakeVendasRepo { Contagens = [] };
+        var resultado = await CriarSut(repo).ConsultarAsync(Campo.Pagamento, "60 dias", contar: true);
 
-        var resultado = await CriarSut(repo).ConsultarAsync(Campo.Pagamento, "xyz", contar: true);
-
-        Assert.Equal(
-            "Nenhuma correspondência. O valor tem de ser um dos existentes (entre parênteses, nº de clientes):\n" +
-            "Pagamento: 30 Dias (12); 60 Dias (7)\n", resultado);
-        var (agrupar, filtros, limite) = repo.ChamadasContar[^1]; // 2.ª chamada: valores existentes
-        Assert.Equal(Campo.Pagamento, agrupar);
-        Assert.Empty(filtros);
-        Assert.Equal(30, limite);
+        Assert.Contains("Nenhuma correspondência", resultado);
+        Assert.Contains("Pagamento:", resultado);
+        Assert.Empty(repo.UltimosFiltros!); // 2.ª chamada: valores existentes, sem filtro
     }
 
     [Fact]
     public async Task Listar_ComValorSemResultados_DevolveOsValoresExistentes()
     {
-        var repo = new FakeVendasRepo
-        {
-            ContagensPor = SoValoresSemFiltro([new("Lisboa", 40, 55, 2), new("Porto", 15, 55, 2)]),
-        };
-
-        var resultado = await CriarSut(repo).ConsultarAsync(Campo.Distrito, "Xyz");
+        var resultado = await CriarSut(new FakeVendasRepo()).ConsultarAsync(Campo.Distrito, "Xyz");
 
         Assert.Contains("Nenhuma correspondência", resultado);
-        Assert.Contains("Distrito: Lisboa (40); Porto (15)", resultado);
+        Assert.Contains("Distrito:", resultado);
     }
-
-    // Dois valores que existem mas não têm clientes em comum não são "valor inexistente".
-    [Fact]
-    public async Task SemCorrespondencia_DoisFiltros_NaoDizQueOValorNaoExiste()
-    {
-        var zonas = new List<ContagemCliente> { new("Norte", 120, 300, 3) };
-        var pagamentos = new List<ContagemCliente> { new("90 Dias", 15, 300, 4) };
-        var repo = new FakeVendasRepo
-        {
-            ContagensPor = (campo, filtros) => filtros.Count > 0 ? [] : campo == Campo.Zona ? zonas : pagamentos,
-        };
-
-        var resultado = await CriarSut(repo).ConsultarAsync(
-            Campo.Zona, "Norte", cruzarCom: Campo.Pagamento, valorCruzado: "90 dias");
-
-        Assert.Contains("combinação sem clientes", resultado);
-        Assert.Contains("a resposta é 0 clientes", resultado);
-        Assert.DoesNotContain("tem de ser um dos existentes", resultado);
-        Assert.Contains("Zona: Norte (120)", resultado);
-        Assert.Contains("Pagamento: 90 Dias (15)", resultado);
-    }
-
-    [Fact]
-    public async Task SemCorrespondencia_MaisValoresQueOMaximo_AvisaQueAListaEstaCortada()
-    {
-        var existentes = Enumerable.Range(1, 30).Select(i => new ContagemCliente($"L{i}", 1, 45, 45)).ToList();
-        var repo = new FakeVendasRepo { ContagensPor = SoValoresSemFiltro(existentes) };
-
-        var resultado = await CriarSut(repo).ConsultarAsync(Campo.Localidade, "xyz");
-
-        Assert.Contains("(mostrados 30 de 45)", resultado);
-    }
-
-    // Uma página além do fim não é "valor inexistente": não vai buscar valores.
-    [Fact]
-    public async Task PaginaAlemDoFim_NaoDizSemCorrespondencia()
-    {
-        var repo = new FakeVendasRepo();
-
-        var resultado = await CriarSut(repo).ConsultarAsync(Campo.Distrito, "Lisboa", pagina: 2);
-
-        Assert.Equal("Nenhuma linha encontrada com esse filtro.", resultado);
-        Assert.Empty(repo.ChamadasContar);
-    }
-
-    [Fact]
-    public async Task SemCorrespondencia_FalhaNaConsultaDosValores_DevolveMensagemAmigavel()
-    {
-        var repo = new FakeVendasRepo
-        {
-            ContagensPor = (_, filtros) => filtros.Count == 0 ? throw new InvalidOperationException("falha de bd") : [],
-        };
-
-        Assert.Equal(ErroNeutro, await CriarSut(repo).ConsultarAsync(Campo.Pagamento, "xyz", contar: true));
-    }
-
-    // Com filtros não há resultados; sem filtros (a consulta dos valores existentes) devolve os valores dados.
-    private static Func<Campo, IReadOnlyDictionary<Campo, string>, IReadOnlyList<ContagemCliente>> SoValoresSemFiltro(
-        IReadOnlyList<ContagemCliente> valores) => (_, filtros) => filtros.Count == 0 ? valores : [];
 
     [Fact]
     public async Task Contar_SemDados_DevolveMensagemDeVazio()

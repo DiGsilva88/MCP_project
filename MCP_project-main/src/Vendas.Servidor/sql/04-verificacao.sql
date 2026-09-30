@@ -2,10 +2,6 @@
 USE [IAVSGIX];
 GO
 
--- Tempo de CPU/decorrido de cada consulta (separador Mensagens). Serve para decidir se vale a pena
--- otimizar as views: só se uma consulta demorar bem mais de ~200 ms.
-SET STATISTICS TIME ON;
-
 -- ── ViewMCP_cliente ─────────────────────────────────────────────────────
 -- Uma linha por cliente? (Linhas = Clientes)
 SELECT COUNT(*)                    AS Linhas,
@@ -63,6 +59,4 @@ ORDER BY c.NomeCliente;
 -- ── Permissões (correr como mcpserver) ──────────────────────────────────
 SELECT permission_name FROM fn_my_permissions('dbo.ViewMCP_cliente', 'OBJECT');
 SELECT permission_name FROM fn_my_permissions('dbo.ViewMCP_cliente_faturacao', 'OBJECT');
-
-SET STATISTICS TIME OFF;
 GO

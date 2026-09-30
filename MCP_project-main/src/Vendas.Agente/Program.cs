@@ -1,5 +1,6 @@
 ﻿
 using System.Diagnostics;
+using System.Text;
 using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -8,23 +9,25 @@ using Vendas.Agente;
 
 //o agente arranca o servidor MCP como um programa filho e fala com ele
 //por stdin/stdout
-// A pasta do executável é ...\src\Vendas.Agente\bin\<Configuração>\net10.0
+// A pasta do executável é ...\src\Vendas.Agente\bin\Debug\net10.0
 // Subir quatro níveis dá ...\src, onde está também a pasta do servidor.
-// O servidor é compilado com o agente (ProjectReference no csproj), na mesma configuração (Debug/Release).
 
 var caminhoServidor = Path.GetFullPath(
     Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Vendas.Servidor"));
-var configuracao = Path.GetFileName(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory)));
-var dllServidor = Path.Combine(caminhoServidor, "bin", configuracao!, "net10.0", "Vendas.Servidor.dll");
 
-if (!File.Exists(dllServidor))
-    throw new FileNotFoundException($"Não encontrei o servidor compilado em {dllServidor}. Compile a solução (dotnet build Vendas.slnx).");
+if (!Directory.Exists(caminhoServidor))
+    throw new DirectoryNotFoundException($"Não encontrei o servidor em {caminhoServidor}");
+
+
+var dllServidor = Path.Combine(caminhoServidor, "bin", "Debug", "net10.0", "Vendas.Servidor.dll");
 
 var transporte = new StdioClientTransport(new StdioClientTransportOptions
 {
     Name = "vendas",
     Command = "dotnet",
-    Arguments = [dllServidor],
+    // dll já compilado arranca em <1 s; "dotnet run" reavalia/compila sempre. Se não houver dll, cai no run.
+    // ponytail: dll pode ficar desatualizada se o servidor mudar — voltar a fazer build do Vendas.Servidor.
+    Arguments = File.Exists(dllServidor) ? [dllServidor] : ["run", "--project", caminhoServidor],
     // a ligação à BD é passada ao servidor. O agente só a reencaminha,
     // nunca a imprime nem a envia ao modelo
     EnvironmentVariables = new Dictionary<string, string?>
@@ -58,18 +61,7 @@ var http = new HttpClient
 IChatClient ollama = new OllamaApiClient(http, "qwen2.5");
 IChatClient modelo = ollama
     .AsBuilder()
-    .UseFunctionInvocation(null, c =>
-    {
-        c.MaximumIterationsPerRequest = 5;
-        // tempo de cada chamada à ferramenta (MCP + SQL), para saber de onde vem a demora
-        c.FunctionInvoker = async (ctx, ct) =>
-        {
-            var t = Stopwatch.StartNew();
-            var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
-            Console.WriteLine($"[{ctx.Function.Name} {t.ElapsedMilliseconds} ms]");
-            return resultado;
-        };
-    })
+    .UseFunctionInvocation(null, c => c.MaximumIterationsPerRequest = 5)
     .Build();
 
 // Opções comuns: modelo fica carregado 30 min (sem re-load a frio) e respostas determinísticas.
@@ -81,20 +73,14 @@ var opcoes = new ChatOptions
 
 var regras = PoliticasSeguranca.Regras;
 
-// Aquece o Ollama enquanto o utilizador escolhe o modo: carrega o modelo e o prefixo do prompt
-// (regras + esquema das ferramentas). Usa o cliente sem invocação de ferramentas.
+// Aquece o Ollama enquanto o utilizador escolhe o modo: carrega o modelo e o prefixo do prompt (regras).
 // Falhas ignoram-se: a 1.ª pergunta real mostra o erro.
 var aquecimento = Task.Run(async () =>
 {
     try
     {
         await ollama.GetResponseAsync([new(ChatRole.System, regras), new(ChatRole.User, "ola")],
-            new ChatOptions
-            {
-                MaxOutputTokens = 1,
-                Tools = [.. ferramentas],
-                RawRepresentationFactory = opcoes.RawRepresentationFactory,
-            });
+            new ChatOptions { MaxOutputTokens = 1, RawRepresentationFactory = opcoes.RawRepresentationFactory });
     }
     catch { }
 });
@@ -129,18 +115,22 @@ while(true)
     historico.Add(new(ChatRole.User, pergunta));
 
     var relogio = Stopwatch.StartNew();
-    var partes = new List<ChatResponseUpdate>();
+    var texto = new StringBuilder();
     long? primeiroToken = null;
     try
     {
         // streaming: o texto aparece à medida que o modelo o gera (o tempo até ao 1.º token é o que o utilizador sente)
         await foreach (var parte in modelo.GetStreamingResponseAsync(historico, opcoes))
         {
-            partes.Add(parte);
+            foreach (var chamada in parte.Contents.OfType<FunctionCallContent>())
+                Console.WriteLine($"[usou {chamada.Name}]"); // transparência: ferramentas usadas
             if (parte.Text.Length == 0) continue;
             primeiroToken ??= relogio.ElapsedMilliseconds;
             Console.Write(parte.Text);
+            texto.Append(parte.Text);
         }
+        Console.WriteLine();
+        Console.WriteLine($"[1.º token {primeiroToken ?? 0} ms · total {relogio.ElapsedMilliseconds} ms]");
     }
     catch (Exception ex)
     {
@@ -151,31 +141,12 @@ while(true)
         continue;
     }
 
-    Console.WriteLine();
-    Console.WriteLine($"[1.º token {(primeiroToken is { } ms ? $"{ms} ms" : "n/d")} · total {relogio.ElapsedMilliseconds} ms]");
-
-    // O ciclo de ferramentas pode esgotar-se (MaximumIterationsPerRequest) sem texto final.
-    var resposta = partes.ToChatResponse();
-    if (string.IsNullOrWhiteSpace(resposta.Messages.LastOrDefault()?.Text))
-    {
-        Console.WriteLine("O modelo não chegou a dar uma resposta. Reformule a pergunta.");
-        historico.RemoveAt(historico.Count - 1);
-        continue;
-    }
-
-    historico.AddMessages(resposta);
-
-    // Só a última troca mantém as chamadas e os resultados das ferramentas (o modelo vê os argumentos e as
-    // linhas para "mostra mais" / "e desses…"); nas anteriores ficam só pergunta e resposta, sem CSVs.
-    // Guarda as regras + as últimas 5 perguntas.
-    var ultima = historico.FindLastIndex(m => m.Role == ChatRole.User);
-    historico = [.. historico.Where((m, i) => i >= ultima || !EhFerramenta(m))];
-    while (historico.Count(m => m.Role == ChatRole.User) > 5)
-        historico.RemoveRange(1, historico.FindIndex(2, m => m.Role == ChatRole.User) - 1);
+    // Guarda só pergunta + resposta final: os CSVs das ferramentas não voltam a ser enviados ao modelo
+    // (cada token do histórico é reprocessado em todas as perguntas). Regras + últimas 5 trocas.
+    historico.Add(new(ChatRole.Assistant, texto.ToString()));
+    if (historico.Count > 11)
+        historico = [historico[0], .. historico[^10..]];
 }
-
-static bool EhFerramenta(ChatMessage m) =>
-    m.Role == ChatRole.Tool || m.Contents.OfType<FunctionCallContent>().Any();
 
 // ---- Modo menu: sem modelo, chama a ferramenta MCP "consultar" diretamente a partir de escolhas numeradas.
 // As colunas abaixo espelham o enum Campo do Vendas.Servidor (ficha do cliente + faturação)

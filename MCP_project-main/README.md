@@ -137,17 +137,13 @@ Para usar a partir de outro PC ou do telemóvel seria preciso mudar para transpo
 
 ## Usar com o Vendas.Agente (Ollama)
 
-Host de consola local, sem cloud. Precisa do Ollama a correr em `http://localhost:11434` com o modelo `qwen2.5` (`ollama pull qwen2.5`). O agente lança a dll compilada do servidor (`Vendas.Servidor.dll`; um `ProjectReference` garante que é compilada com o agente, por isso basta o comando abaixo) e passa-lhe o `VENDAS_SQL` do seu próprio ambiente; a password vem do `sql.pwd`.
+Host de consola local, sem cloud. Precisa do Ollama a correr em `http://localhost:11434` com o modelo `qwen2.5` (`ollama pull qwen2.5`). O agente lança o servidor com `dotnet run` e passa-lhe o `VENDAS_SQL` do seu próprio ambiente; a password vem do `sql.pwd`.
 
 ```powershell
 dotnet run --project src/Vendas.Agente
 ```
 
-Mostra as tools disponíveis, depois lê perguntas do teclado (Enter vazio termina). A resposta aparece em streaming e cada pergunta mostra o tempo de cada chamada a uma tool (`[consultar 120 ms]`) e o tempo até ao 1.º token e total (`[1.º token … ms · total … ms]`), para medir onde está a demora.
-
-- O modelo é aquecido em paralelo com a escolha do modo, fica carregado 30 min (`keep_alive`) e responde com `Temperature = 0`.
-- O histórico guarda as chamadas e resultados das tools só da última troca, e as últimas 5 perguntas.
-- Quando um filtro não tem correspondência, a tool devolve logo os valores existentes (até 30), para o modelo não gastar outra chamada a descobri-los.
+Mostra as tools disponíveis, depois lê perguntas do teclado (Enter vazio termina) e indica que tools usou em cada resposta.
 
 ## Testar com o MCP Inspector
 
@@ -168,7 +164,6 @@ No Inspector: "List Tools" e invocar cada tool para validar a resposta.
 | O conector não aparece no Claude Desktop | Config editado no ficheiro errado (`%APPDATA%` em vez do da pasta `Packages`), ou a app estava aberta e regravou o ficheiro. `main.log` com `no stdio servers connected` confirma. |
 | Tool devolve "Não foi possivel consultar os dados neste momento" | Ver `mcp-server-vendas.log`. `Login failed ... 18456` → password errada/ausente: recriar o `sql.pwd`. |
 | Servidor não arranca: `VENDAS_SQL não definida` | Falta o `env` no config do host, ou o terminal foi aberto antes do `setx`. |
-| O agente diz `Não encontrei o servidor compilado` | O servidor ainda não foi compilado na mesma configuração do agente. `dotnet build Vendas.slnx` (ou `dotnet run --project src/Vendas.Agente`, que compila os dois). |
 | `dotnet build` falha com `MSB3027`/`MSB3021` ("... is locked by") | Há processos `Vendas.Servidor.exe` antigos (Inspector, Claude Desktop). Terminá-los e recompilar (os PIDs vêm na mensagem de erro). |
 
 ```powershell

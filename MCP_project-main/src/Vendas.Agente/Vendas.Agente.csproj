@@ -13,9 +13,4 @@
     <PackageReference Include="OllamaSharp" Version="5.4.30" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- O agente arranca a dll do servidor (não usa o código): isto garante que é compilada sempre que o agente o é. -->
-    <ProjectReference Include="..\Vendas.Servidor\Vendas.Servidor.csproj" ReferenceOutputAssembly="false" />
-  </ItemGroup>
-
 </Project>
