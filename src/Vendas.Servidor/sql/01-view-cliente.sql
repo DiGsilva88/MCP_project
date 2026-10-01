@@ -3,11 +3,14 @@ USE [IAVSGIX];
 GO
 
 CREATE OR ALTER VIEW [dbo].[ViewMCP_cliente] AS
-SELECT ClienteID, NomeCliente, Zona, Localidade, Distrito, ContribuinteID, Email
+SELECT ClienteID, NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Localidade, Distrito, ContribuinteID, Email
 FROM (
     SELECT [ClienteID],
            LTRIM(RTRIM([NomeCliente])) AS NomeCliente,
            COALESCE(NULLIF(LTRIM(RTRIM([Zona])),''),        '(sem zona)')       AS Zona,
+           COALESCE(NULLIF(LTRIM(RTRIM([Vendedor])),''),    '(sem vendedor)')   AS Vendedor,
+           COALESCE(NULLIF(LTRIM(RTRIM([TipoCliente])),''), '(sem tipo)')       AS TipoCliente,
+           COALESCE(NULLIF(LTRIM(RTRIM([Actividade])),''),  '(sem actividade)') AS Actividade,
            COALESCE(NULLIF(LTRIM(RTRIM([Localidade])),''),  '(sem localidade)') AS Localidade,
            COALESCE(NULLIF(LTRIM(RTRIM([Distrito])),''),    '(sem distrito)')   AS Distrito,
            -- Mascarar o Telefone (Corrigido o duplicado e a vírgula)

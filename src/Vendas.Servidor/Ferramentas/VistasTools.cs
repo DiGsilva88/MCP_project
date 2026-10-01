@@ -93,6 +93,50 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         }
     }
 
+    [McpServerTool(Name = "consultar_sensivel")]
+    [Description(
+        "Dados sensíveis dos clientes, valores reais: Contribuinte (NIF), Email, Telefone, Morada, CodigoPostal, " +
+        "VolumeVendas e Plafond (VolumeVendas é o declarado na ficha, não faturado). Devolve NomeCliente e o dado pedido. " +
+        "maiores=true ordena do maior para o menor (só VolumeVendas e Plafond): usar para \"top N\" / \"maior\". " +
+        "coluna/valor filtra os clientes pela ficha ou faturação (ex.: coluna=Localidade, valor=Azeitão). " +
+        "Devolve CSV; se cortado, use pagina=2, 3...")]
+    public async Task<string> ConsultarSensivelAsync(
+        [Description("Dado a mostrar.")] CampoSensivel dado,
+        [Description("Opcional: coluna para filtrar os clientes (a mesma lista da tool consultar).")] Campo? coluna = null,
+        [Description("Obrigatório com coluna: valor exato, ex.: Azeitão.")] string? valor = null,
+        [Description("true: do maior para o menor (só VolumeVendas e Plafond).")] bool maiores = false,
+        [Description("Máximo de linhas, 1 a 100.")] int limite = 10,
+        [Description("Página, 1 é a primeira.")] int pagina = 1,
+        CancellationToken ct = default)
+    {
+        var temValor = !string.IsNullOrWhiteSpace(valor);
+        if ((coluna is not null) != temValor)
+            return "coluna e valor têm de ser usados juntos.";
+
+        if (maiores && dado is not (CampoSensivel.VolumeVendas or CampoSensivel.Plafond))
+            return "maiores só se aplica a VolumeVendas e Plafond.";
+
+        var filtros = new Dictionary<Campo, string>();
+        if (temValor) filtros[coluna!.Value] = valor!.Trim();
+
+        limite = Math.Clamp(limite, 1, MaxLinhas);
+        var deslocamento = (Math.Max(1, pagina) - 1) * limite;
+
+        try
+        {
+            var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, ct);
+            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0
+                ? await SemCorrespondenciaAsync(filtros, ct)
+                : FormatarDados(resultado, filtros);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
+        {
+            log.LogError(ex, "Falha em consultar_sensivel ({Dado})", dado); // sem valores: são dados pessoais
+            return ErroNeutro;
+        }
+    }
+
     // Filtro sem match: devolve já os valores existentes de cada coluna filtrada, para o modelo
     // não gastar outra chamada só a descobri-los.
     // Com um só filtro o valor não existe. Num cruzamento os valores podem existir e simplesmente não ter

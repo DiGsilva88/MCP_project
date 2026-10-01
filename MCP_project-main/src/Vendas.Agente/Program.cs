@@ -58,7 +58,7 @@ var http = new HttpClient
     Timeout = TimeSpan.FromMinutes(10),   // modelo local é lento a arrancar
 };
 
-IChatClient ollama = new OllamaApiClient(http, "qwen2.5");
+IChatClient ollama = new OllamaApiClient(http, "qwen2.5:7b");
 IChatClient modelo = ollama
     .AsBuilder()
     .UseFunctionInvocation(null, c => c.MaximumIterationsPerRequest = 5)

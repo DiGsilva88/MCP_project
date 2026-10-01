@@ -15,9 +15,17 @@ public class RepoSqlIntegracaoTests
     {
         var ligacao = Environment.GetEnvironmentVariable("VENDAS_SQL_TESTES");
         Assert.False(string.IsNullOrEmpty(ligacao), "Defina VENDAS_SQL_TESTES para correr estes testes.");
-        return new RepoSql(ligacao);
 
-       
+        // Mesma regra do servidor: sem Password= na ligação, vem do sql.pwd (DPAPI)
+        var cs = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(ligacao);
+        var ficheiroPwd = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Vendas", "sql.pwd");
+        if (OperatingSystem.IsWindows() && string.IsNullOrEmpty(cs.Password) && File.Exists(ficheiroPwd))
+            cs.Password = System.Text.Encoding.Unicode.GetString(
+                System.Security.Cryptography.ProtectedData.Unprotect(
+                    Convert.FromHexString(File.ReadAllText(ficheiroPwd).Trim()), null,
+                    System.Security.Cryptography.DataProtectionScope.CurrentUser));
+        return new RepoSql(cs.ConnectionString);
     }
 
     [Fact]

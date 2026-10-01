@@ -1,4 +1,5 @@
 using System.Data;
+using System.Globalization;
 using Microsoft.Data.SqlClient;
 
 namespace Vendas.Servidor.Modelos.Dados;
@@ -37,6 +38,24 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         return new PaginaClientes(colunas, linhas, total);
     }
 
+    public async Task<PaginaClientes> ListarSensivelAsync(
+        CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
+        CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaClientes.ListarSensivel(mostrar, filtros, maiores, deslocamento);
+        var total = 0;
+
+        var linhas = await LerAsync(sql, parametros, limite,
+            leitor =>
+            {
+                total = leitor.GetInt32(2); // Total é igual em todas as linhas
+                return new[] { Texto(leitor, 0), Texto(leitor, 1) };
+            },
+            cancellationToken);
+
+        return new PaginaClientes(["NomeCliente", mostrar.ToString()], linhas, total);
+    }
+
     // Faz o trabalho repetitivo, igual em todas as consultas.
     // "await using" fecha a ligação sozinha, mesmo que haja erro.
     private async Task<List<T>> LerAsync<T>(
@@ -63,5 +82,5 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
 
     // Lê qualquer coluna como texto. Sem valor devolve "sem dados".
     private static string Texto(SqlDataReader leitor, int i)
-        => Campos.Limpar(leitor.IsDBNull(i) ? null : Convert.ToString(leitor.GetValue(i)));
+        => Campos.Limpar(leitor.IsDBNull(i) ? null : Convert.ToString(leitor.GetValue(i), CultureInfo.InvariantCulture));
 }
