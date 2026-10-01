@@ -27,7 +27,7 @@ projeto_Mcp/
     │           ├── IVendasRepo.cs       Contrato do repositório
     │           ├── RepoSql.cs           Implementação em SQL Server (única — sem fallback em memória)
     │           └── ConsultaClientes.cs  Construção das queries; só aqui se traduz Campo -> coluna SQL
-    └── Vendas.Agente/               Host de consola: Ollama (qwen2.5) + servidor MCP
+    └── Vendas.Agente/               Host de consola: Ollama (qwen2.5:7b) + servidor MCP
         ├── Program.cs               Lança o servidor, liga o modelo às tools, ciclo de perguntas
         └── PoliticasSeguranca.cs    Regras de segurança (prompt de sistema)
 ```
@@ -137,7 +137,7 @@ Para usar a partir de outro PC ou do telemóvel seria preciso mudar para transpo
 
 ## Usar com o Vendas.Agente (Ollama)
 
-Host de consola local, sem cloud. Precisa do Ollama a correr em `http://localhost:11434` com o modelo `qwen2.5` (`ollama pull qwen2.5`). O agente lança o servidor com `dotnet run` e passa-lhe o `VENDAS_SQL` do seu próprio ambiente; a password vem do `sql.pwd`.
+Host de consola local, sem cloud. Precisa do Ollama a correr em `http://localhost:11434` com o modelo `qwen2.5:7b` (`ollama pull qwen2.5:7b`). O agente lança o servidor com `dotnet run` e passa-lhe o `VENDAS_SQL` do seu próprio ambiente; a password vem do `sql.pwd`.
 
 ```powershell
 dotnet run --project src/Vendas.Agente
