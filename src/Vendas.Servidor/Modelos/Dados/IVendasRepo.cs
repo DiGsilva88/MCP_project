@@ -16,4 +16,10 @@ public interface IVendasRepo
     Task<PaginaClientes> ListarAsync(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
         CancellationToken cancellationToken = default);
+
+    // Como ListarAsync, mas com um dado da view sensível (NIF, contactos, valores reais).
+    // maiores=true ordena esse dado do maior para o menor (só colunas numéricas).
+    Task<PaginaClientes> ListarSensivelAsync(
+        CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
+        CancellationToken cancellationToken = default);
 }

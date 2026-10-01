@@ -1,4 +1,5 @@
--- 03 · PERMISSÕES DO LOGIN mcpserver (só leitura, só nas duas views). Correr depois de 01 e 02.
+-- 03 · PERMISSÕES DO LOGIN mcpserver (só leitura, só nas views MCP). Correr depois de 01 e 02.
+-- O GRANT da view sensível (05) está no próprio 05.
 USE [IAVSGIX];
 GO
 

@@ -55,6 +55,45 @@ internal static class ConsultaClientes
         return (sql, Parametros);
     }
 
+    // Como Listar, mas com uma coluna da view sensível. "maiores" ordena do maior para o menor
+    // (rankings); só faz sentido nas colunas numéricas, quem chama já o validou.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) ListarSensivel(
+        CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento)
+    {
+        var coluna = ColunaSensivel(mostrar);
+        var (whereSql, aplicarFiltros) = FiltrosWhere(filtros);
+
+        var sql = $"""
+            SELECT c.NomeCliente, {coluna},
+                   COUNT(*) OVER () AS Total
+            FROM   {Origem}
+            JOIN   [dbo].[ViewMCP_cliente_sensivel] AS s ON s.ClienteID = c.ClienteID
+            {whereSql}
+            ORDER BY {(maiores ? coluna + " DESC, " : "")}c.NomeCliente, c.ClienteID
+            OFFSET @deslocamento ROWS FETCH NEXT @limite ROWS ONLY;
+            """;
+
+        void Parametros(SqlParameterCollection p)
+        {
+            p.Add("@deslocamento", SqlDbType.Int).Value = deslocamento;
+            aplicarFiltros(p);
+        }
+
+        return (sql, Parametros);
+    }
+
+    private static string ColunaSensivel(CampoSensivel campo) => campo switch
+    {
+        CampoSensivel.Contribuinte => "s.[ContribuinteID]",
+        CampoSensivel.Email => "s.[Email]",
+        CampoSensivel.Telefone => "s.[Telefone]",
+        CampoSensivel.Morada => "s.[Endereco]",
+        CampoSensivel.CodigoPostal => "s.[PostalID]",
+        CampoSensivel.VolumeVendas => "s.[VolumeVendas]",
+        CampoSensivel.Plafond => "s.[Plafond]",
+        _ => throw new ArgumentOutOfRangeException(nameof(campo), campo, null)
+    };
+
     // Tradução de Campo para coluna SQL (lista branca). Só esta camada conhece os aliases
     // c./f. do JOIN em Origem — o enum Campo, no modelo de domínio, não sabe disto.
     private static string Coluna(Campo campo) => campo switch

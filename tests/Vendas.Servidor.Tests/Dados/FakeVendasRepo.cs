@@ -35,6 +35,20 @@ internal sealed class FakeVendasRepo : IVendasRepo
         return Task.FromResult(ContagensPor?.Invoke(agrupar, filtros) ?? Contagens);
     }
 
+    public (CampoSensivel Dado, bool Maiores)? UltimoSensivel { get; private set; }
+
+    public Task<PaginaClientes> ListarSensivelAsync(
+        CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
+        CancellationToken ct = default)
+    {
+        UltimoSensivel = (mostrar, maiores);
+        UltimosFiltros = filtros;
+        UltimoDeslocamento = deslocamento;
+        UltimoLimite = limite;
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult(Pagina);
+    }
+
     public Task<PaginaClientes> ListarAsync(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
         CancellationToken ct = default)

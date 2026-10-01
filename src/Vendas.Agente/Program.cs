@@ -25,6 +25,8 @@ var transporte = new StdioClientTransport(new StdioClientTransportOptions
     Name = "vendas",
     Command = "dotnet",
     Arguments = [dllServidor],
+    // o log do servidor (inclui a exceção real quando a tool devolve "não foi possível consultar")
+    StandardErrorLines = linha => Console.Error.WriteLine($"[servidor] {linha}"),
     // a ligação à BD é passada ao servidor. O agente só a reencaminha,
     // nunca a imprime nem a envia ao modelo
     EnvironmentVariables = new Dictionary<string, string?>
@@ -55,7 +57,7 @@ var http = new HttpClient
     Timeout = TimeSpan.FromMinutes(10),   // modelo local é lento a arrancar
 };
 
-IChatClient ollama = new OllamaApiClient(http, "qwen2.5:7b");
+IChatClient ollama = new OllamaApiClient(http, Environment.GetEnvironmentVariable("OLLAMA_MODELO") ?? "qwen2.5:7b");
 IChatClient modelo = ollama
     .AsBuilder()
     .UseFunctionInvocation(null, c =>
@@ -66,17 +68,19 @@ IChatClient modelo = ollama
         {
             var t = Stopwatch.StartNew();
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
-            Console.WriteLine($"[{ctx.Function.Name} {t.ElapsedMilliseconds} ms]");
+            var args = string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
+            var texto = resultado?.ToString() ?? "";
+            Console.WriteLine($"[{ctx.Function.Name}({args}) {t.ElapsedMilliseconds} ms] {texto[..Math.Min(texto.Length, 120)].ReplaceLineEndings(" ")}");
             return resultado;
         };
     })
     .Build();
 
-// Opções comuns: modelo fica carregado 30 min (sem re-load a frio) e respostas determinísticas.
+// Opções comuns: modelo fica carregado em memória para sempre (-1m = sem expirar, sem re-load a frio) e respostas determinísticas.
 var opcoes = new ChatOptions
 {
     Temperature = 0,
-    RawRepresentationFactory = o => new OllamaSharp.Models.Chat.ChatRequest { KeepAlive = "30m" },
+    RawRepresentationFactory = o => new OllamaSharp.Models.Chat.ChatRequest { KeepAlive = "-1m" },
 };
 
 var regras = PoliticasSeguranca.Regras;

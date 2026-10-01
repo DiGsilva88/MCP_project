@@ -1,4 +1,5 @@
--- 04 · VERIFICAÇÃO (só leitura). Correr depois de 01–03 para confirmar que tudo ficou bem.
+-- 04 · VERIFICAÇÃO (só leitura). Correr depois de 01–03 e 05 para confirmar que tudo ficou bem.
+-- Correr por blocos (selecionar e executar), ligado à IAVSGIX.
 USE [IAVSGIX];
 GO
 
@@ -13,7 +14,7 @@ SELECT COUNT(*)                    AS Linhas,
        COUNT(DISTINCT NomeCliente) AS Nomes
 FROM dbo.ViewMCP_cliente;
 
-SELECT TOP 10 NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Distrito
+SELECT TOP 10 NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Localidade, Distrito
 FROM   dbo.ViewMCP_cliente
 ORDER BY NomeCliente;
 
@@ -23,6 +24,7 @@ SELECT COUNT(*) AS clientes,
   SUM(CASE WHEN Vendedor    = '(sem vendedor)'   THEN 1 ELSE 0 END) AS sem_vendedor,
   SUM(CASE WHEN TipoCliente = '(sem tipo)'       THEN 1 ELSE 0 END) AS sem_tipo,
   SUM(CASE WHEN Actividade  = '(sem actividade)' THEN 1 ELSE 0 END) AS sem_actividade,
+  SUM(CASE WHEN Localidade  = '(sem localidade)' THEN 1 ELSE 0 END) AS sem_localidade,
   SUM(CASE WHEN Distrito    = '(sem distrito)'   THEN 1 ELSE 0 END) AS sem_distrito
 FROM dbo.ViewMCP_cliente;
 
@@ -60,9 +62,30 @@ WHERE  c.Distrito  COLLATE Latin1_General_CI_AI = 'Setubal'
   AND  f.Pagamento COLLATE Latin1_General_CI_AI LIKE '30 dias %'
 ORDER BY c.NomeCliente;
 
--- ── Permissões (correr como mcpserver) ──────────────────────────────────
-SELECT permission_name FROM fn_my_permissions('dbo.ViewMCP_cliente', 'OBJECT');
-SELECT permission_name FROM fn_my_permissions('dbo.ViewMCP_cliente_faturacao', 'OBJECT');
+-- ── ViewMCP_cliente_sensivel (05) ───────────────────────────────────────
+-- Mesmo nº de clientes que a ficha? Top 3 por volume (valores reais).
+SELECT (SELECT COUNT(*) FROM dbo.ViewMCP_cliente)          AS ficha,
+       (SELECT COUNT(*) FROM dbo.ViewMCP_cliente_sensivel) AS sensivel;
+
+SELECT TOP 3 NomeCliente, VolumeVendas, Plafond
+FROM   dbo.ViewMCP_cliente_sensivel
+ORDER BY VolumeVendas DESC, NomeCliente;
+
+-- ── Permissões do mcpserver ─────────────────────────────────────────────
+-- Papéis: só deve aparecer db_denydatawriter.
+SELECT dp.name, r.name AS papel
+FROM   sys.database_principals dp
+LEFT JOIN sys.database_role_members m ON m.member_principal_id = dp.principal_id
+LEFT JOIN sys.database_principals  r ON r.principal_id = m.role_principal_id
+WHERE  dp.name = 'mcpserver';
+
+-- Como mcpserver: lê as 3 views (se falhar, falta o GRANT em 03/05). O REVERT tem de correr sempre:
+-- se um SELECT falhar, execute só "REVERT;".
+EXECUTE AS USER = 'mcpserver';
+SELECT COUNT(*) AS Fichas    FROM dbo.ViewMCP_cliente;
+SELECT COUNT(*) AS Faturacao FROM dbo.ViewMCP_cliente_faturacao;
+SELECT COUNT(*) AS Sensivel  FROM dbo.ViewMCP_cliente_sensivel;
+REVERT;
 
 SET STATISTICS TIME OFF;
 GO

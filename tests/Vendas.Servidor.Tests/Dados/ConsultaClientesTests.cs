@@ -14,6 +14,18 @@ public class ConsultaClientesTests
     }
 
     [Fact]
+    public void ListarSensivel_Maiores_OrdenaPelaColunaDescEFiltraPorFicha()
+    {
+        var filtros = new Dictionary<Campo, string> { [Campo.Localidade] = "Azeitão" };
+        var (sql, aplicarParametros) = ConsultaClientes.ListarSensivel(CampoSensivel.VolumeVendas, filtros, maiores: true, deslocamento: 0);
+
+        Assert.Contains("JOIN   [dbo].[ViewMCP_cliente_sensivel] AS s", sql);
+        Assert.Contains("ORDER BY s.[VolumeVendas] DESC, c.NomeCliente", sql);
+        Assert.Contains("WHERE (c.[Localidade] COLLATE", sql);
+        Assert.Equal("Azeitão", Aplicar(aplicarParametros)["@filtro0"].Value);
+    }
+
+    [Fact]
     public void Listar_SemFiltros_NaoTemWhereEPaginaComOffset()
     {
         var (sql, aplicarParametros) = ConsultaClientes.Listar(

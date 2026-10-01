@@ -15,6 +15,29 @@ public class VistasToolsTests
     private static string NL(params string[] linhas) =>
         string.Concat(linhas.Select(l => l + Environment.NewLine));
 
+    // ---------- sensível ----------
+
+    [Fact]
+    public async Task Sensivel_MaioresNumaColunaDeTexto_RecusaSemIrAoRepo()
+    {
+        var repo = new FakeVendasRepo();
+        var r = await CriarSut(repo).ConsultarSensivelAsync(CampoSensivel.Contribuinte, maiores: true);
+
+        Assert.Equal("maiores só se aplica a VolumeVendas e Plafond.", r);
+        Assert.Null(repo.UltimoSensivel);
+    }
+
+    [Fact]
+    public async Task Sensivel_TopPorVolume_PassaMaioresEDevolveCsv()
+    {
+        var repo = new FakeVendasRepo { Pagina = new(["NomeCliente", "VolumeVendas"], [["Ana", "900000"]], 1) };
+        var r = await CriarSut(repo).ConsultarSensivelAsync(CampoSensivel.VolumeVendas, maiores: true, limite: 3);
+
+        Assert.Equal((CampoSensivel.VolumeVendas, true), repo.UltimoSensivel);
+        Assert.Equal(3, repo.UltimoLimite);
+        Assert.Equal("NomeCliente,VolumeVendas\nAna,900000\n", r);
+    }
+
     // ---------- dados ----------
 
     [Fact]
