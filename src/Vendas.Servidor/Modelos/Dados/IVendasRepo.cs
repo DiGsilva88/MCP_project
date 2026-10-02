@@ -12,14 +12,14 @@ public interface IVendasRepo
         Campo agrupar, IReadOnlyDictionary<Campo, string> filtros, int limite,
         CancellationToken cancellationToken = default);
 
-    // Clientes que cumprem os filtros, com os campos pedidos.
+    // Clientes que cumprem os filtros, com os campos pedidos. nome: só clientes cujo nome começa por esse texto.
     Task<PaginaClientes> ListarAsync(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
-        CancellationToken cancellationToken = default);
+        string? nome = null, CancellationToken cancellationToken = default);
 
     // Como ListarAsync, mas com um dado da view sensível (NIF, contactos, valores reais).
     // maiores=true ordena esse dado do maior para o menor (só colunas numéricas).
     Task<PaginaClientes> ListarSensivelAsync(
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
-        CancellationToken cancellationToken = default);
+        string? nome = null, Campo? tambem = null, CancellationToken cancellationToken = default);
 }

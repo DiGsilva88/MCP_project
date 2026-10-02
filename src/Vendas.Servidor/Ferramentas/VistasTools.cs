@@ -34,6 +34,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "contar=true: conta clientes por valor da coluna, com percentagens; com valor: quantos têm esse valor. " +
         "Se o valor não existir, a resposta lista os valores existentes. " +
         "cruzarCom/valorCruzado filtra também por outra coluna (ex.: coluna=Zona, contar=true, cruzarCom=Pagamento, valorCruzado=\"30 dias\"). " +
+        "nomeComecaPor: só clientes cujo nome começa por esse texto (ex.: \"A\"); usar isto para nomes, não valor. " +
         "Devolve CSV; se cortado, use pagina=2, 3...")]
     public async Task<string> ConsultarAsync(
         [Description("Opcional: coluna a mostrar/filtrar/contar.")] Campo? coluna = null,
@@ -43,6 +44,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Obrigatório com cruzarCom: valor exato dessa segunda coluna.")] string? valorCruzado = null,
         [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 50,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens).")] int pagina = 1,
+        [Description("Opcional: início do nome do cliente, ex.: A.")] string? nomeComecaPor = null,
         CancellationToken ct = default)
     {
         var temValor = !string.IsNullOrWhiteSpace(valor);
@@ -50,6 +52,9 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
         if (coluna is null && (contar || temValor))
             return "Indique uma coluna para contar ou filtrar.";
+
+        if (contar && !string.IsNullOrWhiteSpace(nomeComecaPor))
+            return "nomeComecaPor não se combina com contar; liste os clientes.";
 
         if ((cruzarCom is not null) != temValorCruzado)
             return "cruzarCom e valorCruzado têm de ser usados juntos.";
@@ -76,8 +81,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             }
 
             var resultado = await repo.ListarAsync(
-                coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, ct);
-            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0
+                coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, nomeComecaPor, ct);
+            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
                 ? await SemCorrespondenciaAsync(filtros, ct)
                 : FormatarDados(resultado, filtros);
         }
@@ -99,6 +104,9 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "VolumeVendas e Plafond (VolumeVendas é o declarado na ficha, não faturado). Devolve NomeCliente e o dado pedido. " +
         "maiores=true ordena do maior para o menor (só VolumeVendas e Plafond): usar para \"top N\" / \"maior\". " +
         "coluna/valor filtra os clientes pela ficha ou faturação (ex.: coluna=Localidade, valor=Azeitão). " +
+        "nomeComecaPor: só clientes cujo nome começa por esse texto. " +
+        "mostrarTambem: acrescenta uma coluna da ficha/faturação a cada linha (ex.: dado=VolumeVendas, maiores=true, mostrarTambem=Actividade " +
+        "para \"clientes com maior volume e a sua atividade\"). " +
         "Devolve CSV; se cortado, use pagina=2, 3...")]
     public async Task<string> ConsultarSensivelAsync(
         [Description("Dado a mostrar.")] CampoSensivel dado,
@@ -107,6 +115,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("true: do maior para o menor (só VolumeVendas e Plafond).")] bool maiores = false,
         [Description("Máximo de linhas, 1 a 100.")] int limite = 10,
         [Description("Página, 1 é a primeira.")] int pagina = 1,
+        [Description("Opcional: início do nome do cliente.")] string? nomeComecaPor = null,
+        [Description("Opcional: coluna a mostrar junto do dado (ex.: Actividade).")] Campo? mostrarTambem = null,
         CancellationToken ct = default)
     {
         var temValor = !string.IsNullOrWhiteSpace(valor);
@@ -124,8 +134,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
         try
         {
-            var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, ct);
-            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0
+            var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, nomeComecaPor, mostrarTambem, ct);
+            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
                 ? await SemCorrespondenciaAsync(filtros, ct)
                 : FormatarDados(resultado, filtros);
         }
@@ -182,8 +192,10 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             csv.Append(string.Join(',', linha.Select(Campo))).Append('\n');
 
         // Avisa o modelo quando a lista foi cortada para ele não pensar que já viu a info toda
-        if (pagina.Total > pagina.Linhas.Count)
-            csv.Append($"# Mostrados {pagina.Linhas.Count} de {pagina.Total}. Filtre por valor ou use pagina=2,3... para ver o resto.\n");
+        // Sem corte também diz o total, para o modelo nunca ter de o adivinhar ("10 de 10").
+        csv.Append(pagina.Total > pagina.Linhas.Count
+            ? $"# Mostrados {pagina.Linhas.Count} de {pagina.Total}. Filtre por valor ou use pagina=2,3... para ver o resto.\n"
+            : $"# Lista completa: {pagina.Linhas.Count} clientes.\n");
 
         return csv.ToString();
     }

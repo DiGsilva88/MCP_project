@@ -21,9 +21,9 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
 
     public async Task<PaginaClientes> ListarAsync(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
-        CancellationToken cancellationToken = default)
+        string? nome = null, CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaClientes.Listar(mostrar, filtros, deslocamento);
+        var (sql, parametros) = ConsultaClientes.Listar(mostrar, filtros, deslocamento, nome);
         var colunas = new[] { "NomeCliente" }.Concat(mostrar.Select(c => c.ToString())).ToArray();
         var total = 0;
 
@@ -40,20 +40,21 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
 
     public async Task<PaginaClientes> ListarSensivelAsync(
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
-        CancellationToken cancellationToken = default)
+        string? nome = null, Campo? tambem = null, CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaClientes.ListarSensivel(mostrar, filtros, maiores, deslocamento);
+        var (sql, parametros) = ConsultaClientes.ListarSensivel(mostrar, filtros, maiores, deslocamento, nome, tambem);
+        var colunas = tambem is { } t ? new[] { "NomeCliente", mostrar.ToString(), t.ToString() } : ["NomeCliente", mostrar.ToString()];
         var total = 0;
 
         var linhas = await LerAsync(sql, parametros, limite,
             leitor =>
             {
-                total = leitor.GetInt32(2); // Total é igual em todas as linhas
-                return new[] { Texto(leitor, 0), Texto(leitor, 1) };
+                total = leitor.GetInt32(colunas.Length); // Total é igual em todas as linhas
+                return colunas.Select((_, i) => Texto(leitor, i)).ToArray();
             },
             cancellationToken);
 
-        return new PaginaClientes(["NomeCliente", mostrar.ToString()], linhas, total);
+        return new PaginaClientes(colunas, linhas, total);
     }
 
     // Faz o trabalho repetitivo, igual em todas as consultas.

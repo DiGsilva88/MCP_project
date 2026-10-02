@@ -19,7 +19,7 @@ public class ConsultaClientesTests
         var filtros = new Dictionary<Campo, string> { [Campo.Localidade] = "Azeitão" };
         var (sql, aplicarParametros) = ConsultaClientes.ListarSensivel(CampoSensivel.VolumeVendas, filtros, maiores: true, deslocamento: 0);
 
-        Assert.Contains("JOIN   [dbo].[ViewMCP_cliente_sensivel] AS s", sql);
+        Assert.Contains("JOIN   [mcp].[ViewMCP_cliente_sensivel] AS s", sql);
         Assert.Contains("ORDER BY s.[VolumeVendas] DESC, c.NomeCliente", sql);
         Assert.Contains("WHERE (c.[Localidade] COLLATE", sql);
         Assert.Equal("Azeitão", Aplicar(aplicarParametros)["@filtro0"].Value);
@@ -44,6 +44,24 @@ public class ConsultaClientesTests
 
         Assert.Contains("WHERE (c.[Zona] COLLATE Latin1_General_CI_AI = @filtro0", sql);
         Assert.Equal("Lisboa", Aplicar(aplicarParametros)["@filtro0"].Value);
+    }
+
+    [Fact]
+    public void ListarSensivel_ComTambem_JuntaAColunaDaFichaAntesDoTotal()
+    {
+        var (sql, _) = ConsultaClientes.ListarSensivel(
+            CampoSensivel.VolumeVendas, new Dictionary<Campo, string>(), maiores: true, deslocamento: 0, tambem: Campo.Actividade);
+
+        Assert.Contains("SELECT c.NomeCliente, s.[VolumeVendas], c.[Actividade],", sql);    }
+
+    [Fact]
+    public void Listar_ComNome_FiltraPorInicioDoNomeEEscapaWildcards()
+    {
+        var (sql, aplicarParametros) = ConsultaClientes.Listar(
+            [Campo.Zona], new Dictionary<Campo, string>(), deslocamento: 0, nome: " A% ");
+
+        Assert.Contains("WHERE c.NomeCliente COLLATE Latin1_General_CI_AI LIKE REPLACE(REPLACE(REPLACE(@nome", sql);
+        Assert.Equal("A%", Aplicar(aplicarParametros)["@nome"].Value); // o % chega como parâmetro, o SQL escapa-o
     }
 
     [Fact]

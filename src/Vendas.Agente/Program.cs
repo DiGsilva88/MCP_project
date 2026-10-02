@@ -57,6 +57,8 @@ var http = new HttpClient
     Timeout = TimeSpan.FromMinutes(10),   // modelo local é lento a arrancar
 };
 
+var chamadas = 0; // chamadas a ferramentas na pergunta em curso (ver PoliticasSeguranca.RespostaSemFonte)
+
 IChatClient ollama = new OllamaApiClient(http, Environment.GetEnvironmentVariable("OLLAMA_MODELO") ?? "qwen2.5:7b");
 IChatClient modelo = ollama
     .AsBuilder()
@@ -66,6 +68,7 @@ IChatClient modelo = ollama
         // tempo de cada chamada à ferramenta (MCP + SQL), para saber de onde vem a demora
         c.FunctionInvoker = async (ctx, ct) =>
         {
+            chamadas++;
             var t = Stopwatch.StartNew();
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var args = string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
@@ -137,13 +140,27 @@ while(true)
     long? primeiroToken = null;
     try
     {
-        // streaming: o texto aparece à medida que o modelo o gera (o tempo até ao 1.º token é o que o utilizador sente)
-        await foreach (var parte in modelo.GetStreamingResponseAsync(historico, opcoes))
+        // O texto só é mostrado depois de validado: uma resposta com números mas sem chamar
+        // nenhuma ferramenta é inventada, por isso é descartada e repete-se uma vez.
+        for (var tentativa = 0; ; tentativa++)
         {
-            partes.Add(parte);
-            if (parte.Text.Length == 0) continue;
-            primeiroToken ??= relogio.ElapsedMilliseconds;
-            Console.Write(parte.Text);
+            chamadas = 0;
+            partes.Clear();
+            await foreach (var parte in modelo.GetStreamingResponseAsync(historico, opcoes))
+            {
+                partes.Add(parte);
+                if (parte.Text.Length > 0) primeiroToken ??= relogio.ElapsedMilliseconds;
+            }
+
+            var texto = partes.ToChatResponse().Text;
+            if (!PoliticasSeguranca.RespostaSemFonte(texto, chamadas)) { Console.Write(texto); break; }
+
+            if (tentativa == 1)
+            {
+                partes.Clear(); // cai na mensagem "não chegou a dar uma resposta" abaixo
+                break;
+            }
+            historico.Add(new(ChatRole.System, "Respondeste sem chamar nenhuma ferramenta. Chama a ferramenta adequada e responde só com o que ela devolver."));
         }
     }
     catch (Exception ex)
@@ -155,6 +172,8 @@ while(true)
         continue;
     }
 
+    var sistema = historico[0];
+    historico.RemoveAll(m => m.Role == ChatRole.System && m != sistema); // lembrete de repetição
     Console.WriteLine();
     Console.WriteLine($"[1.º token {(primeiroToken is { } ms ? $"{ms} ms" : "n/d")} · total {relogio.ElapsedMilliseconds} ms]");
 

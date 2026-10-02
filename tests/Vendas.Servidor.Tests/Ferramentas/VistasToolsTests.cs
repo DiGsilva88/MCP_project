@@ -35,7 +35,21 @@ public class VistasToolsTests
 
         Assert.Equal((CampoSensivel.VolumeVendas, true), repo.UltimoSensivel);
         Assert.Equal(3, repo.UltimoLimite);
-        Assert.Equal("NomeCliente,VolumeVendas\nAna,900000\n", r);
+        Assert.Equal("NomeCliente,VolumeVendas\nAna,900000\n# Lista completa: 1 clientes.\n", r);
+    }
+
+    [Fact]
+    public async Task Sensivel_MostrarTambem_PassaAColunaEDevolveAsTresColunas()
+    {
+        var repo = new FakeVendasRepo
+        {
+            Pagina = new(["NomeCliente", "VolumeVendas", "Actividade"], [["Ana", "900000", "Oficina"]], 1),
+        };
+        var r = await CriarSut(repo).ConsultarSensivelAsync(
+            CampoSensivel.VolumeVendas, maiores: true, mostrarTambem: Campo.Actividade);
+
+        Assert.Equal(Campo.Actividade, repo.UltimoTambem);
+        Assert.Equal("NomeCliente,VolumeVendas,Actividade\nAna,900000,Oficina\n# Lista completa: 1 clientes.\n", r);
     }
 
     // ---------- dados ----------
@@ -65,7 +79,7 @@ public class VistasToolsTests
 
         var resultado = await CriarSut(repo).ConsultarAsync(Campo.Distrito, "Lisboa");
 
-        Assert.Equal("NomeCliente,Distrito\nAna,Lisboa\n\"Bento, Filhos\",Porto\n", resultado);
+        Assert.Equal("NomeCliente,Distrito\nAna,Lisboa\n\"Bento, Filhos\",Porto\n# Lista completa: 2 clientes.\n", resultado);
         var filtro = Assert.Single(repo.UltimosFiltros!);
         Assert.Equal(Campo.Distrito, filtro.Key);
         Assert.Equal("Lisboa", filtro.Value);
@@ -78,7 +92,7 @@ public class VistasToolsTests
 
         var resultado = await CriarSut(repo).ConsultarAsync(Campo.Zona);
 
-        Assert.Equal("NomeCliente,Zona\nAna,Norte\n", resultado);
+        Assert.Equal("NomeCliente,Zona\nAna,Norte\n# Lista completa: 1 clientes.\n", resultado);
         Assert.Equal([Campo.Zona], repo.UltimoMostrar);
         Assert.Empty(repo.UltimosFiltros!);
     }
@@ -140,7 +154,7 @@ public class VistasToolsTests
 
         Assert.Equal(
             "Clientes com Actividade = Oficina Independente e Distrito = Setúbal: 1 clientes.\n" +
-            "NomeCliente,Actividade\nAna,Oficina Independente\n", resultado);
+            "NomeCliente,Actividade\nAna,Oficina Independente\n# Lista completa: 1 clientes.\n", resultado);
     }
 
     [Fact]
