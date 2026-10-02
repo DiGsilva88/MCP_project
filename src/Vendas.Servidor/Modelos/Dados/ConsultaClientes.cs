@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using Microsoft.Data.SqlClient;
 
 namespace Vendas.Servidor.Modelos.Dados;
@@ -8,7 +8,7 @@ namespace Vendas.Servidor.Modelos.Dados;
 internal static class ConsultaClientes
 {
     private const string Origem =
-        "[dbo].[ViewMCP_cliente] AS c JOIN [dbo].[ViewMCP_cliente_faturacao] AS f ON c.ClienteID = f.ClienteID";
+        "[mcp].[ViewMCP_cliente] AS c JOIN [mcp].[ViewMCP_cliente_faturacao] AS f ON c.ClienteID = f.ClienteID";
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) Contar(
         Campo agrupar, IReadOnlyDictionary<Campo, string> filtros)
@@ -67,7 +67,7 @@ internal static class ConsultaClientes
             SELECT c.NomeCliente, {coluna},
                    COUNT(*) OVER () AS Total
             FROM   {Origem}
-            JOIN   [dbo].[ViewMCP_cliente_sensivel] AS s ON s.ClienteID = c.ClienteID
+            JOIN   [mcp].[ViewMCP_cliente_sensivel] AS s ON s.ClienteID = c.ClienteID
             {whereSql}
             ORDER BY {(maiores ? coluna + " DESC, " : "")}c.NomeCliente, c.ClienteID
             OFFSET @deslocamento ROWS FETCH NEXT @limite ROWS ONLY;

@@ -1,7 +1,7 @@
-USE [IAVSGIX];
+﻿USE [IAVSGIX];
 GO
 
-CREATE OR ALTER VIEW [dbo].[ViewMCP_cliente_faturacao] AS
+CREATE OR ALTER VIEW [mcp].[ViewMCP_cliente_faturacao] AS
 SELECT 
     ClienteID, NomeCliente, TipoCliente, FormaJuridica, Actividade, Cae, Pais, Zona, Vendedor, 
     Pagamento, Cobranca, Expedicao, SitFinanceira, EscalaoPlafond, EscalaoVolumeVendas
