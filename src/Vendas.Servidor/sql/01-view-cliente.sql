@@ -1,8 +1,19 @@
--- 01 · VIEW DA FICHA DO CLIENTE. Só o CREATE; verificações em 04-verificacao.sql.
+﻿-- 01 · VIEW DA FICHA DO CLIENTE. Só o CREATE; verificações em 04-verificacao.sql.
 USE [IAVSGIX];
 GO
 
-CREATE OR ALTER VIEW [dbo].[ViewMCP_cliente] AS
+-- Schema próprio das views MCP (as tabelas/views de origem continuam em dbo).
+-- AUTHORIZATION dbo: o dono do schema tem de ser o mesmo de dbo.VCliente, senão a cadeia de
+-- propriedade quebra e o mcpserver leva "SELECT permission was denied on VCliente".
+IF SCHEMA_ID('mcp') IS NULL EXEC('CREATE SCHEMA [mcp] AUTHORIZATION dbo');
+ELSE ALTER AUTHORIZATION ON SCHEMA::mcp TO dbo;
+GO
+
+-- Migração: remove as views antigas em dbo (o GRANT ao mcpserver cai com elas; 03 e 05 voltam a dá-lo).
+DROP VIEW IF EXISTS [dbo].[ViewMCP_cliente_sensivel], [dbo].[ViewMCP_cliente_faturacao], [dbo].[ViewMCP_cliente];
+GO
+
+CREATE OR ALTER VIEW [mcp].[ViewMCP_cliente] AS
 SELECT ClienteID, NomeCliente, Zona, Vendedor, TipoCliente, Actividade, Localidade, Distrito, ContribuinteID, Email
 FROM (
     SELECT [ClienteID],
@@ -50,3 +61,8 @@ FROM (
 ) AS x
 WHERE rn = 1;
 GO
+
+ALTER AUTHORIZATION ON SCHEMA::mcp TO dbo;
+SELECT s.name, USER_NAME(s.principal_id) AS dono FROM sys.schemas s WHERE s.name = 'mcp';
+
+SELECT s.name, USER_NAME(s.principal_id) AS dono FROM sys.schemas s WHERE s.name IN ('dbo','mcp');.

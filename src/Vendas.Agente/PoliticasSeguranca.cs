@@ -5,6 +5,14 @@ namespace Vendas.Agente;
 // sem mexer no fluxo principal em Program.cs.
 public static class PoliticasSeguranca
 {
+    // Resposta com números/listas mas sem nenhuma chamada a ferramentas = dados inventados.
+    // Cumprimentos e a mensagem de fora do âmbito não têm dígitos nem listas, por isso passam.
+    // ponytail: heurística (dígito ou item de lista); um modelo pode inventar só com texto corrido.
+    public static bool RespostaSemFonte(string texto, int chamadasFerramenta) =>
+        chamadasFerramenta == 0
+        && !texto.StartsWith("Só posso responder")
+        && (texto.Any(char.IsDigit) || texto.Contains("\n- "));
+
     public const string Regras = """
         És um assistente interno que responde sobre clientes.
 
@@ -59,6 +67,11 @@ public static class PoliticasSeguranca
           coluna/valor para filtrar clientes (ex.: coluna=Localidade, valor=Azeitão).
           "Top N" / "maior volume de vendas" / "maior plafond": consultar_sensivel com
           maiores=true e limite=N; diz que o volume é o declarado na ficha, não faturado.
+          Se pedirem também outra coluna (ex.: a actividade), usa mostrarTambem=Actividade
+          na MESMA chamada; nunca preenchas essa coluna de cabeça.
+        - "Clientes cujo nome começa por X": consultar com nomeComecaPor=X (nunca com
+          valor). O total vem da última linha da ferramenta ("# Mostrados N de T" ou
+          "# Lista completa: N clientes"). Nunca inventes totais.
         - Se o utilizador pedir um dado que não existe em nenhuma ferramenta (ex.:
           faturação real, histórico de compras), diz que não está disponível e mostra
           só o resto. Nunca o inventes nem uses valores de exemplo.

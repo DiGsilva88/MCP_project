@@ -1,9 +1,9 @@
--- 05 · VIEW DOS DADOS SENSÍVEIS (NIF, contactos, morada), SEM máscara. Fica separada das views 01/02
+﻿-- 05 · VIEW DOS DADOS SENSÍVEIS (NIF, contactos, morada), SEM máscara. Fica separada das views 01/02
 -- de propósito: o GRANT é próprio e pode ser dado/retirado sem mexer no resto. Correr depois de 01.
 USE [IAVSGIX];
 GO
 
-CREATE OR ALTER VIEW [dbo].[ViewMCP_cliente_sensivel] AS
+CREATE OR ALTER VIEW [mcp].[ViewMCP_cliente_sensivel] AS
 SELECT ClienteID, NomeCliente, ContribuinteID, Email, Telefone, Endereco, PostalID, VolumeVendas, Plafond
 FROM (
     SELECT [ClienteID],
@@ -25,7 +25,7 @@ GO
 
 
 -- O mcpserver continua só de leitura (db_denydatawriter, ver 03): este é o único acesso novo.
-GRANT SELECT ON OBJECT::dbo.ViewMCP_cliente_sensivel TO mcpserver;
+GRANT SELECT ON OBJECT::mcp.ViewMCP_cliente_sensivel TO mcpserver;
 GO
 
 

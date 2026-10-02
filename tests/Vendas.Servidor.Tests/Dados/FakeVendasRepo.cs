@@ -18,6 +18,8 @@ internal sealed class FakeVendasRepo : IVendasRepo
     public Func<Campo, IReadOnlyDictionary<Campo, string>, IReadOnlyList<ContagemCliente>>? ContagensPor { get; set; }
     public List<(Campo Agrupar, IReadOnlyDictionary<Campo, string> Filtros, int Limite)> ChamadasContar { get; } = [];
 
+    public string? UltimoNome { get; private set; }
+    public Campo? UltimoTambem { get; private set; }
     public int? UltimoLimite { get; private set; }
     public int? UltimoDeslocamento { get; private set; }
     public IReadOnlyDictionary<Campo, string>? UltimosFiltros { get; private set; }
@@ -39,8 +41,10 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public Task<PaginaClientes> ListarSensivelAsync(
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
-        CancellationToken ct = default)
+        string? nome = null, Campo? tambem = null, CancellationToken ct = default)
     {
+        UltimoNome = nome;
+        UltimoTambem = tambem;
         UltimoSensivel = (mostrar, maiores);
         UltimosFiltros = filtros;
         UltimoDeslocamento = deslocamento;
@@ -51,8 +55,9 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public Task<PaginaClientes> ListarAsync(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
-        CancellationToken ct = default)
+        string? nome = null, CancellationToken ct = default)
     {
+        UltimoNome = nome;
         UltimoMostrar = mostrar;
         UltimosFiltros = filtros;
         UltimoDeslocamento = deslocamento;

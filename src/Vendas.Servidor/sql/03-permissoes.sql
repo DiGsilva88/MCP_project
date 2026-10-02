@@ -1,4 +1,4 @@
--- 03 · PERMISSÕES DO LOGIN mcpserver (só leitura, só nas views MCP). Correr depois de 01 e 02.
+﻿-- 03 · PERMISSÕES DO LOGIN mcpserver (só leitura, só nas views MCP). Correr depois de 01 e 02.
 -- O GRANT da view sensível (05) está no próprio 05.
 USE [IAVSGIX];
 GO
@@ -19,8 +19,8 @@ IF IS_ROLEMEMBER('db_datareader', 'mcpserver') = 1
 IF IS_ROLEMEMBER('db_denydatawriter', 'mcpserver') = 0
     ALTER ROLE db_denydatawriter ADD MEMBER mcpserver;   -- nunca escreve
 
-GRANT SELECT ON OBJECT::dbo.ViewMCP_cliente           TO mcpserver;
-GRANT SELECT ON OBJECT::dbo.ViewMCP_cliente_faturacao TO mcpserver;
+GRANT SELECT ON OBJECT::mcp.ViewMCP_cliente           TO mcpserver;
+GRANT SELECT ON OBJECT::mcp.ViewMCP_cliente_faturacao TO mcpserver;
 GO
 
 -- Confirmar: authentication_type_desc tem de dizer INSTANCE

@@ -1,4 +1,4 @@
-# Vendas.Servidor — Servidor MCP de Vendas
+﻿# Vendas.Servidor — Servidor MCP de Vendas
 
 Servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) escrito em C# (.NET 10), que expõe ferramentas ("tools") para consultar dados de clientes a um cliente/agente de IA (ex.: Claude Desktop, MCP Inspector, ou o `Vendas.Agente` deste repositório com Ollama).
 
@@ -48,8 +48,8 @@ projeto_Mcp/
 2. **Ligação ao SQL Server.** A connection string vem da variável de ambiente `VENDAS_SQL`, lida uma vez no arranque. Se existir `%LOCALAPPDATA%\Vendas\sql.pwd`, a password é lida desse ficheiro (encriptado com DPAPI) e acrescentada à ligação — assim o `VENDAS_SQL` não precisa de ter `Password=`. **Não há fallback em memória:** sem `VENDAS_SQL`, o servidor lança `InvalidOperationException` e não arranca.
 
 3. **`Ferramentas/VistasTools.cs`** define uma única tool, `consultar`, sobre as duas views juntas por `ClienteID`:
-   - ficha do cliente (`Zona`, `Vendedor`, `TipoCliente`, `Actividade`, `Distrito`), view `[dbo].[ViewMCP_cliente]`;
-   - condições de faturação (`Pagamento`, `Cobranca`, `Expedicao`, `SituacaoFinanceira`, `EscalaoPlafond`, `EscalaoVolumeVendas`), view `[dbo].[ViewMCP_cliente_faturacao]`. Não devolve valores faturados.
+   - ficha do cliente (`Zona`, `Vendedor`, `TipoCliente`, `Actividade`, `Distrito`), view `[mcp].[ViewMCP_cliente]`;
+   - condições de faturação (`Pagamento`, `Cobranca`, `Expedicao`, `SituacaoFinanceira`, `EscalaoPlafond`, `EscalaoVolumeVendas`), view `[mcp].[ViewMCP_cliente_faturacao]`. Não devolve valores faturados.
 
    Parâmetros: `coluna` (opcional, mostrar/filtrar/contar), `valor` (filtro exato), `contar=true` (agrupa com percentagens), `cruzarCom`/`valorCruzado` (filtra também por outra coluna, de qualquer das views — ex.: contar por `Zona` só dos clientes com `Pagamento` = "30 dias"), `limite` (1–100, por omissão 50) e `pagina`. Devolve CSV. Erros de SQL nunca chegam ao modelo: a tool devolve "Não foi possivel consultar os dados neste momento" e o detalhe fica no log (`stderr`).
 
