@@ -25,6 +25,12 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     // Máximo de valores existentes devolvidos quando o filtro não bate (poupa um turno ao modelo).
     private const int MaxValores = 30;
 
+    private const int MaxLinhasSensivel = 20;
+    private const int MaxPaginasSensivel = 5;
+
+    // Interruptor sem recompilar: VENDAS_SENSIVEL=0 desliga consultar_sensivel (ligado por omissão).
+    private static readonly bool SensivelAtivado = Environment.GetEnvironmentVariable("VENDAS_SENSIVEL") != "0";
+
     private static readonly IReadOnlyList<Campo> TodasAsColunas = Enum.GetValues<Campo>();
 
     [McpServerTool(Name = "consultar")]
@@ -122,6 +128,10 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Opcional: coluna a mostrar junto do dado (ex.: Actividade).")] Campo? mostrarTambem = null,
         CancellationToken ct = default)
     {
+
+        if (!SensivelAtivado)
+            return "Os dados neste servidor estão desativados.";
+
         var temValor = !string.IsNullOrWhiteSpace(valor);
         if ((coluna is not null) != temValor)
             return "coluna e valor têm de ser usados juntos.";
@@ -132,12 +142,19 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         var filtros = new Dictionary<Campo, string>();
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
 
-        limite = Math.Clamp(limite, 1, MaxLinhas);
-        var deslocamento = (Math.Clamp(pagina, 1, MaxPaginas) - 1) * limite;
+
+        limite = Math.Clamp(limite, 1, MaxLinhasSensivel);
+        var deslocamento = (Math.Clamp(pagina, 1, MaxPaginasSensivel) - 1) * limite; // evita overflow de (pagina-1)*limite, que dava OFFSET negativo no SQL
 
         try
         {
             var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, nomeComecaPor, mostrarTambem, ct);
+
+            //Auditoria:que dado,com que filtros e quantas linahas devolvidas. Não mostra valores sensíveis.
+            log.LogInformation("Auditoria: consultar_sensivel dado={Dado} filtros={Filtros} linhas={Linhas}",
+            dado, string.Join(", ", filtros.Keys), resultado.Linhas.Count);
+             
+            
             return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
                 ? await SemCorrespondenciaAsync(filtros, ct)
                 : FormatarDados(resultado, filtros);

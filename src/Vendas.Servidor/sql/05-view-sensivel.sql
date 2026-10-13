@@ -25,6 +25,7 @@ GO
 
 
 -- O mcpserver continua só de leitura (db_denydatawriter, ver 03): este é o único acesso novo.
+--só dar acesso quando existir autorização para ver dados sensíveis. O GRANT é feito em separado para poder ser retirado sem mexer no resto.
 GRANT SELECT ON OBJECT::mcp.ViewMCP_cliente_sensivel TO mcpserver;
 GO
 
