@@ -28,7 +28,7 @@ public class RepoSqlIntegracaoTests
         return new RepoSql(cs.ConnectionString);
     }
 
-    [Fact]
+    [FactComBd]
     public async Task Contar_Por_Zona_Soma0TotalDeClientes()
     {
         var linhas = await CriarRepo().ContarAsync(Campo.Zona, new Dictionary<Campo, string>(),limite:100);
@@ -37,7 +37,7 @@ public class RepoSqlIntegracaoTests
         Assert.Equal(linhas[0].Total, linhas.Sum(l =>l.Clientes)); //só é igual se Grupos <= limite
     }
 
-    [Fact]
+    [FactComBd]
     public async Task Listar_DuasPaginas_NaoRepeteClientes()
     {
         var repo =CriarRepo();
@@ -50,4 +50,14 @@ public class RepoSqlIntegracaoTests
 
     }
 
+}
+
+// Sem VENDAS_SQL_TESTES o teste aparece como saltado em vez de falhado (ex.: Test Explorer, que não usa o filtro do CI).
+public sealed class FactComBdAttribute : FactAttribute
+{
+    public FactComBdAttribute()
+    {
+        if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("VENDAS_SQL_TESTES")))
+            Skip = "Defina VENDAS_SQL_TESTES para correr estes testes.";
+    }
 }
