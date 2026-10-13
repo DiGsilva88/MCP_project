@@ -65,4 +65,4 @@ GO
 ALTER AUTHORIZATION ON SCHEMA::mcp TO dbo;
 SELECT s.name, USER_NAME(s.principal_id) AS dono FROM sys.schemas s WHERE s.name = 'mcp';
 
-SELECT s.name, USER_NAME(s.principal_id) AS dono FROM sys.schemas s WHERE s.name IN ('dbo','mcp');.
+SELECT s.name, USER_NAME(s.principal_id) AS dono FROM sys.schemas s WHERE s.name IN ('dbo','mcp');
