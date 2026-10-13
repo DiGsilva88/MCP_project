@@ -10,7 +10,6 @@ public static class PoliticasSeguranca
     // ponytail: heurística (dígito ou item de lista); um modelo pode inventar só com texto corrido.
     public static bool RespostaSemFonte(string texto, int chamadasFerramenta) =>
         chamadasFerramenta == 0
-        && !texto.StartsWith("Só posso responder")
         && (texto.Any(char.IsDigit) || texto.Contains("\n- "));
 
     public const string Regras = """

@@ -16,6 +16,9 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 {
     private const int MaxLinhas = 100;
 
+    // Evita overflow de (pagina-1)*limite, que dava OFFSET negativo no SQL.
+    private const int MaxPaginas = 1000;
+
     // Frase devolvida ao modelo quando algo falha. Não revela nada do SQL.
     private const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
 
@@ -67,7 +70,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         if (temValorCruzado) filtros[cruzarCom!.Value] = valorCruzado!.Trim();
 
         limite = Math.Clamp(limite, 1, MaxLinhas);
-        var deslocamento = (Math.Max(1, pagina) - 1) * limite;
+        var deslocamento = (Math.Clamp(pagina, 1, MaxPaginas) - 1) * limite;
 
         var relogio = Stopwatch.StartNew();
         try
@@ -130,7 +133,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
 
         limite = Math.Clamp(limite, 1, MaxLinhas);
-        var deslocamento = (Math.Max(1, pagina) - 1) * limite;
+        var deslocamento = (Math.Clamp(pagina, 1, MaxPaginas) - 1) * limite;
 
         try
         {

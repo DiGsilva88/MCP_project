@@ -73,7 +73,11 @@ IChatClient modelo = ollama
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var args = string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
             var texto = resultado?.ToString() ?? "";
-            Console.WriteLine($"[{ctx.Function.Name}({args}) {t.ElapsedMilliseconds} ms] {texto[..Math.Min(texto.Length, 120)].ReplaceLineEndings(" ")}");
+            // dados pessoais (NIF, contactos) não ficam no ecrã/scrollback: só o tamanho
+            var amostra = ctx.Function.Name == "consultar_sensivel"
+                ? $"({texto.Length} caracteres)"
+                : texto[..Math.Min(texto.Length, 120)].ReplaceLineEndings(" ");
+            Console.WriteLine($"[{ctx.Function.Name}({args}) {t.ElapsedMilliseconds} ms] {amostra}");
             return resultado;
         };
     })
