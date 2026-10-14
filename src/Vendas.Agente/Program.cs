@@ -84,10 +84,16 @@ IChatClient modelo = ollama
     .Build();
 
 // Opções comuns: modelo fica carregado em memória para sempre (-1m = sem expirar, sem re-load a frio) e respostas determinísticas.
+// NumCtx fixo: um prompt maior que a janela faz o Ollama cortar o início (as regras) sem avisar.
+// Tem de ser igual no aquecimento, senão o Ollama recarrega o modelo.
 var opcoes = new ChatOptions
 {
     Temperature = 0,
-    RawRepresentationFactory = o => new OllamaSharp.Models.Chat.ChatRequest { KeepAlive = "-1m" },
+    RawRepresentationFactory = o => new OllamaSharp.Models.Chat.ChatRequest
+    {
+        KeepAlive = "-1m",
+        Options = new OllamaSharp.Models.RequestOptions { NumCtx = 4096 },
+    },
 };
 
 var regras = PoliticasSeguranca.Regras;
@@ -127,7 +133,6 @@ if (Console.ReadLine()?.Trim() == "2")
 //--bloco 4 - o ciclo de resposta, lê no teclado, pergunta ao modelo e imprime a resposta
 
 opcoes.Tools = [.. ferramentas];
-List<ChatMessage> historico = [new(ChatRole.System, regras)];
 
 Console.WriteLine(" Escreva a sua pergunta ( Enter vazio termina).");
 
@@ -137,24 +142,37 @@ while(true)
     var pergunta = Console.ReadLine();
     if(string.IsNullOrWhiteSpace(pergunta)) break;
 
-    historico.Add(new(ChatRole.User, pergunta));
+    // Sem histórico: cada pergunta é só regras + pergunta. Em CPU cada token do prompt custa tempo,
+    // e o início (regras + ferramentas) fica igual em todos os pedidos, por isso o Ollama reaproveita-o.
+    // shortcut: perde "mostra mais" / "e desses…"; voltar a guardar a última troca se houver GPU.
+    List<ChatMessage> historico = [new(ChatRole.System, regras), new(ChatRole.User, pergunta)];
 
     var relogio = Stopwatch.StartNew();
     var partes = new List<ChatResponseUpdate>();
     long? primeiroToken = null;
     try
     {
-        // O texto só é mostrado depois de validado: uma resposta com números mas sem chamar
-        // nenhuma ferramenta é inventada, por isso é descartada e repete-se uma vez.
+        // Sem chamada a ferramenta, o texto só é mostrado depois de validado: uma resposta com números
+        // mas sem fonte é inventada, por isso é descartada e repete-se uma vez.
+        // Depois de uma chamada já não há nada a validar e o texto aparece à medida que chega.
         for (var tentativa = 0; ; tentativa++)
         {
             chamadas = 0;
             partes.Clear();
+            var aMostrar = false;
             await foreach (var parte in modelo.GetStreamingResponseAsync(historico, opcoes))
             {
                 partes.Add(parte);
-                if (parte.Text.Length > 0) primeiroToken ??= relogio.ElapsedMilliseconds;
+                if (parte.Text.Length == 0) continue;
+                primeiroToken ??= relogio.ElapsedMilliseconds;
+                if (aMostrar) Console.Write(parte.Text);
+                else if (chamadas > 0)
+                {
+                    aMostrar = true;
+                    Console.Write(string.Concat(partes.Select(p => p.Text))); // inclui o texto anterior à chamada
+                }
             }
+            if (aMostrar) break;
 
             var texto = partes.ToChatResponse().Text;
             if (!PoliticasSeguranca.RespostaSemFonte(texto, chamadas)) { Console.Write(texto); break; }
@@ -172,37 +190,19 @@ while(true)
         Console.Error.WriteLine("O Ollama não respondeu ou devolveu um erro.");
         Console.Error.WriteLine("Confirme que o serviço está a funcionar (ollama server) e que o modelo está conectado");
         Console.Error.WriteLine($"Detalhe: {ex.Message}");
-        historico.RemoveAt(historico.Count - 1); // não guarda a pergunta sem resposta
         continue;
     }
 
-    var sistema = historico[0];
-    historico.RemoveAll(m => m.Role == ChatRole.System && m != sistema); // lembrete de repetição
+    // Tokens lidos = soma dos pedidos desta pergunta (escolher a ferramenta + responder). Em CPU é o que mais pesa.
+    var resposta = partes.ToChatResponse();
     Console.WriteLine();
-    Console.WriteLine($"[1.º token {(primeiroToken is { } ms ? $"{ms} ms" : "n/d")} · total {relogio.ElapsedMilliseconds} ms]");
+    Console.WriteLine($"[1.º token {(primeiroToken is { } ms ? $"{ms} ms" : "n/d")} · total {relogio.ElapsedMilliseconds} ms" +
+                      $" · tokens lidos {resposta.Usage?.InputTokenCount?.ToString() ?? "n/d"}]");
 
     // O ciclo de ferramentas pode esgotar-se (MaximumIterationsPerRequest) sem texto final.
-    var resposta = partes.ToChatResponse();
     if (string.IsNullOrWhiteSpace(resposta.Messages.LastOrDefault()?.Text))
-    {
         Console.WriteLine("O modelo não chegou a dar uma resposta. Reformule a pergunta.");
-        historico.RemoveAt(historico.Count - 1);
-        continue;
-    }
-
-    historico.AddMessages(resposta);
-
-    // Só a última troca mantém as chamadas e os resultados das ferramentas (o modelo vê os argumentos e as
-    // linhas para "mostra mais" / "e desses…"); nas anteriores ficam só pergunta e resposta, sem CSVs.
-    // Guarda as regras + as últimas 5 perguntas.
-    var ultima = historico.FindLastIndex(m => m.Role == ChatRole.User);
-    historico = [.. historico.Where((m, i) => i >= ultima || !EhFerramenta(m))];
-    while (historico.Count(m => m.Role == ChatRole.User) > 5)
-        historico.RemoveRange(1, historico.FindIndex(2, m => m.Role == ChatRole.User) - 1);
 }
-
-static bool EhFerramenta(ChatMessage m) =>
-    m.Role == ChatRole.Tool || m.Contents.OfType<FunctionCallContent>().Any();
 
 // ---- Modo menu: sem modelo, chama a ferramenta MCP "consultar" diretamente a partir de escolhas numeradas.
 // As colunas abaixo espelham o enum Campo do Vendas.Servidor (ficha do cliente + faturação)

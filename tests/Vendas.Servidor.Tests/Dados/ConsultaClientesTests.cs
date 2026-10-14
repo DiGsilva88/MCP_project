@@ -95,7 +95,9 @@ public class ConsultaClientesTests
     {
         var (sql, _) = ConsultaClientes.Contar(Campo.Pagamento, new Dictionary<Campo, string>());
 
-        Assert.Contains("GROUP BY f.[Pagamento]", sql);
+        // agrupa sem distinguir acentos/maiúsculas, como os filtros ("Fernão Ferro" = "FERNAO FERRO")
+        Assert.Contains("MIN(f.[Pagamento]) AS Valor", sql);
+        Assert.Contains("GROUP BY f.[Pagamento] COLLATE Latin1_General_CI_AI", sql);
         Assert.DoesNotContain("WHERE", sql);
     }
 

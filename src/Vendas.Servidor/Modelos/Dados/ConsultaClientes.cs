@@ -16,15 +16,17 @@ internal static class ConsultaClientes
         var coluna = Coluna(agrupar);
         var (whereSql, aplicarFiltros) = FiltrosWhere(filtros);
 
+        // Agrupa com a mesma collation dos filtros: "Fernão Ferro" e "FERNAO FERRO" são um só grupo,
+        // senão a contagem (2 grupos) não bate com o filtro (que apanha os dois).
         var sql = $"""
             SELECT TOP (@limite)
-                   {coluna} AS Valor,
+                   MIN({coluna}) AS Valor,
                    COUNT(*) AS Clientes,
                    SUM(COUNT(*)) OVER () AS Total,
                    COUNT(*) OVER () AS Grupos
             FROM   {Origem}
             {whereSql}
-            GROUP BY {coluna}
+            GROUP BY {coluna} COLLATE Latin1_General_CI_AI
             ORDER BY Clientes DESC, Valor;
             """;
 

@@ -51,7 +51,7 @@ projeto_Mcp/
    - ficha do cliente (`Zona`, `Vendedor`, `TipoCliente`, `Actividade`, `Distrito`), view `[mcp].[ViewMCP_cliente]`;
    - condições de faturação (`Pagamento`, `Cobranca`, `Expedicao`, `SituacaoFinanceira`, `EscalaoPlafond`, `EscalaoVolumeVendas`), view `[mcp].[ViewMCP_cliente_faturacao]`. Não devolve valores faturados.
 
-   Parâmetros: `coluna` (opcional, mostrar/filtrar/contar), `valor` (filtro exato), `contar=true` (agrupa com percentagens), `cruzarCom`/`valorCruzado` (filtra também por outra coluna, de qualquer das views — ex.: contar por `Zona` só dos clientes com `Pagamento` = "30 dias"), `limite` (1–100, por omissão 50) e `pagina`. Devolve CSV. Erros de SQL nunca chegam ao modelo: a tool devolve "Não foi possivel consultar os dados neste momento" e o detalhe fica no log (`stderr`).
+   Parâmetros: `coluna` (opcional, mostrar/filtrar/contar), `valor` (filtro exato), `contar=true` (agrupa com percentagens), `cruzarCom`/`valorCruzado` (filtra também por outra coluna, de qualquer das views — ex.: contar por `Zona` só dos clientes com `Pagamento` = "30 dias"), `limite` (1–100, por omissão 10) e `pagina`. Devolve CSV. Erros de SQL nunca chegam ao modelo: a tool devolve "Não foi possivel consultar os dados neste momento" e o detalhe fica no log (`stderr`).
 
 ## Configuração da ligação
 
