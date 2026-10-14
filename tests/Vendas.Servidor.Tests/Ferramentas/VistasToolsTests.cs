@@ -115,7 +115,7 @@ public class VistasToolsTests
 
         var resultado = await CriarSut(repo).ConsultarAsync(limite: 2);
 
-        Assert.EndsWith("# Mostrados 2 de 3. Filtre por valor ou use pagina=2,3... para ver o resto.\n", resultado);
+        Assert.EndsWith("# Mostrados 2 de 3 clientes.\n", resultado);
     }
 
     // ---------- cruzar ----------
@@ -252,23 +252,55 @@ public class VistasToolsTests
 
     // Dois valores que existem mas não têm clientes em comum não são "valor inexistente".
     [Fact]
-    public async Task SemCorrespondencia_DoisFiltros_NaoDizQueOValorNaoExiste()
+    public async Task SemCorrespondencia_DoisFiltrosQueExistem_Responde0Clientes()
     {
         var zonas = new List<ContagemCliente> { new("Norte", 120, 300, 3) };
         var pagamentos = new List<ContagemCliente> { new("90 Dias", 15, 300, 4) };
         var repo = new FakeVendasRepo
         {
-            ContagensPor = (campo, filtros) => filtros.Count > 0 ? [] : campo == Campo.Zona ? zonas : pagamentos,
+            // cada filtro sozinho tem clientes; os dois juntos não
+            ContagensPor = (campo, filtros) => filtros.Count > 1 ? [] : campo == Campo.Zona ? zonas : pagamentos,
         };
 
         var resultado = await CriarSut(repo).ConsultarAsync(
             Campo.Zona, "Norte", cruzarCom: Campo.Pagamento, valorCruzado: "90 dias");
 
-        Assert.Contains("combinação sem clientes", resultado);
-        Assert.Contains("a resposta é 0 clientes", resultado);
-        Assert.DoesNotContain("tem de ser um dos existentes", resultado);
-        Assert.Contains("Zona: Norte (120)", resultado);
-        Assert.Contains("Pagamento: 90 Dias (15)", resultado);
+        Assert.Equal("0 clientes com Zona = Norte e Pagamento = 90 dias: os valores existem, mas nenhum cliente tem os dois.", resultado);
+    }
+
+    // Num cruzamento diz qual dos valores não existe e lista só os dessa coluna, marcados como totais globais.
+    [Fact]
+    public async Task SemCorrespondencia_DoisFiltrosUmInexistente_DizQualELista()
+    {
+        var actividades = new List<ContagemCliente> { new("Empresas", 195, 379, 2), new("Particular", 31, 379, 2) };
+        var repo = new FakeVendasRepo
+        {
+            ContagensPor = (campo, filtros) =>
+                filtros.Count == 0 ? actividades                                   // valores existentes
+                : filtros.Count == 1 && campo == Campo.Localidade ? [new("CORROIOS", 21, 21, 1)] // Localidade existe
+                : [],                                                                // Actividade = Oficinas não existe
+        };
+
+        var resultado = await CriarSut(repo).ConsultarAsync(
+            Campo.Actividade, "Oficinas", contar: true, cruzarCom: Campo.Localidade, valorCruzado: "Corroios");
+
+        Assert.StartsWith("Nenhuma correspondência: Actividade = Oficinas não existe.", resultado);
+        Assert.Contains("não nesta combinação", resultado);
+        Assert.Contains("Actividade: Empresas (195); Particular (31)", resultado);
+        Assert.DoesNotContain("Localidade:", resultado);
+    }
+
+    [Fact]
+    public async Task Cruzar_MesmoValorNasDuasColunas_RecusaComAFormaCerta()
+    {
+        var repo = new FakeVendasRepo();
+
+        var resultado = await CriarSut(repo).ConsultarAsync(
+            Campo.Actividade, "CORROIOS", cruzarCom: Campo.Localidade, valorCruzado: "Corroios");
+
+        Assert.Contains("coluna=Actividade, contar=true, cruzarCom=Localidade, valorCruzado=Corroios", resultado);
+        Assert.Null(repo.UltimoMostrar);
+        Assert.Empty(repo.ChamadasContar);
     }
 
     [Fact]
@@ -351,7 +383,7 @@ public class VistasToolsTests
 
         var resultado = await CriarSut(repo).ConsultarAsync(Campo.Zona, contar: true, limite: 2);
 
-        Assert.EndsWith(NL("# Mostrados 2 de 3 grupos. Aumente o limite para ver os restantes."), resultado);
+        Assert.EndsWith(NL("# Mostrados 2 de 3 grupos."), resultado);
     }
 
     // ---------- limite, erros ----------
