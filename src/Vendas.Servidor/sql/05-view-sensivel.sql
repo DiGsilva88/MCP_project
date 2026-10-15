@@ -1,5 +1,4 @@
-﻿-- Active: 1789469768837@@192.168.90.11SQL22@1433@IAVSGIX
--- 05 · VIEW DOS DADOS SENSÍVEIS (NIF, contactos, morada), SEM máscara. Fica separada das views 01/02
+﻿-- 05 · VIEW DOS DADOS SENSÍVEIS (NIF, contactos, morada), SEM máscara. Fica separada das views 01/02
 -- de propósito: o GRANT é próprio e pode ser dado/retirado sem mexer no resto. Correr depois de 01.
 USE [IAVSGIX];
 GO

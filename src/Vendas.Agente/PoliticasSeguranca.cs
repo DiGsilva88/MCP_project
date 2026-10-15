@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Vendas.Agente;
 
 // Políticas de segurança do agente de IA: regras que vão no prompt de sistema
@@ -7,10 +9,21 @@ public static class PoliticasSeguranca
 {
     // Resposta com números/listas mas sem nenhuma chamada a ferramentas = dados inventados.
     // Cumprimentos e a mensagem de fora do âmbito não têm dígitos nem listas, por isso passam.
-    // ponytail: heurística (dígito ou item de lista); um modelo pode inventar só com texto corrido.
     public static bool RespostaSemFonte(string texto, int chamadasFerramenta) =>
         chamadasFerramenta == 0
         && (texto.Any(char.IsDigit) || texto.Contains("\n- "));
+
+    // Só conta como fonte um resultado com dados. Erros e recusas do servidor são uma frase só;
+    // CSV, contagens e listas de valores têm várias linhas. As duas exceções de uma linha são respostas reais.
+    // shortcut: depende do formato das mensagens do servidor; mudar para isError do MCP se o servidor o passar a usar.
+    public static bool ResultadoComDados(string texto) =>
+        texto.Contains('\n') || texto.StartsWith("0 clientes com") || texto.StartsWith("Nenhuma linha encontrada");
+
+    // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
+    public static string TextoDoResultado(object? resultado) =>
+        resultado is JsonElement j && j.ValueKind == JsonValueKind.Object && j.TryGetProperty("content", out var conteudo)
+            ? string.Concat(conteudo.EnumerateArray().Select(c => c.TryGetProperty("text", out var t) ? t.GetString() : ""))
+            : resultado?.ToString() ?? "";
 
     // Curto de propósito: o modelo corre em CPU e lê isto em cada pedido (~1 token por 4 letras).
     // Os erros que o servidor já corrige sozinho (valores repetidos, combinações sem clientes) não têm regra aqui.
@@ -43,7 +56,8 @@ public static class PoliticasSeguranca
           na ficha, não faturado.
         - Nomes começados por X: nomeComecaPor=X.
         - Se a ferramenta disser que um valor não existe, usa o existente mais próximo,
-          chama de novo e diz qual usaste.
+          chama de novo e diz qual usaste. Se a lista vier cortada ("mostrados N de M")
+          e nenhum for parecido, diz que não encontraste o valor; não escolhas outro.
 
         Responder
         - Lista as linhas devolvidas, uma por linha (ex.: "1. Nome – valor"), no máximo
