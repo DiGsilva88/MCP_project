@@ -57,7 +57,12 @@ var http = new HttpClient
     Timeout = TimeSpan.FromMinutes(10),   // modelo local é lento a arrancar
 };
 
-var chamadas = 0; // chamadas a ferramentas na pergunta em curso (ver PoliticasSeguranca.RespostaSemFonte)
+var chamadas = 0; // chamadas a ferramentas que devolveram dados na pergunta em curso (ver PoliticasSeguranca.RespostaSemFonte)
+var caracteresFerramentas = 0; // texto devolvido pelas ferramentas na pergunta em curso
+
+// Teto de texto das ferramentas por pergunta (~3 letras por token): regras + esquemas + isto cabem em NumCtx.
+// Acima disto o Ollama cortaria o início do prompt, que são as regras de segurança.
+const int MaxCaracteresFerramentas = 12_000;
 
 IChatClient ollama = new OllamaApiClient(http, Environment.GetEnvironmentVariable("OLLAMA_MODELO") ?? "qwen2.5:7b");
 IChatClient modelo = ollama
@@ -68,16 +73,22 @@ IChatClient modelo = ollama
         // tempo de cada chamada à ferramenta (MCP + SQL), para saber de onde vem a demora
         c.FunctionInvoker = async (ctx, ct) =>
         {
-            chamadas++;
             var t = Stopwatch.StartNew();
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var args = string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
-            var texto = resultado?.ToString() ?? "";
+            var texto = PoliticasSeguranca.TextoDoResultado(resultado);
             // dados pessoais (NIF, contactos) não ficam no ecrã/scrollback: só o tamanho
             var amostra = ctx.Function.Name == "consultar_sensivel"
                 ? $"({texto.Length} caracteres)"
                 : texto[..Math.Min(texto.Length, 120)].ReplaceLineEndings(" ");
             Console.WriteLine($"[{ctx.Function.Name}({args}) {t.ElapsedMilliseconds} ms] {amostra}");
+
+            caracteresFerramentas += texto.Length;
+            if (caracteresFerramentas > MaxCaracteresFerramentas)
+                return "Resultado demasiado grande. Peça menos linhas ou filtre por um valor.";
+
+            // Erro ou recusa não é fonte: a resposta seguinte continua a ser validada.
+            if (PoliticasSeguranca.ResultadoComDados(texto)) chamadas++;
             return resultado;
         };
     })
@@ -92,7 +103,7 @@ var opcoes = new ChatOptions
     RawRepresentationFactory = o => new OllamaSharp.Models.Chat.ChatRequest
     {
         KeepAlive = "-1m",
-        Options = new OllamaSharp.Models.RequestOptions { NumCtx = 4096 },
+        Options = new OllamaSharp.Models.RequestOptions { NumCtx = 8192 },
     },
 };
 
@@ -158,6 +169,7 @@ while(true)
         for (var tentativa = 0; ; tentativa++)
         {
             chamadas = 0;
+            caracteresFerramentas = 0;
             partes.Clear();
             var aMostrar = false;
             await foreach (var parte in modelo.GetStreamingResponseAsync(historico, opcoes))

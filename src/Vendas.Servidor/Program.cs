@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
 using Vendas.Servidor.Modelos.Dados;
 
 
@@ -35,6 +36,15 @@ builder.Services
     .AddMcpServer()
     .WithStdioServerTransport()
     .WithToolsFromAssembly();
+
+// Interruptor sem recompilar: VENDAS_SENSIVEL=0 tira consultar_sensivel da lista de tools (ligado por omissão).
+// Tirada do registo, o modelo nem a vê, em vez de a chamar e receber uma recusa.
+if (Environment.GetEnvironmentVariable("VENDAS_SENSIVEL") == "0")
+    builder.Services.PostConfigure<McpServerOptions>(o =>
+    {
+        if (o.ToolCollection?.TryGetPrimitive("consultar_sensivel", out var sensivel) == true)
+            o.ToolCollection.Remove(sensivel);
+    });
 
 // Constrói e executa o host
 await builder.Build().RunAsync();

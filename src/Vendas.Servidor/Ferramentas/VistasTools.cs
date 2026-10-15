@@ -1,4 +1,3 @@
-
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -29,9 +28,6 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     private const int MaxLinhasSensivel = 20;
     private const int MaxPaginasSensivel = 5;
 
-    // Interruptor sem recompilar: VENDAS_SENSIVEL=0 desliga consultar_sensivel (ligado por omissão).
-    private static readonly bool SensivelAtivado = Environment.GetEnvironmentVariable("VENDAS_SENSIVEL") != "0";
-
     private static readonly IReadOnlyList<Campo> TodasAsColunas = Enum.GetValues<Campo>();
 
     [McpServerTool(Name = "consultar")]
@@ -49,8 +45,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Coluna a mostrar/filtrar/contar.")] Campo? coluna = null,
         [Description("Valor da coluna, ex.: Lisboa, ou \"sem dados\".")] string? valor = null,
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
-        [Description("Segunda coluna, para filtrar.")] Campo? cruzarCom = null, 
-        [Description("Valor de cruzarCom.")] string? valorCruzado = null, 
+        [Description("Segunda coluna, para filtrar.")] Campo? cruzarCom = null,
+        [Description("Valor de cruzarCom.")] string? valorCruzado = null,
         [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 10,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens).")] int pagina = 1,
         [Description("Opcional: início do nome do cliente, ex.: A.")] string? nomeComecaPor = null,
@@ -71,10 +67,13 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         if (cruzarCom is not null && cruzarCom == coluna)
             return "Escolha uma coluna diferente para cruzar.";
 
-        // Erro típico do modelo: o mesmo valor (ex.: uma localidade) nas duas colunas.
-        if (temValor && temValorCruzado && valor!.Trim().Equals(valorCruzado!.Trim(), StringComparison.OrdinalIgnoreCase))
-            return $"valor e valorCruzado são iguais. \"{valorCruzado.Trim()}\" é um valor de {cruzarCom}: " +
-                   $"repita sem valor, ex.: coluna={coluna}, contar=true, cruzarCom={cruzarCom}, valorCruzado={valorCruzado.Trim()}.";
+        // Erro típico do modelo: o mesmo valor (ex.: uma localidade) nas duas colunas. Só se avisa quando não há
+        // resultados: "Setúbal" pode ser mesmo localidade e distrito ao mesmo tempo.
+        var avisoMesmoValor = temValor && temValorCruzado
+            && valor!.Trim().Equals(valorCruzado!.Trim(), StringComparison.OrdinalIgnoreCase)
+            ?$"valor e valorCruzado são iguais. \"{valorCruzado!.Trim()}\" é um valor de {cruzarCom}: repita sem valor, " +
+              $"ex.: coluna={coluna}{(contar ? ", contar=true" : "")}, cruzarCom={cruzarCom}, valorCruzado={valorCruzado.Trim()}."
+            : null;
 
         var filtros = new Dictionary<Campo, string>();
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
@@ -90,14 +89,14 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             {
                 var contagens = await repo.ContarAsync(coluna!.Value, filtros, limite, ct);
                 return contagens.Count == 0 && filtros.Count > 0
-                    ? await SemCorrespondenciaAsync(filtros, ct)
+                    ? avisoMesmoValor ?? await SemCorrespondenciaAsync(filtros, ct)
                     : FormatarContagem(coluna.Value.ToString(), contagens, filtros);
             }
 
             var resultado = await repo.ListarAsync(
                 coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, nomeComecaPor, ct);
             return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
-                ? await SemCorrespondenciaAsync(filtros, ct)
+                ? avisoMesmoValor ?? await SemCorrespondenciaAsync(filtros, ct)
                 : FormatarDados(resultado, filtros);
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
@@ -129,10 +128,6 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Coluna a mostrar junto do dado.")] Campo? mostrarTambem = null,
         CancellationToken ct = default)
     {
-
-        if (!SensivelAtivado)
-            return "Os dados neste servidor estão desativados.";
-
         var temValor = !string.IsNullOrWhiteSpace(valor);
         if ((coluna is not null) != temValor)
             return "coluna e valor têm de ser usados juntos.";
@@ -140,22 +135,21 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         if (maiores && dado is not (CampoSensivel.VolumeVendas or CampoSensivel.Plafond))
             return "maiores só se aplica a VolumeVendas e Plafond.";
 
+        // Recusar em vez de clampear: com clamp a página 6 devolvia a 5 e o modelo mostrava-a como nova.
+        if (pagina > MaxPaginasSensivel)
+            return $"Não há mais páginas: o máximo são {MaxPaginasSensivel}. Filtre por um valor para ver outros clientes.";
+
         var filtros = new Dictionary<Campo, string>();
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
 
-
         limite = Math.Clamp(limite, 1, MaxLinhasSensivel);
-        var deslocamento = (Math.Clamp(pagina, 1, MaxPaginasSensivel) - 1) * limite; // evita overflow de (pagina-1)*limite, que dava OFFSET negativo no SQL
+        var deslocamento = (Math.Max(pagina, 1) - 1) * limite;
 
+        int? linhas = null; // null na auditoria = a consulta falhou
         try
         {
             var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, nomeComecaPor, mostrarTambem, ct);
-
-            //Auditoria:que dado,com que filtros e quantas linahas devolvidas. Não mostra valores sensíveis.
-            log.LogInformation("Auditoria: consultar_sensivel dado={Dado} filtros={Filtros} linhas={Linhas}",
-            dado, string.Join(", ", filtros.Keys), resultado.Linhas.Count);
-             
-            
+            linhas = resultado.Linhas.Count;
             return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
                 ? await SemCorrespondenciaAsync(filtros, ct)
                 : FormatarDados(resultado, filtros);
@@ -165,6 +159,16 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         {
             log.LogError(ex, "Falha em consultar_sensivel ({Dado})", dado); // sem valores: são dados pessoais
             return ErroNeutro;
+        }
+        finally
+        {
+            // Auditoria de cada acesso, também os que falham. Regista os parâmetros (o que permite ver
+            // extrações por nomeComecaPor/páginas) mas nunca os valores devolvidos.
+            log.LogInformation(
+                "Auditoria: consultar_sensivel dado={Dado} filtros={Filtros} nomeComecaPor={Nome} maiores={Maiores} " +
+                "mostrarTambem={Tambem} pagina={Pagina} limite={Limite} linhas={Linhas}",
+                dado, string.Join(", ", filtros.Select(f => $"{f.Key}={f.Value}")), nomeComecaPor, maiores,
+                mostrarTambem, pagina, limite, linhas?.ToString() ?? "falhou");
         }
     }
 
@@ -178,10 +182,10 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         var inexistentes = filtros;
         if (filtros.Count > 1)
         {
-            inexistentes = [];
-            foreach (var (campo, valor) in filtros)
-                if ((await repo.ContarAsync(campo, new Dictionary<Campo, string> { [campo] = valor }, 1, ct)).Count == 0)
-                    inexistentes[campo] = valor;
+            // Uma consulta por filtro, em paralelo (cada chamada ao repo abre a sua ligação).
+            var existe = await Task.WhenAll(filtros.Select(async f =>
+                (f.Key, f.Value, Existe: (await repo.ContarAsync(f.Key, new Dictionary<Campo, string> { [f.Key] = f.Value }, 1, ct)).Count > 0)));
+            inexistentes = existe.Where(e => !e.Existe).ToDictionary(e => e.Key, e => e.Value);
 
             if (inexistentes.Count == 0)
                 return $"0 clientes com {string.Join(" e ", filtros.Select(f => $"{f.Key} = {f.Value}"))}: " +

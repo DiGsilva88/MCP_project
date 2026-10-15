@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Vendas.Servidor.Ferramentas;
 using Vendas.Servidor.Modelos;
@@ -50,6 +51,52 @@ public class VistasToolsTests
 
         Assert.Equal(Campo.Actividade, repo.UltimoTambem);
         Assert.Equal("NomeCliente,VolumeVendas,Actividade\nAna,900000,Oficina\n# Lista completa: 1 clientes.\n", r);
+    }
+
+    // Acima do teto de páginas não repete a última página como se fosse nova: recusa sem ir ao repo.
+    [Fact]
+    public async Task Sensivel_PaginaAcimaDoTeto_RecusaSemIrAoRepo()
+    {
+        var repo = new FakeVendasRepo();
+        var r = await CriarSut(repo).ConsultarSensivelAsync(CampoSensivel.Email, pagina: 6);
+
+        Assert.Equal("Não há mais páginas: o máximo são 5. Filtre por um valor para ver outros clientes.", r);
+        Assert.Null(repo.UltimoSensivel);
+    }
+
+    [Fact]
+    public async Task Sensivel_LimiteAcimaDoTeto_FicaEm20()
+    {
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarSensivelAsync(CampoSensivel.Email, limite: 100, pagina: 5);
+
+        Assert.Equal(20, repo.UltimoLimite);
+        Assert.Equal(80, repo.UltimoDeslocamento);
+    }
+
+    // A auditoria regista também os acessos que falham, com todos os parâmetros e sem valores devolvidos.
+    [Fact]
+    public async Task Sensivel_Auditoria_RegistaParametrosMesmoQuandoFalha()
+    {
+        var log = new LogEmMemoria();
+        var repo = new FakeVendasRepo { LancarExcecao = new InvalidOperationException("falha de bd") };
+
+        await new VistasTools(repo, log).ConsultarSensivelAsync(CampoSensivel.Email, nomeComecaPor: "A", pagina: 2);
+
+        var auditoria = Assert.Single(log.Mensagens, m => m.StartsWith("Auditoria"));
+        Assert.Contains("dado=Email", auditoria);
+        Assert.Contains("nomeComecaPor=A", auditoria);
+        Assert.Contains("pagina=2", auditoria);
+        Assert.Contains("linhas=falhou", auditoria);
+    }
+
+    private sealed class LogEmMemoria : ILogger<VistasTools>
+    {
+        public List<string> Mensagens { get; } = [];
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter) => Mensagens.Add(formatter(state, exception));
     }
 
     // ---------- dados ----------
@@ -291,16 +338,30 @@ public class VistasToolsTests
     }
 
     [Fact]
-    public async Task Cruzar_MesmoValorNasDuasColunas_RecusaComAFormaCerta()
+    public async Task Cruzar_MesmoValorSemResultados_SugereAFormaCerta()
     {
         var repo = new FakeVendasRepo();
 
-        var resultado = await CriarSut(repo).ConsultarAsync(
+        var lista = await CriarSut(repo).ConsultarAsync(
             Campo.Actividade, "CORROIOS", cruzarCom: Campo.Localidade, valorCruzado: "Corroios");
+        var conta = await CriarSut(repo).ConsultarAsync(
+            Campo.Actividade, "CORROIOS", contar: true, cruzarCom: Campo.Localidade, valorCruzado: "Corroios");
 
-        Assert.Contains("coluna=Actividade, contar=true, cruzarCom=Localidade, valorCruzado=Corroios", resultado);
-        Assert.Null(repo.UltimoMostrar);
-        Assert.Empty(repo.ChamadasContar);
+        Assert.Contains("ex.: coluna=Actividade, cruzarCom=Localidade, valorCruzado=Corroios", lista);
+        Assert.Contains("ex.: coluna=Actividade, contar=true, cruzarCom=Localidade, valorCruzado=Corroios", conta);
+    }
+
+    // "Setúbal" existe como localidade e como distrito: com resultados, o pedido é legítimo.
+    [Fact]
+    public async Task Cruzar_MesmoValorComResultados_DevolveOsDados()
+    {
+        var repo = new FakeVendasRepo { Pagina = new(["NomeCliente", "Localidade"], [["Ana", "Setúbal"]], 1) };
+
+        var resultado = await CriarSut(repo).ConsultarAsync(
+            Campo.Localidade, "Setúbal", cruzarCom: Campo.Distrito, valorCruzado: "Setúbal");
+
+        Assert.Contains("Ana,Setúbal", resultado);
+        Assert.DoesNotContain("são iguais", resultado);
     }
 
     [Fact]
