@@ -73,12 +73,68 @@ SELECT TABLE_NAME
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_NAME LIKE '%Marca%';
 
+SELECT TOP 20 *
+FROM dbo.ATG_Marca;
+
+
+--ver se existem marcas duplicadas, ou seja, se existem artigos com o mesmo ArtigoID e TipoArtigo na tabela ATG_Marca.
+SELECT ArtigoID, TipoArtigo, COUNT(*) AS N
+FROM dbo.ATG_Marca
+GROUP BY ArtigoID, TipoArtigo
+HAVING COUNT(*) > 1;
+
+
+SELECT * FROM dbo.ATG_Marca WHERE ArtigoID = 'AIC_ 51105';
+
+--ver se existem artigos com várias marcas, ou seja, se existem artigos com o mesmo ArtigoID e TipoArtigo na tabela ATG_Marca.
+SELECT COUNT(*) AS ArtigosComVariasMarcas
+FROM (
+    SELECT ArtigoID, TipoArtigo
+    FROM dbo.ATG_Marca
+    GROUP BY ArtigoID, TipoArtigo
+    HAVING COUNT(*) > 1
+) AS x;
+
+
+--verifica se as várias marcas são marcas diferentes ou a mesma marca com referências diferentes.
+SELECT * FROM dbo.ATG_Marca WHERE ArtigoID = 'AIC_ 51105';
+
+--verificar se a mesma marca repetida com referências diferentes
+WITH Dup AS (
+    SELECT ArtigoID, TipoArtigo
+    FROM dbo.ATG_Marca
+    GROUP BY ArtigoID, TipoArtigo
+    HAVING COUNT(*) > 1
+),
+Contagem AS (
+    SELECT d.ArtigoID, d.TipoArtigo,
+           SUM(CASE WHEN LEFT(d.ArtigoID, LEN(RTRIM(m.MarcaID))) = RTRIM(m.MarcaID)
+                    THEN 1 ELSE 0 END) AS MarcasQueBatem
+    FROM Dup AS d
+    JOIN dbo.ATG_Marca AS m
+      ON m.ArtigoID = d.ArtigoID AND m.TipoArtigo = d.TipoArtigo
+    GROUP BY d.ArtigoID, d.TipoArtigo
+)
+SELECT MarcasQueBatem, COUNT(*) AS Artigos
+FROM Contagem
+GROUP BY MarcasQueBatem
+ORDER BY MarcasQueBatem;
+
+--conta os artigos com marcas diferentes
+SELECT COUNT(*) AS ArtigosComMarcasDiferentes
+FROM (
+    SELECT ArtigoID, TipoArtigo
+    FROM dbo.ATG_Marca
+    GROUP BY ArtigoID, TipoArtigo
+    HAVING COUNT(DISTINCT MarcaID) > 1
+) AS x;
 
 SELECT TABLE_NAME, COLUMN_NAME
 FROM INFORMATION_SCHEMA.COLUMNS
 WHERE COLUMN_NAME LIKE '%Marca%';
 EXEC sp_help 'dbo.ATG_Marca';
 
+GO
 --criar a view mcp.Vendas, que vai ler a AnaVendArt e a FArtigo, e a ATG_Familia para obter o nome da familia do artigo
 CREATE OR ALTER VIEW mcp.ViewMCP_vendas AS
 SELECT
@@ -94,7 +150,11 @@ SELECT
     CAST(RTRIM(v.ArtigoID) AS nvarchar(50)) AS ArtigoID,
     COALESCE(NULLIF(LTRIM(RTRIM(a.DescrResumida)),''), '(sem descrição)') AS Artigo,
     COALESCE(NULLIF(LTRIM(RTRIM(f.Descricao)),''), '(sem familia)') AS Familia,
-    -- Medidas: o sinal já vem da AnaVendArt(multiplicador ActAnaVend).
+    -- Marca: usa a DescMarca se existir, senão o próprio MarcaID
+    CAST(COALESCE(NULLIF(LTRIM(RTRIM(m.DescMarca)),''),
+                  NULLIF(LTRIM(RTRIM(m.MarcaID)),''),
+                  '(sem marca)') AS nvarchar(50)) AS Marca,
+    -- Medidas: o sinal já vem da AnaVendArt(multiplicador AnaVendart).
     CAST(v.Quantidade AS decimal(18,2)) AS Quantidade,
     CAST(v.VlrLiquido AS decimal(18,2)) AS ValorLiquido
 FROM dbo.AnaVendArt AS v
@@ -102,8 +162,22 @@ FROM dbo.AnaVendArt AS v
 -- A junção é feita com base nessa chave para obter o nome do artigo correspondente ArtigoId+TipoArtigo
 -- um artigo apagado do catalogo não faz desaparecer a venda
 LEFT JOIN dbo.FArtigo AS a ON a.ArtigoID = v.ArtigoID 
-LEFT JOIN dbo.ATG_Familia AS f ON a.FamiliaID = f.FamiliaID; 
+LEFT JOIN dbo.ATG_Familia AS f ON a.FamiliaID = f.FamiliaID
+OUTER APPLY (
+    SELECT TOP 1 mm.MarcaID, mm.DescMarca
+    FROM dbo.ATG_Marca AS mm
+    WHERE mm.ArtigoID = v.ArtigoID
+    AND mm.TipoArtigo = v.TipoArtigo
+    ORDER BY 
+         CASE WHEN LEFT(v.ArtigoID, LEN(RTRIM(mm.MarcaID))) = RTRIM(mm.MarcaID) 
+         THEN 0 ElSE 1 END,
+     mm.MarcaID
+) AS m;
 GO
 
+
+--confirmar que não existem vendas duplicadas
+SELECT COUNT(*) FROM mcp.ViewMCP_vendas;
+SELECT COUNT(*) FROM dbo.AnaVendArt;
 
 
