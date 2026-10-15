@@ -3,6 +3,7 @@
     <Project Path="src/Vendas.Agente/Vendas.Agente.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Vendas.Agente.Tests/Vendas.Agente.Tests.csproj" />
     <Project Path="tests/Vendas.Servidor.Tests/Vendas.Servidor.Tests.csproj" />
   </Folder>
   <Project Path="src/Vendas.Servidor/Vendas.Servidor.csproj" />
