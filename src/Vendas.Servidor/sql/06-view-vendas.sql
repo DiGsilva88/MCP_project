@@ -180,4 +180,34 @@ GO
 SELECT COUNT(*) FROM mcp.ViewMCP_vendas;
 SELECT COUNT(*) FROM dbo.AnaVendArt;
 
+--validações proprias  da AnaVendArt
+
+--Moedas : com mais de uma, o VlrLiquido não pode estar em euros
+SELECT MoedaID, COUNT(*) AS linhas, SUM(VlrLiquido) AS Valor
+From dbo.AnaVendArt
+GROUP BY MoedaID;
+
+--Estados dos documentos de venda: o l deixa os anulados de fora?
+-- SELECT EstadoDocID, COUNT(*) AS documentos ----ERRO CORRIGIR !!!!!!!!!!!
+-- FROM dbo.DOC_Mov
+-- WHERE Aplicação = 'Vendas'
+-- GROUP BY EstadoDoc; 
+
+--C tipos de documentos e sinal: as notas de crédito tem de somar negativo.
+SELECT TipoDocID, COUNT(*) AS  linhas,MIN(VlrLiquido) AS MinValor, MAX(VlrLiquido) AS maior, SUM(VlrLiquido) AS soma
+FROM dbo.AnaVendArt
+GROUP BY TipoDocID
+ORDER BY soma;
+
+--O mesmo clienteID como C e como I?(0 linhas = ok)
+SELECT ClienteID
+FROM dbo.AnaVendArt
+GROUP BY ClienteID
+HAVING COUNT(DISTINCT TipoClienteID) > 1;
+
+--Chave de documento chega: Nenhum documentoID deve repetir-se, mesmo que seja em anos diferentes. (0 linhas = ok)
+SELECT DocumentoID FROM mcp.ViewMCP_vendas 
+GROUP BY DocumentoID
+HAVING COUNT(DISTINCT ClienteID) > 1;
+
 
