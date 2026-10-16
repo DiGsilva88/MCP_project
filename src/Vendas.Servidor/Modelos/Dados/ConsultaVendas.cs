@@ -43,7 +43,7 @@ internal static class ConsultaVendas
             ORDER BY p.Valor DESC, Nome;
             """;
 
-            return(sql, parametros => PreencherPeriodo(paramentros, desde, ate));
+            return(sql, parametros => PreencherPeriodo(parametros, desde, ate));
          }
             public static (string Sql, Action<SqlParameterCollection> Parametros) TopArtigos(
             DimensaoArtigo dimensao,DateOnly desde, DateOnly ate)

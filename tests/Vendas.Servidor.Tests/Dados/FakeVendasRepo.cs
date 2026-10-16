@@ -4,7 +4,7 @@ using Vendas.Servidor.Modelos.Dados;
 namespace Vendas.Servidor.Tests.Dados;
 
 /// <summary>
-/// Dublê de teste para <see cref="IVendasRepo"/>: devolve dados fixos definidos pelo teste
+/// Copia de teste para <see cref="IVendasRepo"/>: devolve dados fixos definidos pelo teste
 /// em vez de ir à base de dados, e regista os argumentos com que foi chamado.
 /// </summary>
 internal sealed class FakeVendasRepo : IVendasRepo
@@ -25,6 +25,9 @@ internal sealed class FakeVendasRepo : IVendasRepo
     public IReadOnlyDictionary<Campo, string>? UltimosFiltros { get; private set; }
     public Campo? UltimoAgrupar { get; private set; }
     public IReadOnlyList<Campo>? UltimoMostrar { get; private set; }
+    public IReadOnlyList<ValorAgrupado> Valores { get; set; } = [];
+    public (DateOnly Desde, DateOnly Ate)? UltimoPeriodo { get; private set; }
+    public DimensaoArtigo? UltimaDimensao { get; private set; }
 
     public Task<IReadOnlyList<ContagemCliente>> ContarAsync(
         Campo agrupar, IReadOnlyDictionary<Campo, string> filtros, int limite, CancellationToken ct = default)
@@ -65,4 +68,24 @@ internal sealed class FakeVendasRepo : IVendasRepo
         if (LancarExcecao is not null) throw LancarExcecao;
         return Task.FromResult(Pagina);
     }
+
+    public Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
+        DateOnly desde, DateOnly ate, int limite, CancellationToken ct = default)
+    {
+        UltimoPeriodo = (desde, ate);
+        UltimoLimite = limite;
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult(Valores);
+    }
+
+    public Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
+        DimensaoArtigo dimensao, DateOnly desde, DateOnly ate, int limite, CancellationToken ct = default)
+    {
+        UltimaDimensao = dimensao;
+        UltimoPeriodo = (desde, ate);
+        UltimoLimite = limite;
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult(Valores);
+    }
 }
+
