@@ -22,4 +22,10 @@ public interface IVendasRepo
     Task<PaginaClientes> ListarSensivelAsync(
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
         string? nome = null, Campo? tambem = null, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
+        DateOnly desde, DateOnly ate, int limite, CancellationToken cancellationToken=default);
+
+     Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
+        DimensaoArtigo dimensao,DateOnly desde, DateOnly ate, int limite, CancellationToken cancellationToken=default);
 }

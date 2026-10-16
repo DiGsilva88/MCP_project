@@ -84,4 +84,8 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     // Lê qualquer coluna como texto. Sem valor devolve "sem dados".
     private static string Texto(SqlDataReader leitor, int i)
         => Campos.Limpar(leitor.IsDBNull(i) ? null : Convert.ToString(leitor.GetValue(i), CultureInfo.InvariantCulture));
+   
+
+
+
 }

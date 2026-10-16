@@ -134,7 +134,24 @@ FROM INFORMATION_SCHEMA.COLUMNS
 WHERE COLUMN_NAME LIKE '%Marca%';
 EXEC sp_help 'dbo.ATG_Marca';
 
+
+
+-- 1. Os nomes e tipos existem na AnaVendArt?
+SELECT name, TYPE_NAME(user_type_id) AS tipo
+FROM sys.columns
+WHERE object_id = OBJECT_ID('dbo.AnaVendArt') AND name LIKE 'Vlr%';
+
+
+-- 2. Sinal nas notas de crédito e se Ilíquido - Desconto = Líquido (diferenca perto de 0 = ok)
+SELECT TipoDocID,
+       MIN(VlrIva) AS MinIva, MAX(VlrIva) AS MaxIva,
+       MIN(VlrDesconto) AS MinDesc, MAX(VlrDesconto) AS MaxDesc,
+       SUM("VlrIliq" - "VlrDesconto" - "VlrLiquido") AS diferenca
+FROM dbo.AnaVendArt
+GROUP BY TipoDocID;
+
 GO
+
 --criar a view mcp.Vendas, que vai ler a AnaVendArt e a FArtigo, e a ATG_Familia para obter o nome da familia do artigo
 CREATE OR ALTER VIEW mcp.ViewMCP_vendas AS
 SELECT
@@ -155,8 +172,13 @@ SELECT
                   NULLIF(LTRIM(RTRIM(m.MarcaID)),''),
                   '(sem marca)') AS nvarchar(50)) AS Marca,
     -- Medidas: o sinal já vem da AnaVendArt(multiplicador AnaVendart).
-    CAST(v.Quantidade AS decimal(18,2)) AS Quantidade,
-    CAST(v.VlrLiquido AS decimal(18,2)) AS ValorLiquido
+    CAST(v.Quantidade  AS decimal(18,2)) AS Quantidade,
+    CAST(v.VlrIliq AS decimal(18,2)) AS ValorIliquido,
+    CAST(v.VlrDesconto AS decimal(18,2)) AS ValorDesconto,
+    CAST(v.VlrLiquido  AS decimal(18,2)) AS ValorLiquido,
+    CAST(v.VlrIva      AS decimal(18,2)) AS ValorIva,
+    --quantidade homogenizada
+    CAST(v.QtHomo AS decimal(33,7)) AS QuantidadeHomogenizada
 FROM dbo.AnaVendArt AS v
 -- A chave da Fartigo é o ArtigoID, que é a mesma chave usada na AnaVendArt. 
 -- A junção é feita com base nessa chave para obter o nome do artigo correspondente ArtigoId+TipoArtigo
