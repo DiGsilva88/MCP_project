@@ -203,11 +203,49 @@ ORDER BY soma;
 SELECT ClienteID
 FROM dbo.AnaVendArt
 GROUP BY ClienteID
-HAVING COUNT(DISTINCT TipoClienteID) > 1;
+HAVING COUNT(DISTINCT ClienteID) > 1;
 
 --Chave de documento chega: Nenhum documentoID deve repetir-se, mesmo que seja em anos diferentes. (0 linhas = ok)
 SELECT DocumentoID FROM mcp.ViewMCP_vendas 
 GROUP BY DocumentoID
 HAVING COUNT(DISTINCT ClienteID) > 1;
+
+--Left join não duplicam linhas(2 numeros iguais)
+SELECT(SELECT COUNT(*) FROM mcp.ViewMCP_vendas) AS linhas_mcp,
+       (SELECT COUNT(*) FROM dbo.AnaVendArt) AS linhas_origem;
+
+
+--dar permissão de select na view mcp.ViewMCP_vendas para o user mcp
+GRANT SELECT ON OBJECT ::mcp.ViewMCP_vendas TO mcpserver;
+
+
+----Passa a ser o mcpserver a executar os testes, EXECUTE AS USER = 'mcpserver';
+EXECUTE AS USER = 'mcpserver';
+
+SELECT TOP 5 DocumentoID,TipoDocID, DataDoc,Artigo, ValorLiquido
+FROM mcp.ViewMCP_vendas
+ORDER BY DataDoc DESC;
+
+--a view ERP continua escondida(tem de dar erro 229)
+SELECT TOP 1 * FROM dbo.AnaVendArt;
+
+--Que anos tem dados a view mcp.ViewMCP_vendas?decide que periodos dá para testar
+SELECT YEAR(DataDoc) AS Ano, COUNT(*) AS Linhas, SUM(ValorLiquido) AS Valor
+FROM mcp.ViewMCP_vendas
+GROUP BY YEAR(DataDoc)
+ORDER BY Ano;
+
+
+
+-- 4. A junção que a tool clientes_top_faturacao vai fazer, com o mesmo
+--entre a view vendas e com a clientes (schema mcp + schema dbo) é possível, porque a chave ClienteID é a mesma nas duas views. 
+
+SELECT TOP 5 c.NomeCliente,SUM(v.ValorLiquido) AS Valor
+FROM mcp.ViewMCP_vendas AS v
+LEFT JOIN mcp.ViewMCP_cliente AS c ON c.ClienteID = v.ClienteID
+Where v.DataDoc >= '2026-01-01' AND v.DataDoc < '2027-01-01'
+GROUP BY c.NomeCliente
+ORDER BY Valor DESC;
+
 
 
