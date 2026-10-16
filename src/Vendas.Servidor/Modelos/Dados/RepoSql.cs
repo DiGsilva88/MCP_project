@@ -57,6 +57,21 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         return new PaginaClientes(colunas, linhas, total);
     }
 
+        public async Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
+        DateOnly desde, DateOnly ate, int limite, CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaVendas.TopClientes(desde, ate);
+        return await LerAsync(sql, parametros, limite, LerValorAgrupado, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
+        DimensaoArtigo dimensao, DateOnly desde, DateOnly ate, int limite,
+        CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaVendas.TopArtigos(dimensao, desde, ate);
+        return await LerAsync(sql, parametros, limite, LerValorAgrupado, cancellationToken);
+    }
+
     // Faz o trabalho repetitivo, igual em todas as consultas.
     // "await using" fecha a ligação sozinha, mesmo que haja erro.
     private async Task<List<T>> LerAsync<T>(
@@ -84,4 +99,18 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     // Lê qualquer coluna como texto. Sem valor devolve "sem dados".
     private static string Texto(SqlDataReader leitor, int i)
         => Campos.Limpar(leitor.IsDBNull(i) ? null : Convert.ToString(leitor.GetValue(i), CultureInfo.InvariantCulture));
+   
+
+ // Uma linha do SQL → um ValorAgrupado. A ordem das colunas é a do SELECT.
+    // O nome lê-se diretamente, sem o Texto(...): o Campos.Limpar trocaria "(sem marca)",
+    // "(sem família)" e "(cliente sem ficha)" por "sem dados", e o modelo perdia a
+    // explicação. O COALESCE do SQL já garante que o nome nunca chega a NULL.
+    private static ValorAgrupado LerValorAgrupado(SqlDataReader leitor) => new(
+        Nome:       leitor.GetString(0),
+        Valor:      leitor.GetDecimal(1),
+        Quantidade: leitor.GetDecimal(2),
+        Documentos: leitor.GetInt32(3),
+        Total:      leitor.GetDecimal(4),
+        Grupos:     leitor.GetInt32(5));
+
 }

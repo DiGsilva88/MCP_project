@@ -134,7 +134,24 @@ FROM INFORMATION_SCHEMA.COLUMNS
 WHERE COLUMN_NAME LIKE '%Marca%';
 EXEC sp_help 'dbo.ATG_Marca';
 
+
+
+-- 1. Os nomes e tipos existem na AnaVendArt?
+SELECT name, TYPE_NAME(user_type_id) AS tipo
+FROM sys.columns
+WHERE object_id = OBJECT_ID('dbo.AnaVendArt') AND name LIKE 'Vlr%';
+
+
+-- 2. Sinal nas notas de crédito e se Ilíquido - Desconto = Líquido (diferenca perto de 0 = ok)
+SELECT TipoDocID,
+       MIN(VlrIva) AS MinIva, MAX(VlrIva) AS MaxIva,
+       MIN(VlrDesconto) AS MinDesc, MAX(VlrDesconto) AS MaxDesc,
+       SUM("VlrIliq" - "VlrDesconto" - "VlrLiquido") AS diferenca
+FROM dbo.AnaVendArt
+GROUP BY TipoDocID;
+
 GO
+
 --criar a view mcp.Vendas, que vai ler a AnaVendArt e a FArtigo, e a ATG_Familia para obter o nome da familia do artigo
 CREATE OR ALTER VIEW mcp.ViewMCP_vendas AS
 SELECT
@@ -155,14 +172,20 @@ SELECT
                   NULLIF(LTRIM(RTRIM(m.MarcaID)),''),
                   '(sem marca)') AS nvarchar(50)) AS Marca,
     -- Medidas: o sinal já vem da AnaVendArt(multiplicador AnaVendart).
-    CAST(v.Quantidade AS decimal(18,2)) AS Quantidade,
-    CAST(v.VlrLiquido AS decimal(18,2)) AS ValorLiquido
+    CAST(v.Quantidade  AS decimal(18,2)) AS Quantidade,
+    CAST(v.VlrIliq AS decimal(18,2)) AS ValorIliquido,
+    CAST(v.VlrDesconto AS decimal(18,2)) AS ValorDesconto,
+    CAST(v.VlrLiquido  AS decimal(18,2)) AS ValorLiquido,
+    CAST(v.VlrIva      AS decimal(18,2)) AS ValorIva,
+    --quantidade homogenizada
+    CAST(v.QtHomo AS decimal(33,7)) AS QuantidadeHomogenizada
 FROM dbo.AnaVendArt AS v
 -- A chave da Fartigo é o ArtigoID, que é a mesma chave usada na AnaVendArt. 
 -- A junção é feita com base nessa chave para obter o nome do artigo correspondente ArtigoId+TipoArtigo
 -- um artigo apagado do catalogo não faz desaparecer a venda
-LEFT JOIN dbo.FArtigo AS a ON a.ArtigoID = v.ArtigoID 
-LEFT JOIN dbo.ATG_Familia AS f ON a.FamiliaID = f.FamiliaID
+LEFT JOIN dbo.FArtigo AS a ON a.ArtigoID = v.ArtigoID
+                           AND a.TipoArtigo = v.TipoArtigo -- chave com 2 colunas: só ArtigoID duplicava vendas
+LEFT JOIN dbo.ATG_Familia AS f ON v.FamiliaID = f.FamiliaID
 OUTER APPLY (
     SELECT TOP 1 mm.MarcaID, mm.DescMarca
     FROM dbo.ATG_Marca AS mm
@@ -188,10 +211,10 @@ From dbo.AnaVendArt
 GROUP BY MoedaID;
 
 --Estados dos documentos de venda: o l deixa os anulados de fora?
--- SELECT EstadoDocID, COUNT(*) AS documentos ----ERRO CORRIGIR !!!!!!!!!!!
--- FROM dbo.DOC_Mov
--- WHERE Aplicação = 'Vendas'
--- GROUP BY EstadoDoc; 
+SELECT EstadoDoc, COUNT(*) AS documentos
+FROM dbo.DOC_Mov
+WHERE Aplicacao = 'VND'
+GROUP BY EstadoDoc;
 
 --C tipos de documentos e sinal: as notas de crédito tem de somar negativo.
 SELECT TipoDocID, COUNT(*) AS  linhas,MIN(VlrLiquido) AS MinValor, MAX(VlrLiquido) AS maior, SUM(VlrLiquido) AS soma
@@ -203,7 +226,7 @@ ORDER BY soma;
 SELECT ClienteID
 FROM dbo.AnaVendArt
 GROUP BY ClienteID
-HAVING COUNT(DISTINCT ClienteID) > 1;
+HAVING COUNT(DISTINCT TipoCliente) > 1;
 
 --Chave de documento chega: Nenhum documentoID deve repetir-se, mesmo que seja em anos diferentes. (0 linhas = ok)
 SELECT DocumentoID FROM mcp.ViewMCP_vendas 
@@ -213,6 +236,13 @@ HAVING COUNT(DISTINCT ClienteID) > 1;
 --Left join não duplicam linhas(2 numeros iguais)
 SELECT(SELECT COUNT(*) FROM mcp.ViewMCP_vendas) AS linhas_mcp,
        (SELECT COUNT(*) FROM dbo.AnaVendArt) AS linhas_origem;
+
+--G. Linhas e valor sem marca (se quase tudo ficar sem marca, a dimensão Marca não vale a pena)
+SELECT CASE WHEN Marca = '(sem marca)' THEN 'sem marca' ELSE 'com marca' END AS grupo,
+       COUNT(*)          AS linhas,
+       SUM(ValorLiquido) AS valor
+FROM   mcp.ViewMCP_vendas
+GROUP BY CASE WHEN Marca = '(sem marca)' THEN 'sem marca' ELSE 'com marca' END;
 
 
 --dar permissão de select na view mcp.ViewMCP_vendas para o user mcp
@@ -238,14 +268,18 @@ ORDER BY Ano;
 
 
 -- 4. A junção que a tool clientes_top_faturacao vai fazer, com o mesmo
---entre a view vendas e com a clientes (schema mcp + schema dbo) é possível, porque a chave ClienteID é a mesma nas duas views. 
+--entre a view vendas e a de clientes (as duas no schema mcp), pela chave ClienteID.
+-- Agrupa por ClienteID, como a tool: dois clientes com o mesmo nome não se somam.
 
-SELECT TOP 5 c.NomeCliente,SUM(v.ValorLiquido) AS Valor
+SELECT TOP 5 v.ClienteID, c.NomeCliente, SUM(v.ValorLiquido) AS Valor
 FROM mcp.ViewMCP_vendas AS v
 LEFT JOIN mcp.ViewMCP_cliente AS c ON c.ClienteID = v.ClienteID
 Where v.DataDoc >= '2026-01-01' AND v.DataDoc < '2027-01-01'
-GROUP BY c.NomeCliente
+GROUP BY v.ClienteID, c.NomeCliente
 ORDER BY Valor DESC;
+
+-- Voltar a ser o utilizador original: sem isto, o resto da janela corre como mcpserver.
+REVERT;
 
 
 
