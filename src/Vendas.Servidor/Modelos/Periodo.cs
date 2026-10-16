@@ -1,7 +1,6 @@
 //os periodos que o modelo pode pedir
 //lista fechada de periodos:o modelo escolhe, o servidor calcula as datas
 
-using System.ComponentModel;
 
 namespace Vendas.Servidor.Modelos;
 
@@ -30,9 +29,9 @@ public enum Periodo
 
          return periodo switch
          {
-             Periodo.Ultimos7Dias => (hoje.AddDays(-7), amanha),
-             Periodo.Ultimos30Dias => (hoje.AddDays(-30), amanha),
-             Periodo.Ultimos90Dias => (hoje.AddDays(-90), amanha),
+             Periodo.Ultimos7Dias => (hoje.AddDays(-6), amanha),
+             Periodo.Ultimos30Dias => (hoje.AddDays(-29), amanha),
+             Periodo.Ultimos90Dias => (hoje.AddDays(-89), amanha),
              Periodo.AnoAtual => (inicioAno, amanha),
              Periodo.MesAtual => (inicioMes, amanha),
              Periodo.AnoAnterior => (inicioAno.AddYears(-1), inicioAno),
@@ -50,7 +49,7 @@ public enum Periodo
           Periodo.Ultimos7Dias => "últimos 7 dias",
           Periodo.Ultimos30Dias => "últimos 30 dias",
           Periodo.Ultimos90Dias => "últimos 90 dias",
-          Periodo.Ultimos12Meses => "ultimos 12 meses",
+          Periodo.Ultimos12Meses => "últimos 12 meses",
           Periodo.MesAtual => "mês atual",
           Periodo.AnoAtual => "ano atual",
           Periodo.MesAnterior => "mês anterior",
