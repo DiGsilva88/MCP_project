@@ -65,7 +65,7 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     }
 
     public async Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
-        DimensaoArtigo dimensao, DateOnly desde, DateOnly ate, int limite,
+        DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite,
         CancellationToken cancellationToken = default)
     {
         var (sql, parametros) = ConsultaVendas.TopArtigos(dimensao, desde, ate);

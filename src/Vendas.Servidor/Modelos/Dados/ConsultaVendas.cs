@@ -46,7 +46,7 @@ internal static class ConsultaVendas
             return(sql, parametros => PreencherPeriodo(parametros, desde, ate));
          }
             public static (string Sql, Action<SqlParameterCollection> Parametros) TopArtigos(
-            DimensaoArtigo dimensao,DateOnly desde, DateOnly ate)
+            DimensaoVenda dimensao,DateOnly desde, DateOnly ate)
     {
         var(nome, agrupar) = Colunas(dimensao);
 
@@ -71,12 +71,12 @@ internal static class ConsultaVendas
 
     //O que se mostra e por onde se agrupa, para cada dimensão. Switch fechado:
     //o modelo escolhe um valor do enum, nunca escreve SQL.
-private static(string Nome, string Agrupar) Colunas(DimensaoArtigo dimensao) => dimensao switch
+private static(string Nome, string Agrupar) Colunas(DimensaoVenda dimensao) => dimensao switch
 {
 
-        DimensaoArtigo.Artigo  => ("CONCAT([Artigo], ' (', [ArtigoID], ')')", "[ArtigoID], [Artigo]"),
-        DimensaoArtigo.Familia => ("[Familia]", "[Familia]"),
-        DimensaoArtigo.Marca   => ("[Marca]",   "[Marca]"),
+        DimensaoVenda.Artigo  => ("CONCAT([Artigo], ' (', [ArtigoID], ')')", "[ArtigoID], [Artigo]"),
+        DimensaoVenda.Familia => ("[Familia]", "[Familia]"),
+        DimensaoVenda.Marca   => ("[Marca]",   "[Marca]"),
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao))
 
 };

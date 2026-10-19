@@ -27,7 +27,7 @@ internal sealed class FakeVendasRepo : IVendasRepo
     public IReadOnlyList<Campo>? UltimoMostrar { get; private set; }
     public IReadOnlyList<ValorAgrupado> Valores { get; set; } = [];
     public (DateOnly Desde, DateOnly Ate)? UltimoPeriodo { get; private set; }
-    public DimensaoArtigo? UltimaDimensao { get; private set; }
+    public DimensaoVenda? UltimaDimensao { get; private set; }
 
     public Task<IReadOnlyList<ContagemCliente>> ContarAsync(
         Campo agrupar, IReadOnlyDictionary<Campo, string> filtros, int limite, CancellationToken ct = default)
@@ -79,7 +79,7 @@ internal sealed class FakeVendasRepo : IVendasRepo
     }
 
     public Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
-        DimensaoArtigo dimensao, DateOnly desde, DateOnly ate, int limite, CancellationToken ct = default)
+        DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, CancellationToken ct = default)
     {
         UltimaDimensao = dimensao;
         UltimoPeriodo = (desde, ate);
