@@ -1,6 +1,11 @@
-
+using ModelContextProtocol.Server;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
+using System.Text;
+using Microsoft.Extensions.Logging;
+using Vendas.Servidor.Modelos.Dados;
+using Vendas.Servidor.Modelos;
 
 namespace Vendas.Servidor.Ferramentas;
 
@@ -10,7 +15,7 @@ namespace Vendas.Servidor.Ferramentas;
 
 [McpServerToolType]
 
-public sealed class VendasTools(IVendas repo, ILogger<VistasTools>log)
+public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
 {
     
     [McpServerTool(Name = "consultar_vendas" )]
@@ -21,7 +26,7 @@ public sealed class VendasTools(IVendas repo, ILogger<VistasTools>log)
     public async Task<string> ConsultarVendasAsync(
 
         [Description("Cliente, Artigo, Familia ou Marca.")] DimensaoVenda agrupar = DimensaoVenda.Cliente,
-        [Description("Periodo.")] Periodo periodo = periodo.AnoAtual,
+        [Description("Periodo.")] Periodo periodo = Periodo.AnoAtual,
         [Description("Máximo linhas, 1 a 100")] int limite =10,
         CancellationToken cancellationToken =default)
     {
@@ -54,12 +59,40 @@ public sealed class VendasTools(IVendas repo, ILogger<VistasTools>log)
             log.LogInformation(" consultar_vendas {Agrupar} {Periodo} em {Ms} ms",
             agrupar, periodo, relogio.ElapsedMilliseconds);
         }
-    }    
-    
-    
+    }
 
+    private static DateOnly Hoje() => DateOnly.FromDateTime(DateTime.Today);
 
+    internal static string FormatarRanking(string cabecalho, string plural, string descricao,
+        DateOnly desde, DateOnly ate, IReadOnlyList<ValorAgrupado> linhas, bool comQuantidade)
+    {
+        if (linhas.Count == 0)
+            return $"Sem vendas no periodo {descricao}.";
 
+        // Total e grupos são iguais em todas as linhas (o SQL calcula-os com OVER())
+        var (total, grupos) = (linhas[0].Total, linhas[0].Grupos);
 
+        // "ate" é exclusivo no Intervalo; o último dia incluído é o anterior
+        var csv = new StringBuilder()
+            .AppendLine(string.Create(CultureInfo.InvariantCulture,
+                $"Vendas por {cabecalho}, {descricao} ({desde:yyyy-MM-dd} a {ate.AddDays(-1):yyyy-MM-dd}): total {total:0.00} em {grupos} {plural}."))
+            .AppendLine($"posicao,{cabecalho},valor,percentagem,documentos{(comQuantidade ? ",quantidade" : "")}");
 
+        // InvariantCulture: ponto decimal, senão a vírgula partia o CSV
+        for (var i = 0; i < linhas.Count; i++)
+        {
+            var l = linhas[i];
+            var percentagem = total == 0 ? 0 : 100 * l.Valor / total;
+            csv.Append(string.Create(CultureInfo.InvariantCulture,
+                $"{i + 1},{VistasTools.Campo(l.Nome)},{l.Valor:0.00},{percentagem:0.0},{l.Documentos}"));
+            if (comQuantidade)
+                csv.Append(string.Create(CultureInfo.InvariantCulture, $",{l.Quantidade:0.##}"));
+            csv.AppendLine();
+        }
+
+        if (grupos > linhas.Count)
+            csv.AppendLine($"# Mostrados {linhas.Count} de {grupos} {plural}.");
+
+        return csv.ToString();
+    }
 }

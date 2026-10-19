@@ -36,8 +36,6 @@ builder.Services
     .AddMcpServer()
     .WithStdioServerTransport()
     .WithToolsFromAssembly();
-    .WithTools<VendasTools>();
-    
 
 // Interruptor sem recompilar: VENDAS_SENSIVEL=0 tira consultar_sensivel da lista de tools (ligado por omissão).
 // Tirada do registo, o modelo nem a vê, em vez de a chamar e receber uma recusa.
