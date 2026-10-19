@@ -64,7 +64,8 @@ var caracteresFerramentas = 0; // texto devolvido pelas ferramentas na pergunta 
 // Acima disto o Ollama cortaria o início do prompt, que são as regras de segurança.
 const int MaxCaracteresFerramentas = 12_000;
 
-IChatClient ollama = new OllamaApiClient(http, Environment.GetEnvironmentVariable("OLLAMA_MODELO") ?? "qwen2.5:7b");
+// 4b instruct (sem "thinking"): o 7b é demasiado pesado para o CPU desta máquina
+IChatClient ollama = new OllamaApiClient(http, Environment.GetEnvironmentVariable("OLLAMA_MODELO") ?? "qwen3:4b-instruct");
 IChatClient modelo = ollama
     .AsBuilder()
     .UseFunctionInvocation(null, c =>
