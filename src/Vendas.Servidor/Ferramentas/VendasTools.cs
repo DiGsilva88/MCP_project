@@ -20,14 +20,16 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
     [Description(
 
         "Ranking de faturação real num período (valor líquido sem IVA, notas de crédito descontadas). " +
-        "agrupar=Cliente: melhores clientes; Artigo, Familia ou Marca: o que mais se vende. " +
-        "Devolve CSV: posicao, <agrupar>, valor, percentagem, documentos (+quantidade fora de Cliente).")]
+        "agrupar=Cliente: melhores clientes (nome e ID); Artigo, Familia ou Marca: o que mais se vende; Mes: atividade mês a mês. " +
+        "cliente (ID ou nome) limita a esse cliente: o que compra, quanto, quando. " +
+        "Devolve CSV: posicao, <agrupar>, valor, percentagem, documentos (+quantidade fora de Cliente), bruto, desconto, iva.")]
     public async Task<string> ConsultarVendasAsync(
 
-        [Description("Cliente, Artigo, Familia ou Marca.")] DimensaoVenda agrupar = DimensaoVenda.Cliente,
+        [Description("Cliente, Artigo, Familia, Marca ou Mes.")] DimensaoVenda agrupar = DimensaoVenda.Cliente,
         [Description("Ultimos7Dias, Ultimos30Dias, Ultimos90Dias, Ultimos12Meses, AnoAtual, AnoAnterior, MesAtual ou MesAnterior.")]
         Periodo periodo = Periodo.AnoAtual,
         [Description("Máximo de linhas, 1 a 100.")] int limite = 10,
+        [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
         CancellationToken ct = default)
     {
         limite = Math.Clamp(limite, 1, VistasTools.MaxLinhas);
@@ -39,10 +41,10 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
 
             // Um método por view de origem: os clientes precisam do nome que vive na ViewMCP_cliente.
             var linhas = agrupar == DimensaoVenda.Cliente
-                ? await repo.TopClientesAsync(desde, ate, limite, ct)
-                : await repo.TopArtigosAsync(agrupar, desde, ate, limite, ct);
+                ? await repo.TopClientesAsync(desde, ate, limite, cliente, ct)
+                : await repo.TopArtigosAsync(agrupar, desde, ate, limite, cliente, ct);
 
-            return FormatarRanking(agrupar, periodo, desde, ate, linhas);
+            return FormatarRanking(agrupar, periodo, desde, ate, cliente, linhas);
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
         catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
@@ -57,12 +59,15 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
     }
 
     private static string FormatarRanking(
-        DimensaoVenda agrupar, Periodo periodo, DateOnly desde, DateOnly ate, IReadOnlyList<ValorAgrupado> linhas)
+        DimensaoVenda agrupar, Periodo periodo, DateOnly desde, DateOnly ate, string? cliente,
+        IReadOnlyList<ValorAgrupado> linhas)
     {
         var inv = CultureInfo.InvariantCulture;
         var (cabecalho, plural) = (Dimensoes.Cabecalho(agrupar), Dimensoes.Plural(agrupar));
         // "ate" é exclusivo: mostra-se o último dia incluído
         var intervalo = $"{desde.ToString("dd-MM-yyyy", inv)} a {ate.AddDays(-1).ToString("dd-MM-yyyy", inv)}";
+        if (!string.IsNullOrWhiteSpace(cliente))
+            intervalo += $", cliente \"{cliente.Trim()}\"";
 
         if (linhas.Count == 0)
             return $"Sem vendas: {Periodos.Descricao(periodo)} ({intervalo}).";
@@ -74,7 +79,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
         var csv = new StringBuilder()
             .AppendLine(string.Create(inv,
                 $"Vendas por {cabecalho}, {Periodos.Descricao(periodo)} ({intervalo}): total {total:0.00} em {grupos} {plural}."))
-            .AppendLine($"posicao,{cabecalho},valor,percentagem,documentos{(comQuantidade ? ",quantidade" : "")}");
+            .AppendLine($"posicao,{cabecalho},valor,percentagem,documentos{(comQuantidade ? ",quantidade" : "")},bruto,desconto,iva");
 
         var posicao = 0;
         foreach (var linha in linhas)
@@ -83,7 +88,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
             var percentagem = total == 0 ? "-" : (100 * linha.Valor / total).ToString("0.0", inv);
             var quantidade = comQuantidade ? "," + linha.Quantidade.ToString("0.##", inv) : "";
             csv.AppendLine(string.Create(inv,
-                $"{++posicao},{VistasTools.Campo(linha.Nome)},{linha.Valor:0.00},{percentagem},{linha.Documentos}{quantidade}"));
+                $"{++posicao},{VistasTools.Campo(linha.Nome)},{linha.Valor:0.00},{percentagem},{linha.Documentos}{quantidade},{linha.Bruto:0.00},{linha.Desconto:0.00},{linha.Iva:0.00}"));
         }
 
         // Mais grupos na base de dados do que linhas mostradas: a lista foi cortada.

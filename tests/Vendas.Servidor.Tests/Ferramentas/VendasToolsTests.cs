@@ -7,43 +7,82 @@ namespace Vendas.Servidor.Tests.Ferramentas;
 
 public class VendasToolsTests
 {
-    private static VendasTools CriarSut(FakeVendasRepo repo) =>
-        new(repo, NullLogger<VendasTools>.Instance);
+
+
+    private static VendasTools CriarSut(FakeVendasRepo repo) => new(repo, NullLogger<VendasTools>.Instance);
 
     [Fact]
-    public async Task Vendas_PorArtigo_DevolveRankingComPercentagemEQuantidadeECorte()
+    public async Task Cliente_ChamaTopClientes()
     {
-        var repo = new FakeVendasRepo
-        {
-            Valores = [new("Parafuso, 5mm", 750m, 30m, 4, 1000m, 3), new("Porca", 250m, 10.5m, 2, 1000m, 3)]
-        };
-        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo, Periodo.AnoAtual, limite: 2);
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Cliente, limite: 5);
 
-        Assert.Equal(DimensaoVenda.Artigo, repo.UltimaDimensao);
-        Assert.Equal(2, repo.UltimoLimite);
-        var linhas = r.Split(Environment.NewLine);
-        Assert.Equal("posicao,artigo,valor,percentagem,documentos,quantidade", linhas[1]);
-        Assert.Equal("1,\"Parafuso, 5mm\",750.00,75.0,4,30", linhas[2]);
-        Assert.Equal("2,Porca,250.00,25.0,2,10.5", linhas[3]);
-        Assert.Equal("# Mostrados 2 de 3 artigos.", linhas[4]);
+        Assert.Null(repo.UltimaDimensao); // não foi ao TopArtigos
+        Assert.Equal(5, repo.UltimoLimite);
     }
 
     [Fact]
-    public async Task Vendas_PorCliente_UsaTopClientesESemQuantidade()
+    public async Task Marca_ChamaTopArtigosComADimensao()
     {
-        var repo = new FakeVendasRepo { Valores = [new("Ana", 100m, 0m, 1, 100m, 1)] };
-        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Cliente, Periodo.AnoAtual);
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Marca);
 
-        Assert.Null(repo.UltimaDimensao);
-        Assert.Contains("posicao,cliente,valor,percentagem,documentos" + Environment.NewLine + "1,Ana,100.00,100.0,1", r);
+        Assert.Equal(DimensaoVenda.Marca, repo.UltimaDimensao);
     }
 
     [Fact]
-    public async Task Vendas_ErroNoRepo_DevolveErroNeutro()
+    public async Task Limite_AcimaDe100_FicaEm100()
     {
-        var repo = new FakeVendasRepo { LancarExcecao = new InvalidOperationException("SQL partido") };
+    
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarVendasAsync(limite:500);
+        Assert.Equal(100, repo.UltimoLimite);
+    }
+
+
+    [Fact]
+    public async Task Falha_DevolveErroNeutro()
+    {
+    
+        var repo = new FakeVendasRepo{LancarExcecao = new InvalidOperationException("SQL secreto")};
         var r = await CriarSut(repo).ConsultarVendasAsync();
-
-        Assert.Equal("Não foi possivel consultar os dados neste momento", r);
+        
+        Assert.Equal(VistasTools.ErroNeutro, r);
     }
-}
+
+    [Fact]
+    public async Task Csv_ProtegeVirgulasUsaPontoEAvisaCorte()
+    {
+    
+        var repo = new FakeVendasRepo{Valores = [new("Bento, Filhos", 1234.5m,0,3,2469m,2, 1371.67m, -137.17m, 283.94m)]};
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Cliente);
+        Assert.Contains("posicao,cliente,valor,percentagem,documentos,bruto,desconto,iva" + Environment.NewLine, r);
+        Assert.Contains("1,\"Bento, Filhos\",1234.50,50.0,3,1371.67,-137.17,283.94",r);
+        Assert.Contains("# Mostrados 1 de 2 clientes",r);
+
+    }
+
+    [Fact]
+    public async Task Cliente_PassaAoRepoEApareceNoCabecalho()
+    {
+        var repo = new FakeVendasRepo{Valores = [new("2024-12", 30.6m,1,1,30.6m,1)]};
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, cliente: " 1003 ");
+
+        Assert.Equal(" 1003 ", repo.UltimoCliente);
+        Assert.Equal(DimensaoVenda.Mes, repo.UltimaDimensao);
+        Assert.Contains("cliente \"1003\"", r);
+        Assert.Contains("posicao,mes,valor,percentagem,documentos,quantidade,bruto,desconto,iva", r);
+    }
+
+    [Fact]
+    public async Task TotalZero_NaoDividePorZero()
+    {
+    
+        var repo = new FakeVendasRepo{Valores = [new("Ana", 0m,2m,1,0m,1)]};
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo);
+        
+        Assert.Contains("1,Ana,0.00,-,1,2",r);
+    }
+    
+    }
+

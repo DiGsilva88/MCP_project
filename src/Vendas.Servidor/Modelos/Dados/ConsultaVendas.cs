@@ -16,78 +16,96 @@ internal static class ConsultaVendas
     private const string Clientes = "[mcp].[ViewMCP_cliente]";
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) TopClientes(
-        DateOnly desde, DateOnly ate)
+        DateOnly desde, DateOnly ate, string? cliente = null)
     {
-        //1o soma por ClienteId dentro da view de vendas (o CTE "por cliente");
-        //2º vai buscar o nome a View_cliente o nome vive lá
-
+        // 1º soma por ClienteID dentro da view de vendas; 2º vai buscar o nome à ViewMCP_cliente.
+        // O ID vai junto ao nome para o modelo poder cruzar com as outras consultas.
         var sql = $"""
-            WITH porCliente AS (
-                SELECT v.[ClienteID],
-                       SUM(v.[ValorLiquido])           AS Valor,
-                       COUNT(DISTINCT v.[DocumentoID]) AS Documentos
-                FROM   {Vendas} AS v
-                WHERE  v.[DataDoc] >= @desde
-                  AND  v.[DataDoc] <  @ate
-                GROUP BY v.[ClienteID] 
-                )
             SELECT TOP (@limite)
-                COALESCE(c.[NomeCliente], '(cliente sem ficha)') AS Nome,
-                p.Valor,
-                CAST(0 decimal(18,2)) AS Quantidade,
-                p.Documentos,
-                SUM(p.Valor) OVER () AS Total,
-                COUNT(*) OVER() AS Grupos
-            FROM porCliente AS p
+                   CONCAT(COALESCE(c.[NomeCliente], '(cliente sem ficha)'), ' (', p.[ClienteID], ')') AS Nome,
+                   p.Valor,
+                   CAST(0 AS decimal(18,2)) AS Quantidade,
+                   p.Documentos,
+                   SUM(p.Valor) OVER () AS Total,
+                   COUNT(*)     OVER () AS Grupos,
+                   p.Bruto, p.Desconto, p.Iva
+            FROM (
+                SELECT [ClienteID],
+                       SUM([ValorLiquido])           AS Valor,
+                       COUNT(DISTINCT [DocumentoID]) AS Documentos,
+                       SUM([ValorIliquido])          AS Bruto,
+                       SUM([ValorDesconto])          AS Desconto,
+                       SUM([ValorIva])               AS Iva
+                FROM   {Vendas}
+                WHERE  [DataDoc] >= @desde
+                  AND  [DataDoc] <  @ate
+                  {FiltroCliente(cliente)}
+                GROUP BY [ClienteID]
+            ) AS p
             LEFT JOIN {Clientes} AS c ON c.[ClienteID] = p.[ClienteID]
             ORDER BY p.Valor DESC, Nome;
             """;
 
-            return(sql, parametros => PreencherPeriodo(parametros, desde, ate));
-         }
-            public static (string Sql, Action<SqlParameterCollection> Parametros) TopArtigos(
-            DimensaoVenda dimensao,DateOnly desde, DateOnly ate)
+        return (sql, parametros => Preencher(parametros, desde, ate, cliente));
+    }
+
+    public static (string Sql, Action<SqlParameterCollection> Parametros) TopArtigos(
+        DimensaoVenda dimensao, DateOnly desde, DateOnly ate, string? cliente = null)
     {
-        var(nome, agrupar) = Colunas(dimensao);
+        var (nome, agrupar) = Colunas(dimensao);
+        // Meses por ordem cronológica (mais recente primeiro); o resto do maior para o menor valor
+        var ordem = dimensao == DimensaoVenda.Mes ? "Nome DESC" : "Valor DESC, Nome";
 
         var sql = $"""
             SELECT TOP (@limite)
-            {nome}  AS Nome,
-                   SUM([ValorLiquido])              AS Valor,
-                   SUM([Quantidade])                AS Quantidade,
-                   COUNT(DISTINCT [DocumentoID])    AS Documentos,
+                   {nome} AS Nome,
+                   SUM([ValorLiquido]) AS Valor,
+                   SUM([Quantidade])   AS Quantidade,
+                   COUNT(DISTINCT [DocumentoID]) AS Documentos,
                    SUM(SUM([ValorLiquido])) OVER () AS Total,
-                   COUNT(*)                 OVER () AS Grupos
+                   COUNT(*)                 OVER () AS Grupos,
+                   SUM([ValorIliquido]) AS Bruto,
+                   SUM([ValorDesconto]) AS Desconto,
+                   SUM([ValorIva])      AS Iva
             FROM   {Vendas}
             WHERE  [DataDoc] >= @desde
               AND  [DataDoc] <  @ate
+              {FiltroCliente(cliente)}
             GROUP BY {agrupar}
-            ORDER BY Valor DESC, Nome;
+            ORDER BY {ordem};
             """;
 
-        return (sql, parametros => PreencherPeriodo(parametros, desde, ate));
-
+        return (sql, parametros => Preencher(parametros, desde, ate, cliente));
     }
+
+    // Só as vendas de um cliente: ID exato ou início do nome (sem acentos/maiúsculas).
+    // Os REPLACE escapam [ % _ para o texto do modelo nunca funcionar como wildcard (igual à ConsultaClientes).
+    private static string FiltroCliente(string? cliente) => string.IsNullOrWhiteSpace(cliente) ? "" : $"""
+        AND [ClienteID] IN (
+                    SELECT cf.[ClienteID] FROM {Clientes} AS cf
+                    WHERE  CAST(cf.[ClienteID] AS nvarchar(50)) = @cliente
+                       OR  cf.[NomeCliente] COLLATE Latin1_General_CI_AI LIKE
+                           REPLACE(REPLACE(REPLACE(@cliente, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%')
+        """;
 
     //O que se mostra e por onde se agrupa, para cada dimensão. Switch fechado:
     //o modelo escolhe um valor do enum, nunca escreve SQL.
-private static(string Nome, string Agrupar) Colunas(DimensaoVenda dimensao) => dimensao switch
-{
-
+    private static (string Nome, string Agrupar) Colunas(DimensaoVenda dimensao) => dimensao switch
+    {
         DimensaoVenda.Artigo  => ("CONCAT([Artigo], ' (', [ArtigoID], ')')", "[ArtigoID], [Artigo]"),
         DimensaoVenda.Familia => ("[Familia]", "[Familia]"),
         DimensaoVenda.Marca   => ("[Marca]",   "[Marca]"),
+        // estilo 120 = "aaaa-mm-dd": os 7 primeiros caracteres são o mês
+        DimensaoVenda.Mes     => ("CONVERT(char(7), [DataDoc], 120)", "CONVERT(char(7), [DataDoc], 120)"),
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao))
+    };
 
-};
-
-//dateOnly - DateTime a meia noite é o formato que o SqlCliente envia para uma coluna "date"
-private static void PreencherPeriodo(SqlParameterCollection parametros,DateOnly desde, DateOnly ate)
-
+    //DateOnly -> DateTime à meia-noite é o formato que o SqlClient envia para uma coluna "date"
+    private static void Preencher(SqlParameterCollection parametros, DateOnly desde, DateOnly ate, string? cliente)
     {
-        
-        parametros.Add("@desde", SqlDbType.Date).Value =desde.ToDateTime(TimeOnly.MinValue);
-        parametros.Add("@ate", SqlDbType.Date).Value =ate.ToDateTime(TimeOnly.MinValue);
+        parametros.Add("@desde", SqlDbType.Date).Value = desde.ToDateTime(TimeOnly.MinValue);
+        parametros.Add("@ate", SqlDbType.Date).Value = ate.ToDateTime(TimeOnly.MinValue);
+        if (!string.IsNullOrWhiteSpace(cliente))
+            parametros.Add("@cliente", SqlDbType.NVarChar, 100).Value = cliente.Trim();
     }
 }
-

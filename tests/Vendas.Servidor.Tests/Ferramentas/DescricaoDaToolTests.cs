@@ -19,5 +19,18 @@ public class DescricaoDaToolTests
         Assert.Contains(coluna, descricao);
     }
 
+    [Theory]
+
+    [MemberData(nameof(NomesDasDimensoes))]
+    public void DescricaoVendas_MencionaTodasAsDimensoes(string dimensao)
+    {
+        var descricao = typeof(VendasTools).GetMethod(nameof(VendasTools.ConsultarVendasAsync))!
+            .GetCustomAttribute<DescriptionAttribute>()!.Description;
+
+        Assert.Contains(dimensao, descricao);
+    }
+
+    public static TheoryData<string> NomesDasDimensoes() => new(Enum.GetNames<DimensaoVenda>());
+
     public static TheoryData<string> NomesDasColunas() => new(Enum.GetNames<Campo>());
 }

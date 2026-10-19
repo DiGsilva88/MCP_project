@@ -52,6 +52,8 @@ public static class PoliticasSeguranca
         - Quem compra mais, faturação, artigos, famílias ou marcas mais vendidos:
           consultar_vendas com agrupar e periodo (sem período dito: AnoAtual; "este mês":
           MesAtual; "ano passado": AnoAnterior). Diz o período que vem no resultado.
+          Vendas, artigos ou atividade de um cliente: consultar_vendas com cliente=ID ou nome
+          (atividade mês a mês: agrupar=Mes). Valor vendido = valor (líquido sem IVA).
         - NIF, email, telefone, morada, código postal, volume de vendas declarado e plafond:
           consultar_sensivel. Top por volume declarado na ficha (ou plafond): consultar_sensivel
           com dado=VolumeVendas, maiores=true, limite=N (EscalaoVolumeVendas é só o escalão,

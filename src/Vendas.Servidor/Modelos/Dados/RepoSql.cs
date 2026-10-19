@@ -57,18 +57,18 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         return new PaginaClientes(colunas, linhas, total);
     }
 
-        public async Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
-        DateOnly desde, DateOnly ate, int limite, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
+        DateOnly desde, DateOnly ate, int limite, string? cliente = null, CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaVendas.TopClientes(desde, ate);
+        var (sql, parametros) = ConsultaVendas.TopClientes(desde, ate, cliente);
         return await LerAsync(sql, parametros, limite, LerValorAgrupado, cancellationToken);
     }
 
     public async Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
-        DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite,
+        DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaVendas.TopArtigos(dimensao, desde, ate);
+        var (sql, parametros) = ConsultaVendas.TopArtigos(dimensao, desde, ate, cliente);
         return await LerAsync(sql, parametros, limite, LerValorAgrupado, cancellationToken);
     }
 
@@ -111,6 +111,9 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         Quantidade: leitor.GetDecimal(2),
         Documentos: leitor.GetInt32(3),
         Total:      leitor.GetDecimal(4),
-        Grupos:     leitor.GetInt32(5));
+        Grupos:     leitor.GetInt32(5),
+        Bruto:      leitor.GetDecimal(6),
+        Desconto:   leitor.GetDecimal(7),
+        Iva:        leitor.GetDecimal(8));
 
 }
