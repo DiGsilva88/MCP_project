@@ -24,11 +24,12 @@ public class PoliticasSegurancaTests
         Assert.False(PoliticasSeguranca.RespostaSemFonte("Olá! Em que posso ajudar?", 0));
     }
 
-    // Frases copiadas de VistasTools: se o servidor as mudar, estes testes avisam.
+    // Frases copiadas de VistasTools e VendasTools: se o servidor as mudar, estes testes avisam.
     [Theory]
     [InlineData("Nome,Localidade\nAna,Lisboa\n")]
     [InlineData("0 clientes com Localidade = Lisboa e Distrito = Porto: os valores existem, mas nenhum cliente tem os dois.")]
     [InlineData("Nenhuma linha encontrada com esse filtro.")]
+    [InlineData("Sem vendas no periodo ano atual.")]
     public void ResultadoComDados_RespostasReais_ContamComoFonte(string texto)
     {
         Assert.True(PoliticasSeguranca.ResultadoComDados(texto));

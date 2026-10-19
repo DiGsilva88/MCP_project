@@ -14,10 +14,11 @@ public static class PoliticasSeguranca
         && (texto.Any(char.IsDigit) || texto.Contains("\n- "));
 
     // Só conta como fonte um resultado com dados. Erros e recusas do servidor são uma frase só;
-    // CSV, contagens e listas de valores têm várias linhas. As duas exceções de uma linha são respostas reais.
+    // CSV, contagens e listas de valores têm várias linhas. As exceções de uma linha são respostas reais.
     // shortcut: depende do formato das mensagens do servidor; mudar para isError do MCP se o servidor o passar a usar.
     public static bool ResultadoComDados(string texto) =>
-        texto.Contains('\n') || texto.StartsWith("0 clientes com") || texto.StartsWith("Nenhuma linha encontrada");
+        texto.Contains('\n') || texto.StartsWith("0 clientes com") || texto.StartsWith("Nenhuma linha encontrada")
+        || texto.StartsWith("Sem vendas no periodo");
 
     // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
     public static string TextoDoResultado(object? resultado) =>
@@ -48,12 +49,16 @@ public static class PoliticasSeguranca
           Prazo ou condições de pagamento é Pagamento.
         - Dois critérios: coluna/valor para um, cruzarCom/valorCruzado para o outro.
           Um valor por filtro; "A e B" na mesma coluna = uma chamada por valor.
-        - NIF, email, telefone, morada, código postal, volume de vendas e plafond:
-          consultar_sensivel. Top N clientes por volume de vendas (ou plafond):
-          consultar_sensivel com dado=VolumeVendas, maiores=true, limite=N
-          (EscalaoVolumeVendas é só o escalão, não serve para top). Outra coluna na
-          mesma lista (ex.: actividade): mostrarTambem. Diz que o volume é o declarado
-          na ficha, não faturado.
+        - Quem compra mais, faturação, artigos, famílias ou marcas mais vendidos:
+          consultar_vendas com agrupar e periodo (sem período dito: AnoAtual; "este mês":
+          MesAtual; "ano passado": AnoAnterior). Diz o período que vem no resultado.
+          Vendas, artigos ou atividade de um cliente: consultar_vendas com cliente=ID ou nome
+          (atividade mês a mês: agrupar=Mes). Valor vendido = valor (líquido sem IVA).
+        - NIF, email, telefone, morada, código postal, volume de vendas declarado e plafond:
+          consultar_sensivel. Top por volume declarado na ficha (ou plafond): consultar_sensivel
+          com dado=VolumeVendas, maiores=true, limite=N (EscalaoVolumeVendas é só o escalão,
+          não serve para top). Outra coluna na mesma lista (ex.: actividade): mostrarTambem.
+          Diz que o volume é o declarado na ficha, não faturado.
         - Nomes começados por X: nomeComecaPor=X.
         - Se a ferramenta disser que um valor não existe, usa o existente mais próximo,
           chama de novo e diz qual usaste. Se a lista vier cortada ("mostrados N de M")
