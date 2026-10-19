@@ -27,5 +27,5 @@ public interface IVendasRepo
         DateOnly desde, DateOnly ate, int limite, CancellationToken cancellationToken=default);
 
      Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
-        DimensaoArtigo dimensao,DateOnly desde, DateOnly ate, int limite, CancellationToken cancellationToken=default);
+        DimensaoVenda dimensao,DateOnly desde, DateOnly ate, int limite, CancellationToken cancellationToken=default);
 }

@@ -14,13 +14,13 @@ namespace Vendas.Servidor.Ferramentas;
 [McpServerToolType]
 public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 {
-    private const int MaxLinhas = 100;
+    internal const int MaxLinhas = 100;
 
     // Evita overflow de (pagina-1)*limite, que dava OFFSET negativo no SQL.
     private const int MaxPaginas = 1000;
 
     // Frase devolvida ao modelo quando algo falha. Não revela nada do SQL.
-    private const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
+    internal const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
 
     // Máximo de valores existentes devolvidos quando o filtro não bate (poupa um turno ao modelo).
     private const int MaxValores = 30;
@@ -266,6 +266,6 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
     // Protege o CSV: um valor com vírgula, aspas ou quebra de linha vai entre aspas.
     // Ex.: Bento, Filhos  ->  "Bento, Filhos"
-    private static string Campo(string texto)
+    internal static string Campo(string texto)
         => texto.IndexOfAny([',', '"', '\n', '\r']) < 0 ? texto : $"\"{texto.Replace("\"", "\"\"")}\"";
 }
