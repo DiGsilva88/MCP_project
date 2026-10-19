@@ -10,86 +10,83 @@ using Vendas.Servidor.Modelos;
 namespace Vendas.Servidor.Ferramentas;
 
 
-//ferranentas sobre a view mcp_vendas 
-//todas agregam no SQL : nenhuma devolve linhas de documentos
-
+// Ferramentas sobre a view mcp.ViewMCP_vendas.
+// Todas agregam no SQL: nenhuma devolve linhas de documentos.
 [McpServerToolType]
-
 public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
 {
-    
-    [McpServerTool(Name = "consultar_vendas" )]
+    [McpServerTool(Name = "consultar_vendas")]
+    // Descrição curta de propósito, como nas outras tools: o modelo lê-a em cada pedido.
     [Description(
-        "Ranking de faturação real num periodo(valor liquído sem IVA, notas de crédito descontadas). " +
-        "agrupar= Cliente: melhores clientes; Artigo, Familia ou Marca: o que mais se vende. "+
-        "Devolve CSV: posicao, <agrupar>, valor, percentagem,documentos (+quantidade fora de Cliente.")]
+
+        "Ranking de faturação real num período (valor líquido sem IVA, notas de crédito descontadas). " +
+        "agrupar=Cliente: melhores clientes; Artigo, Familia ou Marca: o que mais se vende. " +
+        "Devolve CSV: posicao, <agrupar>, valor, percentagem, documentos (+quantidade fora de Cliente).")]
     public async Task<string> ConsultarVendasAsync(
 
         [Description("Cliente, Artigo, Familia ou Marca.")] DimensaoVenda agrupar = DimensaoVenda.Cliente,
-        [Description("Periodo.")] Periodo periodo = Periodo.AnoAtual,
-        [Description("Máximo linhas, 1 a 100")] int limite =10,
-        CancellationToken cancellationToken =default)
+        [Description("Ultimos7Dias, Ultimos30Dias, Ultimos90Dias, Ultimos12Meses, AnoAtual, AnoAnterior, MesAtual ou MesAnterior.")]
+        Periodo periodo = Periodo.AnoAtual,
+        [Description("Máximo de linhas, 1 a 100.")] int limite = 10,
+        CancellationToken ct = default)
     {
-        limite = Math.Clamp(limite,1, VistasTools.MaxLinhas);
+        limite = Math.Clamp(limite, 1, VistasTools.MaxLinhas);
 
         var relogio = Stopwatch.StartNew();
         try
         {
-            var(desde, ate) = Periodos.Intervalo(periodo, Hoje());
-            //0 repositorio tem um metodo por view de origem: os clientes precisam do nome da viewMCP_cliente
+            var (desde, ate) = Periodos.Intervalo(periodo, DateOnly.FromDateTime(DateTime.Today));
 
+            // Um método por view de origem: os clientes precisam do nome que vive na ViewMCP_cliente.
             var linhas = agrupar == DimensaoVenda.Cliente
-            ? await repo.TopClientesAsync (desde, ate, limite, cancellationToken)
-            : await repo.TopArtigosAsync (agrupar,desde,ate, limite, cancellationToken);
+                ? await repo.TopClientesAsync(desde, ate, limite, ct)
+                : await repo.TopArtigosAsync(agrupar, desde, ate, limite, ct);
 
-        return FormatarRanking(Dimensoes.Cabecalho(agrupar), Dimensoes.Plural(agrupar),
-                Periodos.Descricao(periodo),desde,ate, linhas,
-                comQuantidade: agrupar != DimensaoVenda.Cliente);
+            return FormatarRanking(agrupar, periodo, desde, ate, linhas);
         }
-
-        catch (OperationCanceledException) {throw;}
-        catch (Exception exeption) //nunca mostra ao modelo detalhes  do Sql
+        catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
+        catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
         {
-            log.LogError(exeption, "Falha em consultar_vendas ({Agrupar}), ({Periodo})", agrupar, periodo);
+            log.LogError(ex, "Falha em consultar_vendas ({Agrupar}, {Periodo})", agrupar, periodo);
             return VistasTools.ErroNeutro;
-
         }
         finally
         {
-            log.LogInformation(" consultar_vendas {Agrupar} {Periodo} em {Ms} ms",
-            agrupar, periodo, relogio.ElapsedMilliseconds);
+            log.LogInformation("consultar_vendas {Agrupar} {Periodo} em {Ms} ms", agrupar, periodo, relogio.ElapsedMilliseconds);
         }
     }
 
-    private static DateOnly Hoje() => DateOnly.FromDateTime(DateTime.Today);
-
-    internal static string FormatarRanking(string cabecalho, string plural, string descricao,
-        DateOnly desde, DateOnly ate, IReadOnlyList<ValorAgrupado> linhas, bool comQuantidade)
+    private static string FormatarRanking(
+        DimensaoVenda agrupar, Periodo periodo, DateOnly desde, DateOnly ate, IReadOnlyList<ValorAgrupado> linhas)
     {
+        var inv = CultureInfo.InvariantCulture;
+        var (cabecalho, plural) = (Dimensoes.Cabecalho(agrupar), Dimensoes.Plural(agrupar));
+        // "ate" é exclusivo: mostra-se o último dia incluído
+        var intervalo = $"{desde.ToString("dd-MM-yyyy", inv)} a {ate.AddDays(-1).ToString("dd-MM-yyyy", inv)}";
+
         if (linhas.Count == 0)
-            return $"Sem vendas no periodo {descricao}.";
+            return $"Sem vendas: {Periodos.Descricao(periodo)} ({intervalo}).";
 
         // Total e grupos são iguais em todas as linhas (o SQL calcula-os com OVER())
         var (total, grupos) = (linhas[0].Total, linhas[0].Grupos);
+        var comQuantidade = agrupar != DimensaoVenda.Cliente;
 
-        // "ate" é exclusivo no Intervalo; o último dia incluído é o anterior
         var csv = new StringBuilder()
-            .AppendLine(string.Create(CultureInfo.InvariantCulture,
-                $"Vendas por {cabecalho}, {descricao} ({desde:yyyy-MM-dd} a {ate.AddDays(-1):yyyy-MM-dd}): total {total:0.00} em {grupos} {plural}."))
+            .AppendLine(string.Create(inv,
+                $"Vendas por {cabecalho}, {Periodos.Descricao(periodo)} ({intervalo}): total {total:0.00} em {grupos} {plural}."))
             .AppendLine($"posicao,{cabecalho},valor,percentagem,documentos{(comQuantidade ? ",quantidade" : "")}");
 
-        // InvariantCulture: ponto decimal, senão a vírgula partia o CSV
-        for (var i = 0; i < linhas.Count; i++)
+        var posicao = 0;
+        foreach (var linha in linhas)
         {
-            var l = linhas[i];
-            var percentagem = total == 0 ? 0 : 100 * l.Valor / total;
-            csv.Append(string.Create(CultureInfo.InvariantCulture,
-                $"{i + 1},{VistasTools.Campo(l.Nome)},{l.Valor:0.00},{percentagem:0.0},{l.Documentos}"));
-            if (comQuantidade)
-                csv.Append(string.Create(CultureInfo.InvariantCulture, $",{l.Quantidade:0.##}"));
-            csv.AppendLine();
+            // Total 0 (ex.: só notas de crédito que anulam as vendas): sem percentagem, evita dividir por zero
+            var percentagem = total == 0 ? "-" : (100 * linha.Valor / total).ToString("0.0", inv);
+            var quantidade = comQuantidade ? "," + linha.Quantidade.ToString("0.##", inv) : "";
+            csv.AppendLine(string.Create(inv,
+                $"{++posicao},{VistasTools.Campo(linha.Nome)},{linha.Valor:0.00},{percentagem},{linha.Documentos}{quantidade}"));
         }
 
+        // Mais grupos na base de dados do que linhas mostradas: a lista foi cortada.
         if (grupos > linhas.Count)
             csv.AppendLine($"# Mostrados {linhas.Count} de {grupos} {plural}.");
 

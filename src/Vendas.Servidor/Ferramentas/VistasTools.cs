@@ -39,7 +39,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "valor: filtra a coluna. cruzarCom/valorCruzado: filtra também por outra coluna " +
         "(ex.: actividade com mais clientes em Corroios: coluna=Actividade, contar=true, cruzarCom=Localidade, valorCruzado=Corroios). " +
         "nomeComecaPor: clientes cujo nome começa por esse texto. " +
-        "Valores de volume de vendas ou plafond (ex.: top clientes por volume): usar consultar_sensivel. " +
+        "Faturação real (top clientes, artigos, familias, marcas): usar consultar_vendas" +
+        "Volume declarado na ficha ou plafond: usar consultar_sensivel"+
         "Devolve CSV; pagina=2 para continuar.")]
     public async Task<string> ConsultarAsync(
         [Description("Coluna a mostrar/filtrar/contar.")] Campo? coluna = null,
