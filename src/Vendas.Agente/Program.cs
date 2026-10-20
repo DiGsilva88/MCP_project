@@ -135,8 +135,10 @@ Console.WriteLine();
 Console.WriteLine("Modo de utilização:");
 Console.WriteLine("1) Perguntas livres (usa um modelo local via Ollama)");
 Console.WriteLine("2) Menu fixo (sem modelo, chama as ferramentas diretamente)");
+Console.WriteLine("3) Chat no browser (como o utilizador final, usa o modelo local)");
 Console.Write("> ");
-if (Console.ReadLine()?.Trim() == "2")
+var modo = Console.ReadLine()?.Trim();
+if (modo == "2")
 {
     await ModoMenuAsync(mcp);
     return;
@@ -146,6 +148,12 @@ if (Console.ReadLine()?.Trim() == "2")
 
 opcoes.Tools = [.. ferramentas];
 
+if (modo == "3")
+{
+    await ModoWebAsync();
+    return;
+}
+
 Console.WriteLine(" Escreva a sua pergunta ( Enter vazio termina).");
 
 while(true)
@@ -153,7 +161,13 @@ while(true)
     Console.Write("> ");
     var pergunta = Console.ReadLine();
     if(string.IsNullOrWhiteSpace(pergunta)) break;
+    await ResponderAsync(pergunta, texto => { Console.Write(texto); return Task.CompletedTask; });
+}
 
+// Responde a uma pergunta; "escrever" recebe o texto à medida que pode ser mostrado (consola ou browser).
+// As estatísticas e os erros técnicos vão sempre para a consola, nunca para o utilizador.
+async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
+{
     // Sem histórico: cada pergunta é só regras + pergunta. Em CPU cada token do prompt custa tempo,
     // e o início (regras + ferramentas) fica igual em todos os pedidos, por isso o Ollama reaproveita-o.
     // shortcut: perde "mostra mais" / "e desses…"; voltar a guardar a última troca se houver GPU.
@@ -178,17 +192,17 @@ while(true)
                 partes.Add(parte);
                 if (parte.Text.Length == 0) continue;
                 primeiroToken ??= relogio.ElapsedMilliseconds;
-                if (aMostrar) Console.Write(parte.Text);
+                if (aMostrar) await escrever(parte.Text);
                 else if (chamadas > 0)
                 {
                     aMostrar = true;
-                    Console.Write(string.Concat(partes.Select(p => p.Text))); // inclui o texto anterior à chamada
+                    await escrever(string.Concat(partes.Select(p => p.Text))); // inclui o texto anterior à chamada
                 }
             }
             if (aMostrar) break;
 
             var texto = partes.ToChatResponse().Text;
-            if (!PoliticasSeguranca.RespostaSemFonte(texto, chamadas)) { Console.Write(texto); break; }
+            if (!PoliticasSeguranca.RespostaSemFonte(texto, chamadas)) { await escrever(texto); break; }
 
             if (tentativa == 1)
             {
@@ -203,7 +217,8 @@ while(true)
         Console.Error.WriteLine("O Ollama não respondeu ou devolveu um erro.");
         Console.Error.WriteLine("Confirme que o serviço está a funcionar (ollama server) e que o modelo está conectado");
         Console.Error.WriteLine($"Detalhe: {ex.Message}");
-        continue;
+        await escrever("Não foi possível obter uma resposta neste momento. Tente novamente.");
+        return;
     }
 
     // Tokens lidos = soma dos pedidos desta pergunta (escolher a ferramenta + responder). Em CPU é o que mais pesa.
@@ -214,7 +229,66 @@ while(true)
 
     // O ciclo de ferramentas pode esgotar-se (MaximumIterationsPerRequest) sem texto final.
     if (string.IsNullOrWhiteSpace(resposta.Messages.LastOrDefault()?.Text))
-        Console.WriteLine("O modelo não chegou a dar uma resposta. Reformule a pergunta.");
+        await escrever("O modelo não chegou a dar uma resposta. Reformule a pergunta.");
+}
+
+// ---- Modo web: a mesma ResponderAsync, servida numa página local (só localhost, nunca na rede).
+// shortcut: um pedido de cada vez (o Ollama em CPU também só responde a um); usar Kestrel se houver vários utilizadores.
+async Task ModoWebAsync()
+{
+    const string endereco = "http://localhost:5080/";
+    const int MaxPergunta = 500;
+
+    using var servidor = new System.Net.HttpListener();
+    servidor.Prefixes.Add(endereco);
+    servidor.Start();
+    Console.WriteLine($"Chat em {endereco} (Ctrl+C termina). As chamadas às ferramentas aparecem aqui.");
+    Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true });
+
+    while (true)
+    {
+        var ctx = await servidor.GetContextAsync();
+        var (pedido, resposta) = (ctx.Request, ctx.Response);
+        try
+        {
+            if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/")
+            {
+                resposta.ContentType = "text/html; charset=utf-8";
+                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(PaginaChat.Html));
+            }
+            else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/perguntar")
+            {
+                using var leitor = new StreamReader(pedido.InputStream, System.Text.Encoding.UTF8);
+                var pergunta = (await leitor.ReadToEndAsync()).Trim();
+                resposta.ContentType = "text/plain; charset=utf-8";
+                resposta.SendChunked = true; // o texto vai aparecendo no browser, como na consola
+
+                if (pergunta.Length is 0 or > MaxPergunta)
+                {
+                    resposta.StatusCode = 400;
+                    await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes($"A pergunta tem de ter entre 1 e {MaxPergunta} caracteres."));
+                }
+                else
+                {
+                    Console.WriteLine($"> {pergunta}");
+                    await ResponderAsync(pergunta, async texto =>
+                    {
+                        await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(texto));
+                        await resposta.OutputStream.FlushAsync();
+                    });
+                }
+            }
+            else resposta.StatusCode = 404;
+        }
+        catch (Exception ex) when (ex is System.Net.HttpListenerException or IOException)
+        {
+            Console.Error.WriteLine("O browser fechou a ligação a meio da resposta."); // ex.: página recarregada
+        }
+        finally
+        {
+            try { resposta.Close(); } catch { }
+        }
+    }
 }
 
 // ---- Modo menu: sem modelo, chama a ferramenta MCP "consultar" diretamente a partir de escolhas numeradas.

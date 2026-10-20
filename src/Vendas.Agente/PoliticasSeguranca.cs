@@ -18,7 +18,7 @@ public static class PoliticasSeguranca
     // shortcut: depende do formato das mensagens do servidor; mudar para isError do MCP se o servidor o passar a usar.
     public static bool ResultadoComDados(string texto) =>
         texto.Contains('\n') || texto.StartsWith("0 clientes com") || texto.StartsWith("Nenhuma linha encontrada")
-        || texto.StartsWith("Sem vendas no periodo");
+        || texto.StartsWith("Sem vendas:");
 
     // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
     public static string TextoDoResultado(object? resultado) =>
