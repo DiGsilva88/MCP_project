@@ -16,8 +16,11 @@ internal static class ConsultaVendas
     private const string Clientes = "[mcp].[ViewMCP_cliente]";
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) TopClientes(
-        DateOnly desde, DateOnly ate, string? cliente = null)
+        DateOnly desde, DateOnly ate, string? cliente = null, IReadOnlyDictionary<Campo, string>? filtros = null)
     {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var onde = Onde(cliente, ficha);
+
         // 1º soma por ClienteID dentro da view de vendas; 2º vai buscar o nome à ViewMCP_cliente.
         // O ID vai junto ao nome para o modelo poder cruzar com as outras consultas.
         var sql = $"""
@@ -28,65 +31,100 @@ internal static class ConsultaVendas
                    p.Documentos,
                    SUM(p.Valor) OVER () AS Total,
                    COUNT(*)     OVER () AS Grupos,
-                   p.Bruto, p.Desconto, p.Iva
+                   p.Bruto, p.Desconto, p.Iva,
+                   t.TotalDocumentos
             FROM (
                 SELECT [ClienteID],
-                       SUM([ValorLiquido])           AS Valor,
-                       COUNT(DISTINCT [DocumentoID]) AS Documentos,
-                       SUM([ValorIliquido])          AS Bruto,
-                       SUM([ValorDesconto])          AS Desconto,
-                       SUM([ValorIva])               AS Iva
+                       COALESCE(SUM([ValorLiquido]), 0)  AS Valor,
+                       COUNT(DISTINCT [DocumentoID])     AS Documentos,
+                       COALESCE(SUM([ValorIliquido]), 0) AS Bruto,
+                       COALESCE(SUM([ValorDesconto]), 0) AS Desconto,
+                       COALESCE(SUM([ValorIva]), 0)      AS Iva
                 FROM   {Vendas}
-                WHERE  [DataDoc] >= @desde
-                  AND  [DataDoc] <  @ate
-                  {FiltroCliente(cliente)}
+                {onde}
                 GROUP BY [ClienteID]
             ) AS p
+            {TotalDocumentos(onde)}
             LEFT JOIN {Clientes} AS c ON c.[ClienteID] = p.[ClienteID]
             ORDER BY p.Valor DESC, Nome;
             """;
 
-        return (sql, parametros => Preencher(parametros, desde, ate, cliente));
+        return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
     }
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) TopArtigos(
-        DimensaoVenda dimensao, DateOnly desde, DateOnly ate, string? cliente = null)
+        DimensaoVenda dimensao, DateOnly desde, DateOnly ate, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null)
     {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var onde = Onde(cliente, ficha);
+
         var (nome, agrupar) = Colunas(dimensao);
         // Meses por ordem cronológica (mais recente primeiro); o resto do maior para o menor valor
         var ordem = dimensao == DimensaoVenda.Mes ? "Nome DESC" : "Valor DESC, Nome";
 
+        // MAX(t.TotalDocumentos): a query tem GROUP BY e o total é igual em todas as linhas
         var sql = $"""
             SELECT TOP (@limite)
                    {nome} AS Nome,
-                   SUM([ValorLiquido]) AS Valor,
-                   SUM([Quantidade])   AS Quantidade,
+                   COALESCE(SUM([ValorLiquido]), 0) AS Valor,
+                   COALESCE(SUM([Quantidade]), 0)   AS Quantidade,
                    COUNT(DISTINCT [DocumentoID]) AS Documentos,
-                   SUM(SUM([ValorLiquido])) OVER () AS Total,
-                   COUNT(*)                 OVER () AS Grupos,
-                   SUM([ValorIliquido]) AS Bruto,
-                   SUM([ValorDesconto]) AS Desconto,
-                   SUM([ValorIva])      AS Iva
+                   SUM(COALESCE(SUM([ValorLiquido]), 0)) OVER () AS Total,
+                   COUNT(*)                              OVER () AS Grupos,
+                   COALESCE(SUM([ValorIliquido]), 0) AS Bruto,
+                   COALESCE(SUM([ValorDesconto]), 0) AS Desconto,
+                   COALESCE(SUM([ValorIva]), 0)      AS Iva,
+                   MAX(t.TotalDocumentos)            AS TotalDocumentos
             FROM   {Vendas}
-            WHERE  [DataDoc] >= @desde
-              AND  [DataDoc] <  @ate
-              {FiltroCliente(cliente)}
+            {TotalDocumentos(onde)}
+            {onde}
             GROUP BY {agrupar}
             ORDER BY {ordem};
             """;
 
-        return (sql, parametros => Preencher(parametros, desde, ate, cliente));
+        return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
     }
 
-    // Só as vendas de um cliente: ID exato ou início do nome (sem acentos/maiúsculas).
+    // Clientes com esse ID exato ou cujo nome começa pelo texto (sem acentos/maiúsculas); o ID exato vem primeiro.
+    // A tool usa isto para saber se o cliente existe e se é só um, antes de somar vendas.
     // Os REPLACE escapam [ % _ para o texto do modelo nunca funcionar como wildcard (igual à ConsultaClientes).
-    private static string FiltroCliente(string? cliente) => string.IsNullOrWhiteSpace(cliente) ? "" : $"""
-        AND [ClienteID] IN (
-                    SELECT cf.[ClienteID] FROM {Clientes} AS cf
-                    WHERE  CAST(cf.[ClienteID] AS nvarchar(50)) = @cliente
-                       OR  cf.[NomeCliente] COLLATE Latin1_General_CI_AI LIKE
-                           REPLACE(REPLACE(REPLACE(@cliente, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%')
-        """;
+    public static (string Sql, Action<SqlParameterCollection> Parametros) ProcurarClientes(string cliente)
+    {
+        var sql = $"""
+            SELECT TOP (@limite)
+                   CAST([ClienteID] AS nvarchar(50)) AS Id,
+                   COALESCE([NomeCliente], '(sem nome)') AS Nome
+            FROM   {Clientes}
+            WHERE  CAST([ClienteID] AS nvarchar(50)) = @cliente
+               OR  [NomeCliente] COLLATE Latin1_General_CI_AI LIKE
+                   REPLACE(REPLACE(REPLACE(@cliente, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%'
+            ORDER BY CASE WHEN CAST([ClienteID] AS nvarchar(50)) = @cliente THEN 0 ELSE 1 END, [NomeCliente];
+            """;
+
+        return (sql, p => p.Add("@cliente", SqlDbType.NVarChar, 100).Value = cliente.Trim());
+    }
+
+    // Só as vendas de um cliente, pelo ID exato (a tool já o resolveu com ProcurarClientes).
+    private static string FiltroCliente(string? cliente) =>
+        string.IsNullOrWhiteSpace(cliente) ? "" : "AND CAST([ClienteID] AS nvarchar(50)) = @cliente";
+
+    // Período + cliente + filtro da ficha. É o mesmo WHERE no ranking e na contagem de documentos.
+    private static string Onde(string? cliente, string ficha) =>
+        $"WHERE [DataDoc] >= @desde AND [DataDoc] < @ate {FiltroCliente(cliente)} {ficha}";
+
+    // Só clientes com essa Localidade/Distrito/Zona/... (mesmo filtro da tool consultar).
+    private static (string Sql, Action<SqlParameterCollection> Parametros) FiltroFicha(
+        IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        if (filtros is not { Count: > 0 }) return ("", _ => { });
+        var (where, aplicar) = ConsultaClientes.FiltrosWhere(filtros);
+        return ($"AND [ClienteID] IN (SELECT c.ClienteID FROM {ConsultaClientes.Origem} {where})", aplicar);
+    }
+
+    // Documentos distintos no período todo: um documento tem vários artigos, por isso não se somam os grupos.
+    private static string TotalDocumentos(string onde) =>
+        $"CROSS JOIN (SELECT COUNT(DISTINCT [DocumentoID]) AS TotalDocumentos FROM {Vendas} {onde}) AS t";
 
     //O que se mostra e por onde se agrupa, para cada dimensão. Switch fechado:
     //o modelo escolhe um valor do enum, nunca escreve SQL.

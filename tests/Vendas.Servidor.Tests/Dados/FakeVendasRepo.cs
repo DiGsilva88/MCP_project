@@ -71,10 +71,22 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public string? UltimoCliente { get; private set; }
 
+    // Por omissão, qualquer texto é um cliente com esse ID (os testes antigos não precisam de o preparar).
+    public Func<string, IReadOnlyList<(string Id, string Nome)>> Clientes { get; set; } = c => [(c.Trim(), "Cliente " + c.Trim())];
+
+    public Task<IReadOnlyList<(string Id, string Nome)>> ProcurarClientesAsync(
+        string cliente, int limite, CancellationToken ct = default)
+    {
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult<IReadOnlyList<(string Id, string Nome)>>(Clientes(cliente).Take(limite).ToList());
+    }
+
     public Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
-        DateOnly desde, DateOnly ate, int limite, string? cliente = null, CancellationToken ct = default)
+        DateOnly desde, DateOnly ate, int limite, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
     {
         UltimoCliente = cliente;
+        UltimosFiltros = filtros;
         UltimoPeriodo = (desde, ate);
         UltimoLimite = limite;
         if (LancarExcecao is not null) throw LancarExcecao;
@@ -83,9 +95,10 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
-        CancellationToken ct = default)
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
     {
         UltimoCliente = cliente;
+        UltimosFiltros = filtros;
         UltimaDimensao = dimensao;
         UltimoPeriodo = (desde, ate);
         UltimoLimite = limite;

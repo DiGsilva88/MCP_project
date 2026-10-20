@@ -7,7 +7,7 @@ namespace Vendas.Servidor.Modelos.Dados;
 // As colunas vêm sempre de Coluna() (lista branca, definida aqui), nunca de texto do modelo.
 internal static class ConsultaClientes
 {
-    private const string Origem =
+    internal const string Origem =
         "[mcp].[ViewMCP_cliente] AS c JOIN [mcp].[ViewMCP_cliente_faturacao] AS f ON c.ClienteID = f.ClienteID";
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) Contar(
@@ -59,7 +59,7 @@ internal static class ConsultaClientes
 
     // Como Listar, mas com uma coluna da view sensível. "maiores" ordena do maior para o menor
     // (rankings); só faz sentido nas colunas numéricas, quem chama já o validou.
-    public static (string Sql, Action<SqlParameterCollection> Parametros) ListarSensivel(
+    internal static (string Sql, Action<SqlParameterCollection> Parametros) ListarSensivel(
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, string? nome = null, Campo? tambem = null)
     {
         var coluna = ColunaSensivel(mostrar);
@@ -120,7 +120,7 @@ internal static class ConsultaClientes
     // valor "sem dados" não existe como texto na BD (a view guarda o marcador da coluna: "(sem ...)"
     // ou "0 - sem ...") por isso vira NULL/vazio/marcador em vez de comparação exata.
     // "nome" (opcional): só clientes cujo NomeCliente começa por esse texto (sem acentos/maiúsculas).
-    private static (string Sql, Action<SqlParameterCollection> Parametros) FiltrosWhere(
+    internal static (string Sql, Action<SqlParameterCollection> Parametros) FiltrosWhere(
         IReadOnlyDictionary<Campo, string> filtros, string? nome = null)
     {
         var temNome = !string.IsNullOrWhiteSpace(nome);

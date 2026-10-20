@@ -212,7 +212,8 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
             historico.Add(new(ChatRole.System, "Respondeste sem chamar nenhuma ferramenta. Chama a ferramenta adequada e responde só com o que ela devolver."));
         }
     }
-    catch (Exception ex)
+    // O browser fechou a meio (HttpListenerException ao escrever): não é falha do Ollama, sobe para o ModoWebAsync.
+    catch (Exception ex) when (ex is not System.Net.HttpListenerException)
     {
         Console.Error.WriteLine("O Ollama não respondeu ou devolveu um erro.");
         Console.Error.WriteLine("Confirme que o serviço está a funcionar (ollama server) e que o modelo está conectado");
@@ -256,10 +257,16 @@ async Task ModoWebAsync()
                 resposta.ContentType = "text/html; charset=utf-8";
                 await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(PaginaChat.Html));
             }
+            // Outra página aberta no browser pode fazer POST para localhost sem CORS; o browser diz sempre a Origin.
+            else if (pedido.HttpMethod == "POST" && pedido.Headers["Origin"] is { } origem && origem != endereco.TrimEnd('/'))
+                resposta.StatusCode = 403;
             else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/perguntar")
             {
+                // Lê no máximo MaxPergunta + 1 caracteres: um corpo enorme nunca chega todo à memória.
                 using var leitor = new StreamReader(pedido.InputStream, System.Text.Encoding.UTF8);
-                var pergunta = (await leitor.ReadToEndAsync()).Trim();
+                var buffer = new char[MaxPergunta + 1];
+                var lidos = await leitor.ReadBlockAsync(buffer);
+                var pergunta = lidos > MaxPergunta ? new string(buffer) : new string(buffer, 0, lidos).Trim();
                 resposta.ContentType = "text/plain; charset=utf-8";
                 resposta.SendChunked = true; // o texto vai aparecendo no browser, como na consola
 
