@@ -54,6 +54,11 @@ public static class PoliticasSeguranca
           MesAtual; "ano passado": AnoAnterior). Diz o período que vem no resultado.
           Vendas, artigos ou atividade de um cliente: consultar_vendas com cliente=ID ou nome
           (atividade mês a mês: agrupar=Mes). Valor vendido = valor (líquido sem IVA).
+          - Mês com nome (março, setembro): mes=3; com ano: ano=2026. Só o ano: ano=2025.
+        - Vendas ou melhores clientes de uma localidade, distrito, zona ou vendedor:
+          consultar_vendas com coluna/valor (ex.: coluna=Localidade, valor=Seixal). cliente= é só para um cliente.
+        - Valor médio por venda: a média que vem no resultado (de um cliente: com cliente=).
+
         - NIF, email, telefone, morada, código postal, volume de vendas declarado e plafond:
           consultar_sensivel. Top por volume declarado na ficha (ou plafond): consultar_sensivel
           com dado=VolumeVendas, maiores=true, limite=N (EscalaoVolumeVendas é só o escalão,
@@ -68,7 +73,7 @@ public static class PoliticasSeguranca
         - Lista as linhas devolvidas, uma por linha (ex.: "1. Nome – valor"), no máximo
           10, sem juntar nomes iguais (são clientes diferentes). Depois diz o total que
           vem no fim do resultado (ex.: "mostro 5 de 379"). Nunca respondas só com o total.
-        - Nos rankings de vendas, diz o período e as datas da 1ª linha e que os valores são eu euros, sem IVA.
+        - Nos rankings de vendas, diz o período e as datas da 1ª linha e que os valores são em euros, sem IVA.
         - Não fales de ferramentas nem de parâmetros (pagina, limite, contar...).
         """;
 }

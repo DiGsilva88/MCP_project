@@ -33,7 +33,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     [McpServerTool(Name = "consultar")]
     // Descrições curtas de propósito: o modelo corre em CPU e lê-as em cada pedido.
     [Description(
-        "Listar ou contar clientes. Colunas: Zona, Localidade, Vendedor, TipoCliente, Actividade, Distrito, " +
+        "Listar ou contar clientes (sem vendas nem valores). Colunas: Zona, Localidade, Vendedor, TipoCliente, Actividade, Distrito, " +
         "Pagamento, Cobranca, Expedicao, SituacaoFinanceira, EscalaoPlafond, EscalaoVolumeVendas. " +
         "contar=true: nº de clientes por valor da coluna (ex.: top 5 localidades: coluna=Localidade, contar=true, limite=5). " +
         "valor: filtra a coluna. cruzarCom/valorCruzado: filtra também por outra coluna " +
@@ -90,14 +90,14 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             {
                 var contagens = await repo.ContarAsync(coluna!.Value, filtros, limite, ct);
                 return contagens.Count == 0 && filtros.Count > 0
-                    ? avisoMesmoValor ?? await SemCorrespondenciaAsync(filtros, ct)
+                    ? avisoMesmoValor ?? await SemCorrespondenciaAsync(repo, filtros, ct)
                     : FormatarContagem(coluna.Value.ToString(), contagens, filtros);
             }
 
             var resultado = await repo.ListarAsync(
                 coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, nomeComecaPor, ct);
             return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
-                ? avisoMesmoValor ?? await SemCorrespondenciaAsync(filtros, ct)
+                ? avisoMesmoValor ?? await SemCorrespondenciaAsync(repo, filtros, ct)
                 : FormatarDados(resultado, filtros);
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
@@ -152,7 +152,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, nomeComecaPor, mostrarTambem, ct);
             linhas = resultado.Linhas.Count;
             return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
-                ? await SemCorrespondenciaAsync(filtros, ct)
+                ? await SemCorrespondenciaAsync(repo, filtros, ct)
                 : FormatarDados(resultado, filtros);
         }
         catch (OperationCanceledException) { throw; }
@@ -178,7 +178,9 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     // Com um só filtro o valor não existe. Num cruzamento, verifica cada filtro sozinho: se todos existem,
     // a combinação tem 0 clientes; senão diz qual falhou e lista só os valores dessa coluna.
     // (Antes listava sempre todas as colunas e o modelo apresentava as contagens globais como resposta.)
-    private async Task<string> SemCorrespondenciaAsync(Dictionary<Campo, string> filtros, CancellationToken ct)
+    // internal static: a consultar_vendas também a usa quando o filtro da ficha não existe.
+    internal static async Task<string> SemCorrespondenciaAsync(
+        IVendasRepo repo, Dictionary<Campo, string> filtros, CancellationToken ct)
     {
         var inexistentes = filtros;
         if (filtros.Count > 1)

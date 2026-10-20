@@ -82,9 +82,11 @@ internal sealed class FakeVendasRepo : IVendasRepo
     }
 
     public Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
-        DateOnly desde, DateOnly ate, int limite, string? cliente = null, CancellationToken ct = default)
+        DateOnly desde, DateOnly ate, int limite, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
     {
         UltimoCliente = cliente;
+        UltimosFiltros = filtros;
         UltimoPeriodo = (desde, ate);
         UltimoLimite = limite;
         if (LancarExcecao is not null) throw LancarExcecao;
@@ -93,9 +95,10 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
-        CancellationToken ct = default)
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
     {
         UltimoCliente = cliente;
+        UltimosFiltros = filtros;
         UltimaDimensao = dimensao;
         UltimoPeriodo = (desde, ate);
         UltimoLimite = limite;

@@ -61,7 +61,7 @@ public enum Periodo
       }
       var a= ano ??(mes > hoje.Month ? hoje.Year -1 : hoje.Year);
       var desde = new DateOnly(a, mes.Value,1);
-      return(desde, desde.AddMonths(1),$"{Meses[mes.Value -1]} de a {a}");
+      return(desde, desde.AddMonths(1),$"{Meses[mes.Value -1]} de {a}");
    }
       //o nome do periodo para a frase de resposta
       public static string Descricao(Periodo periodo) => periodo switch

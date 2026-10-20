@@ -56,8 +56,8 @@ public class VendasToolsTests
     
         var repo = new FakeVendasRepo{Valores = [new("Bento, Filhos", 1234.5m,0,3,2469m,2, 1371.67m, -137.17m, 283.94m)]};
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Cliente);
-        Assert.Contains("posicao,cliente,valor,percentagem,documentos,bruto,desconto,iva" + Environment.NewLine, r);
-        Assert.Contains("1,\"Bento, Filhos\",1234.50,50.0,3,1371.67,-137.17,283.94",r);
+        Assert.Contains("posicao,cliente,valor,percentagem,documentos,media,bruto,desconto,iva" + Environment.NewLine, r);
+        Assert.Contains("1,\"Bento, Filhos\",1234.50,50.0,3,411.50,1371.67,-137.17,283.94",r);
         Assert.Contains("# Mostrados 1 de 2 clientes",r);
 
     }
@@ -71,7 +71,7 @@ public class VendasToolsTests
         Assert.Equal("1003", repo.UltimoCliente);
         Assert.Equal(DimensaoVenda.Mes, repo.UltimaDimensao);
         Assert.Contains("cliente \"Cliente 1003 (1003)\"", r);
-        Assert.Contains("posicao,mes,valor,percentagem,documentos,quantidade,bruto,desconto,iva", r);
+        Assert.Contains("posicao,mes,valor,percentagem,documentos,media,quantidade,bruto,desconto,iva", r);
     }
 
     [Fact]
@@ -111,7 +111,47 @@ public class VendasToolsTests
         var repo = new FakeVendasRepo{Valores = [new("Ana", 0m,2m,1,0m,1)]};
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo);
         
-        Assert.Contains("1,Ana,0.00,-,1,2",r);
+        Assert.Contains("1,Ana,0.00,-,1,0.00,2",r);
+    }
+
+    [Fact]
+    public async Task MesEAno_PedemEsseMes()
+    {
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarVendasAsync(mes: 3, ano: 2026);
+        Assert.Equal((new DateOnly(2026, 3, 1), new DateOnly(2026, 4, 1)), repo.UltimoPeriodo);
+    }
+
+    [Fact]
+    public async Task Mes13_DevolveMensagem()
+        => Assert.Equal("mes tem de ser de 1 a 12.", await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(mes: 13));
+
+    [Fact]
+    public async Task ColunaSemValor_DevolveMensagem()
+        => Assert.Equal("coluna e valor têm de ser usados juntos.",
+            await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(coluna: Campo.Localidade));
+
+    [Fact]
+    public async Task Localidade_ChegaAoRepoEDaAMedia()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("Ana (1)", 10m, 0, 2, 10m, 1, TotalDocumentos: 2)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(coluna: Campo.Localidade, valor: " Seixal ");
+
+        Assert.Equal("Seixal", repo.UltimosFiltros![Campo.Localidade]);
+        Assert.Contains("Localidade = Seixal", r);
+        Assert.Contains("2 documentos, média 5.00 por documento", r);
+    }
+
+    [Fact]
+    public async Task LocalidadeInexistente_ListaAsExistentes()
+    {
+        var repo = new FakeVendasRepo
+        {
+            ContagensPor = (_, f) => f.Count > 0 ? [] : [new ContagemCliente("Seixal", 5, 5, 1)],
+        };
+        var r = await CriarSut(repo).ConsultarVendasAsync(coluna: Campo.Localidade, valor: "Seixall");
+
+        Assert.StartsWith("Nenhuma correspondência", r);
     }
     
     }
