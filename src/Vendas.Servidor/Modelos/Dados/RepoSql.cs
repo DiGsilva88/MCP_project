@@ -57,6 +57,13 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         return new PaginaClientes(colunas, linhas, total);
     }
 
+    public async Task<IReadOnlyList<(string Id, string Nome)>> ProcurarClientesAsync(
+        string cliente, int limite, CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaVendas.ProcurarClientes(cliente);
+        return await LerAsync(sql, parametros, limite, leitor => (leitor.GetString(0), leitor.GetString(1)), cancellationToken);
+    }
+
     public async Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
         DateOnly desde, DateOnly ate, int limite, string? cliente = null, CancellationToken cancellationToken = default)
     {

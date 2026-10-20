@@ -15,6 +15,9 @@ namespace Vendas.Servidor.Ferramentas;
 [McpServerToolType]
 public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
 {
+    // Quantos clientes se mostram quando o texto serve a vários.
+    private const int MaxClientes = 5;
+
     [McpServerTool(Name = "consultar_vendas")]
     // Descrição curta de propósito, como nas outras tools: o modelo lê-a em cada pedido.
     [Description(
@@ -37,6 +40,25 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
         var relogio = Stopwatch.StartNew();
         try
         {
+            // O cliente tem de existir e ser um só: senão "Sem vendas" ou uma soma de vários clientes
+            // pareceriam a resposta de um cliente.
+            string? rotulo = null;
+            if (!string.IsNullOrWhiteSpace(cliente))
+            {
+                var texto = cliente.Trim();
+                var encontrados = await repo.ProcurarClientesAsync(texto, MaxClientes + 1, ct);
+                if (encontrados.Count == 0)
+                    return $"Cliente \"{texto}\" não encontrado. Indique o ID ou o início do nome.";
+
+                // Um ID exato ganha aos nomes que começam pelo mesmo texto.
+                if (encontrados.Count > 1 && !encontrados[0].Id.Equals(texto, StringComparison.OrdinalIgnoreCase))
+                    return $"Vários clientes começam por \"{texto}\". Indique o ID de um deles:\nid,cliente\n" +
+                           string.Join('\n', encontrados.Take(MaxClientes).Select(c => $"{c.Id},{VistasTools.Campo(c.Nome)}")) +
+                           (encontrados.Count > MaxClientes ? $"\n# Há mais de {MaxClientes}." : "");
+
+                (cliente, rotulo) = (encontrados[0].Id, $"{encontrados[0].Nome} ({encontrados[0].Id})");
+            }
+
             var (desde, ate) = Periodos.Intervalo(periodo, DateOnly.FromDateTime(DateTime.Today));
 
             // Um método por view de origem: os clientes precisam do nome que vive na ViewMCP_cliente.
@@ -44,7 +66,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
                 ? await repo.TopClientesAsync(desde, ate, limite, cliente, ct)
                 : await repo.TopArtigosAsync(agrupar, desde, ate, limite, cliente, ct);
 
-            return FormatarRanking(agrupar, periodo, desde, ate, cliente, linhas);
+            return FormatarRanking(agrupar, periodo, desde, ate, rotulo, linhas);
         }
         catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
         catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
@@ -59,15 +81,15 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
     }
 
     private static string FormatarRanking(
-        DimensaoVenda agrupar, Periodo periodo, DateOnly desde, DateOnly ate, string? cliente,
+        DimensaoVenda agrupar, Periodo periodo, DateOnly desde, DateOnly ate, string? rotuloCliente,
         IReadOnlyList<ValorAgrupado> linhas)
     {
         var inv = CultureInfo.InvariantCulture;
         var (cabecalho, plural) = (Dimensoes.Cabecalho(agrupar), Dimensoes.Plural(agrupar));
         // "ate" é exclusivo: mostra-se o último dia incluído
         var intervalo = $"{desde.ToString("dd-MM-yyyy", inv)} a {ate.AddDays(-1).ToString("dd-MM-yyyy", inv)}";
-        if (!string.IsNullOrWhiteSpace(cliente))
-            intervalo += $", cliente \"{cliente.Trim()}\"";
+        if (rotuloCliente is not null)
+            intervalo += $", cliente \"{rotuloCliente}\"";
 
         if (linhas.Count == 0)
             return $"Sem vendas: {Periodos.Descricao(periodo)} ({intervalo}).";

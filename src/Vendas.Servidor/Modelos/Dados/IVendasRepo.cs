@@ -23,7 +23,11 @@ public interface IVendasRepo
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
         string? nome = null, Campo? tambem = null, CancellationToken cancellationToken = default);
 
-    // Rankings de vendas no período [desde, ate[. cliente (opcional): só as vendas desse cliente (ID ou início do nome).
+    // Clientes com esse ID ou cujo nome começa pelo texto (o ID exato primeiro), no máximo "limite".
+    Task<IReadOnlyList<(string Id, string Nome)>> ProcurarClientesAsync(
+        string cliente, int limite, CancellationToken cancellationToken = default);
+
+    // Rankings de vendas no período [desde, ate[. cliente (opcional): só as vendas desse cliente (ID exato).
     Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
         DateOnly desde, DateOnly ate, int limite, string? cliente = null, CancellationToken cancellationToken = default);
 

@@ -68,10 +68,40 @@ public class VendasToolsTests
         var repo = new FakeVendasRepo{Valores = [new("2024-12", 30.6m,1,1,30.6m,1)]};
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, cliente: " 1003 ");
 
-        Assert.Equal(" 1003 ", repo.UltimoCliente);
+        Assert.Equal("1003", repo.UltimoCliente);
         Assert.Equal(DimensaoVenda.Mes, repo.UltimaDimensao);
-        Assert.Contains("cliente \"1003\"", r);
+        Assert.Contains("cliente \"Cliente 1003 (1003)\"", r);
         Assert.Contains("posicao,mes,valor,percentagem,documentos,quantidade,bruto,desconto,iva", r);
+    }
+
+    [Fact]
+    public async Task ClienteInexistente_DizQueNaoExisteSemSomarVendas()
+    {
+        var repo = new FakeVendasRepo { Clientes = _ => [] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(cliente: "Bentoo");
+
+        Assert.Equal("Cliente \"Bentoo\" não encontrado. Indique o ID ou o início do nome.", r);
+        Assert.Null(repo.UltimoPeriodo); // não chegou a pedir vendas
+    }
+
+    [Fact]
+    public async Task VariosClientes_PedeOIdEmVezDeSomar()
+    {
+        var repo = new FakeVendasRepo { Clientes = _ => [("7", "Casa Costa"), ("9", "Casa Silva, Lda")] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, cliente: "Casa");
+
+        Assert.StartsWith("Vários clientes começam por \"Casa\"", r);
+        Assert.Contains("\n7,Casa Costa\n9,\"Casa Silva, Lda\"", r);
+        Assert.Null(repo.UltimoPeriodo);
+    }
+
+    [Fact]
+    public async Task IdExato_GanhaAosNomesComOMesmoInicio()
+    {
+        var repo = new FakeVendasRepo { Clientes = _ => [("100", "Alfa"), ("1001", "100 Limites")] };
+        await CriarSut(repo).ConsultarVendasAsync(cliente: "100");
+
+        Assert.Equal("100", repo.UltimoCliente);
     }
 
     [Fact]

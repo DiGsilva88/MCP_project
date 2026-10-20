@@ -31,11 +31,11 @@ internal static class ConsultaVendas
                    p.Bruto, p.Desconto, p.Iva
             FROM (
                 SELECT [ClienteID],
-                       SUM([ValorLiquido])           AS Valor,
-                       COUNT(DISTINCT [DocumentoID]) AS Documentos,
-                       SUM([ValorIliquido])          AS Bruto,
-                       SUM([ValorDesconto])          AS Desconto,
-                       SUM([ValorIva])               AS Iva
+                       COALESCE(SUM([ValorLiquido]), 0)  AS Valor,
+                       COUNT(DISTINCT [DocumentoID])     AS Documentos,
+                       COALESCE(SUM([ValorIliquido]), 0) AS Bruto,
+                       COALESCE(SUM([ValorDesconto]), 0) AS Desconto,
+                       COALESCE(SUM([ValorIva]), 0)      AS Iva
                 FROM   {Vendas}
                 WHERE  [DataDoc] >= @desde
                   AND  [DataDoc] <  @ate
@@ -59,14 +59,14 @@ internal static class ConsultaVendas
         var sql = $"""
             SELECT TOP (@limite)
                    {nome} AS Nome,
-                   SUM([ValorLiquido]) AS Valor,
-                   SUM([Quantidade])   AS Quantidade,
+                   COALESCE(SUM([ValorLiquido]), 0) AS Valor,
+                   COALESCE(SUM([Quantidade]), 0)   AS Quantidade,
                    COUNT(DISTINCT [DocumentoID]) AS Documentos,
-                   SUM(SUM([ValorLiquido])) OVER () AS Total,
-                   COUNT(*)                 OVER () AS Grupos,
-                   SUM([ValorIliquido]) AS Bruto,
-                   SUM([ValorDesconto]) AS Desconto,
-                   SUM([ValorIva])      AS Iva
+                   SUM(COALESCE(SUM([ValorLiquido]), 0)) OVER () AS Total,
+                   COUNT(*)                              OVER () AS Grupos,
+                   COALESCE(SUM([ValorIliquido]), 0) AS Bruto,
+                   COALESCE(SUM([ValorDesconto]), 0) AS Desconto,
+                   COALESCE(SUM([ValorIva]), 0)      AS Iva
             FROM   {Vendas}
             WHERE  [DataDoc] >= @desde
               AND  [DataDoc] <  @ate
@@ -78,15 +78,28 @@ internal static class ConsultaVendas
         return (sql, parametros => Preencher(parametros, desde, ate, cliente));
     }
 
-    // Só as vendas de um cliente: ID exato ou início do nome (sem acentos/maiúsculas).
+    // Clientes com esse ID exato ou cujo nome começa pelo texto (sem acentos/maiúsculas); o ID exato vem primeiro.
+    // A tool usa isto para saber se o cliente existe e se é só um, antes de somar vendas.
     // Os REPLACE escapam [ % _ para o texto do modelo nunca funcionar como wildcard (igual à ConsultaClientes).
-    private static string FiltroCliente(string? cliente) => string.IsNullOrWhiteSpace(cliente) ? "" : $"""
-        AND [ClienteID] IN (
-                    SELECT cf.[ClienteID] FROM {Clientes} AS cf
-                    WHERE  CAST(cf.[ClienteID] AS nvarchar(50)) = @cliente
-                       OR  cf.[NomeCliente] COLLATE Latin1_General_CI_AI LIKE
-                           REPLACE(REPLACE(REPLACE(@cliente, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%')
-        """;
+    public static (string Sql, Action<SqlParameterCollection> Parametros) ProcurarClientes(string cliente)
+    {
+        var sql = $"""
+            SELECT TOP (@limite)
+                   CAST([ClienteID] AS nvarchar(50)) AS Id,
+                   COALESCE([NomeCliente], '(sem nome)') AS Nome
+            FROM   {Clientes}
+            WHERE  CAST([ClienteID] AS nvarchar(50)) = @cliente
+               OR  [NomeCliente] COLLATE Latin1_General_CI_AI LIKE
+                   REPLACE(REPLACE(REPLACE(@cliente, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%'
+            ORDER BY CASE WHEN CAST([ClienteID] AS nvarchar(50)) = @cliente THEN 0 ELSE 1 END, [NomeCliente];
+            """;
+
+        return (sql, p => p.Add("@cliente", SqlDbType.NVarChar, 100).Value = cliente.Trim());
+    }
+
+    // Só as vendas de um cliente, pelo ID exato (a tool já o resolveu com ProcurarClientes).
+    private static string FiltroCliente(string? cliente) =>
+        string.IsNullOrWhiteSpace(cliente) ? "" : "AND CAST([ClienteID] AS nvarchar(50)) = @cliente";
 
     //O que se mostra e por onde se agrupa, para cada dimensão. Switch fechado:
     //o modelo escolhe um valor do enum, nunca escreve SQL.

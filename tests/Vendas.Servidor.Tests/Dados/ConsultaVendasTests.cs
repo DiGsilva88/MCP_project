@@ -26,13 +26,31 @@ public class ConsultaVendasTests
     }
 
     [Fact]
-    public void TopArtigos_ComCliente_FiltraPorIdOuNomeEParametriza()
+    public void TopArtigos_ComCliente_FiltraSoPeloIdExatoEParametriza()
     {
-        var (sql, aplicar) = ConsultaVendas.TopArtigos(DimensaoVenda.Artigo, Desde, Ate, " Casa% ");
+        var (sql, aplicar) = ConsultaVendas.TopArtigos(DimensaoVenda.Artigo, Desde, Ate, " 1003 ");
 
-        Assert.Contains("AND [ClienteID] IN (", sql);
+        Assert.Contains("AND CAST([ClienteID] AS nvarchar(50)) = @cliente", sql);
+        Assert.DoesNotContain("LIKE", sql); // a procura por nome é feita antes, na ProcurarClientes
+        Assert.Equal("1003", Aplicar(aplicar)["@cliente"].Value);
+    }
+
+    [Fact]
+    public void ProcurarClientes_IdOuInicioDoNomeSemWildcards()
+    {
+        var (sql, aplicar) = ConsultaVendas.ProcurarClientes(" Casa% ");
+
         Assert.Contains("REPLACE(REPLACE(REPLACE(@cliente", sql); // o % do modelo não é wildcard
+        Assert.Contains("ORDER BY CASE WHEN CAST([ClienteID] AS nvarchar(50)) = @cliente THEN 0", sql); // ID exato primeiro
         Assert.Equal("Casa%", Aplicar(aplicar)["@cliente"].Value);
+    }
+
+    [Fact]
+    public void SomasSemValores_DaoZeroENaoNull()
+    {
+        // Um SUM só de NULL dá NULL e o GetDecimal rebentava com a consulta toda.
+        foreach (var (sql, _) in new[] { ConsultaVendas.TopClientes(Desde, Ate), ConsultaVendas.TopArtigos(DimensaoVenda.Marca, Desde, Ate) })
+            Assert.DoesNotMatch(@"(?<!COALESCE\()SUM\(\[", sql);
     }
 
     [Fact]
