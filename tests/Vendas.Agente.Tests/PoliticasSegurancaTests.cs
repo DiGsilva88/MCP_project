@@ -29,7 +29,7 @@ public class PoliticasSegurancaTests
     [InlineData("Nome,Localidade\nAna,Lisboa\n")]
     [InlineData("0 clientes com Localidade = Lisboa e Distrito = Porto: os valores existem, mas nenhum cliente tem os dois.")]
     [InlineData("Nenhuma linha encontrada com esse filtro.")]
-    [InlineData("Sem vendas no periodo ano atual.")]
+    [InlineData("Sem vendas: ano atual (01-01-2026 a 31-12-2026).")]
     public void ResultadoComDados_RespostasReais_ContamComoFonte(string texto)
     {
         Assert.True(PoliticasSeguranca.ResultadoComDados(texto));
