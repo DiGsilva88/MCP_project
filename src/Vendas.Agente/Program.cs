@@ -75,8 +75,16 @@ IChatClient modelo = ollama
         c.FunctionInvoker = async (ctx, ct) =>
         {
             var t = Stopwatch.StartNew();
-            var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var args = string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
+
+            // Valor fora do esquema: corrige-se aqui, sem ir ao servidor (lá daria um erro genérico).
+            if (PoliticasSeguranca.ArgumentoInvalido(ctx.Function.JsonSchema, ctx.Arguments) is { } invalido)
+            {
+                Console.WriteLine($"[{ctx.Function.Name}({args}) recusado] {invalido}");
+                return invalido;
+            }
+
+            var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var texto = PoliticasSeguranca.TextoDoResultado(resultado);
             // dados pessoais (NIF, contactos) não ficam no ecrã/scrollback: só o tamanho
             var amostra = ctx.Function.Name == "consultar_sensivel"

@@ -95,15 +95,32 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
-        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
+        IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false, CancellationToken ct = default)
     {
         UltimoCliente = cliente;
         UltimosFiltros = filtros;
         UltimaDimensao = dimensao;
         UltimoPeriodo = (desde, ate);
         UltimoLimite = limite;
+        UltimoPorQuantidade = porQuantidade;
         if (LancarExcecao is not null) throw LancarExcecao;
         return Task.FromResult(Valores);
     }
+
+    public bool? UltimoPorQuantidade { get; private set; }
+    public IReadOnlyList<ClienteSemVendas> SemVendas { get; set; } = [];
+    public DateOnly? UltimaVenda { get; set; }
+
+    public Task<IReadOnlyList<ClienteSemVendas>> ClientesSemVendasAsync(
+        DateOnly desde, DateOnly ate, int limite, IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
+    {
+        UltimosFiltros = filtros;
+        UltimoPeriodo = (desde, ate);
+        UltimoLimite = limite;
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult(SemVendas);
+    }
+
+    public Task<DateOnly?> UltimaVendaAsync(CancellationToken ct = default) => Task.FromResult(UltimaVenda);
 }
 

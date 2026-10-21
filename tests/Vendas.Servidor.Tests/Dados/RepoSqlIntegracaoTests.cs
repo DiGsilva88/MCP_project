@@ -63,6 +63,28 @@ public class RepoSqlIntegracaoTests
         Assert.NotEmpty(distritos);
         Assert.Equal(meses[0].Total, distritos[0].Total);
         Assert.Equal(meses[0].TotalDocumentos, distritos[0].TotalDocumentos);
+        Assert.NotNull(meses[0].UltimaData);
+    }
+
+    // Por quantidade: a 1.ª linha é a de mais unidades.
+    [FactComBd]
+    public async Task ArtigosPorQuantidade_OrdenadosPorUnidades()
+    {
+        var linhas = await CriarRepo().TopArtigosAsync(
+            DimensaoVenda.Artigo, new DateOnly(2026, 1, 1), new DateOnly(2026, 7, 1), limite: 5, porQuantidade: true);
+
+        Assert.Equal(linhas.Max(l => l.Quantidade), linhas[0].Quantidade);
+    }
+
+    [FactComBd]
+    public async Task ClientesSemVendas_EUltimaVenda_Correm()
+    {
+        var repo = CriarRepo();
+        var semVendas = await repo.ClientesSemVendasAsync(new DateOnly(2026, 6, 1), new DateOnly(2026, 9, 1), limite: 5);
+
+        Assert.NotNull(await repo.UltimaVendaAsync());
+        // A última compra de quem não comprou no período é sempre anterior ao período.
+        Assert.All(semVendas, c => Assert.True(c.Ultima is null || c.Ultima < new DateOnly(2026, 6, 1)));
     }
 
 }

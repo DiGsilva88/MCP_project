@@ -28,6 +28,7 @@ public class PoliticasSegurancaTests
     [Theory]
     [InlineData("Nome,Localidade\nAna,Lisboa\n")]
     [InlineData("0 clientes com Localidade = Lisboa e Distrito = Porto: os valores existem, mas nenhum cliente tem os dois.")]
+    [InlineData("0 clientes sem vendas: ano atual (01-01-2026 a 21-10-2026). Todos os clientes da ficha compraram neste período.")]
     [InlineData("Nenhuma linha encontrada com esse filtro.")]
     [InlineData("Sem vendas: ano atual (01-01-2026 a 31-12-2026).")]
     public void ResultadoComDados_RespostasReais_ContamComoFonte(string texto)
@@ -43,6 +44,39 @@ public class PoliticasSegurancaTests
     public void ResultadoComDados_ErrosERecusas_NaoContam(string texto)
     {
         Assert.False(PoliticasSeguranca.ResultadoComDados(texto));
+    }
+
+    // Esquema mínimo no formato que o McpClientTool expõe (o servidor gera-o a partir dos enums).
+    private static readonly JsonElement Esquema = JsonSerializer.Deserialize<JsonElement>(
+        """{"type":"object","properties":{"agrupar":{"type":"string","enum":["Cliente","Localidade"]},"coluna":{"type":["string","null"],"enum":["Zona",null]},"limite":{"type":"integer"}}}""");
+
+    private static string? Validar(params (string Nome, object? Valor)[] argumentos)
+        => PoliticasSeguranca.ArgumentoInvalido(Esquema, argumentos.Select(a => KeyValuePair.Create(a.Nome, a.Valor)));
+
+    [Fact]
+    public void ArgumentoInvalido_ValorForaDoEnum_DizOsPossiveisENaoContaComoDados()
+    {
+        var r = Validar(("agrupar", JsonSerializer.Deserialize<JsonElement>("\"Localidad\"")));
+
+        Assert.Equal("agrupar=Localidad não existe. Valores possíveis: Cliente, Localidade. Chama de novo com um destes.", r);
+        Assert.False(PoliticasSeguranca.ResultadoComDados(r!));
+    }
+
+    [Fact]
+    public void ArgumentoInvalido_ValoresValidos_Passam()
+    {
+        Assert.Null(Validar(("agrupar", "localidade"))); // o servidor aceita sem distinguir maiúsculas
+        Assert.Null(Validar(("coluna", null), ("limite", 5)));
+        Assert.Null(Validar(("coluna", JsonSerializer.Deserialize<JsonElement>("null"))));
+    }
+
+    [Fact]
+    public void ArgumentoInvalido_ParametroInexistente_DizOsPossiveis()
+    {
+        var r = Validar(("ordem", "Quantidade"));
+
+        Assert.StartsWith("O parâmetro ordem não existe. Parâmetros possíveis: agrupar, coluna, limite.", r);
+        Assert.False(PoliticasSeguranca.ResultadoComDados(r!));
     }
 
     [Fact]

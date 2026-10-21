@@ -231,7 +231,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
         csv.Append(string.Join(',', pagina.Colunas)).Append('\n');
         foreach (var linha in pagina.Linhas)
-            csv.Append(string.Join(',', linha.Select(Campo))).Append('\n');
+            csv.Append(string.Join(',', linha.Select(v => Campo(v)))).Append('\n');
 
         // Avisa o modelo quando a lista foi cortada para ele não pensar que já viu a info toda
         // Sem corte também diz o total, para o modelo nunca ter de o adivinhar ("10 de 10").
