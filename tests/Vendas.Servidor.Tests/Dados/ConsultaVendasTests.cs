@@ -61,4 +61,20 @@ public class ConsultaVendasTests
         Assert.Contains("GROUP BY CONVERT(char(7), [DataDoc], 120)", sql);
         Assert.Contains("ORDER BY Nome DESC;", sql);
     }
+
+    [Fact]
+    public void TopArtigos_Distrito_AgrupaPelaFichaSemPerderVendasSemFicha()
+    {
+        var (sql, _) = ConsultaVendas.TopArtigos(DimensaoVenda.Distrito, Desde, Ate);
+
+        Assert.Contains("OUTER APPLY (SELECT c.[Distrito] AS ValorFicha", sql); // não é JOIN: clientes sem ficha contam
+        Assert.Contains("WHERE c.ClienteID = v.[ClienteID]", sql);
+        Assert.Contains("GROUP BY ficha.ValorFicha COLLATE Latin1_General_CI_AI", sql);
+        Assert.Contains("'(sem dados)')", sql); // o nome nunca chega NULL
+        Assert.Contains("ORDER BY Valor DESC, Nome;", sql);
+    }
+
+    [Fact]
+    public void TopArtigos_Marca_NaoVaiAFicha()
+        => Assert.DoesNotContain("OUTER APPLY", ConsultaVendas.TopArtigos(DimensaoVenda.Marca, Desde, Ate).Sql);
 }

@@ -18,4 +18,9 @@
     <ProjectReference Include="..\Vendas.Servidor\Vendas.Servidor.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+    <ItemGroup>
+  <!-- O ficheiro passa a viajar dentro do .exe -->
+  <EmbeddedResource Include="Pagina\pagina-chat.html" />
+    </ItemGroup>
+
 </Project>

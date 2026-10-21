@@ -153,6 +153,18 @@ public class VendasToolsTests
 
         Assert.StartsWith("Nenhuma correspondência", r);
     }
-    
+
+    [Fact]
+    public async Task Localidade_AgrupaVendasPorLocalidade()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("Seixal", 100m, 4m, 2, 400m, 3, TotalDocumentos: 8)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Localidade);
+
+        Assert.Equal(DimensaoVenda.Localidade, repo.UltimaDimensao);
+        Assert.Contains("Vendas por localidade", r);
+        Assert.Contains("posicao,localidade,valor,percentagem", r);
+        Assert.Contains("# Mostrados 1 de 3 localidades.", r);
+    }
+
     }
 

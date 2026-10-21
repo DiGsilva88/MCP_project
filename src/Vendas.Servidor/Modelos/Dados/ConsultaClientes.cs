@@ -99,7 +99,7 @@ internal static class ConsultaClientes
 
     // Tradução de Campo para coluna SQL (lista branca). Só esta camada conhece os aliases
     // c./f. do JOIN em Origem — o enum Campo, no modelo de domínio, não sabe disto.
-    private static string Coluna(Campo campo) => campo switch
+    internal static string Coluna(Campo campo) => campo switch
     {
         Campo.Zona => "c.[Zona]",
         Campo.Localidade => "c.[Localidade]",
