@@ -19,6 +19,8 @@ WHERE  o.name = 'AnaVendArt'
 ;
 
 
+
+
 SELECT o.name                                               AS objeto,
        USER_NAME(COALESCE(o.principal_id, s.principal_id))  AS dono
 FROM   sys.objects AS o
@@ -155,14 +157,14 @@ GO
 --criar a view mcp.Vendas, que vai ler a AnaVendArt e a FArtigo, e a ATG_Familia para obter o nome da familia do artigo
 CREATE OR ALTER VIEW mcp.ViewMCP_vendas AS
 SELECT
+-- Cliente: a mesma chave da ViewMcp_clientes, para permitir a junção entre as duas views
+    v.ClienteID AS ClienteID,
     -- Documento "FT 1/2026/123 o Doc Id repete se entre anos e secções, 
     -- por isso é necessário acrescentar o ano e a secção para tornar o DocumentoID único"
     CAST(CONCAT(RTRIM(v.TipoDocID),' ', v.SecVendaID,'/', 
     YEAR(v.DataDoc), '/', v.DocID) AS nvarchar(80)) AS DocumentoID,
     CAST(RTRIM(v.TipoDocID) as nvarchar(20)) AS TipoDocID,
     CAST(v.DataDoc AS date) AS DataDoc,
-    -- Cliente: a mesma chave da ViewMcp_clientes, para permitir a junção entre as duas views
-    v.ClienteID AS ClienteID,
     -- Artigo: o código vem da AnaVendArt, o nome vem da Fartigo.
     CAST(RTRIM(v.ArtigoID) AS nvarchar(50)) AS ArtigoID,
     COALESCE(NULLIF(LTRIM(RTRIM(a.DescrResumida)),''), '(sem descrição)') AS Artigo,
