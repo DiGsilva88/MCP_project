@@ -32,7 +32,8 @@ internal static class ConsultaVendas
                    SUM(p.Valor) OVER () AS Total,
                    COUNT(*)     OVER () AS Grupos,
                    p.Bruto, p.Desconto, p.Iva,
-                   t.TotalDocumentos
+                   t.TotalDocumentos,
+                   t.UltimaData
             FROM (
                 SELECT [ClienteID],
                        COALESCE(SUM([ValorLiquido]), 0)  AS Valor,
@@ -54,14 +55,23 @@ internal static class ConsultaVendas
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) TopArtigos(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, string? cliente = null,
-        IReadOnlyDictionary<Campo, string>? filtros = null)
+        IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false)
     {
         var (ficha, aplicarFicha) = FiltroFicha(filtros);
         var onde = Onde(cliente, ficha);
 
         var (nome, agrupar) = Colunas(dimensao);
-        // Meses por ordem cronológica (mais recente primeiro); o resto do maior para o menor valor
-        var ordem = dimensao == DimensaoVenda.Mes ? "Nome DESC" : "Valor DESC, Nome";
+        // Meses por ordem cronológica (mais recente primeiro); o resto do maior para o menor valor (ou quantidade)
+        var ordem = dimensao == DimensaoVenda.Mes ? "Nome DESC"
+            : porQuantidade ? "Quantidade DESC, Nome"
+            : "Valor DESC, Nome";
+
+        // Dimensão da ficha (Localidade, Distrito...): cada linha de venda vai buscar esse valor ao seu cliente.
+        // OUTER APPLY e não JOIN: vendas de clientes sem ficha continuam a contar no total.
+        // Só expõe ValorFicha, por isso os [ClienteID] sem prefixo do WHERE continuam a ser os da venda.
+        var aplicarFichaCliente = Dimensoes.CampoDaFicha(dimensao) is { } campo
+            ? $"OUTER APPLY (SELECT {ConsultaClientes.Coluna(campo)} AS ValorFicha FROM {ConsultaClientes.Origem} WHERE c.ClienteID = v.[ClienteID]) AS ficha"
+            : "";
 
         // MAX(t.TotalDocumentos): a query tem GROUP BY e o total é igual em todas as linhas
         var sql = $"""
@@ -75,9 +85,11 @@ internal static class ConsultaVendas
                    COALESCE(SUM([ValorIliquido]), 0) AS Bruto,
                    COALESCE(SUM([ValorDesconto]), 0) AS Desconto,
                    COALESCE(SUM([ValorIva]), 0)      AS Iva,
-                   MAX(t.TotalDocumentos)            AS TotalDocumentos
-            FROM   {Vendas}
+                   MAX(t.TotalDocumentos)            AS TotalDocumentos,
+                   MAX(t.UltimaData)                 AS UltimaData
+            FROM   {Vendas} AS v
             {TotalDocumentos(onde)}
+            {aplicarFichaCliente}
             {onde}
             GROUP BY {agrupar}
             ORDER BY {ordem};
@@ -122,9 +134,37 @@ internal static class ConsultaVendas
         return ($"AND [ClienteID] IN (SELECT c.ClienteID FROM {ConsultaClientes.Origem} {where})", aplicar);
     }
 
+    // Clientes da ficha sem nenhuma venda em [desde, ate[, com a data da última compra antes disso
+    // (NULL = nunca comprou). Os que deixaram de comprar há menos tempo vêm primeiro.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) ClientesSemVendas(
+        DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null)
+    {
+        var (where, aplicarFiltros) = ConsultaClientes.FiltrosWhere(filtros ?? new Dictionary<Campo, string>());
+        var sql = $"""
+            SELECT TOP (@limite)
+                   CONCAT(COALESCE(c.[NomeCliente], '(sem nome)'), ' (', c.[ClienteID], ')') AS Nome,
+                   u.UltimaData,
+                   COUNT(*) OVER () AS Total
+            FROM   {ConsultaClientes.Origem}
+            OUTER APPLY (SELECT MAX(v.[DataDoc]) AS UltimaData FROM {Vendas} AS v
+                         WHERE v.[ClienteID] = c.ClienteID AND v.[DataDoc] < @ate) AS u
+            {(where.Length == 0 ? "WHERE" : where + " AND")} NOT EXISTS (
+                SELECT 1 FROM {Vendas} AS v
+                WHERE v.[ClienteID] = c.ClienteID AND v.[DataDoc] >= @desde AND v.[DataDoc] < @ate)
+            ORDER BY u.UltimaData DESC, Nome;
+            """;
+
+        return (sql, p => { Preencher(p, desde, ate, null); aplicarFiltros(p); });
+    }
+
+    // Data da venda mais recente na view (sem período): diz até onde vão os dados quando um período vem vazio.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) UltimaVenda() =>
+        ($"SELECT MAX([DataDoc]) FROM {Vendas};", _ => { });
+
     // Documentos distintos no período todo: um documento tem vários artigos, por isso não se somam os grupos.
+    // UltimaData: a venda mais recente do período, para avisar quando os dados acabam antes do fim do período.
     private static string TotalDocumentos(string onde) =>
-        $"CROSS JOIN (SELECT COUNT(DISTINCT [DocumentoID]) AS TotalDocumentos FROM {Vendas} {onde}) AS t";
+        $"CROSS JOIN (SELECT COUNT(DISTINCT [DocumentoID]) AS TotalDocumentos, MAX([DataDoc]) AS UltimaData FROM {Vendas} {onde}) AS t";
 
     //O que se mostra e por onde se agrupa, para cada dimensão. Switch fechado:
     //o modelo escolhe um valor do enum, nunca escreve SQL.
@@ -135,6 +175,10 @@ internal static class ConsultaVendas
         DimensaoVenda.Marca   => ("[Marca]",   "[Marca]"),
         // estilo 120 = "aaaa-mm-dd": os 7 primeiros caracteres são o mês
         DimensaoVenda.Mes     => ("CONVERT(char(7), [DataDoc], 120)", "CONVERT(char(7), [DataDoc], 120)"),
+        // Agrupa sem acentos/maiúsculas como o ConsultaClientes.Contar ("Fernão Ferro" = "FERNAO FERRO").
+        // Vazio ou cliente sem ficha -> "(sem dados)": o nome nunca chega NULL ao LerValorAgrupado.
+        _ when Dimensoes.CampoDaFicha(dimensao) is not null =>
+            ("COALESCE(MIN(NULLIF(ficha.ValorFicha, '')), '(sem dados)')", "ficha.ValorFicha COLLATE Latin1_General_CI_AI"),
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao))
     };
 

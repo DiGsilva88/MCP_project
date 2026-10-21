@@ -39,7 +39,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "valor: filtra a coluna. cruzarCom/valorCruzado: filtra também por outra coluna " +
         "(ex.: actividade com mais clientes em Corroios: coluna=Actividade, contar=true, cruzarCom=Localidade, valorCruzado=Corroios). " +
         "nomeComecaPor: clientes cujo nome começa por esse texto. " +
-        "Faturação real (top clientes, artigos, familias, marcas, vendas de um cliente): usar consultar_vendas. " +
+        "Faturação real (top clientes, artigos, familias, marcas, vendas por localidade/distrito/zona/vendedor/actividade, " +
+        "vendas de um cliente): usar consultar_vendas. " +
         "Volume declarado na ficha ou plafond: usar consultar_sensivel. " +
         "Devolve CSV; pagina=2 para continuar.")]
     public async Task<string> ConsultarAsync(
@@ -230,7 +231,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
         csv.Append(string.Join(',', pagina.Colunas)).Append('\n');
         foreach (var linha in pagina.Linhas)
-            csv.Append(string.Join(',', linha.Select(Campo))).Append('\n');
+            csv.Append(string.Join(',', linha.Select(v => Campo(v)))).Append('\n');
 
         // Avisa o modelo quando a lista foi cortada para ele não pensar que já viu a info toda
         // Sem corte também diz o total, para o modelo nunca ter de o adivinhar ("10 de 10").
@@ -267,8 +268,9 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         return csv.ToString();
     }
 
-    // Protege o CSV: um valor com vírgula, aspas ou quebra de linha vai entre aspas.
+    // Protege o CSV: um valor com o separador, aspas ou quebra de linha vai entre aspas.
     // Ex.: Bento, Filhos  ->  "Bento, Filhos"
-    internal static string Campo(string texto)
-        => texto.IndexOfAny([',', '"', '\n', '\r']) < 0 ? texto : $"\"{texto.Replace("\"", "\"\"")}\"";
+    // As vendas usam ';' (os números vêm com vírgula decimal); estas tools usam ','.
+    internal static string Campo(string texto, char separador = ',')
+        => texto.IndexOfAny([separador, '"', '\n', '\r']) < 0 ? texto : $"\"{texto.Replace("\"", "\"\"")}\"";
 }

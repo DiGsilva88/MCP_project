@@ -61,4 +61,57 @@ public class ConsultaVendasTests
         Assert.Contains("GROUP BY CONVERT(char(7), [DataDoc], 120)", sql);
         Assert.Contains("ORDER BY Nome DESC;", sql);
     }
+
+    [Fact]
+    public void TopArtigos_Distrito_AgrupaPelaFichaSemPerderVendasSemFicha()
+    {
+        var (sql, _) = ConsultaVendas.TopArtigos(DimensaoVenda.Distrito, Desde, Ate);
+
+        Assert.Contains("OUTER APPLY (SELECT c.[Distrito] AS ValorFicha", sql); // não é JOIN: clientes sem ficha contam
+        Assert.Contains("WHERE c.ClienteID = v.[ClienteID]", sql);
+        Assert.Contains("GROUP BY ficha.ValorFicha COLLATE Latin1_General_CI_AI", sql);
+        Assert.Contains("'(sem dados)')", sql); // o nome nunca chega NULL
+        Assert.Contains("ORDER BY Valor DESC, Nome;", sql);
+    }
+
+    [Fact]
+    public void TopArtigos_PorQuantidade_OrdenaPelasUnidades()
+        => Assert.Contains("ORDER BY Quantidade DESC, Nome;",
+            ConsultaVendas.TopArtigos(DimensaoVenda.Artigo, Desde, Ate, porQuantidade: true).Sql);
+
+    [Fact]
+    public void TopArtigos_MesPorQuantidade_ContinuaCronologico()
+        => Assert.Contains("ORDER BY Nome DESC;",
+            ConsultaVendas.TopArtigos(DimensaoVenda.Mes, Desde, Ate, porQuantidade: true).Sql);
+
+    [Fact]
+    public void Rankings_TrazemAUltimaDataDoPeriodo()
+    {
+        foreach (var (sql, _) in new[] { ConsultaVendas.TopClientes(Desde, Ate), ConsultaVendas.TopArtigos(DimensaoVenda.Marca, Desde, Ate) })
+            Assert.Contains("MAX([DataDoc]) AS UltimaData", sql);
+    }
+
+    [Fact]
+    public void ClientesSemVendas_SemFiltros_NaoExisteVendaNoPeriodo()
+    {
+        var (sql, aplicar) = ConsultaVendas.ClientesSemVendas(Desde, Ate);
+
+        Assert.Contains("WHERE NOT EXISTS (", sql);
+        Assert.Contains("v.[DataDoc] >= @desde AND v.[DataDoc] < @ate", sql);
+        Assert.Contains("ORDER BY u.UltimaData DESC, Nome;", sql);
+        Assert.False(Aplicar(aplicar).Contains("@cliente"));
+    }
+
+    [Fact]
+    public void ClientesSemVendas_ComFiltro_JuntaComAnd()
+    {
+        var (sql, aplicar) = ConsultaVendas.ClientesSemVendas(Desde, Ate, new Dictionary<Campo, string> { [Campo.Localidade] = "Seixal" });
+
+        Assert.Contains(" AND NOT EXISTS (", sql);
+        Assert.Equal("Seixal", Aplicar(aplicar)["@filtro0"].Value);
+    }
+
+    [Fact]
+    public void TopArtigos_Marca_NaoVaiAFicha()
+        => Assert.DoesNotContain("OUTER APPLY", ConsultaVendas.TopArtigos(DimensaoVenda.Marca, Desde, Ate).Sql);
 }

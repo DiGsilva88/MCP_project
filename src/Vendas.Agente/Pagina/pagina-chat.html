@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assistente de Vendas</title>
+  <style>
+    :root {
+      --fundo: #e9edf7;
+      --cartao: #ffffff;
+      --texto: #1b2232;
+      --suave: #667085;
+      --borda: #e4e7ee;
+      --marca: #1f45c7;
+      --marca-escura: #1838a6;
+      --marca-texto: #ffffff;
+      --bolha-ia: #f1f3f7;
+      --chip: #eaf0ff;
+      --chip-texto: #1f45c7;
+      --ok: #22a06b;
+      --erro: #d92d20;
+      --sombra: 0 24px 48px -12px rgba(16, 32, 80, .25);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --fundo: #0f1320;
+        --cartao: #171c2a;
+        --texto: #e8ebf2;
+        --suave: #9aa3b5;
+        --borda: #262d3e;
+        --marca: #3d63e6;
+        --marca-escura: #3358d6;
+        --bolha-ia: #21283a;
+        --chip: #1f2a48;
+        --chip-texto: #a9bdff;
+        --sombra: 0 24px 48px -12px rgba(0, 0, 0, .5);
+      }
+    }
+
+    /* ---------- Base ---------- */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px 16px;
+      background: var(--fundo);
+      color: var(--texto);
+      font: 15px/1.45 system-ui, "Segoe UI", Roboto, sans-serif;
+    }
+    button, input { font: inherit; }
+    :focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+
+    /* Escondido no ecrã, mas lido pelos leitores de ecrã */
+    .so-leitor {
+      position: absolute; width: 1px; height: 1px; overflow: hidden;
+      clip: rect(0 0 0 0); white-space: nowrap;
+    }
+
+    /* O pequeno círculo de cor. Usado na etiqueta de estado, no topo e no rodapé. */
+    .chat-ponto {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--ok);
+      flex: none; 
+    }
+
+    /* ---------- chat-estado (etiqueta por cima do cartão) ---------- */
+    .chat-estado {
+      margin: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--cartao);
+      color: var(--texto);
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(16, 32, 80, .08);
+    }
+    .chat-estado--desligado .chat-ponto { background: var(--erro); }
+
+    /* ---------- chat-cartao ---------- */
+    .chat-cartao {
+      width: min(100%, 440px);                   
+      height: min(720px, calc(100dvh - 96px));   
+      display: flex;
+      flex-direction: column;                   
+      background: var(--cartao);
+      border-radius: 20px;
+      overflow: hidden;                          
+      box-shadow: var(--sombra);
+    }
+
+    /* ---------- chat-topo ---------- */
+    .chat-topo {
+      padding: 20px 20px 18px;
+      background: var(--marca);
+      color: var(--marca-texto);
+    }
+    .chat-avatares { display: flex; justify-content: center; }
+    .chat-avatar {
+      width: 36px; height: 36px;
+      display: grid; place-items: center;        
+      border-radius: 50%;
+      border: 2px solid var(--marca);            
+      font-size: 14px; font-weight: 700;
+      color: #1b2232;
+    }
+    .chat-avatar + .chat-avatar { margin-left: -10px; } 
+    .chat-avatar--laranja { background: #f7b98f; }
+    .chat-avatar--verde { background: #91d5b8; }
+    .chat-avatar--branco { background: #ffffff; color: var(--marca); }
+    .chat-titulo {
+      margin: 14px 0 4px;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      text-align: center;
+    }
+    .chat-subtitulo {
+      margin: 0;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-size: 13px;
+      opacity: .85;
+    }
+    .chat-subtitulo .chat-ponto { width: 6px; height: 6px; background: currentColor; }
+
+    /* ---------- chat-conversa ---------- */
+    .chat-conversa {
+      flex: 1;                        /* ocupa todo o espaço entre o topo e a escrita */
+      overflow-y: auto;               /* só esta zona faz scroll; o topo fica fixo */
+      overscroll-behavior: contain;   /* no fim do scroll, não arrasta a página toda */
+      padding: 20px 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ---------- chat-msg ---------- */
+    .chat-msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      white-space: pre-wrap;         
+      overflow-wrap: anywhere;        
+      animation: chat-entrar .18s ease-out;
+    }
+    .chat-msg--ia {
+      align-self: flex-start;         
+      background: var(--bolha-ia);
+      border-bottom-left-radius: 4px; 
+    }
+    .chat-msg--eu {
+      align-self: flex-end;           
+      background: var(--marca);
+      color: var(--marca-texto);
+      border-bottom-right-radius: 4px;
+    }
+   
+    .chat-msg--ia + .chat-msg--eu,
+    .chat-msg--eu + .chat-msg--ia { margin-top: 8px; }
+    .chat-msg--erro {
+      background: transparent;
+      color: var(--erro);
+      border: 1px solid currentColor;
+    }
+    @keyframes chat-entrar {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+   
+    .chat-pontos { display: inline-flex; gap: 4px; padding: 4px 0; }
+    .chat-pontos i {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--suave);
+      animation: chat-saltar 1s infinite ease-in-out;
+    }
+    .chat-pontos i:nth-child(2) { animation-delay: .15s; } 
+    .chat-pontos i:nth-child(3) { animation-delay: .30s; }
+    @keyframes chat-saltar {
+      0%, 60%, 100% { transform: none; opacity: .5; }
+      30%           { transform: translateY(-4px); opacity: 1; }
+    }
+
+    
+    .chat-sugestoes {
+      display: flex;
+      flex-wrap: wrap;                
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .chat-chip {
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 14px;
+      background: var(--chip);
+      color: var(--chip-texto);
+      font-size: 14px;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+    }
+    .chat-chip:hover { filter: brightness(.96); }
+    .chat-chip:disabled { opacity: .5; cursor: default; }
+
+    .chat-escrever {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 10px 10px 20px;
+    border-top: 1px solid var(--borda);
+    }
+.chat-escrever:focus-within { border-top-color: var(--marca); }
+
+    /* Quem desligou as animações no sistema não as vê aqui */
+    @media (prefers-reduced-motion: reduce) {
+      .chat-msg, .chat-pontos i { animation: none; }
+    }
+
+    .chat-campo {
+    flex: 1;
+    min-width: 0; 
+    border: 0;
+    padding: 10px 0;
+    background: transparent;
+    color: var(--texto);
+    }
+    .chat-campo::placeholder { color: var(--suave); }
+    .chat-campo:focus-visible { outline: none; } /* o foco vê-se na linha azul de cima */
+
+    .chat-enviar {
+    width: 44px; height: 44px; 
+    flex: none;
+    display: grid; place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: var(--marca);
+    color: var(--marca-texto);
+    cursor: pointer;
+    }
+    .chat-enviar:hover { background: var(--marca-escura); }
+    .chat-campo:disabled, .chat-enviar:disabled { opacity: .55; cursor: wait; }
+
+    /* ---------- chat-rodape ---------- */
+    .chat-rodape {
+    display: flex;
+    justify-content: center;
+    padding: 0 0 12px;
+    }
+    .chat-rodape-texto {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--bolha-ia);
+    color: var(--suave);
+    font-size: 12px;
+    }
+    .chat-rodape .chat-ponto { width: 6px; height: 6px; background: var(--suave);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- role="status": um leitor de ecrã anuncia quando o texto muda -->
+  <p class="chat-estado" id="estado" role="status">
+    <span class="chat-ponto" aria-hidden="true"></span>
+    <span id="estado-texto">Pronto a responder</span>
+  </p>
+
+  <div class="chat-cartao">
+
+    <header class="chat-topo">
+      <!-- Letras provisórias: troca pelas que quiseres -->
+      <div class="chat-avatares" aria-hidden="true">
+        <span class="chat-avatar chat-avatar--branco">I</span>
+        <span class="chat-avatar chat-avatar--branco">N</span>
+        <span class="chat-avatar chat-avatar--branco">F</span>
+        <span class="chat-avatar chat-avatar--branco">O</span>
+        <span class="chat-avatar chat-avatar--branco">R</span>
+        <span class="chat-avatar chat-avatar--branco">A</span>
+        <span class="chat-avatar chat-avatar--branco">P</span>
+      </div>
+      <h1 class="chat-titulo">Assistente de Vendas</h1>
+      <p class="chat-subtitulo">
+        <span class="chat-ponto" aria-hidden="true"></span>Clientes, faturação, artigos, famílias e marcas
+      </p>
+    </header>
+
+    <!-- role="log": cada mensagem nova é lida pelo leitor de ecrã, sem interromper -->
+    <main class="chat-conversa" id="conversa" role="log" aria-live="polite">
+      <div class="chat-msg chat-msg--ia">Olá! Sou o assistente de vendas. Pergunte sobre clientes, faturação, artigos, famílias e marcas.</div>
+      <div class="chat-msg chat-msg--ia">Experimente uma destas perguntas:</div>
+
+      <div class="chat-sugestoes" id="sugestoes">
+        <button type="button" class="chat-chip">Que família de artigos vendeu mais no mês passado?</button>
+        <button type="button" class="chat-chip">Quais são os 5 melhores clientes este ano?</button>
+        <button type="button" class="chat-chip">Quantos clientes há por zona?</button>
+        <button type="button" class="chat-chip">Como evoluíram as vendas mês a mês este ano?</button>
+      </div>
+    </main>
+
+    <form class="chat-escrever" id="form">
+      <!-- O rótulo existe para leitores de ecrã, mas não se vê -->
+      <label for="pergunta" class="so-leitor">Pergunta</label>
+      <input class="chat-campo" id="pergunta" maxlength="500" autocomplete="off"
+             placeholder="Escreva a sua pergunta…" required>
+      <button class="chat-enviar" aria-label="Enviar">
+        <!-- Seta desenhada em SVG: não depende de ficheiros nem de fontes de ícones -->
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+    </form>
+
+    
+
+    <footer class="chat-rodape">
+      <span class="chat-rodape-texto">
+        <span class="chat-ponto" aria-hidden="true"></span>Só leitura · nada é alterado na base de dados
+      </span>
+    </footer>
+
+  </div>
+
+  <script>
+  
+
+
+    const form = document.getElementById('form');
+    const campo = document.getElementById('pergunta');
+    const botao = form.querySelector('.chat-enviar');
+    const estado = document.getElementById('estado');
+    const estadoTexto = document.getElementById('estado-texto');
+    const conversa = document.getElementById('conversa');
+    const chips = document.querySelectorAll('.chat-chip');
+
+    // Verde quando o agente responde, vermelho quando falha.
+    // toggle(classe, condição): põe a classe se a condição for true, tira se for false.
+
+    function ligado(sim) {
+      estado.classList.toggle('chat-estado--desligado', !sim);
+      estadoTexto.textContent = sim ? 'Pronto a responder' : 'Sem ligação ao agente';
+    }
+
+    function descer() {
+      conversa.scrollTop = conversa.scrollHeight;
+    }
+
+    function mensagem(texto, variante) {
+      const div = document.createElement('div');
+      div.className = 'chat-msg chat-msg--' + variante;
+      div.textContent = texto;
+      conversa.appendChild(div);
+      descer();
+      return div;
+    }
+
+    // Bolha da IA com os três pontos a saltar enquanto espera
+    function aEsperar() {
+      const div = mensagem('', 'ia');
+      div.innerHTML =
+        '<span class="chat-pontos" aria-hidden="true"><i></i><i></i><i></i></span>' +
+        '<span class="so-leitor">A consultar os dados…</span>';
+      return div;
+    }
+
+    function bloquear(sim) {
+      campo.disabled = botao.disabled = sim;
+      chips.forEach(c => c.disabled = sim);
+    }
+
+    async function perguntar(texto) {
+      document.getElementById('sugestoes')?.remove();
+      mensagem(texto, 'eu');
+      const resposta = aEsperar();
+      bloquear(true);
+      conversa.setAttribute('aria-busy', 'true'); // o leitor de ecrã lê a resposta no fim, não aos bocados
+      try {
+        const r = await fetch('/perguntar', { method: 'POST', body: texto });
+        ligado(r.ok);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+
+        const leitor = r.body.getReader();
+        const descodificador = new TextDecoder();
+        let primeiro = true;
+        for (;;) {
+          const { done, value } = await leitor.read();
+          if (done) break;
+          if (primeiro) { resposta.textContent = ''; primeiro = false; }
+          resposta.textContent += descodificador.decode(value, { stream: true });
+          descer();
+        }
+        resposta.textContent += descodificador.decode(); // últimos bytes que ficaram no descodificador
+
+        if (primeiro) {
+          resposta.textContent = 'Sem resposta. Tente novamente.';
+          resposta.classList.add('chat-msg--erro');
+        }
+      } catch {
+        ligado(false);
+        resposta.textContent = 'O assistente não está disponível. Confirme que o agente está a correr.';
+        resposta.classList.add('chat-msg--erro');
+      } finally {
+        conversa.setAttribute('aria-busy', 'false');
+        bloquear(false);
+        descer();
+        campo.focus();
+      }
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const texto = campo.value.trim();
+      if (!texto || campo.disabled) return;
+      campo.value = '';
+      perguntar(texto);
+    });
+
+    // replace(/\s+/g, ' '): junta espaços e quebras de linha do HTML num só espaço
+    chips.forEach(b =>
+      b.addEventListener('click', () => {
+        if (!campo.disabled) perguntar(b.textContent.replace(/\s+/g, ' ').trim());
+      }));
+
+    campo.focus();
+  </script>
+</body>
+</html>

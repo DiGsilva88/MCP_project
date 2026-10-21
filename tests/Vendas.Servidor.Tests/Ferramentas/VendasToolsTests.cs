@@ -51,15 +51,24 @@ public class VendasToolsTests
     }
 
     [Fact]
-    public async Task Csv_ProtegeVirgulasUsaPontoEAvisaCorte()
+    public async Task Csv_PontoEVirgulaNumerosPtEAvisaCorte()
     {
-    
+        // O modelo trocava dígitos ao converter 1234.50 sozinho: os números já vêm em pt-PT, prontos a copiar.
         var repo = new FakeVendasRepo{Valores = [new("Bento, Filhos", 1234.5m,0,3,2469m,2, 1371.67m, -137.17m, 283.94m)]};
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Cliente);
-        Assert.Contains("posicao,cliente,valor,percentagem,documentos,media,bruto,desconto,iva" + Environment.NewLine, r);
-        Assert.Contains("1,\"Bento, Filhos\",1234.50,50.0,3,411.50,1371.67,-137.17,283.94",r);
+        Assert.Contains("posicao;cliente;valor;percentagem;documentos;media;bruto;desconto;iva" + Environment.NewLine, r);
+        Assert.Contains("1;Bento, Filhos;1 234,50;50,0;3;411,50;1 371,67;-137,17;283,94",r);
+        Assert.Contains("total 2 469,00 €", r);
         Assert.Contains("# Mostrados 1 de 2 clientes",r);
+    }
 
+    [Fact]
+    public async Task Csv_NomeComPontoEVirgula_VaiEntreAspas()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("Ana; Rui", 10m, 0, 1, 10m, 1)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync();
+        Assert.Contains("1;\"Ana; Rui\";10,00", r);
+        Assert.Contains("# Lista completa: 1 clientes.", r);
     }
 
     [Fact]
@@ -71,7 +80,7 @@ public class VendasToolsTests
         Assert.Equal("1003", repo.UltimoCliente);
         Assert.Equal(DimensaoVenda.Mes, repo.UltimaDimensao);
         Assert.Contains("cliente \"Cliente 1003 (1003)\"", r);
-        Assert.Contains("posicao,mes,valor,percentagem,documentos,media,quantidade,bruto,desconto,iva", r);
+        Assert.Contains("posicao;mes;valor;percentagem;documentos;media;quantidade;bruto;desconto;iva", r);
     }
 
     [Fact]
@@ -111,7 +120,7 @@ public class VendasToolsTests
         var repo = new FakeVendasRepo{Valores = [new("Ana", 0m,2m,1,0m,1)]};
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo);
         
-        Assert.Contains("1,Ana,0.00,-,1,0.00,2",r);
+        Assert.Contains("1;Ana;0,00;-;1;0,00;2",r);
     }
 
     [Fact]
@@ -139,7 +148,8 @@ public class VendasToolsTests
 
         Assert.Equal("Seixal", repo.UltimosFiltros![Campo.Localidade]);
         Assert.Contains("Localidade = Seixal", r);
-        Assert.Contains("2 documentos, média 5.00 por documento", r);
+        Assert.Contains("2 documentos.", r);
+        Assert.Contains("Valor médio por documento: 5,00 €.", r); // a média geral, numa linha só sua
     }
 
     [Fact]
@@ -153,6 +163,97 @@ public class VendasToolsTests
 
         Assert.StartsWith("Nenhuma correspondência", r);
     }
-    
+
+    [Fact]
+    public async Task Localidade_AgrupaVendasPorLocalidade()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("Seixal", 100m, 4m, 2, 400m, 3, TotalDocumentos: 8)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Localidade);
+
+        Assert.Equal(DimensaoVenda.Localidade, repo.UltimaDimensao);
+        Assert.Contains("Vendas por localidade", r);
+        Assert.Contains("posicao;localidade;valor;percentagem", r);
+        Assert.Contains("# Mostrados 1 de 3 localidades.", r);
+    }
+
+    [Fact]
+    public async Task Quantidade_OrdenaPorUnidadesEPoeAQuantidadeAFrente()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("Filtro (F1)", 50m, 627m, 3, 50m, 1)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo, ordenar: OrdenarVenda.Quantidade);
+
+        Assert.True(repo.UltimoPorQuantidade);
+        Assert.Contains("Vendas por artigo, por quantidade", r);
+        Assert.Contains("posicao;artigo;quantidade;valor;", r);
+        Assert.Contains("1;Filtro (F1);627;50,00;", r);
+    }
+
+    [Fact]
+    public async Task QuantidadePorCliente_Recusa()
+    {
+        var repo = new FakeVendasRepo();
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Cliente, ordenar: OrdenarVenda.Quantidade);
+
+        Assert.StartsWith("ordenar=Quantidade não se aplica a Cliente", r);
+        Assert.Null(repo.UltimoPeriodo);
+    }
+
+    [Fact]
+    public async Task DadosAcabamAntesDoFimDoPeriodo_Avisa()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("2026-09", 10m, 1, 1, 10m, 1, TotalDocumentos: 1, UltimaData: new DateOnly(2026, 9, 5))] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, mes: 9, ano: 2026);
+
+        Assert.Contains("Atenção: a última venda registada neste período é de 05-09-2026.", r);
+    }
+
+    [Fact]
+    public async Task DadosAteAoFimDoPeriodo_NaoAvisa()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("2026-03", 10m, 1, 1, 10m, 1, TotalDocumentos: 1, UltimaData: new DateOnly(2026, 3, 30))] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, mes: 3, ano: 2026);
+
+        Assert.DoesNotContain("Atenção", r);
+    }
+
+    [Fact]
+    public async Task PeriodoVazio_DizAteQuandoHaDados()
+    {
+        var repo = new FakeVendasRepo { UltimaVenda = new DateOnly(2026, 9, 5) };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo, Periodo.MesAtual);
+
+        Assert.StartsWith("Sem vendas: mês atual", r);
+        Assert.Contains("Atenção: as últimas vendas registadas são de 05-09-2026.", r);
+    }
+
+    [Fact]
+    public async Task SemVendas_ListaClientesComUltimaCompra()
+    {
+        var repo = new FakeVendasRepo
+        {
+            SemVendas = [new("Ana (1)", new DateOnly(2026, 5, 2), 7), new("Rui (2)", null, 7)],
+        };
+        var r = await CriarSut(repo).ConsultarVendasAsync(periodo: Periodo.Ultimos90Dias, semVendas: true, limite: 2);
+
+        Assert.Null(repo.UltimaDimensao); // não foi aos rankings
+        Assert.Contains("Clientes sem vendas, últimos 90 dias", r);
+        Assert.Contains(": 7 clientes.", r);
+        Assert.Contains("Ana (1);02-05-2026", r);
+        Assert.Contains("Rui (2);nunca comprou", r);
+        Assert.Contains("# Mostrados 2 de 7 clientes.", r);
+    }
+
+    [Fact]
+    public async Task SemVendas_NenhumCliente_DizQueTodosCompraram()
+    {
+        var r = await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(semVendas: true);
+        Assert.StartsWith("0 clientes sem vendas: ano atual", r);
+    }
+
+    [Fact]
+    public async Task SemVendas_ComCliente_Recusa()
+        => Assert.StartsWith("semVendas lista vários clientes",
+            await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(semVendas: true, cliente: "1003"));
+
     }
 

@@ -74,11 +74,32 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
 
     public async Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
-        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default)
+        IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
+        CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaVendas.TopArtigos(dimensao, desde, ate, cliente, filtros);
+        var (sql, parametros) = ConsultaVendas.TopArtigos(dimensao, desde, ate, cliente, filtros, porQuantidade);
         return await LerAsync(sql, parametros, limite, LerValorAgrupado, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<ClienteSemVendas>> ClientesSemVendasAsync(
+        DateOnly desde, DateOnly ate, int limite, IReadOnlyDictionary<Campo, string>? filtros = null,
+        CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaVendas.ClientesSemVendas(desde, ate, filtros);
+        return await LerAsync(sql, parametros, limite,
+            leitor => new ClienteSemVendas(leitor.GetString(0), Data(leitor, 1), leitor.GetInt32(2)),
+            cancellationToken);
+    }
+
+    public async Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaVendas.UltimaVenda();
+        return (await LerAsync(sql, parametros, 1, leitor => Data(leitor, 0), cancellationToken)).FirstOrDefault();
+    }
+
+    // DataDoc pode ser date ou datetime na view: Convert aceita os dois.
+    private static DateOnly? Data(SqlDataReader leitor, int i)
+        => leitor.IsDBNull(i) ? null : DateOnly.FromDateTime(Convert.ToDateTime(leitor.GetValue(i), CultureInfo.InvariantCulture));
 
     // Faz o trabalho repetitivo, igual em todas as consultas.
     // "await using" fecha a ligação sozinha, mesmo que haja erro.
@@ -123,6 +144,7 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         Bruto:      leitor.GetDecimal(6),
         Desconto:   leitor.GetDecimal(7),
         Iva:        leitor.GetDecimal(8),
-        TotalDocumentos: leitor.GetInt32(9));
+        TotalDocumentos: leitor.GetInt32(9),
+        UltimaData: Data(leitor, 10));
 
 }

@@ -33,7 +33,17 @@ public interface IVendasRepo
         DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
 
+    // porQuantidade: ordena por unidades vendidas em vez de valor (o Mes fica sempre por ordem cronológica).
     Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
-        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
+        IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
+        CancellationToken cancellationToken = default);
+
+    // Clientes da ficha que não têm vendas em [desde, ate[, com a última compra anterior.
+    Task<IReadOnlyList<ClienteSemVendas>> ClientesSemVendasAsync(
+        DateOnly desde, DateOnly ate, int limite, IReadOnlyDictionary<Campo, string>? filtros = null,
+        CancellationToken cancellationToken = default);
+
+    // Data da venda mais recente que existe (null = sem vendas nenhumas).
+    Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default);
 }
