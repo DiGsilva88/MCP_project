@@ -24,6 +24,10 @@ public class PoliticasSegurancaTests
         Assert.False(PoliticasSeguranca.RespostaSemFonte("Olá! Em que posso ajudar?", 0));
     }
 
+    [Fact]
+    public void RespostaSemFonte_ForaDoAmbito_Passa() =>
+        Assert.False(PoliticasSeguranca.RespostaSemFonte(PoliticasSeguranca.ForaDoAmbito,0));
+
     // Frases copiadas de VistasTools e VendasTools: se o servidor as mudar, estes testes avisam.
     [Theory]
     [InlineData("Nome,Localidade\nAna,Lisboa\n")]
