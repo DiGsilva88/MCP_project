@@ -28,6 +28,7 @@ var ficheiroPwd = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Vendas", "sql.pwd");
 if (OperatingSystem.IsWindows() && File.Exists(ficheiroPwd))
     ligacao.Password = Encoding.Unicode.GetString(ProtectedData.Unprotect(
+        
         Convert.FromHexString(File.ReadAllText(ficheiroPwd).Trim()), null, DataProtectionScope.CurrentUser));
 
 builder.Services.AddSingleton<IVendasRepo>(_ => new RepoSql(ligacao.ConnectionString));

@@ -47,6 +47,12 @@ catch (Exception ex)
     Console.Error.WriteLine("Não consegui arrancar/ligar ao servidor MCP (Vendas.Servidor).");
     Console.Error.WriteLine("Isto acontece antes de o Ollama entrar em jogo — não é um problema do Ollama.");
     Console.Error.WriteLine($"Detalhe: {ex.Message}");
+
+    if (args.Contains("--web"))
+    {
+        Console.Error.WriteLine("Carregue Enter para fechar");
+        Console.ReadLine();
+    }
     return;
 }
 await using var _ = mcp;
@@ -75,12 +81,12 @@ IChatClient modelo = ollama
         c.FunctionInvoker = async (ctx, ct) =>
         {
             var t = Stopwatch.StartNew();
-            var args = string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
+            var argumentos = string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
 
             // Valor fora do esquema: corrige-se aqui, sem ir ao servidor (lá daria um erro genérico).
             if (PoliticasSeguranca.ArgumentoInvalido(ctx.Function.JsonSchema, ctx.Arguments) is { } invalido)
             {
-                Console.WriteLine($"[{ctx.Function.Name}({args}) recusado] {invalido}");
+                Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {invalido}");
                 return invalido;
             }
 
@@ -90,7 +96,7 @@ IChatClient modelo = ollama
             var amostra = ctx.Function.Name == "consultar_sensivel"
                 ? $"({texto.Length} caracteres)"
                 : texto[..Math.Min(texto.Length, 120)].ReplaceLineEndings(" ");
-            Console.WriteLine($"[{ctx.Function.Name}({args}) {t.ElapsedMilliseconds} ms] {amostra}");
+            Console.WriteLine($"[{ctx.Function.Name}({argumentos}) {t.ElapsedMilliseconds} ms] {amostra}");
 
             caracteresFerramentas += texto.Length;
             if (caracteresFerramentas > MaxCaracteresFerramentas)
@@ -116,7 +122,7 @@ var opcoes = new ChatOptions
     },
 };
 
-var regras = PoliticasSeguranca.Regras;
+ var regras = PoliticasSeguranca.Regras + $"\nHoje é {DateTime.Today:dd-MM-yyyy}.";
 
 // Aquece o Ollama enquanto o utilizador escolhe o modo: carrega o modelo e o prefixo do prompt
 // (regras + esquema das ferramentas). Usa o cliente sem invocação de ferramentas.
@@ -139,13 +145,28 @@ var aquecimento = Task.Run(async () =>
 foreach (var f in ferramentas)
     Console.WriteLine($"- {f.Name}: {f.Description}");
 
-Console.WriteLine();
-Console.WriteLine("Modo de utilização:");
-Console.WriteLine("1) Perguntas livres (usa um modelo local via Ollama)");
-Console.WriteLine("2) Menu fixo (sem modelo, chama as ferramentas diretamente)");
-Console.WriteLine("3) Chat no browser (como o utilizador final, usa o modelo local)");
-Console.Write("> ");
-var modo = Console.ReadLine()?.Trim();
+// Console.WriteLine();
+// Console.WriteLine("Modo de utilização:");
+// Console.WriteLine("1) Perguntas livres (usa um modelo local via Ollama)");
+// Console.WriteLine("2) Menu fixo (sem modelo, chama as ferramentas diretamente)");
+// Console.WriteLine("3) Chat no browser (como o utilizador final, usa o modelo local)");
+// Console.Write("> ");
+// var modo = argumentos.Contains("--web") ? "3" : Console.ReadLine()?.Trim();
+
+
+var arrancarWeb = args.Contains("--web"); // lançado pelo botão do Visual
+if (!arrancarWeb)
+{
+    Console.WriteLine();
+    Console.WriteLine("Modo de utilização:");
+    Console.WriteLine("1) Perguntas livres (usa um modelo local via Ollama)");
+    Console.WriteLine("2) Menu fixo (sem modelo, chama as ferramentas diretamente)");
+    Console.WriteLine("3) Chat no browser (como o utilizador final, usa o modelo local)");
+    Console.Write("> ");
+}
+var modo = arrancarWeb ? "3" : Console.ReadLine()?.Trim();
+
+
 if (modo == "2")
 {
     await ModoMenuAsync(mcp);
