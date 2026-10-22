@@ -12,14 +12,12 @@ namespace Vendas.Servidor.Ferramentas;
 
 // Ferramentas sobre a view mcp.ViewMCP_vendas.
 // Todas agregam no SQL: nenhuma devolve linhas de documentos.
+
 [McpServerToolType]
 public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
 {
     // Quantos clientes se mostram quando o texto serve a vários.
     private const int MaxClientes = 5;
-
-    // Separador do CSV das vendas: ';' porque os números já vêm com vírgula decimal.
-    private const char Sep = ';';
 
     // Dias sem vendas no fim do período a partir dos quais se avisa que os dados acabam antes.
     private const int DiasSemDadosAviso = 7;
@@ -30,26 +28,31 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
 
     [McpServerTool(Name = "consultar_vendas")]
     // Descrição curta de propósito, como nas outras tools: o modelo lê-a em cada pedido.
+    // Sem exemplos com valores reais (ex.: mes=3): o modelo pequeno copiava-os.
     [Description(
-
         "Ranking de faturação real num período (valor líquido sem IVA, notas de crédito descontadas). " +
         "agrupar=Cliente: melhores clientes (nome e ID); Artigo, Familia ou Marca: o que mais se vende; Mes: atividade mês a mês; " +
         "Localidade, Distrito, Zona, Vendedor ou Actividade: onde/quem vende mais (vendas, não nº de clientes). " +
         "ordenar=Quantidade: por unidades vendidas. " +
-        "mes/ano: mês ou ano concreto (março de 2026: mes=3, ano=2026). " +
+        "mes/ano: mês ou ano concreto (mes=<1 a 12>, ano=<ano>). " +
+        "dataInicio/dataFim: intervalo concreto (semana, trimestre, semestre), formato dd-MM-aaaa. " +
         "coluna/valor: só clientes dessa localidade, distrito, zona ou vendedor (ex.: agrupar=Cliente, coluna=Localidade, valor=Seixal). " +
         "cliente (ID ou nome) limita a esse cliente: o que compra, quanto, quando. " +
         "semVendas=true: clientes SEM compras no período, com a data da última compra. " +
-        "Devolve o valor médio por documento e CSV com ';': posicao, <agrupar>, valor, percentagem, documentos, media, quantidade, bruto, desconto, iva.")]
-    public async Task<string> ConsultarVendasAsync(
+        "Devolve texto pronto a mostrar: título com total e período, valor médio por documento e lista numerada.")]
 
+
+    public async Task<string> ConsultarVendasAsync(
         [Description("Cliente, Artigo, Familia, Marca, Mes, Localidade, Distrito, Zona, Vendedor ou Actividade.")] DimensaoVenda agrupar = DimensaoVenda.Cliente,
         [Description("Ultimos7Dias, Ultimos30Dias, Ultimos90Dias, Ultimos12Meses, AnoAtual, AnoAnterior, MesAtual ou MesAnterior.")]
+
         Periodo periodo = Periodo.AnoAtual,
         [Description("Máximo de linhas, 1 a 100.")] int limite = 10,
         [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
-        [Description("Opcional: mês 1 a 12 (março=3). Tem prioridade sobre periodo.")] int? mes = null,
-        [Description("Opcional: ano, ex.: 2026. Sem mes = ano inteiro.")] int? ano = null,
+        [Description("Opcional: mês 1 a 12. Tem prioridade sobre periodo.")] int? mes = null,
+        [Description("Opcional: ano com 4 dígitos. Sem mes = ano inteiro.")] int? ano = null,
+        [Description("Opcional: data inicial dd-MM-aaaa. Usar com dataFim. Tem prioridade sobre mes, ano e periodo.")] string? dataInicio = null,
+        [Description("Opcional: data final dd-MM-aaaa (incluída).")] string? dataFim = null,
         [Description("Opcional: coluna da ficha, ex.: Localidade, Distrito, Zona, Vendedor.")] Campo? coluna = null,
         [Description("Valor dessa coluna, ex.: Seixal.")] string? valor = null,
         [Description("Valor (euros) ou Quantidade (unidades).")] OrdenarVenda ordenar = OrdenarVenda.Valor,
@@ -61,6 +64,20 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
         var hoje = DateOnly.FromDateTime(DateTime.Today);
         if (mes is < 1 or > 12) return "mes tem de ser de 1 a 12.";
         if (ano is < 2000 || ano > hoje.Year) return $"ano tem de ser de 2000 a {hoje.Year}.";
+
+        // Intervalo livre (semana, trimestre, semestre). Erros numa linha só: o agente não os conta
+        // como dados e o modelo pode corrigir e chamar de novo.
+        DateOnly? inicio = null, fim = null;
+        if ((dataInicio is null) != (dataFim is null)) return "dataInicio e dataFim têm de ser usados juntos.";
+        if (dataInicio is not null)
+        {
+            if (!DateOnly.TryParseExact(dataInicio.Trim(), "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var i)
+                || !DateOnly.TryParseExact(dataFim!.Trim(), "dd-MM-yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var f))
+                return "Datas no formato dd-MM-aaaa, ex.: 01-08-2026.";
+            if (f < i) return "dataFim tem de ser igual ou depois de dataInicio.";
+            (inicio, fim) = (i, f);
+        }
+
         var temValor = !string.IsNullOrWhiteSpace(valor);
         if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
         // Somar unidades de artigos diferentes por cliente não quer dizer nada.
@@ -76,7 +93,10 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
         try
         {
             DateOnly desde, ate; string descricao;
-            if (mes is null && ano is null)
+            if (inicio is not null)
+                // "ate" é exclusivo no resto do código: soma-se um dia à data final pedida.
+                (desde, ate, descricao) = (inicio.Value, fim!.Value.AddDays(1), "período indicado");
+            else if (mes is null && ano is null)
             {
                 (desde, ate) = Periodos.Intervalo(periodo, hoje);
                 descricao = Periodos.Descricao(periodo);
@@ -154,6 +174,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
         return intervalo;
     }
 
+    // Texto pronto a mostrar ao utilizador (e legível pelo modelo): título, média, aviso, lista numerada, rodapé.
     private static string FormatarRanking(
         DimensaoVenda agrupar, bool porQuantidade, string descricao, DateOnly desde, DateOnly ate, string? rotuloCliente,
         Dictionary<Campo, string> filtros, IReadOnlyList<ValorAgrupado> linhas, DateOnly? ultimaVenda)
@@ -172,43 +193,33 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
         var comQuantidade = agrupar != DimensaoVenda.Cliente;
         var ordem = porQuantidade && agrupar != DimensaoVenda.Mes ? ", por quantidade" : "";
 
-        var csv = new StringBuilder()
+        var texto = new StringBuilder()
             .AppendLine($"Vendas por {cabecalho}{ordem}, {descricao} ({intervalo}): total {Euros(total)} € em {grupos} {plural}, " +
                         $"{documentos.ToString("#,##0", Pt)} documentos. Valores em euros, sem IVA.")
-            // Uma só média, numa linha própria: a coluna "media" é de cada linha e o modelo confundia as duas.
             .AppendLine(documentos == 0 ? "Valor médio por documento: -" : $"Valor médio por documento: {Euros(total / documentos)} €.");
 
         // A última venda do período fica bem antes do fim: os dados acabam aí (view por atualizar).
         if (linhas[0].UltimaData is { } ultima && ate.AddDays(-1).DayNumber - ultima.DayNumber > DiasSemDadosAviso)
-            csv.AppendLine($"Atenção: a última venda registada neste período é de {Data(ultima)}.");
-
-        // Por quantidade, a quantidade vem logo a seguir ao nome: é a coluna que responde à pergunta.
-        csv.AppendLine(porQuantidade && comQuantidade
-            ? $"posicao;{cabecalho};quantidade;valor;percentagem;documentos;media;bruto;desconto;iva"
-            : $"posicao;{cabecalho};valor;percentagem;documentos;media{(comQuantidade ? ";quantidade" : "")};bruto;desconto;iva");
+            texto.AppendLine($"Atenção: a última venda registada neste período é de {Data(ultima)}.");
 
         var posicao = 0;
         foreach (var linha in linhas)
         {
+            var nome = string.IsNullOrWhiteSpace(linha.Nome) ? "(sem descrição)" : linha.Nome.Trim();
             // Total 0 (ex.: só notas de crédito que anulam as vendas): sem percentagem, evita dividir por zero
-            var percentagem = total == 0 ? "-" : (100 * linha.Valor / total).ToString("0.0", Pt);
-            var quantidade = linha.Quantidade.ToString("#,##0.##", Pt);
-            var mediaLinha = linha.Documentos == 0 ? "-" : Euros(linha.Valor / linha.Documentos);
-            var nome = VistasTools.Campo(linha.Nome, Sep);
-            var resto = $"{percentagem};{linha.Documentos};{mediaLinha}";
-            var fim = $"{Euros(linha.Bruto)};{Euros(linha.Desconto)};{Euros(linha.Iva)}";
+            var percentagem = total == 0 ? "" : $" ({(100 * linha.Valor / total).ToString("0.0", Pt)}%)";
 
-            csv.AppendLine(porQuantidade && comQuantidade
-                ? $"{++posicao};{nome};{quantidade};{Euros(linha.Valor)};{resto};{fim}"
-                : $"{++posicao};{nome};{Euros(linha.Valor)};{resto}{(comQuantidade ? ";" + quantidade : "")};{fim}");
+            texto.AppendLine(porQuantidade && comQuantidade
+                ? $"{++posicao}. {nome} – {linha.Quantidade.ToString("#,##0.##", Pt)} unidades ({Euros(linha.Valor)} €)"
+                : $"{++posicao}. {nome} – {Euros(linha.Valor)} €{percentagem}");
         }
 
         // Diz sempre quantas linhas vieram e quantas há, para o modelo nunca ter de o adivinhar.
-        csv.AppendLine(grupos > linhas.Count
-            ? $"# Mostrados {linhas.Count} de {grupos} {plural}."
-            : $"# Lista completa: {linhas.Count} {plural}.");
+        texto.AppendLine(grupos > linhas.Count
+            ? $"Mostro {linhas.Count} de {grupos} {plural}."
+            : $"Lista completa: {linhas.Count} {plural}.");
 
-        return csv.ToString();
+        return texto.ToString();
     }
 
     private static string FormatarSemVendas(
@@ -218,15 +229,20 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
         if (linhas.Count == 0)
             return $"0 clientes sem vendas: {descricao} ({intervalo}). Todos os clientes da ficha compraram neste período.";
 
-        var csv = new StringBuilder()
-            .AppendLine($"Clientes sem vendas, {descricao} ({intervalo}): {linhas[0].Total} clientes.")
-            .AppendLine($"cliente{Sep}ultima_compra");
-        foreach (var linha in linhas)
-            csv.AppendLine($"{VistasTools.Campo(linha.Nome, Sep)}{Sep}{(linha.Ultima is { } u ? Data(u) : "nunca comprou")}");
+        var texto = new StringBuilder()
+            .AppendLine($"Clientes sem vendas, {descricao} ({intervalo}): {linhas[0].Total} clientes.");
 
-        csv.AppendLine(linhas[0].Total > linhas.Count
-            ? $"# Mostrados {linhas.Count} de {linhas[0].Total} clientes."
-            : $"# Lista completa: {linhas.Count} clientes.");
-        return csv.ToString();
+        var posicao = 0;
+        foreach (var linha in linhas)
+        {
+            var nome = string.IsNullOrWhiteSpace(linha.Nome) ? "(sem nome)" : linha.Nome.Trim();
+            texto.AppendLine($"{++posicao}. {nome} – " +
+                             (linha.Ultima is { } u ? $"última compra a {Data(u)}" : "nunca comprou"));
+        }
+
+        texto.AppendLine(linhas[0].Total > linhas.Count
+            ? $"Mostro {linhas.Count} de {linhas[0].Total} clientes."
+            : $"Lista completa: {linhas.Count} clientes.");
+        return texto.ToString();
     }
 }

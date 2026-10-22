@@ -7,8 +7,6 @@ namespace Vendas.Servidor.Tests.Ferramentas;
 
 public class VendasToolsTests
 {
-
-
     private static VendasTools CriarSut(FakeVendasRepo repo) => new(repo, NullLogger<VendasTools>.Instance);
 
     [Fact]
@@ -33,54 +31,53 @@ public class VendasToolsTests
     [Fact]
     public async Task Limite_AcimaDe100_FicaEm100()
     {
-    
         var repo = new FakeVendasRepo();
-        await CriarSut(repo).ConsultarVendasAsync(limite:500);
+        await CriarSut(repo).ConsultarVendasAsync(limite: 500);
         Assert.Equal(100, repo.UltimoLimite);
     }
-
 
     [Fact]
     public async Task Falha_DevolveErroNeutro()
     {
-    
-        var repo = new FakeVendasRepo{LancarExcecao = new InvalidOperationException("SQL secreto")};
+        var repo = new FakeVendasRepo { LancarExcecao = new InvalidOperationException("SQL secreto") };
         var r = await CriarSut(repo).ConsultarVendasAsync();
-        
+
         Assert.Equal(VistasTools.ErroNeutro, r);
     }
 
     [Fact]
-    public async Task Csv_PontoEVirgulaNumerosPtEAvisaCorte()
+    public async Task Texto_ListaNumeradaNumerosPtEAvisaCorte()
     {
         // O modelo trocava dígitos ao converter 1234.50 sozinho: os números já vêm em pt-PT, prontos a copiar.
-        var repo = new FakeVendasRepo{Valores = [new("Bento, Filhos", 1234.5m,0,3,2469m,2, 1371.67m, -137.17m, 283.94m)]};
+        var repo = new FakeVendasRepo { Valores = [new("Bento, Filhos", 1234.5m, 0, 3, 2469m, 2, 1371.67m, -137.17m, 283.94m)] };
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Cliente);
-        Assert.Contains("posicao;cliente;valor;percentagem;documentos;media;bruto;desconto;iva" + Environment.NewLine, r);
-        Assert.Contains("1;Bento, Filhos;1 234,50;50,0;3;411,50;1 371,67;-137,17;283,94",r);
+
+        Assert.Contains("1. Bento, Filhos – 1 234,50 € (50,0%)", r);
         Assert.Contains("total 2 469,00 €", r);
-        Assert.Contains("# Mostrados 1 de 2 clientes",r);
+        Assert.Contains("Mostro 1 de 2 clientes.", r);
+        Assert.DoesNotContain("posicao;", r); // já não há CSV
     }
 
     [Fact]
-    public async Task Csv_NomeComPontoEVirgula_VaiEntreAspas()
+    public async Task Texto_NomeComPontoEVirgula_ApareceTalComo()
     {
         var repo = new FakeVendasRepo { Valores = [new("Ana; Rui", 10m, 0, 1, 10m, 1)] };
         var r = await CriarSut(repo).ConsultarVendasAsync();
-        Assert.Contains("1;\"Ana; Rui\";10,00", r);
-        Assert.Contains("# Lista completa: 1 clientes.", r);
+
+        Assert.Contains("1. Ana; Rui – 10,00 € (100,0%)", r);
+        Assert.Contains("Lista completa: 1 clientes.", r);
     }
 
     [Fact]
     public async Task Cliente_PassaAoRepoEApareceNoCabecalho()
     {
-        var repo = new FakeVendasRepo{Valores = [new("2024-12", 30.6m,1,1,30.6m,1)]};
+        var repo = new FakeVendasRepo { Valores = [new("2024-12", 30.6m, 1, 1, 30.6m, 1)] };
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, cliente: " 1003 ");
 
         Assert.Equal("1003", repo.UltimoCliente);
         Assert.Equal(DimensaoVenda.Mes, repo.UltimaDimensao);
         Assert.Contains("cliente \"Cliente 1003 (1003)\"", r);
-        Assert.Contains("posicao;mes;valor;percentagem;documentos;media;quantidade;bruto;desconto;iva", r);
+        Assert.Contains("1. 2024-12 – 30,60 €", r);
     }
 
     [Fact]
@@ -116,11 +113,11 @@ public class VendasToolsTests
     [Fact]
     public async Task TotalZero_NaoDividePorZero()
     {
-    
-        var repo = new FakeVendasRepo{Valores = [new("Ana", 0m,2m,1,0m,1)]};
+        var repo = new FakeVendasRepo { Valores = [new("Ana", 0m, 2m, 1, 0m, 1)] };
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo);
-        
-        Assert.Contains("1;Ana;0,00;-;1;0,00;2",r);
+
+        // Sem percentagem: a linha acaba logo a seguir ao valor.
+        Assert.Contains("1. Ana – 0,00 €" + Environment.NewLine, r);
     }
 
     [Fact]
@@ -134,6 +131,44 @@ public class VendasToolsTests
     [Fact]
     public async Task Mes13_DevolveMensagem()
         => Assert.Equal("mes tem de ser de 1 a 12.", await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(mes: 13));
+
+    // ---- Intervalo livre (dataInicio/dataFim): trimestre, semestre, semana.
+
+    [Fact]
+    public async Task Datas_PedemEsseIntervalo_ComOFimIncluido()
+    {
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarVendasAsync(dataInicio: "01-01-2026", dataFim: "31-03-2026");
+
+        // "ate" é exclusivo no repositório: 31-03 incluído = até 01-04.
+        Assert.Equal((new DateOnly(2026, 1, 1), new DateOnly(2026, 4, 1)), repo.UltimoPeriodo);
+    }
+
+    [Fact]
+    public async Task Datas_TemPrioridadeSobreMesEAno()
+    {
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarVendasAsync(mes: 9, ano: 2026, dataInicio: "01-08-2026", dataFim: "07-08-2026");
+
+        Assert.Equal((new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 8)), repo.UltimoPeriodo);
+    }
+
+    [Fact]
+    public async Task Datas_SoUma_DevolveMensagem()
+        => Assert.Equal("dataInicio e dataFim têm de ser usados juntos.",
+            await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(dataInicio: "01-01-2026"));
+
+    [Fact]
+    public async Task Datas_FormatoErrado_DevolveMensagem()
+        => Assert.Equal("Datas no formato dd-MM-aaaa, ex.: 01-08-2026.",
+            await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(dataInicio: "2026-01-01", dataFim: "2026-03-31"));
+
+    [Fact]
+    public async Task Datas_FimAntesDoInicio_DevolveMensagem()
+        => Assert.Equal("dataFim tem de ser igual ou depois de dataInicio.",
+            await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(dataInicio: "31-03-2026", dataFim: "01-01-2026"));
+
+    // ----
 
     [Fact]
     public async Task ColunaSemValor_DevolveMensagem()
@@ -172,8 +207,8 @@ public class VendasToolsTests
 
         Assert.Equal(DimensaoVenda.Localidade, repo.UltimaDimensao);
         Assert.Contains("Vendas por localidade", r);
-        Assert.Contains("posicao;localidade;valor;percentagem", r);
-        Assert.Contains("# Mostrados 1 de 3 localidades.", r);
+        Assert.Contains("1. Seixal – 100,00 € (25,0%)", r);
+        Assert.Contains("Mostro 1 de 3 localidades.", r);
     }
 
     [Fact]
@@ -184,8 +219,8 @@ public class VendasToolsTests
 
         Assert.True(repo.UltimoPorQuantidade);
         Assert.Contains("Vendas por artigo, por quantidade", r);
-        Assert.Contains("posicao;artigo;quantidade;valor;", r);
-        Assert.Contains("1;Filtro (F1);627;50,00;", r);
+        // A quantidade vem antes do valor: é ela que responde à pergunta.
+        Assert.Contains("1. Filtro (F1) – 627 unidades (50,00 €)", r);
     }
 
     [Fact]
@@ -238,9 +273,9 @@ public class VendasToolsTests
         Assert.Null(repo.UltimaDimensao); // não foi aos rankings
         Assert.Contains("Clientes sem vendas, últimos 90 dias", r);
         Assert.Contains(": 7 clientes.", r);
-        Assert.Contains("Ana (1);02-05-2026", r);
-        Assert.Contains("Rui (2);nunca comprou", r);
-        Assert.Contains("# Mostrados 2 de 7 clientes.", r);
+        Assert.Contains("1. Ana (1) – última compra a 02-05-2026", r);
+        Assert.Contains("2. Rui (2) – nunca comprou", r);
+        Assert.Contains("Mostro 2 de 7 clientes.", r);
     }
 
     [Fact]
@@ -254,6 +289,4 @@ public class VendasToolsTests
     public async Task SemVendas_ComCliente_Recusa()
         => Assert.StartsWith("semVendas lista vários clientes",
             await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(semVendas: true, cliente: "1003"));
-
-    }
-
+}
