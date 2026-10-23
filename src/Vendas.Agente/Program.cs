@@ -6,7 +6,7 @@ using ModelContextProtocol.Protocol;
 using OllamaSharp;
 using Vendas.Agente;
 
-// O agente arranca o servidor MCP como um programa filho e fala com ele por stdin/stdout. o servidor MCP como um programa filho e fala com ele
+// O agente arranca o servidor MCP como um programa filho e fala com ele por stdin/stdout.
 
 // A pasta do executável é ...\src\Vendas.Agente\bin\<Configuração>\net10.0
 // Subir quatro níveis dá ...\src, onde está também a pasta do servidor.
