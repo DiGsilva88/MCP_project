@@ -134,8 +134,8 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log)
             var porQuantidade = ordenar == OrdenarVenda.Quantidade;
             // Um método por view de origem: os clientes precisam do nome que vive na ViewMCP_cliente.
             var linhas = agrupar == DimensaoVenda.Cliente
-                ? await repo.TopClientesAsync(desde, ate, limite, cliente, filtros, ct)
-                : await repo.TopArtigosAsync(agrupar, desde, ate, limite, cliente, filtros, porQuantidade, ct);
+                ? await repo.RankingPorClienteAsync(desde, ate, limite, cliente, filtros, ct)
+                : await repo.RankingPorDimensaoAsync(agrupar, desde, ate, limite, cliente, filtros, porQuantidade, ct);
 
             // Sem vendas com filtro: se o valor nem existe (ex.: "Seixall"), mostra os que existem.
             if (linhas.Count == 0 && filtros.Count > 0

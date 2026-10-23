@@ -16,9 +16,9 @@ public class ConsultaVendasTests
     private static readonly DateOnly Desde = new(2024, 1, 1), Ate = new(2025, 1, 1);
 
     [Fact]
-    public void TopClientes_SemCliente_NaoFiltraNemTemParametro()
+    public void RankingPorCliente_SemCliente_NaoFiltraNemTemParametro()
     {
-        var (sql, aplicar) = ConsultaVendas.TopClientes(Desde, Ate);
+        var (sql, aplicar) = ConsultaVendas.RankingPorCliente(Desde, Ate);
 
         Assert.Contains("CAST(0 AS decimal(18,2))", sql);
         Assert.DoesNotContain("@cliente", sql);
@@ -26,9 +26,9 @@ public class ConsultaVendasTests
     }
 
     [Fact]
-    public void TopArtigos_ComCliente_FiltraSoPeloIdExatoEParametriza()
+    public void RankingPorDimensao_ComCliente_FiltraSoPeloIdExatoEParametriza()
     {
-        var (sql, aplicar) = ConsultaVendas.TopArtigos(DimensaoVenda.Artigo, Desde, Ate, " 1003 ");
+        var (sql, aplicar) = ConsultaVendas.RankingPorDimensao(DimensaoVenda.Artigo, Desde, Ate, " 1003 ");
 
         Assert.Contains("AND CAST([ClienteID] AS nvarchar(50)) = @cliente", sql);
         Assert.DoesNotContain("LIKE", sql); // a procura por nome é feita antes, na ProcurarClientes
@@ -49,23 +49,23 @@ public class ConsultaVendasTests
     public void SomasSemValores_DaoZeroENaoNull()
     {
         // Um SUM só de NULL dá NULL e o GetDecimal rebentava com a consulta toda.
-        foreach (var (sql, _) in new[] { ConsultaVendas.TopClientes(Desde, Ate), ConsultaVendas.TopArtigos(DimensaoVenda.Marca, Desde, Ate) })
+        foreach (var (sql, _) in new[] { ConsultaVendas.RankingPorCliente(Desde, Ate), ConsultaVendas.RankingPorDimensao(DimensaoVenda.Marca, Desde, Ate) })
             Assert.DoesNotMatch(@"(?<!COALESCE\()SUM\(\[", sql);
     }
 
     [Fact]
-    public void TopArtigos_Mes_OrdenaPorMesMaisRecente()
+    public void RankingPorDimensao_Mes_OrdenaPorMesMaisRecente()
     {
-        var (sql, _) = ConsultaVendas.TopArtigos(DimensaoVenda.Mes, Desde, Ate);
+        var (sql, _) = ConsultaVendas.RankingPorDimensao(DimensaoVenda.Mes, Desde, Ate);
 
         Assert.Contains("GROUP BY CONVERT(char(7), [DataDoc], 120)", sql);
         Assert.Contains("ORDER BY Nome DESC;", sql);
     }
 
     [Fact]
-    public void TopArtigos_Distrito_AgrupaPelaFichaSemPerderVendasSemFicha()
+    public void RankingPorDimensao_Distrito_AgrupaPelaFichaSemPerderVendasSemFicha()
     {
-        var (sql, _) = ConsultaVendas.TopArtigos(DimensaoVenda.Distrito, Desde, Ate);
+        var (sql, _) = ConsultaVendas.RankingPorDimensao(DimensaoVenda.Distrito, Desde, Ate);
 
         Assert.Contains("OUTER APPLY (SELECT c.[Distrito] AS ValorFicha", sql); // não é JOIN: clientes sem ficha contam
         Assert.Contains("WHERE c.ClienteID = v.[ClienteID]", sql);
@@ -75,19 +75,19 @@ public class ConsultaVendasTests
     }
 
     [Fact]
-    public void TopArtigos_PorQuantidade_OrdenaPelasUnidades()
+    public void RankingPorDimensao_PorQuantidade_OrdenaPelasUnidades()
         => Assert.Contains("ORDER BY Quantidade DESC, Nome;",
-            ConsultaVendas.TopArtigos(DimensaoVenda.Artigo, Desde, Ate, porQuantidade: true).Sql);
+            ConsultaVendas.RankingPorDimensao(DimensaoVenda.Artigo, Desde, Ate, porQuantidade: true).Sql);
 
     [Fact]
-    public void TopArtigos_MesPorQuantidade_ContinuaCronologico()
+    public void RankingPorDimensao_MesPorQuantidade_ContinuaCronologico()
         => Assert.Contains("ORDER BY Nome DESC;",
-            ConsultaVendas.TopArtigos(DimensaoVenda.Mes, Desde, Ate, porQuantidade: true).Sql);
+            ConsultaVendas.RankingPorDimensao(DimensaoVenda.Mes, Desde, Ate, porQuantidade: true).Sql);
 
     [Fact]
     public void Rankings_TrazemAUltimaDataDoPeriodo()
     {
-        foreach (var (sql, _) in new[] { ConsultaVendas.TopClientes(Desde, Ate), ConsultaVendas.TopArtigos(DimensaoVenda.Marca, Desde, Ate) })
+        foreach (var (sql, _) in new[] { ConsultaVendas.RankingPorCliente(Desde, Ate), ConsultaVendas.RankingPorDimensao(DimensaoVenda.Marca, Desde, Ate) })
             Assert.Contains("MAX([DataDoc]) AS UltimaData", sql);
     }
 
@@ -112,6 +112,6 @@ public class ConsultaVendasTests
     }
 
     [Fact]
-    public void TopArtigos_Marca_NaoVaiAFicha()
-        => Assert.DoesNotContain("OUTER APPLY", ConsultaVendas.TopArtigos(DimensaoVenda.Marca, Desde, Ate).Sql);
+    public void RankingPorDimensao_Marca_NaoVaiAFicha()
+        => Assert.DoesNotContain("OUTER APPLY", ConsultaVendas.RankingPorDimensao(DimensaoVenda.Marca, Desde, Ate).Sql);
 }

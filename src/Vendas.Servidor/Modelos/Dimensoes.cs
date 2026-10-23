@@ -11,47 +11,36 @@ public enum OrdenarVenda {Valor, Quantidade}
 public static class Dimensoes
 {
 
-    public static string Cabecalho(DimensaoVenda dimensao) => dimensao switch
-{
-    DimensaoVenda.Cliente => "cliente",
-    DimensaoVenda.Artigo => "artigo",
-    DimensaoVenda.Familia => "familia",
-    DimensaoVenda.Marca => "marca",
-    DimensaoVenda.Mes => "mes",
-    DimensaoVenda.Localidade => "localidade",
-    DimensaoVenda.Distrito => "distrito",
-    DimensaoVenda.Zona => "zona",
-    DimensaoVenda.Vendedor => "vendedor",
-    DimensaoVenda.Actividade => "actividade",
-    _=> throw new ArgumentOutOfRangeException(nameof(dimensao))
+    public static string Cabecalho(DimensaoVenda dimensao) => Nomes(dimensao).Singular;
 
-};
-
-    public static string Plural(DimensaoVenda dimensao) => dimensao switch
-{
-    DimensaoVenda.Cliente => "clientes",
-    DimensaoVenda.Artigo => "artigos",
-    DimensaoVenda.Familia => "famílias",
-    DimensaoVenda.Marca => "marcas",
-    DimensaoVenda.Mes => "meses",
-    DimensaoVenda.Localidade => "localidades",
-    DimensaoVenda.Distrito => "distritos",
-    DimensaoVenda.Zona => "zonas",
-    DimensaoVenda.Vendedor => "vendedores",
-    DimensaoVenda.Actividade => "actividades",
-    _=> throw new ArgumentOutOfRangeException(nameof(dimensao))
-
-};
+    public static string Plural(DimensaoVenda dimensao) => Nomes(dimensao).Plural;
 
     // Coluna da ficha do cliente por onde se agrupa; null nas dimensões da própria venda.
     public static Campo? CampoDaFicha(DimensaoVenda dimensao) => dimensao switch
-{
-    DimensaoVenda.Localidade => Campo.Localidade,
-    DimensaoVenda.Distrito => Campo.Distrito,
-    DimensaoVenda.Zona => Campo.Zona,
-    DimensaoVenda.Vendedor => Campo.Vendedor,
-    DimensaoVenda.Actividade => Campo.Actividade,
-    _ => null
-};
 
+    {
+        DimensaoVenda.Localidade => Campo.Localidade,
+        DimensaoVenda.Distrito => Campo.Distrito,
+        DimensaoVenda.Zona => Campo.Zona,
+        DimensaoVenda.Vendedor => Campo.Vendedor,
+        DimensaoVenda.Actividade => Campo.Actividade,
+        _ => null
+    };
+
+    private static (string Singular,string Plural) Nomes(DimensaoVenda dimensao) => dimensao switch
+
+    {
+        DimensaoVenda.Cliente => ("cliente", "clientes"),
+        DimensaoVenda.Artigo => ("artigo", "artigos"),
+        DimensaoVenda.Familia => ("familia", "famílias"),
+        DimensaoVenda.Marca => ("marca", "marcas"),
+        DimensaoVenda.Mes => ("mes", "meses"),
+        DimensaoVenda.Localidade => ("localidade", "localidades"),
+        DimensaoVenda.Distrito => ("distrito", "distritos"),
+        DimensaoVenda.Zona => ("zona", "zonas"),
+        DimensaoVenda.Vendedor => ("vendedor", "vendedores"),
+        DimensaoVenda.Actividade => ("actividade", "actividades"),
+        _ => throw new ArgumentOutOfRangeException(nameof(dimensao))
+    };
 }
+    

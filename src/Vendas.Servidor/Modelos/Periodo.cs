@@ -1,12 +1,11 @@
 //os periodos que o modelo pode pedir
 //lista fechada de periodos:o modelo escolhe, o servidor calcula as datas
 
-
-using System.IO.Pipes;
-using System.Reflection.Metadata.Ecma335;
+using System.Globalization;
 
 namespace Vendas.Servidor.Modelos;
 
+// Lista fechada de períodos: o modelo escolhe, o servidor calcula as datas.
 public enum Periodo
    {
       Ultimos7Dias,
@@ -19,16 +18,63 @@ public enum Periodo
       MesAnterior
    }
 
+
+// Intervalo [Desde, Ate[: "Ate" não está incluído. Descricao é o nome do período para a resposta
+public readonly record struct IntervaloVendas(DateOnly Desde, DateOnly Ate,string Descricao);
    public static class Periodos
    {
+      private const string FormatoData = "dd-MM-yyyy";
         private static readonly string [] Meses = 
       ["janeiro","fevereiro","março","abril","maio","junho","julho", "agosto","setembro","outubro","novembro","dezembro"];
       //mes /ano concretos
        
       
-//devolve o intervalo [desde,ate[ -"ate" não está incluido
-//exemplo: mes anterior a 15-10-2026 - desde = 01-09-2026, ate = 01-10-2026
-//recebe hoje como parametro, para poder testar com datas diferentes da data de hoje
+// Traduz o que o modelo pediu num intervalo, por esta prioridade: dataInicio/dataFim, mes/ano, periodo.
+// Erro (uma linha, para o modelo corrigir e chamar de novo) em vez de exceção: Erro != null quando o pedido é inválido.
+   public static (IntervaloVendas? Intervalo, string? Erro) Resolver(
+    Periodo periodo, int? mes, int? ano, string? dataInicio, string? dataFim, DateOnly hoje)
+{
+    if (ErroMesEAno(mes, ano, hoje) is { } erro) return (null, erro);
+
+    if (dataInicio is not null || dataFim is not null)
+        return ResolverDatas(dataInicio, dataFim);
+
+    if (mes is not null || ano is not null)
+    {
+        var (desde, ate, descricao) = IntervaloMes(mes, ano, hoje);
+        return (new IntervaloVendas(desde, ate, descricao), null);
+    }
+
+    var (inicio, fim) = Intervalo(periodo, hoje);
+    return (new IntervaloVendas(inicio, fim, Descricao(periodo)), null);
+}
+
+private static string? ErroMesEAno(int? mes, int? ano, DateOnly hoje)
+{
+    if (mes is < 1 or > 12) return "mes tem de ser de 1 a 12.";
+    if (ano is < 2000 || ano > hoje.Year) return $"ano tem de ser de 2000 a {hoje.Year}.";
+    return null;
+}
+
+private static (IntervaloVendas? Intervalo, string? Erro) ResolverDatas(string? dataInicio, string? dataFim)
+{
+    if (dataInicio is null || dataFim is null)
+        return (null, "dataInicio e dataFim têm de ser usados juntos.");
+
+    if (!DateOnly.TryParseExact(dataInicio.Trim(), FormatoData, CultureInfo.InvariantCulture, DateTimeStyles.None, out var inicio)
+        || !DateOnly.TryParseExact(dataFim.Trim(), FormatoData, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fim))
+        return (null, "Datas no formato dd-MM-aaaa, ex.: 01-08-2026.");
+
+    if (fim < inicio) return (null, "dataFim tem de ser igual ou depois de dataInicio.");
+
+    // "Ate" é exclusivo: soma-se um dia à data final pedida.
+    return (new IntervaloVendas(inicio, fim.AddDays(1), "período indicado"), null);
+}
+
+   
+    
+      // Devolve [desde, ate[. Exemplo: mês anterior a 15-10-2026 = 01-09-2026 a 01-10-2026.
+    // Recebe "hoje" para se poder testar com outras datas.
       public static (DateOnly desde, DateOnly ate) Intervalo(Periodo periodo, DateOnly hoje)
     {
         var inicioMes = new DateOnly(hoje.Year, hoje.Month, 1);
@@ -50,7 +96,7 @@ public enum Periodo
         };
     }
 
-    //mes e ano concreto
+    //mes e ano concretos
     public static (DateOnly desde, DateOnly ate, string descricao) IntervaloMes(int? mes, int? ano, DateOnly hoje)
 
    {
@@ -78,9 +124,11 @@ public enum Periodo
                  
       };
 
+   }
+
     
           
-      }
+      
 
 
 

@@ -81,7 +81,7 @@ internal sealed class FakeVendasRepo : IVendasRepo
         return Task.FromResult<IReadOnlyList<(string Id, string Nome)>>(Clientes(cliente).Take(limite).ToList());
     }
 
-    public Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
+    public Task<IReadOnlyList<ValorAgrupado>> RankingPorClienteAsync(
         DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
     {
@@ -93,7 +93,7 @@ internal sealed class FakeVendasRepo : IVendasRepo
         return Task.FromResult(Valores);
     }
 
-    public Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
+    public Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false, CancellationToken ct = default)
     {

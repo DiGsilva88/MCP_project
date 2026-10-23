@@ -64,20 +64,20 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         return await LerAsync(sql, parametros, limite, leitor => (leitor.GetString(0), leitor.GetString(1)), cancellationToken);
     }
 
-    public async Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
+    public async Task<IReadOnlyList<ValorAgrupado>> RankingPorClienteAsync(
         DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaVendas.TopClientes(desde, ate, cliente, filtros);
+        var (sql, parametros) = ConsultaVendas.RankingPorCliente(desde, ate, cliente, filtros);
         return await LerAsync(sql, parametros, limite, LerValorAgrupado, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
+    public async Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
         CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaVendas.TopArtigos(dimensao, desde, ate, cliente, filtros, porQuantidade);
+        var (sql, parametros) = ConsultaVendas.RankingPorDimensao(dimensao, desde, ate, cliente, filtros, porQuantidade);
         return await LerAsync(sql, parametros, limite, LerValorAgrupado, cancellationToken);
     }
 
