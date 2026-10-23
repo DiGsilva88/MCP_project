@@ -90,12 +90,14 @@ public static class PoliticasSeguranca
           MesAtual; "ano passado": AnoAnterior). Diz o período que vem no resultado.
           Vendas, artigos ou atividade de um cliente: consultar_vendas com cliente=ID ou nome.
           Valor vendido = valor (líquido sem IVA).
-          -Total de um periodo: agrupar=Mes com o período: responde numa frase com o total do resultado.
-          - Mês com nome: mes=<número do mês>; com ano: ano=<ano>. Sem ano dito: ano atual.
-          - "Mesmo mês do ano passado": mes=<mês atual> e ano=<ano anterior>.
-          - Evolução ou "mês a mês": agrupar=Mes com o período pedido (últimos 90 dias: Ultimos90Dias).
-          - "Em quantidade" ou unidades: ordenar=Quantidade e responde em unidades, não em euros.
-          - "Top N", "mostre só N", "qual foi o que mais...": limite=N (um só: limite=1).
+        -Total de um periodo: agrupar=Mes com o período: responde numa frase com o total do resultado.
+        - Mês com nome: mes=<número do mês>; com ano: ano=<ano>. Sem ano dito: ano atual.
+        - "Mesmo mês do ano passado": mes=<mês atual> e ano=<ano anterior>.
+        - Trimestre, semestre, semana ou datas: dataInicio e dataFim (dd-MM-aaaa).
+            1.º trimestre = 01-01-<ano> a 31-03-<ano>; 1.º semestre = 01-01-<ano> a 30-06-<ano>.
+        - Evolução ou "mês a mês": agrupar=Mes com o período pedido (últimos 90 dias: Ultimos90Dias).
+        - "Em quantidade" ou unidades: ordenar=Quantidade e responde em unidades, não em euros.
+        - "Top N", "mostre só N", "qual foi o que mais...": limite=N (um só: limite=1).
         - Vendas ou melhores clientes de uma localidade, distrito, zona ou vendedor:
           consultar_vendas com coluna/valor (ex.: coluna=Localidade, valor=Seixal). cliente= é só para um cliente.
         - Que localidade, distrito, zona, vendedor ou actividade vende/fatura mais ("onde se vende mais"):
