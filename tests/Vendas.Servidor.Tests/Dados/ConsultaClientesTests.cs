@@ -52,7 +52,8 @@ public class ConsultaClientesTests
         var (sql, _) = ConsultaClientes.ListarSensivel(
             CampoSensivel.VolumeVendas, new Dictionary<Campo, string>(), maiores: true, deslocamento: 0, tambem: Campo.Actividade);
 
-        Assert.Contains("SELECT c.NomeCliente, s.[VolumeVendas], c.[Actividade],", sql);    }
+        Assert.Contains("SELECT c.NomeCliente, s.[VolumeVendas], c.[Actividade],", sql);
+    }
 
     [Fact]
     public void Listar_ComNome_FiltraPorInicioDoNomeEEscapaWildcards()

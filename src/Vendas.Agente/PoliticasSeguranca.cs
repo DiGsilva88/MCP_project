@@ -12,6 +12,7 @@ public static class PoliticasSeguranca
 
     public const string ForaDoAmbito =
     "Só posso responder a perguntas sobre clientes, vendas e artigos.Exemplo:'Quantos clientes há por zona?' ou 'Quem foram os 5 melhores clientes este ano?'";
+
     public static bool RespostaSemFonte(string texto, int chamadasFerramenta) =>
         chamadasFerramenta == 0
         && texto.Trim() != ForaDoAmbito
@@ -61,7 +62,7 @@ public static class PoliticasSeguranca
             ? string.Concat(conteudo.EnumerateArray().Select(c => c.TryGetProperty("text", out var t) ? t.GetString() : ""))
             : resultado?.ToString() ?? "";
 
-    
+
 
     // Curto de propósito: o modelo corre em CPU e lê isto em cada pedido (~1 token por 4 letras).
     // Os erros que o servidor já corrige sozinho (valores repetidos, combinações sem clientes) não têm regra aqui.
@@ -91,7 +92,7 @@ public static class PoliticasSeguranca
           Vendas, artigos ou atividade de um cliente: consultar_vendas com cliente=ID ou nome.
           Valor vendido = valor (líquido sem IVA).
         -Total de um periodo: agrupar=Mes com o período: responde numa frase com o total do resultado.
-        - Mês com nome: mes=<número do mês>; com ano: ano=<ano>. Sem ano dito: ano atual.
+        - Mês com nome: mes=<número do mês>; ano só se o utilizador o disser (sem ano, o servidor usa o mais recente).
         - "Mesmo mês do ano passado": mes=<mês atual> e ano=<ano anterior>.
         - Trimestre, semestre, semana ou datas: dataInicio e dataFim (dd-MM-aaaa).
             1.º trimestre = 01-01-<ano> a 31-03-<ano>; 1.º semestre = 01-01-<ano> a 30-06-<ano>.

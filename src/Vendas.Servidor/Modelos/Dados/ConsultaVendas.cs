@@ -12,7 +12,7 @@ internal static class ConsultaVendas
 
 {
     // Nomes das views num só sítio. Todas as views do MCP vivem no schema mcp.
-    private const string Vendas   = "[mcp].[ViewMCP_vendas]";
+    private const string Vendas = "[mcp].[ViewMCP_vendas]";
     private const string Clientes = "[mcp].[ViewMCP_cliente]";
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) RankingPorCliente(
@@ -159,7 +159,8 @@ internal static class ConsultaVendas
 
     // Data da venda mais recente na view (sem período): diz até onde vão os dados quando um período vem vazio.
     public static (string Sql, Action<SqlParameterCollection> Parametros) UltimaVenda() =>
-        ($"SELECT MAX([DataDoc]) FROM {Vendas};", _ => { });
+        ($"SELECT MAX([DataDoc]) FROM {Vendas};", _ => { }
+    );
 
     // Documentos distintos no período todo: um documento tem vários artigos, por isso não se somam os grupos.
     // UltimaData: a venda mais recente do período, para avisar quando os dados acabam antes do fim do período.
@@ -170,11 +171,11 @@ internal static class ConsultaVendas
     //o modelo escolhe um valor do enum, nunca escreve SQL.
     private static (string Nome, string Agrupar) Colunas(DimensaoVenda dimensao) => dimensao switch
     {
-        DimensaoVenda.Artigo  => ("CONCAT([Artigo], ' (', [ArtigoID], ')')", "[ArtigoID], [Artigo]"),
+        DimensaoVenda.Artigo => ("CONCAT([Artigo], ' (', [ArtigoID], ')')", "[ArtigoID], [Artigo]"),
         DimensaoVenda.Familia => ("[Familia]", "[Familia]"),
-        DimensaoVenda.Marca   => ("[Marca]",   "[Marca]"),
+        DimensaoVenda.Marca => ("[Marca]", "[Marca]"),
         // estilo 120 = "aaaa-mm-dd": os 7 primeiros caracteres são o mês
-        DimensaoVenda.Mes     => ("CONVERT(char(7), [DataDoc], 120)", "CONVERT(char(7), [DataDoc], 120)"),
+        DimensaoVenda.Mes => ("CONVERT(char(7), [DataDoc], 120)", "CONVERT(char(7), [DataDoc], 120)"),
         // Agrupa sem acentos/maiúsculas como o ConsultaClientes.Contar ("Fernão Ferro" = "FERNAO FERRO").
         // Vazio ou cliente sem ficha -> "(sem dados)": o nome nunca chega NULL ao LerValorAgrupado.
         _ when Dimensoes.CampoDaFicha(dimensao) is not null =>

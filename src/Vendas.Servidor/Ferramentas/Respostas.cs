@@ -24,37 +24,37 @@ internal static class Respostas
     // o modelo recebe só o ErroNeutro. "detalhe" são os parâmetros sem dados pessoais.
 
     internal static async Task<string> ExecutarAsync(
-    ILogger log, string tool, object? detalhe, Func<Task<string>> consulta) 
+    ILogger log, string tool, object? detalhe, Func<Task<string>> consulta)
 
-     {
+    {
         var relogio = Stopwatch.StartNew();
 
         try
         {
             return await consulta();
         }
-        catch (OperationCanceledException) 
+        catch (OperationCanceledException)
         {
             throw;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             log.LogError(ex, "Falha em {Tool} ({Detalhe})", tool, detalhe);
             return ErroNeutro;
         }
         finally
         {
-            log.LogInformation("{Tool} {Detalhe} em {Ms} ms", tool, detalhe,relogio.ElapsedMilliseconds);
+            log.LogInformation("{Tool} {Detalhe} em {Ms} ms", tool, detalhe, relogio.ElapsedMilliseconds);
         }
     }
 
     // Protege o CSV: um valor com o separador, aspas ou quebra de linha vai entre aspas.
 
-    internal static string EscaparCsv(string texto, char separador = '.')
-    => texto.IndexOfAny([separador, '"','\n', '\r']) < 0 ? texto : $"\"{texto.Replace("\"", "\"\"")}\"";
+    internal static string EscaparCsv(string texto, char separador = ',')
+    => texto.IndexOfAny([separador, '"', '\n', '\r']) < 0 ? texto : $"\"{texto.Replace("\"", "\"\"")}\"";
 
     // "Zona = A e Distrito = B": os filtros tal como o modelo os pediu.
-    internal static string DescreverFiltros(IEnumerable<KeyValuePair<Campo,string>> filtros)
+    internal static string DescreverFiltros(IEnumerable<KeyValuePair<Campo, string>> filtros)
         => string.Join(" e ", filtros.Select(f => $"{f.Key} = {f.Value}"));
 
     // Filtro sem match: devolve já os valores existentes de cada coluna filtrada, para o modelo
@@ -62,23 +62,23 @@ internal static class Respostas
     // (Antes listava sempre todas as colunas e o modelo apresentava as contagens globais como resposta.)
 
     internal static async Task<string> SemCorrespondenciaAsync(
-        IVendasRepo repo,Dictionary<Campo,string> filtros,CancellationToken cancellationToken)
+        IVendasRepo repo, Dictionary<Campo, string> filtros, CancellationToken cancellationToken)
     {
         var inexistentes = filtros;
-        if (filtros.Count >1)
+        if (filtros.Count > 1)
         {
 
             // Uma consulta por filtro, em paralelo (cada chamada ao repo abre a sua ligação)
-        var existe = await Task.WhenAll(filtros.Select(async f =>
-        (f.Key, f.Value, Existe: (await repo.ContarAsync(f.Key, new Dictionary<Campo, string> { [f.Key] = f.Value }, 1, cancellationToken)).Count > 0)));
-        inexistentes = existe.Where(e => !e.Existe).ToDictionary(e => e.Key, e => e.Value);
+            var existe = await Task.WhenAll(filtros.Select(async f =>
+            (f.Key, f.Value, Existe: (await repo.ContarAsync(f.Key, new Dictionary<Campo, string> { [f.Key] = f.Value }, 1, cancellationToken)).Count > 0)));
+            inexistentes = existe.Where(e => !e.Existe).ToDictionary(e => e.Key, e => e.Value);
 
-        if (inexistentes.Count == 0)
-            return $"0 clientes com {DescreverFiltros(filtros)}:"+ "os valores existem. mas nenhum cliente tem os dois";
+            if (inexistentes.Count == 0)
+                return $"0 clientes com {DescreverFiltros(filtros)}:" + "os valores existem.mas nenhum cliente tem os dois.";
         }
 
-        var texto = new StringBuilder(filtros.Count==1
-            ? "Nenhuma correspondência. O valor tem de ser um dos existentes(entre parênteses, nº de clientes):\n"
+        var texto = new StringBuilder(filtros.Count == 1
+            ? "Nenhuma correspondência. O valor tem de ser um dos existentes (entre parênteses, nº de clientes):\n"
             : $"Nenhuma correspondência: {DescreverFiltros(inexistentes)} não existe. " +
               "Valores existentes (entre parênteses, nº de clientes no total, não nesta combinação):\n");
 
@@ -91,10 +91,10 @@ internal static class Respostas
             texto.Append('\n');
         }
 
-       return texto.ToString();
+        return texto.ToString();
 
-        }
     }
-    
+}
+
 
 

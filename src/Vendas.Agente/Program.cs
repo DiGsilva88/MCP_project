@@ -6,8 +6,8 @@ using ModelContextProtocol.Protocol;
 using OllamaSharp;
 using Vendas.Agente;
 
-//o agente arranca o servidor MCP como um programa filho e fala com ele
-//por stdin/stdout
+// O agente arranca o servidor MCP como um programa filho e fala com ele por stdin/stdout. o servidor MCP como um programa filho e fala com ele
+
 // A pasta do executável é ...\src\Vendas.Agente\bin\<Configuração>\net10.0
 // Subir quatro níveis dá ...\src, onde está também a pasta do servidor.
 // O servidor é compilado com o agente (ProjectReference no csproj), na mesma configuração (Debug/Release).
@@ -122,7 +122,7 @@ var opcoes = new ChatOptions
     },
 };
 
- var regras = PoliticasSeguranca.Regras + $"\nHoje é {DateTime.Today:dd-MM-yyyy}.";
+var regras = PoliticasSeguranca.Regras + $"\nHoje é {DateTime.Today:dd-MM-yyyy}.";
 
 // Aquece o Ollama enquanto o utilizador escolhe o modo: carrega o modelo e o prefixo do prompt
 // (regras + esquema das ferramentas). Usa o cliente sem invocação de ferramentas.
@@ -145,14 +145,6 @@ var aquecimento = Task.Run(async () =>
 foreach (var f in ferramentas)
     Console.WriteLine($"- {f.Name}: {f.Description}");
 
-// Console.WriteLine();
-// Console.WriteLine("Modo de utilização:");
-// Console.WriteLine("1) Perguntas livres (usa um modelo local via Ollama)");
-// Console.WriteLine("2) Menu fixo (sem modelo, chama as ferramentas diretamente)");
-// Console.WriteLine("3) Chat no browser (como o utilizador final, usa o modelo local)");
-// Console.Write("> ");
-// var modo = argumentos.Contains("--web") ? "3" : Console.ReadLine()?.Trim();
-
 
 var arrancarWeb = args.Contains("--web"); // lançado pelo botão do Visual
 if (!arrancarWeb)
@@ -173,7 +165,7 @@ if (modo == "2")
     return;
 }
 
-//--bloco 4 - o ciclo de resposta, lê no teclado, pergunta ao modelo e imprime a resposta
+// Ciclo de resposta: lê no teclado, pergunta ao modelo e imprime a resposta.
 
 opcoes.Tools = [.. ferramentas];
 
@@ -185,11 +177,11 @@ if (modo == "3")
 
 Console.WriteLine(" Escreva a sua pergunta ( Enter vazio termina).");
 
-while(true)
+while (true)
 {
     Console.Write("> ");
     var pergunta = Console.ReadLine();
-    if(string.IsNullOrWhiteSpace(pergunta)) break;
+    if (string.IsNullOrWhiteSpace(pergunta)) break;
     await ResponderAsync(pergunta, texto => { Console.Write(texto); return Task.CompletedTask; });
 }
 

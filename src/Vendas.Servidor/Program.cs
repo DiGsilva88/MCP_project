@@ -7,9 +7,7 @@ using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using Vendas.Servidor.Modelos.Dados;
 
-
-
-// Cria o construtor do host da aplicação
+//Cria o construtor do host da aplicação
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging.AddConsole(opcoes =>
@@ -28,7 +26,7 @@ var ficheiroPwd = Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Vendas", "sql.pwd");
 if (OperatingSystem.IsWindows() && File.Exists(ficheiroPwd))
     ligacao.Password = Encoding.Unicode.GetString(ProtectedData.Unprotect(
-        
+
         Convert.FromHexString(File.ReadAllText(ficheiroPwd).Trim()), null, DataProtectionScope.CurrentUser));
 
 builder.Services.AddSingleton<IVendasRepo>(_ => new RepoSql(ligacao.ConnectionString));
@@ -37,6 +35,8 @@ builder.Services
     .AddMcpServer()
     .WithStdioServerTransport()
     .WithToolsFromAssembly();
+
+builder.Services.AddSingleton(TimeProvider.System);
 
 // Interruptor sem recompilar: VENDAS_SENSIVEL=0 tira consultar_sensivel da lista de tools (ligado por omissão).
 // Tirada do registo, o modelo nem a vê, em vez de a chamar e receber uma recusa.

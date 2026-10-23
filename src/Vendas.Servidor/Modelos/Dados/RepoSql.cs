@@ -128,22 +128,22 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     // Lê qualquer coluna como texto. Sem valor devolve "sem dados".
     private static string Texto(SqlDataReader leitor, int i)
         => Campos.Limpar(leitor.IsDBNull(i) ? null : Convert.ToString(leitor.GetValue(i), CultureInfo.InvariantCulture));
-   
 
- // Uma linha do SQL → um ValorAgrupado. A ordem das colunas é a do SELECT.
+
+    // Uma linha do SQL → um ValorAgrupado. A ordem das colunas é a do SELECT.
     // O nome lê-se diretamente, sem o Texto(...): o Campos.Limpar trocaria "(sem marca)",
     // "(sem família)" e "(cliente sem ficha)" por "sem dados", e o modelo perdia a
     // explicação. O COALESCE do SQL já garante que o nome nunca chega a NULL.
     private static ValorAgrupado LerValorAgrupado(SqlDataReader leitor) => new(
-        Nome:       leitor.GetString(0),
-        Valor:      leitor.GetDecimal(1),
+        Nome: leitor.GetString(0),
+        Valor: leitor.GetDecimal(1),
         Quantidade: leitor.GetDecimal(2),
         Documentos: leitor.GetInt32(3),
-        Total:      leitor.GetDecimal(4),
-        Grupos:     leitor.GetInt32(5),
-        Bruto:      leitor.GetDecimal(6),
-        Desconto:   leitor.GetDecimal(7),
-        Iva:        leitor.GetDecimal(8),
+        Total: leitor.GetDecimal(4),
+        Grupos: leitor.GetInt32(5),
+        Bruto: leitor.GetDecimal(6),
+        Desconto: leitor.GetDecimal(7),
+        Iva: leitor.GetDecimal(8),
         TotalDocumentos: leitor.GetInt32(9),
         UltimaData: Data(leitor, 10));
 
