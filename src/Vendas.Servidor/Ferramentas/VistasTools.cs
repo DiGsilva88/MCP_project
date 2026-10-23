@@ -1,12 +1,11 @@
+
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using Vendas.Servidor.Modelos;
 using Vendas.Servidor.Modelos.Dados;
-
 namespace Vendas.Servidor.Ferramentas;
 
 // Uma só tool para as duas views (ficha do cliente + condições de faturação). O SQL já junta as
@@ -14,16 +13,8 @@ namespace Vendas.Servidor.Ferramentas;
 [McpServerToolType]
 public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 {
-    internal const int MaxLinhas = 100;
-
     // Evita overflow de (pagina-1)*limite, que dava OFFSET negativo no SQL.
     private const int MaxPaginas = 1000;
-
-    // Frase devolvida ao modelo quando algo falha. Não revela nada do SQL.
-    internal const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
-
-    // Máximo de valores existentes devolvidos quando o filtro não bate (poupa um turno ao modelo).
-    private const int MaxValores = 30;
 
     private const int MaxLinhasSensivel = 20;
     private const int MaxPaginasSensivel = 5;
@@ -43,6 +34,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "vendas de um cliente): usar consultar_vendas. " +
         "Volume declarado na ficha ou plafond: usar consultar_sensivel. " +
         "Devolve CSV; pagina=2 para continuar.")]
+
+
     public async Task<string> ConsultarAsync(
         [Description("Coluna a mostrar/filtrar/contar.")] Campo? coluna = null,
         [Description("Valor da coluna, ex.: Lisboa, ou \"sem dados\".")] string? valor = null,
@@ -73,7 +66,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         // resultados: "Setúbal" pode ser mesmo localidade e distrito ao mesmo tempo.
         var avisoMesmoValor = temValor && temValorCruzado
             && valor!.Trim().Equals(valorCruzado!.Trim(), StringComparison.OrdinalIgnoreCase)
-            ?$"valor e valorCruzado são iguais. \"{valorCruzado!.Trim()}\" é um valor de {cruzarCom}: repita sem valor, " +
+            ? $"valor e valorCruzado são iguais. \"{valorCruzado!.Trim()}\" é um valor de {cruzarCom}: repita sem valor, " +
               $"ex.: coluna={coluna}{(contar ? ", contar=true" : "")}, cruzarCom={cruzarCom}, valorCruzado={valorCruzado.Trim()}."
             : null;
 
@@ -81,36 +74,25 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
         if (temValorCruzado) filtros[cruzarCom!.Value] = valorCruzado!.Trim();
 
-        limite = Math.Clamp(limite, 1, MaxLinhas);
+        limite = Math.Clamp(limite, 1, Respostas.Maxlinhas);
         var deslocamento = (Math.Clamp(pagina, 1, MaxPaginas) - 1) * limite;
 
-        var relogio = Stopwatch.StartNew();
-        try
+        return await Respostas.ExecutarAsync(log, "consultar", coluna, async () =>
         {
             if (contar)
             {
                 var contagens = await repo.ContarAsync(coluna!.Value, filtros, limite, ct);
                 return contagens.Count == 0 && filtros.Count > 0
-                    ? avisoMesmoValor ?? await SemCorrespondenciaAsync(repo, filtros, ct)
+                    ? avisoMesmoValor ?? await Respostas.SemCorrespondenciaAsync(repo, filtros, ct)
                     : FormatarContagem(coluna.Value.ToString(), contagens, filtros);
             }
 
             var resultado = await repo.ListarAsync(
                 coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, nomeComecaPor, ct);
             return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
-                ? avisoMesmoValor ?? await SemCorrespondenciaAsync(repo, filtros, ct)
+                ? avisoMesmoValor ?? await Respostas.SemCorrespondenciaAsync(repo, filtros, ct)
                 : FormatarDados(resultado, filtros);
-        }
-        catch (OperationCanceledException) { throw; } // cancelamento não é avaria: deixa passar
-        catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
-        {
-            log.LogError(ex, "Falha em consultar ({Coluna})", coluna);
-            return ErroNeutro;
-        }
-        finally
-        {
-            log.LogInformation("consultar {Coluna} em {Ms} ms", coluna, relogio.ElapsedMilliseconds);
-        }
+        });
     }
 
     [McpServerTool(Name = "consultar_sensivel")]
@@ -150,17 +132,15 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         int? linhas = null; // null na auditoria = a consulta falhou
         try
         {
-            var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, nomeComecaPor, mostrarTambem, ct);
-            linhas = resultado.Linhas.Count;
-            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
-                ? await SemCorrespondenciaAsync(repo, filtros, ct)
-                : FormatarDados(resultado, filtros);
-        }
-        catch (OperationCanceledException) { throw; }
-        catch (Exception ex) // nunca mostra ao modelo detalhes do SQL
-        {
-            log.LogError(ex, "Falha em consultar_sensivel ({Dado})", dado); // sem valores: são dados pessoais
-            return ErroNeutro;
+            // Sem valores no log de erros: são dados pessoais.
+            return await Respostas.ExecutarAsync(log, "consultar_sensivel", dado, async () =>
+            {
+                var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, nomeComecaPor, mostrarTambem, ct);
+                linhas = resultado.Linhas.Count;
+                return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
+                    ? await Respostas.SemCorrespondenciaAsync(repo, filtros, ct)
+                    : FormatarDados(resultado, filtros);
+            });
         }
         finally
         {
@@ -174,49 +154,11 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         }
     }
 
-    // Filtro sem match: devolve já os valores existentes de cada coluna filtrada, para o modelo
-    // não gastar outra chamada só a descobri-los.
-    // Com um só filtro o valor não existe. Num cruzamento, verifica cada filtro sozinho: se todos existem,
-    // a combinação tem 0 clientes; senão diz qual falhou e lista só os valores dessa coluna.
-    // (Antes listava sempre todas as colunas e o modelo apresentava as contagens globais como resposta.)
-    // internal static: a consultar_vendas também a usa quando o filtro da ficha não existe.
-    internal static async Task<string> SemCorrespondenciaAsync(
-        IVendasRepo repo, Dictionary<Campo, string> filtros, CancellationToken ct)
-    {
-        var inexistentes = filtros;
-        if (filtros.Count > 1)
-        {
-            // Uma consulta por filtro, em paralelo (cada chamada ao repo abre a sua ligação).
-            var existe = await Task.WhenAll(filtros.Select(async f =>
-                (f.Key, f.Value, Existe: (await repo.ContarAsync(f.Key, new Dictionary<Campo, string> { [f.Key] = f.Value }, 1, ct)).Count > 0)));
-            inexistentes = existe.Where(e => !e.Existe).ToDictionary(e => e.Key, e => e.Value);
-
-            if (inexistentes.Count == 0)
-                return $"0 clientes com {string.Join(" e ", filtros.Select(f => $"{f.Key} = {f.Value}"))}: " +
-                       "os valores existem, mas nenhum cliente tem os dois.";
-        }
-
-        var texto = new StringBuilder(filtros.Count == 1
-            ? "Nenhuma correspondência. O valor tem de ser um dos existentes (entre parênteses, nº de clientes):\n"
-            : $"Nenhuma correspondência: {string.Join(" e ", inexistentes.Select(f => $"{f.Key} = {f.Value}"))} não existe. " +
-              "Valores existentes (entre parênteses, nº de clientes no total, não nesta combinação):\n");
-
-        foreach (var campo in inexistentes.Keys)
-        {
-            var valores = await repo.ContarAsync(campo, new Dictionary<Campo, string>(), MaxValores, ct);
-            texto.Append($"{campo}: {string.Join("; ", valores.Select(v => $"{Campo(v.Valor)} ({v.Clientes})"))}");
-            if (valores.Count > 0 && valores[0].Grupos > valores.Count)
-                texto.Append($" (mostrados {valores.Count} de {valores[0].Grupos})");
-            texto.Append('\n');
-        }
-        return texto.ToString();
-    }
-
     // Num cruzamento, a coluna filtrada que não é mostrada ficava invisível no resultado.
     // Nesse caso devolve todos os filtros ("Actividade = X e Distrito = Y"); senão, vazio.
     private static string FiltrosEscondidos(Dictionary<Campo, string> filtros, IEnumerable<string> mostradas)
         => filtros.Keys.Any(k => !mostradas.Contains(k.ToString()))
-            ? string.Join(" e ", filtros.Select(f => $"{f.Key} = {f.Value}"))
+            ? Respostas.DescreverFiltros(filtros)
             : "";
 
     private static string FormatarDados(PaginaClientes pagina, Dictionary<Campo, string> filtros)
@@ -231,7 +173,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
         csv.Append(string.Join(',', pagina.Colunas)).Append('\n');
         foreach (var linha in pagina.Linhas)
-            csv.Append(string.Join(',', linha.Select(v => Campo(v)))).Append('\n');
+            csv.Append(string.Join(',', linha.Select(v => Respostas.EscaparCsv(v)))).Append('\n');
 
         // Avisa o modelo quando a lista foi cortada para ele não pensar que já viu a info toda
         // Sem corte também diz o total, para o modelo nunca ter de o adivinhar ("10 de 10").
@@ -259,7 +201,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         // Com a cultura portuguesa sairia 14,1 e a vírgula partia o CSV
         foreach (var linha in linhas)
             csv.AppendLine(string.Create(CultureInfo.InvariantCulture,
-                $"{Campo(linha.Valor)},{linha.Clientes},{100.0 * linha.Clientes / total:0.0}"));
+                $"{Respostas.EscaparCsv(linha.Valor)},{linha.Clientes},{100.0 * linha.Clientes / total:0.0}"));
 
         // Mais grupos na base de dados do que linhas mostradas: a lista foi cortada.
         if (grupos > linhas.Count)
@@ -267,10 +209,4 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
         return csv.ToString();
     }
-
-    // Protege o CSV: um valor com o separador, aspas ou quebra de linha vai entre aspas.
-    // Ex.: Bento, Filhos  ->  "Bento, Filhos"
-    // As vendas usam ';' (os números vêm com vírgula decimal); estas tools usam ','.
-    internal static string Campo(string texto, char separador = ',')
-        => texto.IndexOfAny([separador, '"', '\n', '\r']) < 0 ? texto : $"\"{texto.Replace("\"", "\"\"")}\"";
 }

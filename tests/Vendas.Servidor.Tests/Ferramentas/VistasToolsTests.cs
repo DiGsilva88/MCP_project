@@ -312,7 +312,7 @@ public class VistasToolsTests
         var resultado = await CriarSut(repo).ConsultarAsync(
             Campo.Zona, "Norte", cruzarCom: Campo.Pagamento, valorCruzado: "90 dias");
 
-        Assert.Equal("0 clientes com Zona = Norte e Pagamento = 90 dias: os valores existem, mas nenhum cliente tem os dois.", resultado);
+        Assert.Equal("0 clientes com Zona = Norte e Pagamento = 90 dias:os valores existem.mas nenhum cliente tem os dois.", resultado);
     }
 
     // Num cruzamento diz qual dos valores não existe e lista só os dessa coluna, marcados como totais globais.

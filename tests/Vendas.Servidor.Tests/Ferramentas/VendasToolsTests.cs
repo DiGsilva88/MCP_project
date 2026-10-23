@@ -9,6 +9,22 @@ public class VendasToolsTests
 {
     private static VendasTools CriarSut(FakeVendasRepo repo) => new(repo, NullLogger<VendasTools>.Instance);
 
+    // Relógio fixo: o "hoje" da tool deixa de depender do dia em que os testes correm.
+    private sealed class RelogioFixo(DateTimeOffset agora) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => agora;
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
+    }
+
+    [Fact]
+    public async Task Hoje_VemDoRelogioInjetado()
+    {
+        var sut = new VendasTools(new FakeVendasRepo(), NullLogger<VendasTools>.Instance,
+            new RelogioFixo(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero)));
+
+        Assert.Equal("ano tem de ser de 2000 a 2026.", await sut.ConsultarVendasAsync(ano: 2027));
+    }
+
     [Fact]
     public async Task Cliente_ChamaRankingPorCliente()
     {
@@ -42,7 +58,7 @@ public class VendasToolsTests
         var repo = new FakeVendasRepo { LancarExcecao = new InvalidOperationException("SQL secreto") };
         var r = await CriarSut(repo).ConsultarVendasAsync();
 
-        Assert.Equal(VistasTools.ErroNeutro, r);
+        Assert.Equal(Respostas.ErroNeutro, r);
     }
 
     [Fact]

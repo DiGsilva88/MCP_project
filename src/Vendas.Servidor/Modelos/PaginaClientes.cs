@@ -5,4 +5,4 @@ namespace Vendas.Servidor.Modelos;
 public sealed record PaginaClientes(
     IReadOnlyList<string> Colunas, IReadOnlyList<string[]> Linhas, int Total);
 
-    
+

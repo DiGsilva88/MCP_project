@@ -1,10 +1,10 @@
 namespace Vendas.Servidor.Modelos;
 
 // Localidade..Actividade vêm da ficha do cliente: vendas somadas pelo valor dessa coluna.
-public enum DimensaoVenda {Cliente, Artigo, Familia, Marca, Mes, Localidade, Distrito, Zona, Vendedor, Actividade}
+public enum DimensaoVenda { Cliente, Artigo, Familia, Marca, Mes, Localidade, Distrito, Zona, Vendedor, Actividade }
 
 // Por onde se ordena o ranking: euros (líquido) ou unidades vendidas.
-public enum OrdenarVenda {Valor, Quantidade}
+public enum OrdenarVenda { Valor, Quantidade }
 
 
 //traduz a dimensao para o SQL e para a resposta
@@ -27,7 +27,7 @@ public static class Dimensoes
         _ => null
     };
 
-    private static (string Singular,string Plural) Nomes(DimensaoVenda dimensao) => dimensao switch
+    private static (string Singular, string Plural) Nomes(DimensaoVenda dimensao) => dimensao switch
 
     {
         DimensaoVenda.Cliente => ("cliente", "clientes"),
@@ -43,4 +43,4 @@ public static class Dimensoes
         _ => throw new ArgumentOutOfRangeException(nameof(dimensao))
     };
 }
-    
+
