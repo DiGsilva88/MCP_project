@@ -15,7 +15,7 @@ internal static class ConsultaVendas
     private const string Vendas   = "[mcp].[ViewMCP_vendas]";
     private const string Clientes = "[mcp].[ViewMCP_cliente]";
 
-    public static (string Sql, Action<SqlParameterCollection> Parametros) TopClientes(
+    public static (string Sql, Action<SqlParameterCollection> Parametros) RankingPorCliente(
         DateOnly desde, DateOnly ate, string? cliente = null, IReadOnlyDictionary<Campo, string>? filtros = null)
     {
         var (ficha, aplicarFicha) = FiltroFicha(filtros);
@@ -53,7 +53,7 @@ internal static class ConsultaVendas
         return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
     }
 
-    public static (string Sql, Action<SqlParameterCollection> Parametros) TopArtigos(
+    public static (string Sql, Action<SqlParameterCollection> Parametros) RankingPorDimensao(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false)
     {

@@ -29,12 +29,12 @@ public interface IVendasRepo
 
     // Rankings de vendas no período [desde, ate[. cliente (opcional): só as vendas desse cliente (ID exato).
     // filtros (opcional): só clientes com esses valores na ficha (ex.: Localidade = Seixal).
-    Task<IReadOnlyList<ValorAgrupado>> TopClientesAsync(
+    Task<IReadOnlyList<ValorAgrupado>> RankingPorClienteAsync(
         DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
 
     // porQuantidade: ordena por unidades vendidas em vez de valor (o Mes fica sempre por ordem cronológica).
-    Task<IReadOnlyList<ValorAgrupado>> TopArtigosAsync(
+    Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
         CancellationToken cancellationToken = default);

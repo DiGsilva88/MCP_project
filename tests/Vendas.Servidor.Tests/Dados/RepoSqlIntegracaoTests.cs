@@ -57,8 +57,8 @@ public class RepoSqlIntegracaoTests
         var repo = CriarRepo();
         var (desde, ate) = (new DateOnly(2026, 1, 1), new DateOnly(2026, 7, 1));
 
-        var distritos = await repo.TopArtigosAsync(DimensaoVenda.Distrito, desde, ate, limite: 100);
-        var meses = await repo.TopArtigosAsync(DimensaoVenda.Mes, desde, ate, limite: 100);
+        var distritos = await repo.RankingPorDimensaoAsync(DimensaoVenda.Distrito, desde, ate, limite: 100);
+        var meses = await repo.RankingPorDimensaoAsync(DimensaoVenda.Mes, desde, ate, limite: 100);
 
         Assert.NotEmpty(distritos);
         Assert.Equal(meses[0].Total, distritos[0].Total);
@@ -70,7 +70,7 @@ public class RepoSqlIntegracaoTests
     [FactComBd]
     public async Task ArtigosPorQuantidade_OrdenadosPorUnidades()
     {
-        var linhas = await CriarRepo().TopArtigosAsync(
+        var linhas = await CriarRepo().RankingPorDimensaoAsync(
             DimensaoVenda.Artigo, new DateOnly(2026, 1, 1), new DateOnly(2026, 7, 1), limite: 5, porQuantidade: true);
 
         Assert.Equal(linhas.Max(l => l.Quantidade), linhas[0].Quantidade);

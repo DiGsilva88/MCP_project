@@ -10,17 +10,17 @@ public class VendasToolsTests
     private static VendasTools CriarSut(FakeVendasRepo repo) => new(repo, NullLogger<VendasTools>.Instance);
 
     [Fact]
-    public async Task Cliente_ChamaTopClientes()
+    public async Task Cliente_ChamaRankingPorCliente()
     {
         var repo = new FakeVendasRepo();
         await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Cliente, limite: 5);
 
-        Assert.Null(repo.UltimaDimensao); // não foi ao TopArtigos
+        Assert.Null(repo.UltimaDimensao); // não foi ao RankingPorDimensao
         Assert.Equal(5, repo.UltimoLimite);
     }
 
     [Fact]
-    public async Task Marca_ChamaTopArtigosComADimensao()
+    public async Task Marca_ChamaRankingPorDimensaoComADimensao()
     {
         var repo = new FakeVendasRepo();
         await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Marca);
