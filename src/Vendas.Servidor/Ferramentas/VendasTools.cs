@@ -12,7 +12,7 @@ namespace Vendas.Servidor.Ferramentas;
 
 // Ferramentas sobre a view mcp.ViewMCP_vendas.
 // Todas agregam no SQL: nenhuma devolve linhas de documentos.
-
+[McpServerToolType]
 public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, TimeProvider? fonteTempo = null)
 {
     // Quantos clientes se mostram quando o texto serve a vários.
