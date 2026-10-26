@@ -26,6 +26,15 @@ internal sealed class FakeVendasRepo : IVendasRepo
     public Campo? UltimoAgrupar { get; private set; }
     public IReadOnlyList<Campo>? UltimoMostrar { get; private set; }
     public IReadOnlyList<ValorAgrupado> Valores { get; set; } = [];
+    // Resultado dos rankings pelo início do período (ex.: outro para o ano anterior). Sem isto, devolve Valores.
+    public Func<DateOnly, IReadOnlyList<ValorAgrupado>>? ValoresPor { get; set; }
+    public List<(DateOnly Desde, DateOnly Ate, int Limite)> ChamadasRanking { get; } = [];
+
+    private Task<IReadOnlyList<ValorAgrupado>> Ranking(DateOnly desde, DateOnly ate, int limite)
+    {
+        ChamadasRanking.Add((desde, ate, limite));
+        return Task.FromResult(ValoresPor?.Invoke(desde) ?? Valores);
+    }
     public (DateOnly Desde, DateOnly Ate)? UltimoPeriodo { get; private set; }
     public DimensaoVenda? UltimaDimensao { get; private set; }
 
@@ -90,7 +99,7 @@ internal sealed class FakeVendasRepo : IVendasRepo
         UltimoPeriodo = (desde, ate);
         UltimoLimite = limite;
         if (LancarExcecao is not null) throw LancarExcecao;
-        return Task.FromResult(Valores);
+        return Ranking(desde, ate, limite);
     }
 
     public Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
@@ -106,7 +115,7 @@ internal sealed class FakeVendasRepo : IVendasRepo
         UltimoLimite = limite;
         UltimoPorQuantidade = porQuantidade;
         if (LancarExcecao is not null) throw LancarExcecao;
-        return Task.FromResult(Valores);
+        return Ranking(desde, ate, limite);
     }
 
     public bool? UltimoPorQuantidade { get; private set; }

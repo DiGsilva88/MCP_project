@@ -84,6 +84,7 @@ projeto_Mcp/
    - `ordenar`: `Valor` (por omissão) ou `Quantidade` (unidades; não se aplica a `agrupar=Cliente`);
    - `semVendas=true`: clientes **sem** compras no período, com a data da última compra (não se combina com `cliente`);
    - `emCada` (opcional): o 1.º de `agrupar` dentro de cada grupo, com a % no grupo (ex.: `agrupar=Artigo, emCada=Distrito` = o artigo mais vendido em cada distrito; `agrupar=Localidade, emCada=Mes`). Não se aplica a `Cliente`, e as duas dimensões não podem ser ambas da ficha;
+   - `compararAnoAnterior=true`: cada linha com o mesmo intervalo um ano antes (01-01 a 26-10 contra 01-01 a 26-10 do ano anterior), com a variação em %, e o total dos dois no título. Meses e trimestres emparelham pelo ano − 1 (`2026-01` ↔ `2025-01`), o resto pelo nome. Não se combina com `semVendas` nem `emCada`;
    - `limite` (1–100; ignorado em `Mes`/`Trimestre`, que vêm sempre completos).
 
    A resposta traz um título com período, datas, total e nº de documentos, o valor médio por documento, a lista numerada (valor e % do total, ou unidades) e o rodapé `Mostro N de M`. Avisa (`Atenção: …`) quando a última venda do período é mais de 7 dias antes do fim, ou quando o período vem vazio (diz até onde vão os dados).
@@ -189,6 +190,7 @@ Mostra as tools disponíveis e pergunta o modo:
 - Sem histórico: cada pergunta é só regras + pergunta (mais rápido em CPU; perde "mostra mais").
 - Os rankings de `consultar_vendas` são mostrados tal como o servidor os devolve, sem o modelo os reescrever (`PoliticasSeguranca.MostrarDireto`): poupa a 2.ª geração, que em CPU era a parte mais lenta, e os números não podem ser mal copiados. Erros e "Nenhuma correspondência" continuam a ir ao modelo, para ele corrigir e chamar de novo.
 - Os argumentos do modelo são validados contra o esquema da tool antes da chamada: um valor fora do enum (ex.: `agrupar=Localidad`) volta logo ao modelo com os valores possíveis, sem ir ao servidor.
+- Filtros inventados são recusados (`PoliticasSeguranca.ValorInventado`): `valor`, `valorCruzado`, `cliente` e `nomeComecaPor` só passam se uma das suas palavras estiver na pergunta ou num resultado anterior da mesma pergunta. O modelo pequeno copiava os exemplos das descrições (filtrava por Seixal sem ninguém pedir); por isso as descrições e as regras não têm valores reais, e há testes que o garantem.
 - Uma resposta com números sem nenhuma chamada a tool é considerada inventada: é descartada e o modelo tenta uma vez mais. Máx. 5 chamadas a tools e 12 000 caracteres de resultados por pergunta.
 - As regras do prompt (`PoliticasSeguranca.cs`) mandam recusar perguntas fora dos dados de clientes e faturação.
 

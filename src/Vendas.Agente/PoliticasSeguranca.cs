@@ -49,14 +49,7 @@ public static class PoliticasSeguranca
                 return $"O parâmetro {nome} não existe. Parâmetros possíveis: " +
                        string.Join(", ", propriedades.EnumerateObject().Select(p => p.Name)) + ". Chama de novo só com estes.";
 
-            var valor = bruto switch
-            {
-                null => null,
-                JsonElement { ValueKind: JsonValueKind.Null } => null,
-                JsonElement { ValueKind: JsonValueKind.String } j => j.GetString(),
-                JsonElement j => j.ToString(),
-                _ => bruto.ToString(),
-            };
+            var valor = Texto(bruto);
             if (valor is null || !propriedade.TryGetProperty("enum", out var opcoes)) continue;
 
             var possiveis = opcoes.EnumerateArray().Where(o => o.ValueKind == JsonValueKind.String).Select(o => o.GetString()!).ToList();
@@ -65,6 +58,46 @@ public static class PoliticasSeguranca
         }
         return null;
     }
+
+    // Filtros que o modelo inventou: copiava "valor=Seixal" dos exemplos e filtrava sem ninguém pedir.
+    // Um texto de filtro só passa se uma das suas palavras estiver na pergunta ou num resultado anterior desta
+    // pergunta (ex.: "Seixall" corrigido para "Seixal" depois de "Nenhuma correspondência"). Sem acentos nem maiúsculas,
+    // e por palavra: "Charneca" na pergunta aceita a zona "Charneca, Amora, SXL". null = nada inventado.
+    public static string? ValorInventado(
+        string pergunta, string resultadosAnteriores, IEnumerable<KeyValuePair<string, object?>> argumentos)
+    {
+        var fonte = SemAcentos(pergunta + "\n" + resultadosAnteriores);
+        foreach (var (nome, bruto) in argumentos)
+        {
+            if (!ParametrosDeTexto.Contains(nome) || Texto(bruto) is not { } valor || string.IsNullOrWhiteSpace(valor)) continue;
+            var normalizado = SemAcentos(valor.Trim());
+            if (normalizado == "sem dados") continue; // valor especial da tool, não vem do utilizador
+
+            var palavras = normalizado.Split([' ', ',', '.', '-', '/', '(', ')'], StringSplitOptions.RemoveEmptyEntries)
+                .Where(p => p.Length >= 3).ToList();
+            var dito = palavras.Count == 0 ? fonte.Contains(normalizado) : palavras.Any(fonte.Contains);
+            if (!dito)
+                return $"{nome}={valor.Trim()} não está na pergunta. Chama de novo sem esse filtro.";
+        }
+        return null;
+    }
+
+    private static readonly HashSet<string> ParametrosDeTexto = ["valor", "valorCruzado", "cliente", "nomeComecaPor"];
+
+    private static string SemAcentos(string texto) =>
+        new string(texto.Normalize(System.Text.NormalizationForm.FormD)
+            .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+            .ToArray()).ToLowerInvariant();
+
+    // O valor de um argumento do modelo como texto (vem como JsonElement do Ollama).
+    private static string? Texto(object? bruto) => bruto switch
+    {
+        null => null,
+        JsonElement { ValueKind: JsonValueKind.Null } => null,
+        JsonElement { ValueKind: JsonValueKind.String } j => j.GetString(),
+        JsonElement j => j.ToString(),
+        _ => bruto.ToString(),
+    };
 
     // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
     public static string TextoDoResultado(object? resultado) =>
@@ -108,11 +141,15 @@ public static class PoliticasSeguranca
         - Evolução, "mês a mês" ou "qual o mês com mais": agrupar=Mes. Por trimestre ou comparar trimestres: agrupar=Trimestre.
         - Um trimestre, semestre ou semana concreto: dataInicio e dataFim (dd-MM-aaaa).
             1.º trimestre = 01-01-<ano> a 31-03-<ano>; 1.º semestre = 01-01-<ano> a 30-06-<ano>.
+        - Comparar com o ano anterior/passado, variação, crescimento, "este ano vs o ano passado":
+          compararAnoAnterior=true com o período de agora (agrupar=Mes se não disserem outra coisa).
+          Nunca emCada para comparar anos.
         - "X por Y" ou "X em cada Y" com duas coisas (artigo mais vendido por distrito, localidade
           com mais vendas em cada mês ou trimestre): agrupar=X, emCada=Y.
         - "Em quantidade" ou unidades: ordenar=Quantidade e responde em unidades, não em euros.
         - Vendas ou melhores clientes de uma localidade, distrito, zona ou vendedor:
-          consultar_vendas com coluna/valor (ex.: coluna=Localidade, valor=Seixal). cliente= é só para um cliente.
+          consultar_vendas com coluna/valor (ex.: coluna=Localidade, valor=<localidade dita>). cliente= é só para um cliente.
+          Sem localidade, zona ou nome dito na pergunta, não filtres.
         - Que localidade, distrito, zona, vendedor ou actividade vende/fatura mais ("onde se vende mais"):
           consultar_vendas com agrupar=Localidade (ou Distrito, Zona, Vendedor, Actividade).
           Nunca consultar com contar: isso conta clientes, não vendas.

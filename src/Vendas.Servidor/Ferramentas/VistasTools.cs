@@ -28,7 +28,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "Pagamento, Cobranca, Expedicao, SituacaoFinanceira, EscalaoPlafond, EscalaoVolumeVendas. " +
         "contar=true: nº de clientes por valor da coluna (ex.: top 5 localidades: coluna=Localidade, contar=true, limite=5). " +
         "valor: filtra a coluna. cruzarCom/valorCruzado: filtra também por outra coluna " +
-        "(ex.: actividade com mais clientes em Corroios: coluna=Actividade, contar=true, cruzarCom=Localidade, valorCruzado=Corroios). " +
+        "(ex.: actividade com mais clientes numa localidade: coluna=Actividade, contar=true, cruzarCom=Localidade, valorCruzado=<localidade dita>). " +
         "nomeComecaPor: clientes cujo nome começa por esse texto. " +
         "Faturação real (top clientes, artigos, familias, marcas, vendas por localidade/distrito/zona/vendedor/actividade, " +
         "vendas de um cliente): usar consultar_vendas. " +
@@ -38,13 +38,13 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
     public async Task<string> ConsultarAsync(
         [Description("Coluna a mostrar/filtrar/contar.")] Campo? coluna = null,
-        [Description("Valor da coluna, ex.: Lisboa, ou \"sem dados\".")] string? valor = null,
+        [Description("Valor da coluna, tal como o utilizador o disse, ou \"sem dados\".")] string? valor = null,
         [Description("true para contar clientes por valor da coluna.")] bool contar = false,
         [Description("Segunda coluna, para filtrar.")] Campo? cruzarCom = null,
         [Description("Valor de cruzarCom.")] string? valorCruzado = null,
         [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 10,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens).")] int pagina = 1,
-        [Description("Opcional: início do nome do cliente, ex.: A.")] string? nomeComecaPor = null,
+        [Description("Opcional: início do nome do cliente, tal como o utilizador o disse.")] string? nomeComecaPor = null,
         CancellationToken ct = default)
     {
         var temValor = !string.IsNullOrWhiteSpace(valor);
@@ -99,7 +99,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
     [Description(
         "Dado de cada cliente: Contribuinte (NIF), Email, Telefone, Morada, CodigoPostal, VolumeVendas, Plafond " +
         "(VolumeVendas = declarado na ficha, não faturado). maiores=true: do maior para o menor, para top N. " +
-        "coluna/valor: filtra clientes (ex.: coluna=Localidade, valor=Azeitão). " +
+        "coluna/valor: filtra clientes (ex.: coluna=Localidade, valor=<localidade dita>). " +
         "mostrarTambem: junta outra coluna a cada linha (ex.: Actividade). nomeComecaPor: início do nome. Devolve CSV.")]
     public async Task<string> ConsultarSensivelAsync(
         [Description("Dado a mostrar.")] CampoSensivel dado,

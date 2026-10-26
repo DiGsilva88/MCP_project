@@ -30,6 +30,28 @@ public class DescricaoDaToolTests
         Assert.Contains(dimensao, descricao);
     }
 
+    // O modelo pequeno copia os exemplos: "valor=Seixal" na descrição fazia-o filtrar por Seixal sem ninguém pedir.
+    // Verifica as descrições das tools e de todos os parâmetros.
+    [Theory]
+    [InlineData("Seixal")]
+    [InlineData("Azeitão")]
+    [InlineData("Corroios")]
+    [InlineData("Lisboa")]
+    [InlineData("Setúbal")]
+    public void Descricoes_SemValoresReaisDeExemplo(string valorReal)
+    {
+        var metodos = new[] { typeof(VistasTools), typeof(VendasTools) }
+            .SelectMany(t => t.GetMethods())
+            .Where(m => m.GetCustomAttribute<DescriptionAttribute>() is not null);
+
+        foreach (var m in metodos)
+        {
+            Assert.DoesNotContain(valorReal, m.GetCustomAttribute<DescriptionAttribute>()!.Description);
+            foreach (var p in m.GetParameters())
+                Assert.DoesNotContain(valorReal, p.GetCustomAttribute<DescriptionAttribute>()?.Description ?? "");
+        }
+    }
+
     public static TheoryData<string> NomesDasDimensoes() => new(Enum.GetNames<DimensaoVenda>());
 
     public static TheoryData<string> NomesDasColunas() => new(Enum.GetNames<Campo>());

@@ -378,6 +378,79 @@ public class VendasToolsTests
         Assert.Equal(100, repo.UltimoLimite);
     }
 
+    // ---- compararAnoAnterior.
+
+    private static VendasTools CriarSutEm(FakeVendasRepo repo, int ano, int mes, int dia) =>
+        new(repo, NullLogger<VendasTools>.Instance, new RelogioFixo(new DateTimeOffset(ano, mes, dia, 12, 0, 0, TimeSpan.Zero)));
+
+    [Fact]
+    public async Task Comparar_MesmosDiasUmAnoAntesEEmparelhaPorMes()
+    {
+        var repo = new FakeVendasRepo
+        {
+            ValoresPor = desde => desde.Year == 2026
+                ? [new("2026-01", 110m, 1m, 1, 160m, 2, TotalDocumentos: 2), new("2026-02", 50m, 1m, 1, 160m, 2, TotalDocumentos: 2)]
+                : [new("2025-01", 100m, 1m, 1, 200m, 2, TotalDocumentos: 2), new("2025-02", 100m, 1m, 1, 200m, 2, TotalDocumentos: 2)],
+        };
+        var r = await CriarSutEm(repo, 2026, 10, 26).ConsultarVendasAsync(DimensaoVenda.Mes, compararAnoAnterior: true);
+
+        // 01-01-2026 a 26-10-2026 contra 01-01-2025 a 26-10-2025: os mesmos dias, não o ano 2025 inteiro.
+        Assert.Equal((new DateOnly(2025, 1, 1), new DateOnly(2025, 10, 27), 100), repo.ChamadasRanking[1]);
+        Assert.Contains("Comparado com 01-01-2025 a 26-10-2025: total 200,00 € (-20,0%).", r);
+        Assert.Contains("1. 2026-01 – 110,00 € · 2025: 100,00 € (+10,0%)", r);
+        Assert.Contains("2. 2026-02 – 50,00 € · 2025: 100,00 € (-50,0%)", r);
+    }
+
+    [Fact]
+    public async Task Comparar_Ultimos12Meses_OutubroDeCadaAnoComOSeu()
+    {
+        // 27-10-2025 a 26-10-2026 tem dois outubros: cada um emparelha com o do seu ano anterior.
+        var repo = new FakeVendasRepo
+        {
+            ValoresPor = desde => desde.Year == 2025
+                ? [new("2025-10", 10m, 1m, 1, 30m, 2), new("2026-10", 20m, 1m, 1, 30m, 2)]
+                : [new("2024-10", 5m, 1m, 1, 45m, 2), new("2025-10", 40m, 1m, 1, 45m, 2)],
+        };
+        var r = await CriarSutEm(repo, 2026, 10, 26).ConsultarVendasAsync(DimensaoVenda.Mes, Periodo.Ultimos12Meses, compararAnoAnterior: true);
+
+        Assert.Contains("2025-10 – 10,00 € · um ano antes: 5,00 € (+100,0%)", r);
+        Assert.Contains("2026-10 – 20,00 € · um ano antes: 40,00 € (-50,0%)", r);
+    }
+
+    [Fact]
+    public async Task Comparar_SemParOuSemBase_NaoInventaPercentagem()
+    {
+        var repo = new FakeVendasRepo
+        {
+            ValoresPor = desde => desde.Year == 2026
+                ? [new("Filtro (F1)", 10m, 1m, 1, 20m, 2), new("Óleo (O1)", 10m, 1m, 1, 20m, 2)]
+                : [new("Óleo (O1)", 0m, 1m, 1, 0m, 1)],
+        };
+        var r = await CriarSutEm(repo, 2026, 10, 26).ConsultarVendasAsync(DimensaoVenda.Artigo, compararAnoAnterior: true);
+
+        Assert.Contains("1. Filtro (F1) – 10,00 € · 2025: –", r);
+        Assert.Contains("2. Óleo (O1) – 10,00 € · 2025: 0,00 €", r); // base 0: sem % (não divide por zero)
+        Assert.Contains("total 0,00 €.", r);
+        Assert.StartsWith("Vendas por artigo", r); // o agente continua a mostrar direto
+    }
+
+    [Fact]
+    public async Task Comparar_PeriodoVazio_NaoVaiAoAnoAnterior()
+    {
+        var repo = new FakeVendasRepo();
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, compararAnoAnterior: true);
+
+        Assert.StartsWith("Sem vendas:", r);
+        Assert.Single(repo.ChamadasRanking);
+    }
+
+    [Theory]
+    [InlineData(true, null)]
+    [InlineData(false, DimensaoVenda.Distrito)]
+    public async Task Comparar_ComSemVendasOuEmCada_Recusa(bool semVendas, DimensaoVenda? emCada)
+        => Assert.Equal("compararAnoAnterior não se combina com semVendas nem emCada. Chama de novo sem eles.",
+            await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(DimensaoVenda.Artigo, semVendas: semVendas, emCada: emCada, compararAnoAnterior: true));
+
     [Theory]
     [InlineData(DimensaoVenda.Artigo, DimensaoVenda.Artigo, "emCada tem de ser diferente de agrupar.")]
     [InlineData(DimensaoVenda.Cliente, DimensaoVenda.Distrito, "emCada não se aplica a Cliente")]
@@ -386,7 +459,11 @@ public class VendasToolsTests
     public async Task EmCada_CombinacoesInvalidas_Recusa(DimensaoVenda agrupar, DimensaoVenda emCada, string erro)
     {
         var repo = new FakeVendasRepo();
-        Assert.StartsWith(erro, await CriarSut(repo).ConsultarVendasAsync(agrupar, emCada: emCada));
+        var r = await CriarSut(repo).ConsultarVendasAsync(agrupar, emCada: emCada);
+        Assert.StartsWith(erro, r);
+        // Diz como corrigir: sem isso o modelo desistia e mostrava o erro ao utilizador.
+        Assert.Matches("Chama de novo sem emCada|use agrupar=", r);
+        Assert.DoesNotContain('\n', r); // uma linha: o agente não a mostra direto nem a conta como dados
         Assert.Null(repo.UltimoPeriodo); // não chegou ao repo
     }
 }

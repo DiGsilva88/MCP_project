@@ -66,6 +66,8 @@ var http = new HttpClient
 var chamadas = 0; // chamadas a ferramentas que devolveram dados na pergunta em curso (ver PoliticasSeguranca.RespostaSemFonte)
 var caracteresFerramentas = 0; // texto devolvido pelas ferramentas na pergunta em curso
 string? textoDireto = null; // ranking mostrado tal como veio do servidor (ver PoliticasSeguranca.MostrarDireto)
+var perguntaAtual = ""; // os filtros do modelo têm de vir daqui ou de um resultado (ver PoliticasSeguranca.ValorInventado)
+var resultadosPergunta = new System.Text.StringBuilder();
 
 // Teto de texto das ferramentas por pergunta (~3 letras por token): regras + esquemas + isto cabem em NumCtx.
 // Acima disto o Ollama cortaria o início do prompt, que são as regras de segurança.
@@ -90,9 +92,15 @@ IChatClient modelo = ollama
                 Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {invalido}");
                 return invalido;
             }
+            if (PoliticasSeguranca.ValorInventado(perguntaAtual, resultadosPergunta.ToString(), ctx.Arguments) is { } inventado)
+            {
+                Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {inventado}");
+                return inventado;
+            }
 
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var texto = PoliticasSeguranca.TextoDoResultado(resultado);
+            resultadosPergunta.AppendLine(texto);
             // dados pessoais (NIF, contactos) não ficam no ecrã/scrollback: só o tamanho
             var amostra = ctx.Function.Name == "consultar_sensivel"
                 ? $"({texto.Length} caracteres)"
@@ -204,6 +212,8 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
     // e o início (regras + ferramentas) fica igual em todos os pedidos, por isso o Ollama reaproveita-o.
     // shortcut: perde "mostra mais" / "e desses…"; voltar a guardar a última troca se houver GPU.
     List<ChatMessage> historico = [new(ChatRole.System, regras), new(ChatRole.User, pergunta)];
+    perguntaAtual = pergunta;
+    resultadosPergunta.Clear();
 
     var relogio = Stopwatch.StartNew();
     var partes = new List<ChatResponseUpdate>();
