@@ -25,6 +25,16 @@ public static class PoliticasSeguranca
         texto.Contains('\n') || texto.StartsWith("0 clientes ") || texto.StartsWith("Nenhuma linha encontrada")
         || texto.StartsWith("Sem vendas:");
 
+    // Os rankings de consultar_vendas já vêm prontos a mostrar (números em pt-PT, período, avisos): o agente
+    // mostra-os tal como vêm, sem o modelo os reescrever. Em CPU isso era mais de metade do tempo, e o modelo trocava números.
+    // Erros e "Nenhuma correspondência" ficam de fora: o modelo tem de os ler para corrigir e chamar de novo.
+    // shortcut: depende dos inícios de frase do VendasTools; se lá mudarem, mudar aqui (há teste).
+    public static bool MostrarDireto(string tool, string texto) =>
+        tool == "consultar_vendas" && PrefixosDiretos.Any(texto.StartsWith);
+
+    private static readonly string[] PrefixosDiretos =
+        ["Vendas por ", "Melhor ", "Sem vendas:", "Clientes sem vendas", "0 clientes sem vendas"];
+
     // Valida os argumentos do modelo contra o esquema da tool antes de a chamar. Um valor fora do enum
     // (ex.: agrupar=Localidad) dava no servidor um erro genérico e o utilizador via "não foi possível consultar";
     // assim o modelo recebe os valores possíveis e pode corrigir. null = argumentos válidos.
@@ -39,14 +49,7 @@ public static class PoliticasSeguranca
                 return $"O parâmetro {nome} não existe. Parâmetros possíveis: " +
                        string.Join(", ", propriedades.EnumerateObject().Select(p => p.Name)) + ". Chama de novo só com estes.";
 
-            var valor = bruto switch
-            {
-                null => null,
-                JsonElement { ValueKind: JsonValueKind.Null } => null,
-                JsonElement { ValueKind: JsonValueKind.String } j => j.GetString(),
-                JsonElement j => j.ToString(),
-                _ => bruto.ToString(),
-            };
+            var valor = Texto(bruto);
             if (valor is null || !propriedade.TryGetProperty("enum", out var opcoes)) continue;
 
             var possiveis = opcoes.EnumerateArray().Where(o => o.ValueKind == JsonValueKind.String).Select(o => o.GetString()!).ToList();
@@ -55,6 +58,46 @@ public static class PoliticasSeguranca
         }
         return null;
     }
+
+    // Filtros que o modelo inventou: copiava "valor=Seixal" dos exemplos e filtrava sem ninguém pedir.
+    // Um texto de filtro só passa se uma das suas palavras estiver na pergunta ou num resultado anterior desta
+    // pergunta (ex.: "Seixall" corrigido para "Seixal" depois de "Nenhuma correspondência"). Sem acentos nem maiúsculas,
+    // e por palavra: "Charneca" na pergunta aceita a zona "Charneca, Amora, SXL". null = nada inventado.
+    public static string? ValorInventado(
+        string pergunta, string resultadosAnteriores, IEnumerable<KeyValuePair<string, object?>> argumentos)
+    {
+        var fonte = SemAcentos(pergunta + "\n" + resultadosAnteriores);
+        foreach (var (nome, bruto) in argumentos)
+        {
+            if (!ParametrosDeTexto.Contains(nome) || Texto(bruto) is not { } valor || string.IsNullOrWhiteSpace(valor)) continue;
+            var normalizado = SemAcentos(valor.Trim());
+            if (normalizado == "sem dados") continue; // valor especial da tool, não vem do utilizador
+
+            var palavras = normalizado.Split([' ', ',', '.', '-', '/', '(', ')'], StringSplitOptions.RemoveEmptyEntries)
+                .Where(p => p.Length >= 3).ToList();
+            var dito = palavras.Count == 0 ? fonte.Contains(normalizado) : palavras.Any(fonte.Contains);
+            if (!dito)
+                return $"{nome}={valor.Trim()} não está na pergunta. Chama de novo sem esse filtro.";
+        }
+        return null;
+    }
+
+    private static readonly HashSet<string> ParametrosDeTexto = ["valor", "valorCruzado", "cliente", "nomeComecaPor"];
+
+    private static string SemAcentos(string texto) =>
+        new string(texto.Normalize(System.Text.NormalizationForm.FormD)
+            .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+            .ToArray()).ToLowerInvariant();
+
+    // O valor de um argumento do modelo como texto (vem como JsonElement do Ollama).
+    private static string? Texto(object? bruto) => bruto switch
+    {
+        null => null,
+        JsonElement { ValueKind: JsonValueKind.Null } => null,
+        JsonElement { ValueKind: JsonValueKind.String } j => j.GetString(),
+        JsonElement j => j.ToString(),
+        _ => bruto.ToString(),
+    };
 
     // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
     public static string TextoDoResultado(object? resultado) =>
@@ -82,32 +125,36 @@ public static class PoliticasSeguranca
         - Cumprimentos: resposta curta a lembrar o que podes consultar.
 
         Consultar
+        - "Top N", "mostre só N", "qual foi o que mais...": limite=N (um só: limite=1).
         - Cidade, vila ou "em X" é Localidade; Distrito só se disserem "distrito".
           Prazo ou condições de pagamento é Pagamento.
         - Dois critérios: coluna/valor para um, cruzarCom/valorCruzado para o outro.
           Um valor por filtro; "A e B" na mesma coluna = uma chamada por valor.
         - Quem compra mais, faturação, artigos, famílias ou marcas mais vendidos:
           consultar_vendas com agrupar e periodo (sem período dito: AnoAtual; "este mês":
-          MesAtual; "ano passado": AnoAnterior). Diz o período que vem no resultado.
+          MesAtual; "ano passado": AnoAnterior).
           Vendas, artigos ou atividade de um cliente: consultar_vendas com cliente=ID ou nome.
           Valor vendido = valor (líquido sem IVA).
-        -Total de um periodo: agrupar=Mes com o período: responde numa frase com o total do resultado.
-        - Mês com nome: mes=<número do mês>; ano só se o utilizador o disser (sem ano, o servidor usa o mais recente).
+        - Mês com nome (ex.: "em setembro"): mes=<número do mês>, nunca MesAtual; ano só se o utilizador o disser.
+          MesAtual é só para "este mês".
         - "Mesmo mês do ano passado": mes=<mês atual> e ano=<ano anterior>.
-        - Trimestre, semestre, semana ou datas: dataInicio e dataFim (dd-MM-aaaa).
+        - Evolução, "mês a mês" ou "qual o mês com mais": agrupar=Mes. Por trimestre ou comparar trimestres: agrupar=Trimestre.
+        - Um trimestre, semestre ou semana concreto: dataInicio e dataFim (dd-MM-aaaa).
             1.º trimestre = 01-01-<ano> a 31-03-<ano>; 1.º semestre = 01-01-<ano> a 30-06-<ano>.
-        - Evolução ou "mês a mês": agrupar=Mes com o período pedido (últimos 90 dias: Ultimos90Dias).
+        - Comparar com o ano anterior/passado, variação, crescimento, "este ano vs o ano passado":
+          compararAnoAnterior=true com o período de agora (agrupar=Mes se não disserem outra coisa).
+          Nunca emCada para comparar anos.
+        - "X por Y" ou "X em cada Y" com duas coisas (artigo mais vendido por distrito, localidade
+          com mais vendas em cada mês ou trimestre): agrupar=X, emCada=Y.
         - "Em quantidade" ou unidades: ordenar=Quantidade e responde em unidades, não em euros.
-        - "Top N", "mostre só N", "qual foi o que mais...": limite=N (um só: limite=1).
         - Vendas ou melhores clientes de uma localidade, distrito, zona ou vendedor:
-          consultar_vendas com coluna/valor (ex.: coluna=Localidade, valor=Seixal). cliente= é só para um cliente.
+          consultar_vendas com coluna/valor (ex.: coluna=Localidade, valor=<localidade dita>). cliente= é só para um cliente.
+          Sem localidade, zona ou nome dito na pergunta, não filtres.
         - Que localidade, distrito, zona, vendedor ou actividade vende/fatura mais ("onde se vende mais"):
           consultar_vendas com agrupar=Localidade (ou Distrito, Zona, Vendedor, Actividade).
           Nunca consultar com contar: isso conta clientes, não vendas.
         - Clientes sem compras, inativos ou "não compram há X": consultar_vendas com semVendas=true
           e o período (há mais de 90 dias: Ultimos90Dias; este ano: AnoAtual).
-        - Valor médio por venda ou compra: responde numa frase com o "Valor médio por documento"
-          do resultado, sem listar linhas (de um cliente: com cliente=; de uma localidade: com coluna/valor).
 
         - NIF, email, telefone, morada, código postal, volume de vendas declarado e plafond:
           consultar_sensivel. Top por volume declarado na ficha (ou plafond): consultar_sensivel
@@ -119,13 +166,12 @@ public static class PoliticasSeguranca
           chama de novo e diz qual usaste. Se a lista vier cortada ("mostrados N de M")
           e nenhum for parecido, diz que não encontraste o valor; não escolhas outro.
 
-        Responder
-        - Lista as linhas devolvidas, uma por linha (ex.: "1. Nome – valor"), no máximo
-          10, sem juntar nomes iguais (são clientes diferentes). Depois diz quantas mostraste
-          e o total do fim do resultado (ex.: "mostro 5 de 379"). Nunca respondas só com o total.
-        - Copia os números tal como vêm (ex.: 38 087,07); não os convertas nem arredondes.
-        - Nos rankings de vendas, diz o período e as datas da 1ª linha e que os valores são em euros, sem IVA.
-        - Se o resultado tiver uma frase "Atenção:", repete-a.
+        Responder (consultar e consultar_sensivel; os resultados de consultar_vendas são mostrados tal como vêm)
+        - Contagens (contar): lista TODAS as linhas, cada uma na sua linha (ex.: "1. Valor – 103 clientes (27,2%)"),
+          depois o total da 1.ª linha. Nunca respondas só com o total.
+        - Listas de clientes: uma por linha, sem juntar nomes iguais (são clientes diferentes);
+          acaba com a frase "# Mostrados N de M" ou "# Lista completa" do resultado.
+        - Copia os números tal como vêm; não os convertas nem arredondes.
         - Não fales de ferramentas nem de parâmetros (pagina, limite, contar...).
         """;
 }

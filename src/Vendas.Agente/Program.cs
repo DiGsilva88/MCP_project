@@ -65,6 +65,9 @@ var http = new HttpClient
 
 var chamadas = 0; // chamadas a ferramentas que devolveram dados na pergunta em curso (ver PoliticasSeguranca.RespostaSemFonte)
 var caracteresFerramentas = 0; // texto devolvido pelas ferramentas na pergunta em curso
+string? textoDireto = null; // ranking mostrado tal como veio do servidor (ver PoliticasSeguranca.MostrarDireto)
+var perguntaAtual = ""; // os filtros do modelo têm de vir daqui ou de um resultado (ver PoliticasSeguranca.ValorInventado)
+var resultadosPergunta = new System.Text.StringBuilder();
 
 // Teto de texto das ferramentas por pergunta (~3 letras por token): regras + esquemas + isto cabem em NumCtx.
 // Acima disto o Ollama cortaria o início do prompt, que são as regras de segurança.
@@ -89,14 +92,30 @@ IChatClient modelo = ollama
                 Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {invalido}");
                 return invalido;
             }
+            if (PoliticasSeguranca.ValorInventado(perguntaAtual, resultadosPergunta.ToString(), ctx.Arguments) is { } inventado)
+            {
+                Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {inventado}");
+                return inventado;
+            }
 
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var texto = PoliticasSeguranca.TextoDoResultado(resultado);
+            resultadosPergunta.AppendLine(texto);
             // dados pessoais (NIF, contactos) não ficam no ecrã/scrollback: só o tamanho
             var amostra = ctx.Function.Name == "consultar_sensivel"
                 ? $"({texto.Length} caracteres)"
                 : texto[..Math.Min(texto.Length, 120)].ReplaceLineEndings(" ");
             Console.WriteLine($"[{ctx.Function.Name}({argumentos}) {t.ElapsedMilliseconds} ms] {amostra}");
+
+            // Ranking pronto: termina o ciclo aqui, sem 2.º pedido ao modelo; o ResponderAsync mostra-o.
+            if (PoliticasSeguranca.MostrarDireto(ctx.Function.Name, texto))
+            {
+                // Duas chamadas no mesmo turno (ex.: por mês e por localidade): mostra as duas.
+                textoDireto = textoDireto is null ? texto : $"{textoDireto}\n{texto}";
+                ctx.Terminate = true;
+                chamadas++;
+                return resultado;
+            }
 
             caracteresFerramentas += texto.Length;
             if (caracteresFerramentas > MaxCaracteresFerramentas)
@@ -193,6 +212,8 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
     // e o início (regras + ferramentas) fica igual em todos os pedidos, por isso o Ollama reaproveita-o.
     // shortcut: perde "mostra mais" / "e desses…"; voltar a guardar a última troca se houver GPU.
     List<ChatMessage> historico = [new(ChatRole.System, regras), new(ChatRole.User, pergunta)];
+    perguntaAtual = pergunta;
+    resultadosPergunta.Clear();
 
     var relogio = Stopwatch.StartNew();
     var partes = new List<ChatResponseUpdate>();
@@ -206,6 +227,7 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
         {
             chamadas = 0;
             caracteresFerramentas = 0;
+            textoDireto = null;
             partes.Clear();
             var aMostrar = false;
             await foreach (var parte in modelo.GetStreamingResponseAsync(historico, opcoes))
@@ -219,6 +241,13 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
                     aMostrar = true;
                     await escrever(string.Concat(partes.Select(p => p.Text))); // inclui o texto anterior à chamada
                 }
+            }
+            // O texto que o modelo escreveu antes da chamada (se houve) não se mostra: o ranking já diz tudo.
+            if (textoDireto is not null)
+            {
+                primeiroToken ??= relogio.ElapsedMilliseconds;
+                await escrever(textoDireto);
+                break;
             }
             if (aMostrar) break;
 
@@ -250,7 +279,7 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
                       $" · tokens lidos {resposta.Usage?.InputTokenCount?.ToString() ?? "n/d"}]");
 
     // O ciclo de ferramentas pode esgotar-se (MaximumIterationsPerRequest) sem texto final.
-    if (string.IsNullOrWhiteSpace(resposta.Messages.LastOrDefault()?.Text))
+    if (textoDireto is null && string.IsNullOrWhiteSpace(resposta.Messages.LastOrDefault()?.Text))
         await escrever("O modelo não chegou a dar uma resposta. Reformule a pergunta.");
 }
 

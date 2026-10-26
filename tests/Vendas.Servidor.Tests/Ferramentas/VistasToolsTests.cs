@@ -8,7 +8,7 @@ namespace Vendas.Servidor.Tests.Ferramentas;
 
 public class VistasToolsTests
 {
-    private const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
+    private const string ErroNeutro = "Não foi possível consultar os dados neste momento";
 
     private static VistasTools CriarSut(FakeVendasRepo repo) =>
         new(repo, NullLogger<VistasTools>.Instance);

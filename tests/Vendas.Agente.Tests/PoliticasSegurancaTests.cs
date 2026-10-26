@@ -41,7 +41,7 @@ public class PoliticasSegurancaTests
     }
 
     [Theory]
-    [InlineData("Não foi possivel consultar os dados neste momento")]
+    [InlineData("Não foi possível consultar os dados neste momento")]
     [InlineData("coluna e valor têm de ser usados juntos.")]
     [InlineData("Não há mais páginas: o máximo são 5. Filtre por um valor para ver outros clientes.")]
     [InlineData("")]
@@ -91,6 +91,64 @@ public class PoliticasSegurancaTests
 
         Assert.Equal("a\nb", PoliticasSeguranca.TextoDoResultado(resultado));
     }
+
+    private static Dictionary<string, object?> Args(string nome, string valor) => new() { [nome] = valor };
+
+    [Theory]
+    [InlineData("Vendas em Fernão Ferro este ano", "valor", "FERNAO FERRO")] // sem acentos nem maiúsculas
+    [InlineData("Clientes da Charneca por actividade", "valorCruzado", "Charneca, Amora, SXL")] // basta uma palavra
+    [InlineData("O que comprou o cliente 1003?", "cliente", "1003")]
+    [InlineData("Clientes por zona sem localidade", "valor", "sem dados")] // valor especial da tool
+    public void ValorInventado_ValorDaPergunta_Passa(string pergunta, string nome, string valor)
+        => Assert.Null(PoliticasSeguranca.ValorInventado(pergunta, "", Args(nome, valor)));
+
+    [Fact]
+    public void ValorInventado_FiltroQueNinguemPediu_Recusa()
+    {
+        var r = PoliticasSeguranca.ValorInventado(
+            "Faça uma analise dos valores faturados este ano com os do ano passado?", "", Args("valor", "Seixal"));
+
+        Assert.Equal("valor=Seixal não está na pergunta. Chama de novo sem esse filtro.", r);
+        Assert.False(PoliticasSeguranca.ResultadoComDados(r!)); // uma linha: não conta como fonte
+    }
+
+    [Fact]
+    public void ValorInventado_CorrigidoPorUmResultadoAnterior_Passa()
+        => Assert.Null(PoliticasSeguranca.ValorInventado(
+            "Vendas em Seixall", "Nenhuma correspondência. O valor tem de ser um dos existentes:\nLocalidade: Seixal (5)",
+            Args("valor", "Seixal")));
+
+    [Fact]
+    public void ValorInventado_ParametrosQueNaoSaoTexto_Ignora()
+        => Assert.Null(PoliticasSeguranca.ValorInventado("Top clientes", "", new Dictionary<string, object?>
+            { ["agrupar"] = "Cliente", ["limite"] = 5, ["coluna"] = "Localidade" }));
+
+    // O modelo copia os exemplos das regras (filtrava por Seixal sem ninguém pedir).
+    [Theory]
+    [InlineData("Seixal")]
+    [InlineData("Azeitão")]
+    [InlineData("Corroios")]
+    [InlineData("Lisboa")]
+    public void Regras_SemValoresReaisDeExemplo(string valorReal)
+        => Assert.DoesNotContain(valorReal, PoliticasSeguranca.Regras);
+
+    // Os inícios de frase que o VendasTools usa: se lá mudarem, este teste lembra de mudar o agente.
+    [Theory]
+    [InlineData("Vendas por mês, ano atual (01-01-2026 a 26-10-2026): total 10,00 € em 1 meses")]
+    [InlineData("Melhor artigo em cada distrito, ano atual (01-01-2026 a 26-10-2026): total 10,00 €")]
+    [InlineData("Sem vendas: mês atual (01-10-2026 a 26-10-2026).")]
+    [InlineData("Clientes sem vendas, últimos 90 dias (29-07-2026 a 26-10-2026): 7 clientes.")]
+    [InlineData("0 clientes sem vendas: ano atual (01-01-2026 a 26-10-2026).")]
+    public void MostrarDireto_RankingsDeVendas(string texto)
+        => Assert.True(PoliticasSeguranca.MostrarDireto("consultar_vendas", texto));
+
+    [Theory]
+    [InlineData("consultar_vendas", "emCada tem de ser diferente de agrupar.")] // erro: o modelo corrige
+    [InlineData("consultar_vendas", "Nenhuma correspondência. O valor tem de ser um dos existentes:\nLocalidade: Seixal (5)")]
+    [InlineData("consultar_vendas", "Vários clientes começam por \"Casa\". Indique o ID de um deles:\nid,cliente\n1,Casa A")]
+    [InlineData("consultar", "Vendas por zona")] // CSV das outras tools: o modelo formata
+    public void MostrarDireto_ErrosEOutrasTools_VaoAoModelo(string tool, string texto)
+        => Assert.False(PoliticasSeguranca.MostrarDireto(tool, texto));
 
     [Fact]
     public void TextoDoResultado_SemContent_UsaToString()

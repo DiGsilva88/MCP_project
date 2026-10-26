@@ -75,9 +75,9 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     public async Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
-        CancellationToken cancellationToken = default)
+        DimensaoVenda? emCada = null, CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaVendas.RankingPorDimensao(dimensao, desde, ate, cliente, filtros, porQuantidade);
+        var (sql, parametros) = ConsultaVendas.RankingPorDimensao(dimensao, desde, ate, cliente, filtros, porQuantidade, emCada);
         return await LerAsync(sql, parametros, limite, LerValorAgrupado, cancellationToken);
     }
 
@@ -145,6 +145,7 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         Desconto: leitor.GetDecimal(7),
         Iva: leitor.GetDecimal(8),
         TotalDocumentos: leitor.GetInt32(9),
-        UltimaData: Data(leitor, 10));
+        UltimaData: Data(leitor, 10),
+        TotalGrupo: leitor.FieldCount > 11 ? leitor.GetDecimal(11) : 0); // só o ranking com emCada traz esta coluna
 
 }

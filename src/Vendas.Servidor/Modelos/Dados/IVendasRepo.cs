@@ -33,11 +33,12 @@ public interface IVendasRepo
         DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
 
-    // porQuantidade: ordena por unidades vendidas em vez de valor (o Mes fica sempre por ordem cronológica).
+    // porQuantidade: ordena por unidades vendidas em vez de valor (Mes e Trimestre ficam sempre por ordem cronológica).
+    // emCada: só o 1.º "dimensao" de cada grupo (ex.: o artigo mais vendido em cada distrito); limite conta grupos.
     Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
-        CancellationToken cancellationToken = default);
+        DimensaoVenda? emCada = null, CancellationToken cancellationToken = default);
 
     // Clientes da ficha que não têm vendas em [desde, ate[, com a última compra anterior.
     Task<IReadOnlyList<ClienteSemVendas>> ClientesSemVendasAsync(
