@@ -14,7 +14,7 @@ internal static class Respostas
 
     //frase devolvida ao modelo quando algo falta.Nada revela SQL
 
-    internal const string ErroNeutro = "Não foi possivel consultar os dados neste momento";
+    internal const string ErroNeutro = "Não foi possível consultar os dados neste momento";
 
     //máximo de valores existentes devolvidos quando o filtro não bate (poupa um turno ao modelo)
 

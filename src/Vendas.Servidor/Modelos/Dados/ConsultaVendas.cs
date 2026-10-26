@@ -55,23 +55,28 @@ internal static class ConsultaVendas
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) RankingPorDimensao(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, string? cliente = null,
-        IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false)
+        IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false, DimensaoVenda? emCada = null)
     {
         var (ficha, aplicarFicha) = FiltroFicha(filtros);
         var onde = Onde(cliente, ficha);
 
         var (nome, agrupar) = Colunas(dimensao);
-        // Meses por ordem cronológica (mais recente primeiro); o resto do maior para o menor valor (ou quantidade)
-        var ordem = dimensao == DimensaoVenda.Mes ? "Nome DESC"
+        // Meses e trimestres por ordem cronológica (do mais antigo ao mais recente); o resto do maior para o menor
+        var ordem = Dimensoes.Cronologica(dimensao) ? "Nome"
             : porQuantidade ? "Quantidade DESC, Nome"
             : "Valor DESC, Nome";
 
         // Dimensão da ficha (Localidade, Distrito...): cada linha de venda vai buscar esse valor ao seu cliente.
         // OUTER APPLY e não JOIN: vendas de clientes sem ficha continuam a contar no total.
         // Só expõe ValorFicha, por isso os [ClienteID] sem prefixo do WHERE continuam a ser os da venda.
-        var aplicarFichaCliente = Dimensoes.CampoDaFicha(dimensao) is { } campo
+        // Com emCada, só uma das duas dimensões pode ser da ficha (a tool recusa as outras combinações).
+        var aplicarFichaCliente = (Dimensoes.CampoDaFicha(dimensao) ?? (emCada is { } e ? Dimensoes.CampoDaFicha(e) : null)) is { } campo
             ? $"OUTER APPLY (SELECT {ConsultaClientes.Coluna(campo)} AS ValorFicha FROM {ConsultaClientes.Origem} WHERE c.ClienteID = v.[ClienteID]) AS ficha"
             : "";
+
+        if (emCada is { } grupo)
+            return (MelhorEmCada(dimensao, grupo, porQuantidade, onde, aplicarFichaCliente),
+                    p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
 
         // MAX(t.TotalDocumentos): a query tem GROUP BY e o total é igual em todas as linhas
         var sql = $"""
@@ -96,6 +101,46 @@ internal static class ConsultaVendas
             """;
 
         return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
+    }
+
+    // O 1.º "dimensao" em cada "grupo" (ex.: o artigo mais vendido em cada distrito): soma por (grupo, item),
+    // numera dentro de cada grupo e fica só com o n.º 1. TotalGrupo dá a percentagem do item no seu grupo.
+    // As colunas de fora têm a mesma ordem das do ranking normal (o LerValorAgrupado lê por posição).
+    private static string MelhorEmCada(DimensaoVenda dimensao, DimensaoVenda grupo, bool porQuantidade, string onde, string aplicarFichaCliente)
+    {
+        var (nome, agrupar) = Colunas(dimensao);
+        var (nomeGrupo, agruparGrupo) = Colunas(grupo);
+        var medida = porQuantidade ? "[Quantidade]" : "[ValorLiquido]";
+        var ordem = Dimensoes.Cronologica(grupo) ? "Grupo" : "TotalGrupo DESC, Grupo";
+
+        return $"""
+            SELECT TOP (@limite)
+                   Nome, Valor, Quantidade, Documentos, Total,
+                   COUNT(*) OVER () AS Grupos,
+                   Bruto, Desconto, Iva, TotalDocumentos, UltimaData, TotalGrupo
+            FROM (
+                SELECT CONCAT({nomeGrupo}, ': ', {nome}) AS Nome,
+                       {nomeGrupo} AS Grupo,
+                       COALESCE(SUM([ValorLiquido]), 0) AS Valor,
+                       COALESCE(SUM([Quantidade]), 0)   AS Quantidade,
+                       COUNT(DISTINCT [DocumentoID]) AS Documentos,
+                       SUM(COALESCE(SUM([ValorLiquido]), 0)) OVER () AS Total,
+                       SUM(COALESCE(SUM([ValorLiquido]), 0)) OVER (PARTITION BY {agruparGrupo}) AS TotalGrupo,
+                       ROW_NUMBER() OVER (PARTITION BY {agruparGrupo} ORDER BY COALESCE(SUM({medida}), 0) DESC, {nome}) AS Posicao,
+                       COALESCE(SUM([ValorIliquido]), 0) AS Bruto,
+                       COALESCE(SUM([ValorDesconto]), 0) AS Desconto,
+                       COALESCE(SUM([ValorIva]), 0)      AS Iva,
+                       MAX(t.TotalDocumentos)            AS TotalDocumentos,
+                       MAX(t.UltimaData)                 AS UltimaData
+                FROM   {Vendas} AS v
+                {TotalDocumentos(onde)}
+                {aplicarFichaCliente}
+                {onde}
+                GROUP BY {agruparGrupo}, {agrupar}
+            ) AS r
+            WHERE Posicao = 1
+            ORDER BY {ordem};
+            """;
     }
 
     // Clientes com esse ID exato ou cujo nome começa pelo texto (sem acentos/maiúsculas); o ID exato vem primeiro.
@@ -176,6 +221,9 @@ internal static class ConsultaVendas
         DimensaoVenda.Marca => ("[Marca]", "[Marca]"),
         // estilo 120 = "aaaa-mm-dd": os 7 primeiros caracteres são o mês
         DimensaoVenda.Mes => ("CONVERT(char(7), [DataDoc], 120)", "CONVERT(char(7), [DataDoc], 120)"),
+        // "2026-T1": ordena bem como texto, tal como o mês
+        DimensaoVenda.Trimestre => ("CONCAT(YEAR([DataDoc]), '-T', DATEPART(QUARTER, [DataDoc]))",
+                                    "YEAR([DataDoc]), DATEPART(QUARTER, [DataDoc])"),
         // Agrupa sem acentos/maiúsculas como o ConsultaClientes.Contar ("Fernão Ferro" = "FERNAO FERRO").
         // Vazio ou cliente sem ficha -> "(sem dados)": o nome nunca chega NULL ao LerValorAgrupado.
         _ when Dimensoes.CampoDaFicha(dimensao) is not null =>

@@ -54,12 +54,47 @@ public class ConsultaVendasTests
     }
 
     [Fact]
-    public void RankingPorDimensao_Mes_OrdenaPorMesMaisRecente()
+    public void RankingPorDimensao_Mes_OrdenaDoMaisAntigoAoMaisRecente()
     {
         var (sql, _) = ConsultaVendas.RankingPorDimensao(DimensaoVenda.Mes, Desde, Ate);
 
         Assert.Contains("GROUP BY CONVERT(char(7), [DataDoc], 120)", sql);
-        Assert.Contains("ORDER BY Nome DESC;", sql);
+        Assert.Contains("ORDER BY Nome;", sql);
+    }
+
+    [Fact]
+    public void RankingPorDimensao_Trimestre_AgrupaPorAnoETrimestre()
+    {
+        var (sql, _) = ConsultaVendas.RankingPorDimensao(DimensaoVenda.Trimestre, Desde, Ate);
+
+        Assert.Contains("CONCAT(YEAR([DataDoc]), '-T', DATEPART(QUARTER, [DataDoc])) AS Nome", sql);
+        Assert.Contains("GROUP BY YEAR([DataDoc]), DATEPART(QUARTER, [DataDoc])", sql);
+        Assert.Contains("ORDER BY Nome;", sql);
+    }
+
+    [Fact]
+    public void RankingPorDimensao_EmCada_FicaComO1DeCadaGrupo()
+    {
+        var (sql, aplicar) = ConsultaVendas.RankingPorDimensao(
+            DimensaoVenda.Artigo, Desde, Ate, emCada: DimensaoVenda.Distrito,
+            filtros: new Dictionary<Campo, string> { [Campo.Zona] = "Norte" });
+
+        Assert.Contains("PARTITION BY ficha.ValorFicha COLLATE Latin1_General_CI_AI ORDER BY COALESCE(SUM([ValorLiquido]), 0) DESC", sql);
+        Assert.Contains("GROUP BY ficha.ValorFicha COLLATE Latin1_General_CI_AI, [ArtigoID], [Artigo]", sql);
+        Assert.Contains("OUTER APPLY (SELECT c.[Distrito] AS ValorFicha", sql); // a ficha vem do emCada
+        Assert.Contains("WHERE Posicao = 1", sql);
+        Assert.Contains("ORDER BY TotalGrupo DESC, Grupo;", sql);
+        Assert.DoesNotContain("Norte", sql); // o valor do filtro vai como parâmetro
+        Assert.Equal("Norte", Aplicar(aplicar)["@filtro0"].Value);
+    }
+
+    [Fact]
+    public void RankingPorDimensao_EmCadaMesPorQuantidade_OrdenaGruposNoTempo()
+    {
+        var sql = ConsultaVendas.RankingPorDimensao(DimensaoVenda.Localidade, Desde, Ate, porQuantidade: true, emCada: DimensaoVenda.Mes).Sql;
+
+        Assert.Contains("ORDER BY COALESCE(SUM([Quantidade]), 0) DESC", sql);
+        Assert.Contains("ORDER BY Grupo;", sql);
     }
 
     [Fact]
@@ -81,7 +116,7 @@ public class ConsultaVendasTests
 
     [Fact]
     public void RankingPorDimensao_MesPorQuantidade_ContinuaCronologico()
-        => Assert.Contains("ORDER BY Nome DESC;",
+        => Assert.Contains("ORDER BY Nome;",
             ConsultaVendas.RankingPorDimensao(DimensaoVenda.Mes, Desde, Ate, porQuantidade: true).Sql);
 
     [Fact]

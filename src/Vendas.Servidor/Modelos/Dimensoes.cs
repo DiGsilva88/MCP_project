@@ -1,7 +1,7 @@
 namespace Vendas.Servidor.Modelos;
 
 // Localidade..Actividade vêm da ficha do cliente: vendas somadas pelo valor dessa coluna.
-public enum DimensaoVenda { Cliente, Artigo, Familia, Marca, Mes, Localidade, Distrito, Zona, Vendedor, Actividade }
+public enum DimensaoVenda { Cliente, Artigo, Familia, Marca, Mes, Trimestre, Localidade, Distrito, Zona, Vendedor, Actividade }
 
 // Por onde se ordena o ranking: euros (líquido) ou unidades vendidas.
 public enum OrdenarVenda { Valor, Quantidade }
@@ -14,6 +14,9 @@ public static class Dimensoes
     public static string Cabecalho(DimensaoVenda dimensao) => Nomes(dimensao).Singular;
 
     public static string Plural(DimensaoVenda dimensao) => Nomes(dimensao).Plural;
+
+    // Mes e Trimestre: mostram-se por ordem do tempo e sempre completos (é uma evolução, não um top).
+    public static bool Cronologica(DimensaoVenda? dimensao) => dimensao is DimensaoVenda.Mes or DimensaoVenda.Trimestre;
 
     // Coluna da ficha do cliente por onde se agrupa; null nas dimensões da própria venda.
     public static Campo? CampoDaFicha(DimensaoVenda dimensao) => dimensao switch
@@ -34,7 +37,8 @@ public static class Dimensoes
         DimensaoVenda.Artigo => ("artigo", "artigos"),
         DimensaoVenda.Familia => ("familia", "famílias"),
         DimensaoVenda.Marca => ("marca", "marcas"),
-        DimensaoVenda.Mes => ("mes", "meses"),
+        DimensaoVenda.Mes => ("mês", "meses"),
+        DimensaoVenda.Trimestre => ("trimestre", "trimestres"),
         DimensaoVenda.Localidade => ("localidade", "localidades"),
         DimensaoVenda.Distrito => ("distrito", "distritos"),
         DimensaoVenda.Zona => ("zona", "zonas"),

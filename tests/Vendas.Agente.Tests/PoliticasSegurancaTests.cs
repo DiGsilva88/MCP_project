@@ -41,7 +41,7 @@ public class PoliticasSegurancaTests
     }
 
     [Theory]
-    [InlineData("Não foi possivel consultar os dados neste momento")]
+    [InlineData("Não foi possível consultar os dados neste momento")]
     [InlineData("coluna e valor têm de ser usados juntos.")]
     [InlineData("Não há mais páginas: o máximo são 5. Filtre por um valor para ver outros clientes.")]
     [InlineData("")]
@@ -91,6 +91,24 @@ public class PoliticasSegurancaTests
 
         Assert.Equal("a\nb", PoliticasSeguranca.TextoDoResultado(resultado));
     }
+
+    // Os inícios de frase que o VendasTools usa: se lá mudarem, este teste lembra de mudar o agente.
+    [Theory]
+    [InlineData("Vendas por mês, ano atual (01-01-2026 a 26-10-2026): total 10,00 € em 1 meses")]
+    [InlineData("Melhor artigo em cada distrito, ano atual (01-01-2026 a 26-10-2026): total 10,00 €")]
+    [InlineData("Sem vendas: mês atual (01-10-2026 a 26-10-2026).")]
+    [InlineData("Clientes sem vendas, últimos 90 dias (29-07-2026 a 26-10-2026): 7 clientes.")]
+    [InlineData("0 clientes sem vendas: ano atual (01-01-2026 a 26-10-2026).")]
+    public void MostrarDireto_RankingsDeVendas(string texto)
+        => Assert.True(PoliticasSeguranca.MostrarDireto("consultar_vendas", texto));
+
+    [Theory]
+    [InlineData("consultar_vendas", "emCada tem de ser diferente de agrupar.")] // erro: o modelo corrige
+    [InlineData("consultar_vendas", "Nenhuma correspondência. O valor tem de ser um dos existentes:\nLocalidade: Seixal (5)")]
+    [InlineData("consultar_vendas", "Vários clientes começam por \"Casa\". Indique o ID de um deles:\nid,cliente\n1,Casa A")]
+    [InlineData("consultar", "Vendas por zona")] // CSV das outras tools: o modelo formata
+    public void MostrarDireto_ErrosEOutrasTools_VaoAoModelo(string tool, string texto)
+        => Assert.False(PoliticasSeguranca.MostrarDireto(tool, texto));
 
     [Fact]
     public void TextoDoResultado_SemContent_UsaToString()

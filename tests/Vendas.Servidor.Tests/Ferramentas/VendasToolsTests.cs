@@ -305,4 +305,88 @@ public class VendasToolsTests
     public async Task SemVendas_ComCliente_Recusa()
         => Assert.StartsWith("semVendas lista vários clientes",
             await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(semVendas: true, cliente: "1003"));
+
+    // ---- Evolução no tempo (Mes, Trimestre) e emCada.
+
+    [Fact]
+    public async Task Mes_VemSempreCompletoEDizOMelhor()
+    {
+        var repo = new FakeVendasRepo
+        {
+            Valores = [new("2026-08", 200m, 5m, 2, 330m, 3), new("2026-09", 30m, 1m, 1, 330m, 3), new("2026-07", 100m, 9m, 1, 330m, 3)],
+        };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, limite: 1);
+
+        Assert.Equal(100, repo.UltimoLimite); // limite ignorado: 12 meses não podem perder os mais recentes
+        Assert.Contains("Vendas por mês, ano atual", r);
+        Assert.Contains("Melhor mês: 2026-08 – 200,00 €.", r);
+    }
+
+    [Fact]
+    public async Task MesPorQuantidade_MelhorEmUnidades()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("2026-08", 200m, 5m, 2, 300m, 2), new("2026-07", 100m, 9m, 1, 300m, 2)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, ordenar: OrdenarVenda.Quantidade);
+
+        Assert.Contains("Melhor mês: 2026-07 – 9 unidades (100,00 €).", r);
+    }
+
+    [Fact]
+    public async Task Trimestre_ChamaODimensaoTrimestre()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("2026-T1", 10m, 1m, 1, 30m, 2), new("2026-T2", 20m, 1m, 1, 30m, 2)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Trimestre);
+
+        Assert.Equal(DimensaoVenda.Trimestre, repo.UltimaDimensao);
+        Assert.Contains("Vendas por trimestre", r);
+        Assert.Contains("Melhor trimestre: 2026-T2 – 20,00 €.", r);
+        Assert.Contains("Lista completa: 2 trimestres.", r);
+    }
+
+    [Fact]
+    public async Task EmCada_PercentagemDentroDoGrupo()
+    {
+        var repo = new FakeVendasRepo
+        {
+            Valores = [new("Setúbal: Filtro (F1)", 50m, 2m, 1, 1000m, 2, TotalGrupo: 200m), new("Lisboa: Óleo (O1)", 10m, 1m, 1, 1000m, 2, TotalGrupo: 40m)],
+        };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo, emCada: DimensaoVenda.Distrito);
+
+        Assert.Equal(DimensaoVenda.Distrito, repo.UltimoEmCada);
+        Assert.StartsWith("Melhor artigo em cada distrito, ano atual", r);
+        Assert.Contains("1. Setúbal: Filtro (F1) – 50,00 € (25,0% do distrito)", r);
+        Assert.Contains("2. Lisboa: Óleo (O1) – 10,00 € (25,0% do distrito)", r);
+        Assert.Contains("Lista completa: 2 distritos.", r);
+        Assert.DoesNotContain("Melhor distrito", r);
+    }
+
+    [Fact]
+    public async Task EmCadaLocalidade_UsaDa()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("Seixal: 2026-08", 50m, 2m, 1, 50m, 1, TotalGrupo: 100m)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, emCada: DimensaoVenda.Localidade);
+
+        Assert.Contains("(50,0% da localidade)", r);
+    }
+
+    [Fact]
+    public async Task EmCadaMes_VemCompleto()
+    {
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Localidade, emCada: DimensaoVenda.Mes, limite: 3);
+
+        Assert.Equal(100, repo.UltimoLimite);
+    }
+
+    [Theory]
+    [InlineData(DimensaoVenda.Artigo, DimensaoVenda.Artigo, "emCada tem de ser diferente de agrupar.")]
+    [InlineData(DimensaoVenda.Cliente, DimensaoVenda.Distrito, "emCada não se aplica a Cliente")]
+    [InlineData(DimensaoVenda.Artigo, DimensaoVenda.Cliente, "emCada não se aplica a Cliente")]
+    [InlineData(DimensaoVenda.Localidade, DimensaoVenda.Distrito, "agrupar e emCada não podem ser os dois da ficha")]
+    public async Task EmCada_CombinacoesInvalidas_Recusa(DimensaoVenda agrupar, DimensaoVenda emCada, string erro)
+    {
+        var repo = new FakeVendasRepo();
+        Assert.StartsWith(erro, await CriarSut(repo).ConsultarVendasAsync(agrupar, emCada: emCada));
+        Assert.Null(repo.UltimoPeriodo); // não chegou ao repo
+    }
 }

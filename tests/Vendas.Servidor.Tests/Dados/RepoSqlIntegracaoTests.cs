@@ -76,6 +76,23 @@ public class RepoSqlIntegracaoTests
         Assert.Equal(linhas.Max(l => l.Quantidade), linhas[0].Quantidade);
     }
 
+    // Trimestres e "o melhor em cada grupo" somam o mesmo que os meses.
+    [FactComBd]
+    public async Task TrimestreEEmCada_BatemComOsMeses()
+    {
+        var repo = CriarRepo();
+        var (desde, ate) = (new DateOnly(2026, 1, 1), new DateOnly(2026, 7, 1));
+
+        var meses = await repo.RankingPorDimensaoAsync(DimensaoVenda.Mes, desde, ate, limite: 100);
+        var trimestres = await repo.RankingPorDimensaoAsync(DimensaoVenda.Trimestre, desde, ate, limite: 100);
+        var porMes = await repo.RankingPorDimensaoAsync(DimensaoVenda.Localidade, desde, ate, limite: 100, emCada: DimensaoVenda.Mes);
+
+        Assert.Equal(2, trimestres.Count);
+        Assert.Equal(meses.Sum(m => m.Valor), trimestres.Sum(t => t.Valor));
+        Assert.Equal(meses.Count, porMes.Count);
+        Assert.Equal(meses.Select(m => m.Valor), porMes.Select(l => l.TotalGrupo)); // os dois por ordem cronológica
+    }
+
     [FactComBd]
     public async Task ClientesSemVendas_EUltimaVenda_Correm()
     {
