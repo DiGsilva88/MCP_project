@@ -19,13 +19,15 @@ projeto_Mcp/
 │   │   ├── Vendas.Servidor.csproj
 │   │   ├── Ferramentas/
 │   │   │   ├── VistasTools.cs       Tools consultar (ficha + condições de faturação) e consultar_sensivel
-│   │   │   └── VendasTools.cs       Tool consultar_vendas (faturação real por período)
+│   │   │   ├── VendasTools.cs       Tool consultar_vendas (faturação real por período)
+│   │   │   └── Respostas.cs         Partilhado: limites, erro neutro, CSV, execução com log, "valores existentes"
 │   │   ├── Modelos/
 │   │   │   ├── Campo.cs             enum Campo (colunas permitidas nas views de clientes)
 │   │   │   ├── CampoSensivel.cs     enum CampoSensivel (NIF, contactos, volume, plafond)
 │   │   │   ├── Campos.cs            normalização de valores ("sem dados")
-│   │   │   ├── Dimensoes.cs         enum DimensaoVenda (Cliente, Artigo, Familia, Marca, Mes)
-│   │   │   ├── Periodo.cs           enum Periodo + cálculo das datas [desde, ate[
+│   │   │   ├── Dimensoes.cs         enums DimensaoVenda (Cliente, Artigo, Familia, Marca, Mes, Localidade,
+│   │   │   │                        Distrito, Zona, Vendedor, Actividade) e OrdenarVenda (Valor, Quantidade)
+│   │   │   ├── Periodo.cs           enum Periodo + cálculo das datas [desde, ate[ (período, mês/ano ou datas)
 │   │   │   ├── ContagemCliente.cs, PaginaClientes.cs, ValorAgrupado.cs   records de resultado
 │   │   │   └── Dados/
 │   │   │       ├── IVendasRepo.cs       Contrato do repositório
@@ -33,9 +35,12 @@ projeto_Mcp/
 │   │   │       ├── ConsultaClientes.cs  SQL das tools de clientes; só aqui se traduz Campo -> coluna SQL
 │   │   │       └── ConsultaVendas.cs    SQL da tool de vendas; só aqui se traduz DimensaoVenda -> coluna SQL
 │   │   └── sql/                     Scripts das views (schema mcp) e permissões, a correr por ordem (00–06)
-│   └── Vendas.Agente/               Host de consola: Ollama (qwen3:4b-instruct) + servidor MCP
-│       ├── Program.cs               Lança o servidor, liga o modelo às tools, ciclo de perguntas, modo menu
-│       └── PoliticasSeguranca.cs    Regras de segurança (prompt de sistema) e validação das respostas
+│   └── Vendas.Agente/               Host local: Ollama (qwen3:4b-instruct) + servidor MCP, em consola ou browser
+│       ├── Program.cs               Lança o servidor, liga o modelo às tools, modos consola, menu e web
+│       ├── PoliticasSeguranca.cs    Regras de segurança (prompt de sistema), validação de argumentos e respostas
+│       ├── PaginaChat.cs            Lê a página do chat embebida no executável
+│       └── Pagina/
+│           └── pagina-chat.html     Página do modo web (chat no browser), embebida como recurso no build
 └── tests/
     ├── Vendas.Servidor.Tests/       Testes das tools (repo falso), do SQL gerado, períodos e integração com a BD
     └── Vendas.Agente.Tests/         Testes das políticas de segurança
@@ -56,7 +61,7 @@ projeto_Mcp/
 
 2. **Ligação ao SQL Server.** A connection string vem da variável de ambiente `VENDAS_SQL`, lida uma vez no arranque. Se existir `%LOCALAPPDATA%\Vendas\sql.pwd`, a password é lida desse ficheiro (encriptado com DPAPI) e acrescentada à ligação — assim o `VENDAS_SQL` não precisa de ter `Password=`. **Não há fallback em memória:** sem `VENDAS_SQL`, o servidor lança `InvalidOperationException` e não arranca.
 
-3. **Tools.** Todas devolvem CSV (ponto decimal, valores com vírgula entre aspas) e avisam quando a lista foi cortada (`# Mostrados N de M`). Erros de SQL nunca chegam ao modelo: a tool devolve "Não foi possivel consultar os dados neste momento" e o detalhe fica no log (`stderr`). O modelo nunca escreve SQL: escolhe valores de enums que o servidor traduz para colunas (lista branca) e os textos vão sempre como parâmetros.
+3. **Tools.** `consultar` e `consultar_sensivel` devolvem CSV (ponto decimal, valores com vírgula entre aspas); `consultar_vendas` devolve texto pronto a mostrar, com números em formato pt-PT (`38 087,07`). Todas dizem quantas linhas vieram e quantas existem (`# Mostrados N de M` / `Mostro N de M`). Erros de SQL nunca chegam ao modelo: a tool devolve "Não foi possivel consultar os dados neste momento" e o detalhe fica no log (`stderr`). O modelo nunca escreve SQL: escolhe valores de enums que o servidor traduz para colunas (lista branca) e os textos vão sempre como parâmetros.
 
    | Tool | Views | Para quê |
    | --- | --- | --- |
@@ -68,13 +73,19 @@ projeto_Mcp/
 
    **`consultar_sensivel`** — `dado` (obrigatório), `coluna`/`valor` (filtro), `maiores=true` (top N por `VolumeVendas` ou `Plafond`), `mostrarTambem` (outra coluna na mesma linha), `nomeComecaPor`, `limite`, `pagina`. Pode ser desligada sem recompilar com `VENDAS_SENSIVEL=0`: sai da lista de tools e o modelo deixa de a ver.
 
-   **`consultar_vendas`** — ranking de faturação:
-   - `agrupar`: `Cliente` (melhores clientes, com o ID junto ao nome), `Artigo`, `Familia`, `Marca` (o que mais se vende) ou `Mes` (atividade mês a mês, do mais recente para o mais antigo);
-   - `periodo`: `Ultimos7Dias`, `Ultimos30Dias`, `Ultimos90Dias`, `Ultimos12Meses`, `AnoAtual` (por omissão), `AnoAnterior`, `MesAtual`, `MesAnterior` — o servidor calcula as datas;
-   - `cliente` (opcional): ID ou início do nome; limita tudo às vendas desse cliente (ex.: `agrupar=Artigo, cliente=1003` = o que esse cliente compra);
+   **`consultar_vendas`** — ranking de faturação (valor líquido sem IVA, notas de crédito descontadas):
+   - `agrupar`: `Cliente` (melhores clientes, com o ID junto ao nome), `Artigo`, `Familia`, `Marca` (o que mais se vende), `Mes` (atividade mês a mês, do mais recente para o mais antigo) ou, pela ficha do cliente, `Localidade`, `Distrito`, `Zona`, `Vendedor`, `Actividade` (onde/quem vende mais);
+   - período, por esta prioridade:
+     - `dataInicio`/`dataFim` (`dd-MM-aaaa`, data final incluída) — semana, trimestre, semestre;
+     - `mes` (1–12) e/ou `ano` (2000–ano atual) — mês sem ano = a ocorrência mais recente; ano sem mês = ano inteiro;
+     - `periodo`: `Ultimos7Dias`, `Ultimos30Dias`, `Ultimos90Dias`, `Ultimos12Meses`, `AnoAtual` (por omissão), `AnoAnterior`, `MesAtual`, `MesAnterior` — o servidor calcula as datas;
+   - `cliente` (opcional): ID ou início do nome; limita tudo às vendas desse cliente (ex.: `agrupar=Artigo, cliente=1003` = o que esse cliente compra). Se o nome servir a vários, devolve até 5 com o ID;
+   - `coluna`/`valor` (opcional): só clientes com esse valor na ficha (ex.: `agrupar=Cliente, coluna=Localidade, valor=Seixal`);
+   - `ordenar`: `Valor` (por omissão) ou `Quantidade` (unidades; não se aplica a `agrupar=Cliente`);
+   - `semVendas=true`: clientes **sem** compras no período, com a data da última compra (não se combina com `cliente`);
    - `limite` (1–100).
 
-   Colunas devolvidas: `posicao`, `<agrupar>`, `valor` (líquido), `percentagem` do total, `documentos`, `quantidade` (fora de `Cliente`), `bruto` (ilíquido), `desconto` e `iva`. A 1.ª linha traz o período e o total vendido.
+   A resposta traz um título com período, datas, total e nº de documentos, o valor médio por documento, a lista numerada (valor e % do total, ou unidades) e o rodapé `Mostro N de M`. Avisa (`Atenção: …`) quando a última venda do período é mais de 7 dias antes do fim, ou quando o período vem vazio (diz até onde vão os dados).
 
 ## Configuração da ligação
 
@@ -170,10 +181,12 @@ Mostra as tools disponíveis e pergunta o modo:
 
 1. **Perguntas livres** — lê perguntas do teclado (Enter vazio termina) e o modelo escolhe a tool. Cada chamada mostra a tool, os argumentos, o tempo e o início do resultado (`[consultar_vendas(agrupar=Cliente, …) 120 ms] …`; em `consultar_sensivel` só o tamanho, para os dados pessoais não ficarem no ecrã). No fim: tempo até ao 1.º token, total e tokens lidos.
 2. **Menu fixo** — sem modelo: escolhas numeradas que chamam a tool `consultar` diretamente.
+3. **Chat no browser** — o mesmo fluxo do modo 1 numa página local em `http://localhost:5080` (abre sozinha). Também arranca direto com `dotnet run --project src/Vendas.Agente -- --web`. A resposta aparece à medida que é gerada; as chamadas às tools e os erros técnicos só aparecem na consola. Só aceita pedidos de `localhost` (POST de outra origem → 403), perguntas de 1 a 500 caracteres e um pedido de cada vez.
 
 - Modelo por omissão `qwen3:4b-instruct` (o 7b é pesado demais para CPU); `OLLAMA_MODELO` muda-o. Fica carregado em memória (`keep_alive = -1m`), `Temperature = 0` e janela fixa `NumCtx = 8192` — um prompt maior faria o Ollama cortar o início, que são as regras de segurança.
 - O modelo é aquecido em paralelo com a escolha do modo.
 - Sem histórico: cada pergunta é só regras + pergunta (mais rápido em CPU; perde "mostra mais").
+- Os argumentos do modelo são validados contra o esquema da tool antes da chamada: um valor fora do enum (ex.: `agrupar=Localidad`) volta logo ao modelo com os valores possíveis, sem ir ao servidor.
 - Uma resposta com números sem nenhuma chamada a tool é considerada inventada: é descartada e o modelo tenta uma vez mais. Máx. 5 chamadas a tools e 12 000 caracteres de resultados por pergunta.
 - As regras do prompt (`PoliticasSeguranca.cs`) mandam recusar perguntas fora dos dados de clientes e faturação.
 
@@ -216,6 +229,7 @@ dotnet test Vendas.slnx --filter "Categoria=Integração"
 | O agente não liga ao Ollama (`Connection refused`) | O Ollama não está a correr: abrir a app Ollama ou `ollama serve`. Confirmar em `http://localhost:11434/api/tags`. |
 | `consultar_sensivel` não aparece na lista de tools | `VENDAS_SENSIVEL=0` está definida no ambiente do servidor. |
 | O agente diz `Não encontrei o servidor compilado` | O servidor ainda não foi compilado na mesma configuração do agente. `dotnet build Vendas.slnx` (ou `dotnet run --project src/Vendas.Agente`, que compila os dois). |
+| O chat web não abre (`HttpListenerException`) | A porta 5080 está ocupada por outra instância do agente: fechá-la e arrancar de novo. |
 | `dotnet build` falha com `MSB3027`/`MSB3021` ("... is locked by") | Há processos `Vendas.Servidor.exe` antigos (Inspector, Claude Desktop). Terminá-los e recompilar (os PIDs vêm na mensagem de erro). |
 
 ```powershell
