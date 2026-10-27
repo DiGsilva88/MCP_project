@@ -46,7 +46,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         "Devolve texto pronto a mostrar: título com total e período, valor médio por documento e lista numerada.")]
     public async Task<string> ConsultarVendasAsync(
         [Description("Cliente, Artigo, Familia, Marca, Mes, Trimestre, Localidade, Distrito, Zona, Vendedor ou Actividade.")] DimensaoVenda agrupar = DimensaoVenda.Cliente,
-        [Description("Ultimos7Dias, Ultimos30Dias, Ultimos90Dias, Ultimos12Meses, AnoAtual, AnoAnterior, MesAtual ou MesAnterior.")] Periodo periodo = Periodo.AnoAtual,
+        [Description("Ultimos7Dias, Ultimos30Dias, Ultimos90Dias, Ultimos12Meses, AnoAtual, AnoAnterior, MesAtual, MesAnterior, TrimestreAtual ou TrimestreAnterior (último trimestre completo).")] Periodo periodo = Periodo.AnoAtual,
         [Description("Máximo de linhas, 1 a 100.")] int limite = 10,
         [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
         [Description("Opcional: mês 1 a 12. Tem prioridade sobre periodo.")] int? mes = null,
@@ -140,7 +140,10 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         (IntervaloVendas Janela, IReadOnlyList<ValorAgrupado> Linhas)? comparacao = null;
         if (compararAnoAnterior && linhas.Count > 0)
         {
-            var antes = new IntervaloVendas(janela.Desde.AddYears(-1), janela.Ate.AddYears(-1), "um ano antes");
+            // Dados por atualizar (ver aviso "Atenção"): o ano anterior corta no mesmo dia da última venda,
+            // senão 01-01 a 04-09 contra 01-01 a 26-10 dava uma descida que não existe.
+            var fim = DadosAcabamAntes(janela, linhas[0].UltimaData) ? linhas[0].UltimaData!.Value.AddDays(1) : janela.Ate;
+            var antes = new IntervaloVendas(janela.Desde.AddYears(-1), fim.AddYears(-1), "um ano antes");
             comparacao = (antes, await Ranking(antes.Desde, antes.Ate, Respostas.Maxlinhas));
         }
 
@@ -219,9 +222,20 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
                         $"{documentos.ToString("#,##0", Pt)} documentos. Valores em euros, sem IVA.")
             .AppendLine(documentos == 0 ? "Valor médio por documento: -" : $"Valor médio por documento: {Euros(total / documentos)} €.");
 
-        // A última venda do período fica bem antes do fim: os dados acabam aí (view por atualizar).
-        if (linhas[0].UltimaData is { } ultima && janela.Ate.AddDays(-1).DayNumber - ultima.DayNumber > DiasSemDadosAviso)
-            texto.AppendLine($"Atenção: a última venda registada neste período é de {Data(ultima)}.");
+        var dadosAcabamAntes = DadosAcabamAntes(janela, linhas[0].UltimaData);
+        if (dadosAcabamAntes)
+            texto.AppendLine($"Atenção: a última venda registada neste período é de {Data(linhas[0].UltimaData!.Value)}.");
+
+        // Dois meses comparados (ex.: janeiro a maio): variação do 1.º para o último. Só com meses inteiros
+        // e dados completos, senão um mês a meio (ex.: o atual) dava uma queda falsa.
+        if (agrupar == DimensaoVenda.Mes && emCada is null && comparacao is null && linhas.Count > 1 && !dadosAcabamAntes
+            && janela.Desde.Day == 1 && janela.Ate.Day == 1)
+        {
+            var (primeiro, ultimo) = (linhas[0], linhas[^1]);
+            string NomeMes(ValorAgrupado l) => int.TryParse(l.Nome.AsSpan(5), out var m) && m is >= 1 and <= 12 ? Periodos.Meses[m - 1] : l.Nome;
+            if (primeiro.Valor > 0)
+                texto.AppendLine($"Variação {NomeMes(primeiro)} → {NomeMes(ultimo)}: {(100 * (ultimo.Valor - primeiro.Valor) / primeiro.Valor).ToString("+0.0;-0.0;0.0", Pt)}%.");
+        }
 
         // Comparação: o total do ano anterior vem do OVER() do SQL, por isso conta tudo e não só as 100 linhas lidas.
         Func<ValorAgrupado, string>? comparar = null;
@@ -270,6 +284,10 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
 
         return texto.ToString();
     }
+
+    // A última venda do período fica bem antes do fim: os dados acabam aí (view por atualizar).
+    private static bool DadosAcabamAntes(IntervaloVendas janela, DateOnly? ultima)
+        => ultima is { } u && janela.Ate.AddDays(-1).DayNumber - u.DayNumber > DiasSemDadosAviso;
 
     // " (+6,4%)". Sem base positiva no ano anterior (0 ou só notas de crédito) a % não quer dizer nada: fica vazia.
     private static string Variacao(decimal atual, decimal antes)

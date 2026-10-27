@@ -15,7 +15,9 @@ public enum Periodo
     AnoAtual,
     AnoAnterior,
     MesAtual,
-    MesAnterior
+    MesAnterior,
+    TrimestreAtual,
+    TrimestreAnterior
 }
 
 
@@ -24,7 +26,7 @@ public readonly record struct IntervaloVendas(DateOnly Desde, DateOnly Ate, stri
 public static class Periodos
 {
     private const string FormatoData = "dd-MM-yyyy";
-    private static readonly string[] Meses =
+    internal static readonly string[] Meses =
   ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
     //mes /ano concretos
 
@@ -80,6 +82,7 @@ public static class Periodos
         var inicioMes = new DateOnly(hoje.Year, hoje.Month, 1);
         var inicioAno = new DateOnly(hoje.Year, 1, 1);
         var amanha = hoje.AddDays(1);
+        var inicioTrimestre = new DateOnly(hoje.Year, (hoje.Month - 1) / 3 * 3 + 1, 1);
 
         return periodo switch
         {
@@ -91,6 +94,9 @@ public static class Periodos
             Periodo.AnoAnterior => (inicioAno.AddYears(-1), inicioAno),
             Periodo.MesAnterior => (inicioMes.AddMonths(-1), inicioMes),
             Periodo.Ultimos12Meses => (hoje.AddMonths(-12).AddDays(1), amanha),
+            Periodo.TrimestreAtual => (inicioTrimestre, amanha),
+            // "último trimestre" = o último trimestre completo do calendário
+            Periodo.TrimestreAnterior => (inicioTrimestre.AddMonths(-3), inicioTrimestre),
             _ => throw new ArgumentOutOfRangeException(nameof(periodo))
 
         };
@@ -120,6 +126,8 @@ public static class Periodos
         Periodo.AnoAtual => "ano atual",
         Periodo.MesAnterior => "mês anterior",
         Periodo.AnoAnterior => "ano anterior",
+        Periodo.TrimestreAtual => "trimestre atual",
+        Periodo.TrimestreAnterior => "trimestre anterior",
         _ => throw new ArgumentOutOfRangeException(nameof(periodo))
 
     };

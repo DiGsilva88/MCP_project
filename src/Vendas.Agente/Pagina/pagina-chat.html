@@ -3,435 +3,1218 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Assistente de Vendas</title>
+  <title>Assistente de vendas</title>
   <style>
+    /* =========================================================
+       1. Tokens
+       ========================================================= */
     :root {
-      --fundo: #e9edf7;
+      --fundo: #eef1f6;        
+      --lateral: #f7f8fb;     
       --cartao: #ffffff;
-      --texto: #1b2232;
-      --suave: #667085;
-      --borda: #e4e7ee;
-      --marca: #1f45c7;
-      --marca-escura: #1838a6;
+      --texto: #16213a;
+      --suave: #4a5570;        
+      --nota: #566179;         
+      --borda: #d5dbe6;
+      --linha: #edf0f5;       
+      --marca: #1d46c0;
+      --marca-escura: #173a9e;
       --marca-texto: #ffffff;
-      --bolha-ia: #f1f3f7;
-      --chip: #eaf0ff;
-      --chip-texto: #1f45c7;
-      --ok: #22a06b;
-      --erro: #d92d20;
-      --sombra: 0 24px 48px -12px rgba(16, 32, 80, .25);
+      --selecionado: #dce4fa;  
+      --barra-fundo: #e6ebf5;
+      --aviso-fundo: #fff6e0;
+      --aviso-borda: #e8c26a;
+      --aviso-texto: #6b4a00;
+      --ok: #5be3a0;
+      --ocupado: #ffd27a;
+      --desligado: #ff9a8f;
+      --erro: #b42318;
+      --borda-forte: #b4becf;  /* eixos e tracejados */
+      --borda-cartao: #c3cbd8; /* contorno nítido dos cartões */
+      --anterior: #b9c6ea;     /* barras do ano anterior */
+      --anterior-linha: #7f93cc; /* linha tracejada do ano anterior */
+      --sobe: #0f6b3f; --sobe-fundo: #e2f4ea;
+      --desce: #a51b0f; --desce-fundo: #fde8e6;
     }
-
     @media (prefers-color-scheme: dark) {
       :root {
         --fundo: #0f1320;
+        --lateral: #131826;
         --cartao: #171c2a;
         --texto: #e8ebf2;
-        --suave: #9aa3b5;
-        --borda: #262d3e;
+        --suave: #b3bbcc;
+        --nota: #9aa3b5;
+        --borda: #2c3447;
+        --linha: #232a3b;
         --marca: #3d63e6;
         --marca-escura: #3358d6;
-        --bolha-ia: #21283a;
-        --chip: #1f2a48;
-        --chip-texto: #a9bdff;
-        --sombra: 0 24px 48px -12px rgba(0, 0, 0, .5);
+        --selecionado: #24325a;
+        --barra-fundo: #232a3b;
+        --aviso-fundo: #2e2612;
+        --aviso-borda: #7a5f1c;
+        --aviso-texto: #f3d38a;
+        --erro: #ff8a7a;
+        --borda-forte: #3a4459;
+        --borda-cartao: #343d51;
+        --anterior: #4a5a8a;
+        --anterior-linha: #8597d6;
+        --sobe: #7fd6a8; --sobe-fundo: #12372a;
+        --desce: #ff9a8f; --desce-fundo: #3d1a17;
       }
     }
 
-    /* ---------- Base ---------- */
+    /* =========================================================
+       2. Base
+       ========================================================= */
     * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 24px 16px;
-      background: var(--fundo);
+      background: var(--cartao);
       color: var(--texto);
-      font: 15px/1.45 system-ui, "Segoe UI", Roboto, sans-serif;
+      font: 15px/1.45 system-ui, "Segoe UI", Tahoma, Roboto, Arial, sans-serif;   /* a letra do Windows, como o phpMyAdmin */
     }
-    button, input { font: inherit; }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; opacity: .5; }
     :focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
-
-    /* Escondido no ecrã, mas lido pelos leitores de ecrã */
+    [hidden] { display: none !important; }   /* sem isto, um display:flex ganha ao atributo hidden */
     .so-leitor {
       position: absolute; width: 1px; height: 1px; overflow: hidden;
       clip: rect(0 0 0 0); white-space: nowrap;
     }
 
-    /* O pequeno círculo de cor. Usado na etiqueta de estado, no topo e no rodapé. */
-    .chat-ponto {
-      display: inline-block;
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--ok);
-      flex: none; 
+    /* =========================================================
+       3. Painel: ocupa a janela toda; o tamanho da janela é decidido pelo VisualIX
+       ========================================================= */
+    .chat-painel {
+      height: 100dvh;
+      display: flex; flex-direction: column;
+      container-type: inline-size;   /* a barra lateral reage à largura do painel */
     }
 
-    /* ---------- chat-estado (etiqueta por cima do cartão) ---------- */
-    .chat-estado {
-      margin: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 14px;
-      border-radius: 999px;
-      background: var(--cartao);
-      color: var(--texto);
-      font-size: 13px;
-      box-shadow: 0 2px 8px rgba(16, 32, 80, .08);
-    }
-    .chat-estado--desligado .chat-ponto { background: var(--erro); }
-
-    /* ---------- chat-cartao ---------- */
-    .chat-cartao {
-      width: min(100%, 440px);                   
-      height: min(720px, calc(100dvh - 96px));   
-      display: flex;
-      flex-direction: column;                   
-      background: var(--cartao);
-      border-radius: 20px;
-      overflow: hidden;                          
-      box-shadow: var(--sombra);
-    }
-
-    /* ---------- chat-topo ---------- */
+    /* =========================================================
+       4. Topo
+       ========================================================= */
     .chat-topo {
-      padding: 20px 20px 18px;
-      background: var(--marca);
-      color: var(--marca-texto);
+      height: 52px; flex: none;
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 16px;
+      background: var(--marca); color: var(--marca-texto);
     }
-    .chat-avatares { display: flex; justify-content: center; }
-    .chat-avatar {
-      width: 36px; height: 36px;
-      display: grid; place-items: center;        
-      border-radius: 50%;
-      border: 2px solid var(--marca);            
-      font-size: 14px; font-weight: 700;
-      color: #1b2232;
+    .chat-topo :focus-visible { outline-color: #fff; }
+    .chat-logo {
+      display: block;
+      height: 28px; width: auto; max-width: 140px;
+      padding: 4px 8px;               /* fundo branco: o logo azul não desaparece no azul */
+      background: #fff; border-radius: 6px;
+      object-fit: contain;
     }
-    .chat-avatar + .chat-avatar { margin-left: -10px; } 
-    .chat-avatar--laranja { background: #f7b98f; }
-    .chat-avatar--verde { background: #91d5b8; }
-    .chat-avatar--branco { background: #ffffff; color: var(--marca); }
-    .chat-titulo {
-      margin: 14px 0 4px;
-      font-size: 19px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-      text-align: center;
-    }
-    .chat-subtitulo {
-      margin: 0;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      font-size: 13px;
-      opacity: .85;
-    }
-    .chat-subtitulo .chat-ponto { width: 6px; height: 6px; background: currentColor; }
+    .chat-separador { width: 1px; height: 20px; background: rgb(255 255 255 / .35); }
+    .chat-avatar { display: block; width: 26px; height: 26px; flex: none; }
+    .chat-titulo { flex: 1; margin: 0; font-size: 15px; font-weight: 700; }
+    .chat-estado { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; }
+    .chat-ponto { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--ok); }
+    .chat-estado--ocupado .chat-ponto { background: var(--ocupado); }
+    .chat-estado--desligado .chat-ponto { background: var(--desligado); }
 
-    /* ---------- chat-conversa ---------- */
-    .chat-conversa {
-      flex: 1;                        /* ocupa todo o espaço entre o topo e a escrita */
-      overflow-y: auto;               /* só esta zona faz scroll; o topo fica fixo */
-      overscroll-behavior: contain;   /* no fim do scroll, não arrasta a página toda */
-      padding: 20px 16px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    /* =========================================================
+       5. Corpo: barra lateral | zona principal
+       ========================================================= */
+    .chat-corpo { flex: 1; min-height: 0; display: flex; }
+
+    .chat-lateral {
+      width: 200px; flex: none;
+      padding: 16px 10px;
+      display: flex; flex-direction: column; gap: 22px;
+      background: var(--lateral);
+      border-right: 1px solid var(--borda);
+      overflow-y: auto;
+    }
+    .chat-grupo { display: flex; flex-direction: column; gap: 2px; }
+    .chat-temas { display: flex; flex-direction: column; gap: 2px; }
+    .chat-rotulo { margin: 0 0 6px 10px; font-size: 12.5px; font-weight: 600; color: var(--suave); }
+    .chat-dica { margin: 0 10px; font-size: 13px; color: var(--nota); }
+
+    .chat-tema {
+      min-height: 40px; padding: 0 10px;
+      border: 0; border-radius: 6px;
+      background: transparent;
+      text-align: left; font-size: 14.5px;
+    }
+    .chat-tema:hover { background: var(--cartao); }
+    .chat-tema[aria-pressed="true"] { background: var(--selecionado); font-weight: 700; }
+
+    .chat-hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+    .chat-hist button {
+      width: 100%; min-height: 36px; padding: 7px 10px;
+      border: 0; border-radius: 6px; background: transparent;
+      text-align: left; font-size: 13px; line-height: 1.35; color: var(--suave);
+    }
+    .chat-hist button span { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .chat-hist button:hover { background: var(--cartao); }
+    .chat-hist button[aria-current="true"] { background: var(--cartao); color: var(--texto); font-weight: 600; box-shadow: inset 3px 0 0 var(--marca); }
+
+    .chat-principal { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+
+    /* Painel estreito: os temas passam para uma linha por cima e o histórico esconde-se */
+    @container (max-width: 560px) {
+      .chat-corpo { flex-direction: column; }
+      .chat-lateral { width: auto; flex-direction: row; padding: 8px 12px; border-right: 0; border-bottom: 1px solid var(--borda); overflow-x: auto; }
+      .chat-lateral .chat-rotulo, .chat-historico { display: none; }
+      .chat-temas { flex-direction: row; }
+      .chat-tema { white-space: nowrap; }
     }
 
-    /* ---------- chat-msg ---------- */
-    .chat-msg {
-      max-width: 85%;
-      padding: 10px 14px;
-      border-radius: 16px;
-      white-space: pre-wrap;         
-      overflow-wrap: anywhere;        
+    /* =========================================================
+       6. Zona de resposta
+       ========================================================= */
+    .chat-area {
+      flex: 1; min-height: 0;
+      overflow-y: auto; overscroll-behavior: contain;
+      padding: 20px 16px;
+      display: flex; flex-direction: column; gap: 16px;
+      background: var(--fundo);
+      scrollbar-width: thin; scrollbar-color: var(--borda) transparent;
+    }
+    /* Em ecrã largo a resposta não estica: linhas e tabelas ficam legíveis */
+    .chat-area > * { width: 100%; max-width: 960px; }
+    .chat-area > .chat-pergunta {
+      width: auto; max-width: min(85%, 816px);
+      margin-right: max(0px, calc(100% - 960px));   /* alinha com a margem direita da resposta */
+    }
+    .chat-intro { display: flex; flex-direction: column; gap: 4px; }
+    .chat-intro h2 { margin: 0; font-size: 22px; line-height: 1.2; }
+    .chat-intro p { margin: 0; color: var(--suave); }
+
+    /* Avatar à esquerda, resposta ao lado */
+    .chat-resposta { display: flex; align-items: flex-start; gap: 10px; }
+    .chat-resposta > .chat-avatar { width: 32px; height: 32px; }
+    .chat-resposta > .chat-folha { flex: 1; min-width: 0; }
+
+    .chat-pergunta {
+      align-self: flex-end; max-width: 85%;
+      margin: 0; padding: 10px 14px;
+      background: var(--selecionado);
+      border-radius: 14px 14px 4px 14px;
+    }
+
+    .chat-sugestoes { display: flex; flex-direction: column; gap: 8px; }
+    .chat-sugestoes h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--suave); }
+    .chat-sugestoes div { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .chat-chip {
+      min-height: 44px; padding: 10px 14px;
+      border: 1px solid var(--borda); border-radius: 8px;
+      background: var(--cartao); text-align: left; font-size: 14.5px;
+    }
+    .chat-chip:hover { border-color: var(--marca); }
+
+    /* =========================================================
+       7. Folha de resposta
+       ========================================================= */
+    .chat-folha {
+      background: var(--cartao);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 14px;
       animation: chat-entrar .18s ease-out;
     }
-    .chat-msg--ia {
-      align-self: flex-start;         
-      background: var(--bolha-ia);
-      border-bottom-left-radius: 4px; 
-    }
-    .chat-msg--eu {
-      align-self: flex-end;           
-      background: var(--marca);
-      color: var(--marca-texto);
-      border-bottom-right-radius: 4px;
-    }
-   
-    .chat-msg--ia + .chat-msg--eu,
-    .chat-msg--eu + .chat-msg--ia { margin-top: 8px; }
-    .chat-msg--erro {
-      background: transparent;
-      color: var(--erro);
-      border: 1px solid currentColor;
-    }
-    @keyframes chat-entrar {
-      from { opacity: 0; transform: translateY(4px); }
-      to   { opacity: 1; transform: none; }
-    }
+    .chat-folha:focus { outline: none; }
+    .chat-folha-cab { display: flex; flex-direction: column; gap: 2px; }
+    .chat-folha-titulo { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--suave); line-height: 1.4; }
+    .chat-folha-meta { margin: 0; font-size: 12.5px; color: var(--nota); }
+    .chat-folha-resumo { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .chat-texto { margin: 0; white-space: pre-wrap; }
 
-   
-    .chat-pontos { display: inline-flex; gap: 4px; padding: 4px 0; }
-    .chat-pontos i {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: var(--suave);
-      animation: chat-saltar 1s infinite ease-in-out;
-    }
-    .chat-pontos i:nth-child(2) { animation-delay: .15s; } 
-    .chat-pontos i:nth-child(3) { animation-delay: .30s; }
-    @keyframes chat-saltar {
-      0%, 60%, 100% { transform: none; opacity: .5; }
-      30%           { transform: translateY(-4px); opacity: 1; }
-    }
-
-    
-    .chat-sugestoes {
-      display: flex;
-      flex-wrap: wrap;                
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .chat-chip {
-      border: 0;
-      border-radius: 999px;
-      padding: 8px 14px;
-      background: var(--chip);
-      color: var(--chip-texto);
+    .chat-aviso {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 12px;
+      background: var(--aviso-fundo); color: var(--aviso-texto);
+      border: 1px solid var(--aviso-borda); border-radius: 8px;
       font-size: 14px;
-      font-weight: 500;
-      text-align: left;
-      cursor: pointer;
     }
-    .chat-chip:hover { filter: brightness(.96); }
-    .chat-chip:disabled { opacity: .5; cursor: default; }
+    .chat-aviso svg { flex: none; margin-top: 2px; }
 
-    .chat-escrever {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 10px 10px 20px;
-    border-top: 1px solid var(--borda);
+    /* Lista numerada: posição | nome e código | valor */
+    .chat-lista-cab {
+      display: flex; justify-content: flex-end;
+      padding-bottom: 6px; border-bottom: 1px solid var(--borda);
+      font-size: 12px; font-weight: 600; color: var(--nota);
     }
-.chat-escrever:focus-within { border-top-color: var(--marca); }
-
-    /* Quem desligou as animações no sistema não as vê aqui */
-    @media (prefers-reduced-motion: reduce) {
-      .chat-msg, .chat-pontos i { animation: none; }
+    .chat-lista { list-style: none; margin: 0; padding: 0; }
+    .chat-item {
+      display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px 10px;
+      align-items: start;
+      padding: 9px 0; border-bottom: 1px solid var(--linha);
+      font-variant-numeric: tabular-nums;
     }
+    .chat-item:last-child { border-bottom: 0; }
+    .chat-item-pos { font-size: 13px; color: var(--nota); padding-top: 1px; }
+    .chat-item-corpo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .chat-item-nome { font-size: 14.5px; line-height: 1.35; overflow-wrap: anywhere; }
+    .chat-item-nome--vazio { font-style: italic; color: var(--suave); }
+    .chat-item-codigo { font-size: 12.5px; color: var(--nota); }
+    .chat-item-barra { display: block; height: 8px; margin-top: 6px; border-radius: 2px; background: var(--barra-fundo); }
+    .chat-item-barra span { display: block; height: 100%; border-radius: 2px; background: var(--marca); }
+    .chat-item-valor { display: flex; flex-direction: column; align-items: flex-end; text-align: right; font-size: 14.5px; white-space: nowrap; }
+    .chat-item-valor strong { font-weight: 700; }
+    .chat-item-valor .chat-data { font-variant-numeric: normal; }
+    .chat-item-rotulo, .chat-item-pct { font-size: 12.5px; color: var(--nota); }
 
+    /* Resposta estruturada: cartões soltos sobre o fundo, como num painel de indicadores */
+    .chat-folha--painel { background: transparent; border: 0; padding: 0; gap: 16px; }
+    .chat-bloco {
+      display: flex; flex-direction: column; gap: 14px;
+      padding: 16px 18px;
+      background: var(--cartao);
+      border: 1px solid var(--borda-cartao); border-radius: 8px;
+    }
+    .chat-bloco--lista { gap: 0; padding-top: 8px; padding-bottom: 8px; }
+    .chat-bloco--lista .chat-lista-cab { padding-top: 8px; }
+
+    /* Cartões de números: rótulo pequeno, valor grande, variação ao lado, período por baixo */
+    .chat-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; font-variant-numeric: tabular-nums; }
+    .chat-kpi {
+      display: flex; flex-direction: column; gap: 6px;
+      min-height: 112px;
+      padding: 16px 18px;
+      background: var(--cartao);
+      border: 1px solid var(--borda-cartao); border-radius: 8px;
+    }
+    .chat-kpi-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--suave); }
+    .chat-kpi-icone { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--borda-cartao); color: var(--texto); }
+    .chat-kpi-linha { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 2px; }
+    .chat-kpi-valor { font-size: 24px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; }
+    .chat-kpi-detalhe { font-size: 13px; color: var(--nota); }
+
+    /* Etiqueta de variação: verde sobe, vermelho desce, cinzento sem comparação */
+    .chat-delta { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--fundo); color: var(--suave); }
+    .chat-delta svg { flex: none; }
+    .chat-delta--sobe { background: var(--sobe-fundo); color: var(--sobe); }
+    .chat-delta--desce { background: var(--desce-fundo); color: var(--desce); }
+    .chat-aviso .chat-justa { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; color: var(--texto); }
+
+    /* Gráfico por mês: cabeçalho, legenda, eixo e leitura do mês escolhido */
+    .chat-grafico { display: flex; flex-direction: column; gap: 12px; }
+    .chat-grafico h3, .chat-meses h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--suave); }
+    .chat-grafico-cab { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
+    .chat-legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--suave); }
+    .chat-legenda > span { display: flex; align-items: center; gap: 6px; }
+    .chat-legenda-cor { width: 8px; height: 8px; border-radius: 50%; }
+    .chat-grafico-corpo { display: flex; gap: 8px; }
+    .chat-eixo { position: relative; width: 56px; height: 200px; flex: none; font-size: 11.5px; color: var(--nota); font-variant-numeric: tabular-nums; }
+    .chat-eixo span { position: absolute; right: 0; white-space: nowrap; }
+    .chat-colunas { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .chat-guia { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--borda); }
+    .chat-rotulos { display: grid; font-size: 12px; text-align: center; color: var(--nota); }
+    .chat-rotulos .chat-rotulo--ativo { color: var(--texto); font-weight: 700; }
+    .chat-leitura { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; padding: 12px 14px; background: var(--lateral); border-radius: 8px; font-variant-numeric: tabular-nums; }
+    .chat-leitura strong { min-width: 80px; font-size: 14px; }
+    .chat-leitura div { display: flex; flex-direction: column; }
+    .chat-leitura small { font-size: 12px; color: var(--nota); }
+
+    /* Gráfico de linhas: evolução por mês */
+    .chat-linha-area { position: relative; height: 200px; border-bottom: 1px solid var(--borda-forte); }
+    .chat-linha-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .chat-linha-marca { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--borda-forte); }
+    .chat-ponto-mes {
+      position: absolute; width: 28px; height: 28px; padding: 0;
+      transform: translate(-50%, -50%);
+      display: grid; place-items: center;
+      border: 0; border-radius: 50%; background: transparent;
+    }
+    .chat-ponto-mes span { width: 10px; height: 10px; border-radius: 50%; background: var(--marca); box-shadow: 0 0 0 2px var(--cartao); }
+    .chat-ponto-mes--parcial span { background: var(--cartao); box-shadow: inset 0 0 0 2px var(--marca); }
+    .chat-ponto-mes:hover span, .chat-ponto-mes[aria-pressed="true"] span { width: 14px; height: 14px; box-shadow: 0 0 0 3px var(--selecionado); }
+    .chat-ponto-mes--parcial[aria-pressed="true"] span { box-shadow: inset 0 0 0 2px var(--marca), 0 0 0 3px var(--selecionado); }
+    .chat-legenda-atual { background: var(--marca); }
+    .chat-legenda-traco { width: 16px !important; height: 0 !important; border-radius: 0 !important; border-top: 2px dashed var(--anterior-linha); }
+    .chat-legenda-oca { width: 9px !important; height: 9px !important; box-shadow: inset 0 0 0 2px var(--marca); }
+
+    /* Ranking: nome | barra grossa | valor, linhas juntas e eixo por baixo */
+    .chat-ranking { gap: 0; }
+    .chat-rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    .chat-rank-linha {
+      display: grid; grid-template-columns: 22px minmax(90px, 28%) minmax(60px, 1fr) minmax(96px, auto);
+      gap: 12px; align-items: center;
+      min-height: 36px;
+      font-variant-numeric: tabular-nums;
+    }
+    .chat-rank-pos { font-size: 12.5px; color: var(--nota); }
+    .chat-rank-nome { display: flex; flex-direction: column; min-width: 0; font-size: 14px; line-height: 1.25; }
+    .chat-rank-nome span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-rank-nome small { font-size: 12px; color: var(--nota); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-rank-pista { display: block; height: 14px; border-radius: 3px; background: var(--barra-fundo); }
+    .chat-rank-pista span { display: block; height: 100%; border-radius: 3px; background: var(--marca); }
+    .chat-rank-valor { display: flex; flex-direction: column; align-items: flex-end; font-size: 14px; white-space: nowrap; }
+    .chat-rank-valor strong { font-weight: 600; }
+    .chat-rank-valor small { font-size: 12px; color: var(--nota); }
+    .chat-rank-eixo { min-height: 0; margin-top: 8px; font-size: 12px; color: var(--nota); }
+    .chat-rank-marcas { display: flex; justify-content: space-between; }
+    .chat-rank-marcas span:first-child { transform: translateX(-30%); }
+    .chat-rank-marcas span:last-child { transform: translateX(30%); }
+
+    /* Tabela de detalhe por mês */
+    .chat-meses { display: flex; flex-direction: column; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .chat-meses h3 { margin-bottom: 8px; }
+    .chat-meses-linha { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, auto) minmax(90px, auto) minmax(90px, auto); gap: 12px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--linha); }
+    .chat-meses-linha > :not(:first-child) { text-align: right; }
+    .chat-meses-cab { padding-top: 0; border-bottom-color: var(--borda); font-size: 12px; font-weight: 600; color: var(--nota); }
+    .chat-meses-linha .chat-atual { font-weight: 600; }
+    .chat-meses-linha .chat-ant { color: var(--suave); }
+
+    /* Tabela (respostas em CSV) */
+    .chat-tabela { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+    .chat-tabela th { padding: 0 8px 6px 0; border-bottom: 1px solid var(--borda); text-align: left; font-size: 12px; font-weight: 600; color: var(--nota); white-space: nowrap; }
+    .chat-tabela th::first-letter { text-transform: uppercase; }
+    .chat-tabela td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--linha); }
+    .chat-tabela .chat-num { text-align: right; padding-left: 8px; padding-right: 0; }
+    .chat-barra { width: 64px; height: 8px; border-radius: 2px; background: var(--barra-fundo); }
+    .chat-barra span { display: block; height: 100%; border-radius: 2px; background: var(--marca); }
+
+    .chat-folha-rodape { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding-top: 2px; }
+    .chat-folha-rodape .chat-folha-meta { margin-left: auto; }
+    .chat-acao {
+      align-self: flex-start;
+      min-height: 36px; padding: 0;
+      border: 0; background: none;
+      color: var(--marca); font-size: 14px; font-weight: 600;
+    }
+    .chat-acao:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    /* Espera e erro */
+    .chat-espera p { margin: 0; color: var(--suave); }
+    .chat-espera .chat-bruto { font-size: 13px; color: var(--nota); white-space: pre-wrap; max-height: 9em; overflow: hidden; }
+    .chat-esqueleto { display: flex; flex-direction: column; gap: 9px; }
+    .chat-esqueleto span { display: block; height: 10px; border-radius: 3px; background: var(--linha); animation: chat-pulsar 1.2s infinite ease-in-out; }
+    .chat-esqueleto span:nth-child(1) { width: 90%; }
+    .chat-esqueleto span:nth-child(2) { width: 72%; }
+    .chat-esqueleto span:nth-child(3) { width: 56%; }
+    .chat-folha--erro { border-color: var(--erro); }
+    .chat-folha--erro p { margin: 0; color: var(--erro); }
+
+    /* =========================================================
+       8. Rodapé: pergunta + só leitura
+       ========================================================= */
+    .chat-rodape { flex: none; background: var(--cartao); border-top: 1px solid var(--borda); padding: 12px 16px 10px; display: flex; flex-direction: column; gap: 8px; }
+    .chat-rodape:focus-within { border-top-color: var(--marca); }
+    .chat-escrever { margin: 0; display: flex; gap: 8px; }
     .chat-campo {
-    flex: 1;
-    min-width: 0; 
-    border: 0;
-    padding: 10px 0;
-    background: transparent;
-    color: var(--texto);
+      flex: 1; min-width: 0; min-height: 44px;
+      padding: 0 12px;
+      border: 1px solid #a9b3c6; border-radius: 8px;  /* 3:1 contra o branco */
+      background: var(--lateral);
     }
-    .chat-campo::placeholder { color: var(--suave); }
-    .chat-campo:focus-visible { outline: none; } /* o foco vê-se na linha azul de cima */
-
+    .chat-campo::placeholder { color: var(--nota); }
     .chat-enviar {
-    width: 44px; height: 44px; 
-    flex: none;
-    display: grid; place-items: center;
-    border: 0;
-    border-radius: 50%;
-    background: var(--marca);
-    color: var(--marca-texto);
-    cursor: pointer;
+      width: 44px; height: 44px; flex: none;
+      display: grid; place-items: center;
+      border: 0; border-radius: 8px;
+      background: var(--marca); color: var(--marca-texto);
     }
     .chat-enviar:hover { background: var(--marca-escura); }
-    .chat-campo:disabled, .chat-enviar:disabled { opacity: .55; cursor: wait; }
+    .chat-rodape-texto { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--nota); }
 
-    /* ---------- chat-rodape ---------- */
-    .chat-rodape {
-    display: flex;
-    justify-content: center;
-    padding: 0 0 12px;
-    }
-    .chat-rodape-texto {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--bolha-ia);
-    color: var(--suave);
-    font-size: 12px;
-    }
-    .chat-rodape .chat-ponto { width: 6px; height: 6px; background: var(--suave);
+    /* =========================================================
+       9. Movimento
+       ========================================================= */
+
+    @keyframes chat-entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    @keyframes chat-pulsar { 50% { opacity: .5; } }
+    @media (prefers-reduced-motion: reduce) {
+      .chat-folha, .chat-esqueleto span { animation: none; }
     }
   </style>
 </head>
 <body>
-
-  <!-- role="status": um leitor de ecrã anuncia quando o texto muda -->
-  <p class="chat-estado" id="estado" role="status">
-    <span class="chat-ponto" aria-hidden="true"></span>
-    <span id="estado-texto">Pronto a responder</span>
-  </p>
-
-  <div class="chat-cartao">
+  <div class="chat-painel">
 
     <header class="chat-topo">
-      <!-- Letras provisórias: troca pelas que quiseres -->
-      <div class="chat-avatares" aria-hidden="true">
-        <span class="chat-avatar chat-avatar--branco">I</span>
-        <span class="chat-avatar chat-avatar--branco">N</span>
-        <span class="chat-avatar chat-avatar--branco">F</span>
-        <span class="chat-avatar chat-avatar--branco">O</span>
-        <span class="chat-avatar chat-avatar--branco">R</span>
-        <span class="chat-avatar chat-avatar--branco">A</span>
-        <span class="chat-avatar chat-avatar--branco">P</span>
-      </div>
-      <h1 class="chat-titulo">Assistente de Vendas</h1>
-      <p class="chat-subtitulo">
-        <span class="chat-ponto" aria-hidden="true"></span>Clientes, faturação, artigos, famílias e marcas
+      <!-- O marcador LOGO é trocado pelo PaginaChat.cs pela imagem embebida (data URI).
+           Aberto como ficheiro (pré-visualização), não há troca: vai buscar a imagem à pasta logo. -->
+      <img class="chat-logo" src="{{LOGO}}" alt="Inforap"
+           onerror="this.onerror = null; this.src = '../logo/logo.png';">
+      <span class="chat-separador" aria-hidden="true"></span>
+      <h1 class="chat-titulo">Assistente de vendas</h1>
+      
+      <!-- role="status": o leitor de ecrã anuncia quando muda -->
+      <p class="chat-estado" id="estado" role="status">
+        <!-- Decorativo (alt vazio). O JS copia-o para antes de cada resposta. -->
+        <img class="chat-avatar" id="avatar" src="{{AVATAR}}" alt=""
+             onerror="this.onerror = null; this.src = '../logo/avatar-assistente-vendas.svg';">
+        <span class="chat-ponto" aria-hidden="true"></span>
+        <span id="estado-texto">Pronto</span>
       </p>
     </header>
 
-    <!-- role="log": cada mensagem nova é lida pelo leitor de ecrã, sem interromper -->
-    <main class="chat-conversa" id="conversa" role="log" aria-live="polite">
-      <div class="chat-msg chat-msg--ia">Olá! Sou o assistente de vendas. Pergunte sobre clientes, faturação, artigos, famílias e marcas.</div>
-      <div class="chat-msg chat-msg--ia">Experimente uma destas perguntas:</div>
+    <div class="chat-corpo">
+      <nav class="chat-lateral" aria-label="Temas e histórico">
+        <div class="chat-grupo">
+          <h2 class="chat-rotulo">Temas</h2>
+          <div class="chat-temas" id="temas"></div>
+        </div>
+        <div class="chat-grupo chat-historico">
+          <h2 class="chat-rotulo">Histórico</h2>
+          <p class="chat-dica" id="hist-vazio">As perguntas que fizer ficam aqui.</p>
+          <ol class="chat-hist" id="historico"></ol>
+        </div>
+      </nav>
 
-      <div class="chat-sugestoes" id="sugestoes">
-        <button type="button" class="chat-chip">Que família de artigos vendeu mais no mês passado?</button>
-        <button type="button" class="chat-chip">Quais são os 5 melhores clientes este ano?</button>
-        <button type="button" class="chat-chip">Quantos clientes há por zona?</button>
-        <button type="button" class="chat-chip">Como evoluíram as vendas mês a mês este ano?</button>
+      <div class="chat-principal">
+        <!-- aria-live: a resposta é lida quando termina (aria-busy durante o streaming) -->
+        <main class="chat-area" id="area" aria-live="polite"></main>
+
+        <footer class="chat-rodape">
+          <form class="chat-escrever" id="form">
+            <label for="pergunta" class="so-leitor">Pergunta</label>
+            <input class="chat-campo" id="pergunta" maxlength="500" autocomplete="off"
+                   placeholder="Escreva a sua pergunta…" required>
+            <button class="chat-enviar" aria-label="Enviar pergunta">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </button>
+          </form>
+          <p class="chat-rodape-texto">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/>
+            </svg>
+            Só leitura. O assistente não altera a base de dados.
+          </p>
+        </footer>
       </div>
-    </main>
-
-    <form class="chat-escrever" id="form">
-      <!-- O rótulo existe para leitores de ecrã, mas não se vê -->
-      <label for="pergunta" class="so-leitor">Pergunta</label>
-      <input class="chat-campo" id="pergunta" maxlength="500" autocomplete="off"
-             placeholder="Escreva a sua pergunta…" required>
-      <button class="chat-enviar" aria-label="Enviar">
-        <!-- Seta desenhada em SVG: não depende de ficheiros nem de fontes de ícones -->
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M5 12h14M13 6l6 6-6 6"/>
-        </svg>
-      </button>
-    </form>
-
-    
-
-    <footer class="chat-rodape">
-      <span class="chat-rodape-texto">
-        <span class="chat-ponto" aria-hidden="true"></span>Só leitura · nada é alterado na base de dados
-      </span>
-    </footer>
-
+    </div>
   </div>
 
   <script>
-  
+    /* ---------- Temas e sugestões (editar aqui) ---------- */
+    const TEMAS = [
+      { id: 'clientes', nome: 'Clientes', descricao: 'Quantos são, onde estão, quem compra mais e quem deixou de comprar.',
+        perguntas: ['Quantos clientes há por zona?', 'Quais são os 5 melhores clientes este ano?', 'Clientes que não compram há 90 dias?'] },
+      { id: 'faturacao', nome: 'Faturação', descricao: 'Vendas por mês, por zona e por período.',
+        perguntas: ['Como evoluíram as vendas mês a mês este ano?', 'Qual foi a faturação por zona este ano?',
+          'Como está a faturação deste ano face ao ano passado?', 'Qual foi o ticket médio em cada mês deste ano?',
+          'Quanto faturámos no último trimestre?'] },
+      { id: 'artigos', nome: 'Artigos', descricao: 'O que vende mais, por artigo, família e marca.',
+        perguntas: ['Que família de artigos vendeu mais no mês passado?', 'Quais são os 10 artigos mais vendidos este ano?',
+          'Que marca faturou mais este ano?', 'Qual foi o artigo mais vendido em cada distrito?'] }
+    ];
 
-
+    /* ---------- Elementos e estado ---------- */
     const form = document.getElementById('form');
     const campo = document.getElementById('pergunta');
     const botao = form.querySelector('.chat-enviar');
     const estado = document.getElementById('estado');
     const estadoTexto = document.getElementById('estado-texto');
-    const conversa = document.getElementById('conversa');
-    const chips = document.querySelectorAll('.chat-chip');
+    const area = document.getElementById('area');
+    const temasEl = document.getElementById('temas');
+    const histEl = document.getElementById('historico');
+    const histVazio = document.getElementById('hist-vazio');
 
-    // Verde quando o agente responde, vermelho quando falha.
-    // toggle(classe, condição): põe a classe se a condição for true, tira se for false.
+    let temaAtual = TEMAS[0].id;
+    const historico = [];   
+    let atual = -1;         
+    let ocupado = false;
 
-    function ligado(sim) {
-      estado.classList.toggle('chat-estado--desligado', !sim);
-      estadoTexto.textContent = sim ? 'Pronto a responder' : 'Sem ligação ao agente';
+    /* ---------- Utilitários ---------- */
+    function el(tag, classe, texto) {
+      const e = document.createElement(tag);
+      if (classe) e.className = classe;
+      if (texto) e.textContent = texto;   
+      return e;
     }
-
-    function descer() {
-      conversa.scrollTop = conversa.scrollHeight;
+    function botaoEl(classe, texto, aoClicar) {
+      const b = el('button', classe, texto);
+      b.type = 'button';
+      b.addEventListener('click', aoClicar);
+      return b;
     }
+    const maiuscula = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+    const semPonto = s => s.replace(/\.\s*$/, '');
+    const paraNumero = s => parseFloat(s.replace(/[^\d,-]/g, '').replace(',', '.'));
+    const icone = (d, t = 16) => {
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('width', t); svg.setAttribute('height', t); svg.setAttribute('viewBox', '0 0 16 16');
+      svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); svg.setAttribute('stroke-width', '1.6');
+      svg.setAttribute('aria-hidden', 'true');
+      const p = document.createElementNS(ns, 'path'); p.setAttribute('d', d); svg.append(p);
+      return svg;
+    };
 
-    function mensagem(texto, variante) {
-      const div = document.createElement('div');
-      div.className = 'chat-msg chat-msg--' + variante;
-      div.textContent = texto;
-      conversa.appendChild(div);
-      descer();
-      return div;
+    /* ---------- Estado no topo ---------- */
+    
+    function mostrarEstado(tipo) {   
+      estado.className = 'chat-estado' + (tipo === 'pronto' ? '' : ' chat-estado--' + tipo);
+      estadoTexto.textContent = { pronto: 'Pronto', ocupado: 'A consultar', desligado: 'Sem ligação' }[tipo];
     }
-
-    // Bolha da IA com os três pontos a saltar enquanto espera
-    function aEsperar() {
-      const div = mensagem('', 'ia');
-      div.innerHTML =
-        '<span class="chat-pontos" aria-hidden="true"><i></i><i></i><i></i></span>' +
-        '<span class="so-leitor">A consultar os dados…</span>';
-      return div;
-    }
-
     function bloquear(sim) {
+      ocupado = sim;
       campo.disabled = botao.disabled = sim;
-      chips.forEach(c => c.disabled = sim);
+      document.querySelectorAll('.chat-lateral button, .chat-chip').forEach(b => b.disabled = sim);
+      if (sim) mostrarEstado('ocupado');
     }
 
+    /* =========================================================
+       Leitura das respostas
+       ========================================================= */
+
+    // A) Bloco CSV: "Zona, clientes, percentagem" + linhas. Vírgula+espaço separa colunas.
+    // shortcut: lê a tabela do texto; quando o agente devolver colunas e linhas em JSON, trocar por isso.
+    function partir(linha) {
+      const campos = [];
+      let atualC = '', aspas = false;
+      for (let i = 0; i < linha.length; i++) {
+        const c = linha[i];
+        if (c === '"') aspas = !aspas;
+        else if (c === ',' && linha[i + 1] === ' ' && !aspas) { campos.push(atualC.trim()); atualC = ''; i++; }
+        else atualC += c;
+      }
+      campos.push(atualC.trim());
+      return campos;
+    }
+    const eNumero = s => /^-?\d[\d.]*(,\d+)?%?$/.test(s);
+    function lerTabela(texto) {
+      const blocos = texto.trim().split(/\n\s*\n/);
+      const i = blocos.findIndex(b => {
+        const linhas = b.trim().split('\n');
+        if (linhas.some(l => /^\d+\.\s/.test(l.trim()))) return false;   // lista numerada, não CSV
+        const cols = linhas.map(partir);
+        return cols.length >= 3 && cols[0].length >= 2 && cols.every(l => l.length === cols[0].length);
+      });
+      if (i < 0) return null;
+      const [cabecalho, ...linhas] = blocos[i].trim().split('\n').map(partir);
+      const numericas = cabecalho.map((_, c) => linhas.every(l => eNumero(l[c])));
+      return { antes: blocos.slice(0, i).join('\n\n'), depois: blocos.slice(i + 1).join('\n\n'), cabecalho, linhas, numericas };
+    }
+
+    // B) Texto com título, factos, avisos e lista numerada (o formato atual do agente)
+    function lerItem(pos, s) {
+      let i = s.lastIndexOf(' – ');            // travessão separa nome e valor
+      if (i < 0) i = s.lastIndexOf(' - ');
+      const esq = i < 0 ? s : s.slice(0, i);
+      const dir = i < 0 ? '' : s.slice(i + 3).trim();
+      let nome = esq.trim(), codigo = '';
+      const c = esq.match(/^(.*\S)\s*\(([^()]+)\)\s*$/);   // último parêntesis = código
+      if (c) { nome = c[1]; codigo = c[2]; }
+      let valor = dir, pct = '', rotulo = '', anterior = null, delta = null;
+      // "255 348,78 € · 2025: 265 396,36 € (-3,8%)": valor, ano anterior e variação
+      const cmp = dir.match(/^(.*?)\s*·\s*(\d{4}):\s*(.*?)\s*\(([+\-−]?[\d.,]+)\s*%\)$/);
+      if (cmp) {
+        valor = cmp[1];
+        anterior = { ano: cmp[2], valor: cmp[3] };
+        delta = parseFloat(cmp[4].replace('−', '-').replace(',', '.'));
+      } else {
+        const p = dir.match(/^(.*\S)\s*\(([\d.,]+\s*%)\)$/);  // "(1,9%)"
+        if (p) { valor = p[1]; pct = p[2]; }
+        const d = valor.match(/^(.*?)\s*(\d{2}-\d{2}-\d{4})$/); // "última compra a 23-12-2025"
+        if (d && d[1]) { rotulo = d[1].replace(/\s+(a|em)$/i, ''); valor = d[2]; }
+      }
+      const num = /^-?[\d\s.\u00a0\u202f]+(,\d+)?\s*€?$/.test(valor) ? paraNumero(valor) : NaN;
+      return { pos, nome, codigo, valor, pct, rotulo, num, anterior, delta };
+    }
+    function lerLista(texto) {
+      const r = { titulo: '', periodo: '', resumo: '', factos: [], avisos: [], itens: [], paragrafos: [], nota: '' };
+      texto.split('\n').map(l => l.trim()).filter(Boolean).forEach((l, i) => {
+        let m;
+        if ((m = l.match(/^(\d+)\.\s+(.+)$/))) r.itens.push(lerItem(m[1], m[2]));
+        else if ((m = l.match(/^Aten[çc][ãa]o:\s*(.+)$/i))) r.avisos.push(m[1]);
+        else if ((m = l.match(/^Mostr[oa]\s+(.+)$/i))) r.nota = 'Mostra ' + semPonto(m[1]);
+        else if (i === 0 && (m = l.match(/^(.+?):\s+(.+)$/))) { r.titulo = m[1]; r.resumo = m[2]; }
+        else if ((m = l.match(/^([^:]{3,40}):\s+(.+)$/))) r.factos.push([m[1], semPonto(m[2])]);
+        else r.paragrafos.push(l);
+      });
+      const p = r.titulo.match(/\s*\((\d{2}-\d{2}-\d{4} a \d{2}-\d{2}-\d{4})\)/);
+      if (p) { r.periodo = p[1]; r.titulo = r.titulo.replace(p[0], ''); }
+      return r;
+    }
+
+    /* =========================================================
+       Desenho das respostas
+       ========================================================= */
+    function botaoCopiar(linhas) {
+      const b = botaoEl('chat-acao', 'Copiar', async () => {
+        // Tabulações: cola em colunas no Excel
+        try { await navigator.clipboard.writeText(linhas.map(l => l.join('\t')).join('\n')); b.textContent = 'Copiado'; }
+        catch { b.textContent = 'Não foi possível copiar'; }
+      });
+      return b;
+    }
+
+    function botaoExportar(linhas) {
+      return botaoEl('chat-acao', 'Exportar', () => {
+        // ";" e BOM: o Excel em pt-PT abre em colunas e com acentos certos
+        const campo = v => /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+        const csv = '﻿' + linhas.map(l => l.map(v => campo(String(v ?? ''))).join(';')).join('\r\n');
+        const a = el('a');
+        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        a.download = `vendas-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+    }
+
+    /* ---------- Números, variações e meses ---------- */
+    const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const ICONES = {
+      total: 'M11.5 4.2A4.8 4.8 0 1 0 11.5 11.8M2.5 6.8h6.5M2.5 9.2h6.5',
+      recibo: 'M3.5 1.8h9v12.4l-2.2-1.4-2.3 1.4-2.3-1.4-2.2 1.4V1.8ZM6 5.5h4M6 8.5h4',
+      subida: 'M2 12.5 6 8l3 3 5-6M10.5 5H14v3.5',
+      barras: 'M3 13V8M8 13V3M13 13V6'
+    };
+    const euros = n => Math.round(n).toLocaleString('pt-PT') + ' €';   // sem cêntimos: lê-se melhor
+    const milhares = n => n >= 1e6 ? (n / 1e6).toLocaleString('pt-PT', { maximumFractionDigits: 1 }) + ' M €' : Math.round(n / 1000) + ' mil €';
+    const textoDelta = d => (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(1).replace('.', ',') + '%';
+    function chipDelta(d, sufixo = '') {
+      const c = el('span', 'chat-delta ' + (d >= 0 ? 'chat-delta--sobe' : 'chat-delta--desce'));
+      c.append(icone(d >= 0 ? 'M2 12 6.5 7.5l3 3L14 5M10 5h4v4' : 'M2 4l4.5 4.5 3-3L14 11M10 11h4V7', 12), textoDelta(d) + sufixo);
+      return c;
+    }
+
+    // Resumo e factos -> cartões (Total, Valor médio, Melhor mês…)
+    function desenharKpis(r, cab, art) {
+      const cartoes = [];
+      let resumoTexto = '';
+      if (r.resumo) {
+        const [principal, ...resto] = r.resumo.split(/\.\s+(?=\S)/);
+        if (resto.length) cab.append(el('p', 'chat-folha-meta', resto.join('. ')));
+        const m = semPonto(principal).match(/^(?:total\s+)?(-?\d[\d\s.  ]*(?:,\d+)?\s*€)\s*(.*)$/i);
+        if (m) cartoes.push({ rotulo: 'Total', valor: euros(paraNumero(m[1])), detalhe: maiuscula(m[2].replace(/^em\s+/i, '')), icone: ICONES.total });
+        else if (/^\d/.test(principal)) {
+          // "379 clientes em 9 grupos": "379 clientes" no valor, "9 grupos" por baixo, para caber numa linha
+          const [, valor, detalhe] = semPonto(principal).match(/^([\d\s.]*\d\s+\S+)\s*(?:em\s+)?(.*)$/) || [, semPonto(principal), ''];
+          cartoes.push({ rotulo: 'Total', valor, detalhe: maiuscula(detalhe), icone: ICONES.barras });
+        }
+        else resumoTexto = maiuscula(semPonto(principal));
+      }
+      for (const [k, v] of r.factos) {
+        if (/^lista completa/i.test(k)) continue;   // não acrescenta informação
+        const c = k.match(/^comparado com\s.*?(\d{4})$/i);
+        const p = v.match(/\(([+\-−]?[\d.,]+)\s*%\)/);
+        if (c && p && cartoes[0] && cartoes[0].rotulo === 'Total') {
+          cartoes[0].delta = parseFloat(p[1].replace('−', '-').replace(',', '.'));
+          cartoes[0].vs = 'vs ' + c[1];
+          continue;
+        }
+        const mes = v.match(/^(\d{4})-(\d{2})\s+[–-]\s+(.+)$/);   // "2026-07 – 278 519,07 €"
+        if (mes) { cartoes.push({ rotulo: k, valor: MESES[+mes[2] - 1], detalhe: euros(paraNumero(mes[3])), icone: ICONES.subida }); continue; }
+        cartoes.push({ rotulo: k, valor: v, icone: /m[ée]dio/i.test(k) ? ICONES.recibo : ICONES.barras });
+      }
+      if (resumoTexto) art.append(el('p', 'chat-folha-resumo', resumoTexto));
+      if (!cartoes.length) return;
+      const grelha = el('div', 'chat-kpis');
+      for (const c of cartoes) {
+        const k = el('div', 'chat-kpi');
+        const topo = el('div', 'chat-kpi-cab');
+        const ic = el('span', 'chat-kpi-icone');
+        ic.append(icone(c.icone, 14));
+        topo.append(el('span', '', c.rotulo), ic);
+        const linha = el('div', 'chat-kpi-linha');
+        linha.append(el('span', 'chat-kpi-valor', c.valor));
+        if (c.delta != null) linha.append(chipDelta(c.delta, ' ' + c.vs));
+        k.append(topo, linha);
+        if (c.detalhe) k.append(el('span', 'chat-kpi-detalhe', c.detalhe));
+        grelha.append(k);
+      }
+      art.append(grelha);
+    }
+
+    // Lista em que todas as linhas são meses "AAAA-MM" -> série para o gráfico
+    function lerSerie(r) {
+      if (r.itens.length < 2 || !r.itens.every(i => /^\d{4}-\d{2}$/.test(i.nome))) return null;
+      const meses = r.itens.map(i => {
+        const [a, m] = i.nome.split('-').map(Number);
+        return { a, m, atual: paraNumero(i.valor), anterior: i.anterior ? paraNumero(i.anterior.valor) : null,
+                 delta: i.delta, anoAnt: i.anterior ? i.anterior.ano : null };
+      });
+      // Meses do período que não vieram na lista: coluna vazia, para a falta de dados se ver
+      const fim = r.periodo.match(/(\d{2})-(\d{4})$/);
+      if (fim) {
+        let { a, m } = meses[meses.length - 1];
+        while (a < +fim[2] || (a === +fim[2] && m < +fim[1])) {
+          if (++m > 12) { m = 1; a++; }
+          meses.push({ a, m, atual: null, anterior: null, delta: null });
+        }
+      }
+      // O mês da última venda registada (aviso "Atenção") está incompleto
+      const ultima = r.avisos.join(' ').match(/(\d{2})-(\d{2})-(\d{4})/);
+      meses.forEach(x => { x.parcial = !!ultima && x.atual != null && x.a === +ultima[3] && x.m === +ultima[2]; });
+      // Período a começar a meio do mês (ex.: últimos 90 dias): o 1.º mês só tem alguns dias
+      if (r.periodo && !r.periodo.startsWith('01-') && meses[0].atual != null) meses[0].parcial = true;
+      const anoAnt = (meses.find(x => x.anoAnt) || {}).anoAnt;
+      // Comparação justa: só os meses completos antes do último incompleto
+      let justa = null;
+      const ip = meses.findLastIndex(x => x.parcial);
+      const completos = meses.slice(0, ip < 0 ? 0 : ip).filter(x => !x.parcial && x.atual != null && x.anterior != null);
+      if (completos.length) {
+        const sa = completos.reduce((s, x) => s + x.atual, 0), sb = completos.reduce((s, x) => s + x.anterior, 0);
+        const curto = x => MESES[x.m - 1].slice(0, 3).toLowerCase();
+        justa = { de: curto(completos[0]), ate: curto(completos[completos.length - 1]), delta: (sa / sb - 1) * 100 };
+      }
+      return { meses, anoAtual: meses[0].a, anoAnt, justa };
+    }
+
+    function desenharSerie(s, art) {
+      const valores = s.meses.flatMap(x => [x.atual, x.anterior]).filter(v => v > 0);
+      const max = Math.max(...valores);
+      const passo = Math.pow(10, Math.floor(Math.log10(max))) / 2;
+      const topo = Math.ceil(max / passo) * passo;          // ex.: 278 519 -> 300 000
+      const colunasCss = `repeat(${s.meses.length}, minmax(0, 1fr))`;
+      const nomeMes = x => MESES[x.m - 1] + (x.a !== s.anoAtual ? ' ' + x.a : '');
+
+      const sec = el('section', 'chat-bloco chat-grafico');
+      const cab = el('div', 'chat-grafico-cab');
+      const leg = el('div', 'chat-legenda');
+      const legenda = (cls, txt) => { const i = el('span'); i.append(el('span', 'chat-legenda-cor ' + cls), txt); leg.append(i); };
+      legenda('chat-legenda-atual', String(s.anoAtual));
+      if (s.anoAnt) legenda('chat-legenda-traco', s.anoAnt);
+      if (s.meses.some(x => x.parcial)) legenda('chat-legenda-oca', 'Mês incompleto');
+      cab.append(el('h3', '', 'Evolução das vendas'), leg);
+
+      const corpo = el('div', 'chat-grafico-corpo');
+      const eixo = el('div', 'chat-eixo');
+      eixo.setAttribute('aria-hidden', 'true');
+      [[topo, 200], [topo / 2, 100], [0, 0]].forEach(([v, y]) => {
+        const l = el('span', '', v ? milhares(v) : '0'); l.style.bottom = (y - 7) + 'px'; eixo.append(l);
+      });
+      const colunas = el('div', 'chat-colunas');
+      // Gráfico de linhas: pontos no centro de cada coluna de mês
+      const n = s.meses.length;
+      const X = i => (i + 0.5) / n * 100;              // % da largura
+      const Y = v => 200 - v / topo * 200;            // px a partir do topo (área de 200 px)
+      const barras = el('div', 'chat-linha-area');
+      barras.setAttribute('role', 'group');
+      barras.setAttribute('aria-label', 'Evolução das vendas por mês. Escolha um mês para ver os valores.');
+      [100, 200].forEach(y => { const g = el('span', 'chat-guia'); g.setAttribute('aria-hidden', 'true'); g.style.bottom = y + 'px'; barras.append(g); });
+      const marca = el('span', 'chat-linha-marca');
+      marca.setAttribute('aria-hidden', 'true');
+      barras.append(marca);
+
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('class', 'chat-linha-svg');
+      svg.setAttribute('viewBox', '0 0 100 200');
+      svg.setAttribute('preserveAspectRatio', 'none');
+      svg.setAttribute('aria-hidden', 'true');
+      const forma = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); e.setAttribute('vector-effect', 'non-scaling-stroke'); svg.append(e); };
+      const pontos = lista => lista.map(i => X(i) + ',' + Y(s.meses[i].atual)).join(' ');
+      // Ano anterior: tracejado
+      const ant = s.meses.map((x, i) => x.anterior != null ? X(i) + ',' + Y(x.anterior) : null).filter(Boolean);
+      if (ant.length > 1) forma('polyline', { points: ant.join(' '), style: 'fill: none; stroke: var(--anterior-linha); stroke-width: 2; stroke-dasharray: 5 4' });
+      // Ano atual: área + linha a cheio nos meses completos, tracejado até cada mês incompleto
+      const comDados = s.meses.map((x, i) => i).filter(i => s.meses[i].atual != null);
+      const completos = comDados.filter(i => !s.meses[i].parcial);
+      if (completos.length > 1) {
+        const p0 = completos[0], p1 = completos[completos.length - 1];
+        forma('polygon', { points: `${X(p0)},200 ${pontos(completos)} ${X(p1)},200`, style: 'fill: var(--selecionado); opacity: .55; stroke: none' });
+        forma('polyline', { points: pontos(completos), style: 'fill: none; stroke: var(--marca); stroke-width: 2.5; stroke-linejoin: round' });
+      }
+      comDados.forEach((i, k) => {
+        if (!s.meses[i].parcial) return;
+        const vizinho = comDados[k === 0 ? 1 : k - 1];   // 1.º mês liga ao seguinte; os outros ao anterior
+        if (vizinho != null) forma('polyline', { points: pontos([vizinho, i]), style: 'fill: none; stroke: var(--marca); stroke-width: 2; stroke-dasharray: 4 4' });
+      });
+      barras.append(svg);
+
+      const rotulos = el('div', 'chat-rotulos');
+      rotulos.setAttribute('aria-hidden', 'true');
+      rotulos.style.gridTemplateColumns = colunasCss;
+      const leitura = el('div', 'chat-leitura');
+      leitura.setAttribute('aria-live', 'polite');
+
+      const variacao = (x, curto) => x.atual == null ? el('span', 'chat-delta', 'Sem vendas registadas')
+        : x.parcial ? el('span', 'chat-delta', curto ? 'Incompleto' : 'Mês incompleto')
+        : x.delta != null ? chipDelta(x.delta, s.anoAnt && !curto ? ' vs ' + s.anoAnt : '') : el('span');
+      const botoes = [];
+      const escolher = i => {
+        const x = s.meses[i];
+        botoes.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.i === i)));
+        marca.style.left = X(i) + '%';
+        [...rotulos.children].forEach((r, j) => r.classList.toggle('chat-rotulo--ativo', i === j));
+        const bloco = (ano, v) => { const d = el('div'); d.append(el('small', '', String(ano)), el('span', '', v == null ? '—' : euros(v))); return d; };
+        leitura.replaceChildren(el('strong', '', nomeMes(x)), bloco(x.a, x.atual));
+        if (s.anoAnt) leitura.append(bloco(s.anoAnt, x.anterior));
+        leitura.append(variacao(x));
+      };
+      s.meses.forEach((x, i) => {
+        rotulos.append(el('span', '', MESES[x.m - 1].slice(0, 3).toLowerCase()));
+        if (x.atual == null) return;                    // mês sem vendas: sem ponto
+        const b = botaoEl('chat-ponto-mes' + (x.parcial ? ' chat-ponto-mes--parcial' : ''), '', () => escolher(i));
+        b.dataset.i = i;
+        b.style.left = X(i) + '%';
+        b.style.top = Y(x.atual) + 'px';
+        b.append(el('span'));
+        b.setAttribute('aria-label', nomeMes(x) + ': ' + euros(x.atual) + (x.anterior != null ? ', ' + s.anoAnt + ': ' + euros(x.anterior) : '')
+          + (x.parcial ? ', mês incompleto' : x.delta != null ? ', ' + textoDelta(x.delta) : ''));
+        botoes.push(b);
+        barras.append(b);
+      });
+      colunas.append(barras, rotulos);
+      corpo.append(eixo, colunas);
+      sec.append(cab, corpo, leitura);
+      art.append(sec);
+
+      // Começa no melhor mês
+      let melhor = 0;
+      s.meses.forEach((x, i) => { if ((x.atual || 0) > (s.meses[melhor].atual || 0)) melhor = i; });
+      escolher(melhor);
+
+      // Tabela de detalhe: os mesmos números, para ler ou copiar
+      const tab = el('section', 'chat-bloco chat-meses');
+      const grelha = el('div');
+      grelha.setAttribute('role', 'table');
+      grelha.setAttribute('aria-label', 'Detalhe por mês');
+      const linha = (celulas, cabecalho) => {
+        const l = el('div', 'chat-meses-linha' + (cabecalho ? ' chat-meses-cab' : ''));
+        l.setAttribute('role', 'row');
+        celulas.forEach(c => { c.setAttribute('role', cabecalho ? 'columnheader' : 'cell'); l.append(c); });
+        grelha.append(l);
+      };
+      linha([el('span', '', 'Mês'), el('span', '', String(s.anoAtual)), el('span', '', s.anoAnt || ''), el('span', '', 'Variação')], true);
+      s.meses.filter(x => x.atual != null).forEach(x => {
+        const v = el('span'); v.append(variacao(x, true));   // na tabela o cabeçalho já diz "Variação"
+        linha([el('span', '', nomeMes(x) + (x.parcial ? ' (incompleto)' : '')), el('span', 'chat-atual', euros(x.atual)),
+               el('span', 'chat-ant', x.anterior == null ? '—' : euros(x.anterior)), v]);
+      });
+      tab.append(el('h3', '', 'Detalhe por mês'), grelha);
+      art.append(tab);
+    }
+
+    // Ranking (top marcas, artigos, clientes): nome | barra | valor, com eixo por baixo
+    function desenharRanking(itens, art) {
+      const max = Math.max(...itens.map(i => i.num));
+      const passo = Math.pow(10, Math.floor(Math.log10(max))) / 2;
+      const topo = Math.ceil(max / passo) * passo;     // ex.: 299 053 -> 300 000
+      const bloco = el('div', 'chat-bloco chat-ranking');
+      const ol = el('ol', 'chat-rank');
+      ol.setAttribute('role', 'list');
+      for (const it of itens) {
+        const li = el('li', 'chat-rank-linha');
+        const nome = el('div', 'chat-rank-nome');
+        const vazio = /^\(?sem descri[çc][ãa]o\)?$/i.test(it.nome);
+        nome.append(el('span', vazio ? 'chat-item-nome--vazio' : '', vazio ? 'Sem descrição' : it.nome));
+        if (it.codigo) nome.append(el('small', '', it.codigo));
+        nome.title = it.nome + (it.codigo ? ' (' + it.codigo + ')' : '');
+        const pista = el('span', 'chat-rank-pista'), cheio = el('span');
+        pista.setAttribute('aria-hidden', 'true');
+        cheio.style.width = Math.max(1, it.num / topo * 100) + '%';
+        pista.append(cheio);
+        const val = el('div', 'chat-rank-valor');
+        val.append(el('strong', '', it.valor));
+        if (it.pct) val.append(el('small', '', it.pct));
+        if (it.delta != null) val.append(chipDelta(it.delta, it.anterior ? ' vs ' + it.anterior.ano : ''));
+        li.append(el('span', 'chat-rank-pos', it.pos), nome, pista, val);
+        ol.append(li);
+      }
+      // Eixo alinhado com a coluna das barras
+      const eixo = el('div', 'chat-rank-linha chat-rank-eixo');
+      eixo.setAttribute('aria-hidden', 'true');
+      const marcas = el('div', 'chat-rank-marcas');
+      for (let k = 0; k <= 4; k++) marcas.append(el('span', '', k ? milhares(topo * k / 4).replace(' €', '') : '0'));
+      eixo.append(el('span'), el('span'), marcas, el('span'));
+      bloco.append(ol, eixo);
+      art.append(bloco);
+    }
+
+    function folhaLista(r, original) {
+      const art = el('article', 'chat-folha');
+      const simples = !r.titulo && !r.itens.length && !r.factos.length && !r.avisos.length;
+      if (simples) { art.append(el('p', 'chat-texto', original.trim())); return art; }
+
+      const cab = el('div', 'chat-folha-cab');
+      if (r.titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(r.titulo)));
+      if (r.periodo) cab.append(el('p', 'chat-folha-meta', 'Período: ' + r.periodo));
+      art.append(cab);
+
+      art.classList.add('chat-folha--painel');
+      desenharKpis(r, cab, art);
+      const serie = lerSerie(r);
+
+      r.avisos.forEach((a, n) => {
+        const div = el('div', 'chat-aviso');
+        div.setAttribute('role', 'note');
+        const texto = el('div');
+        const span = el('span');
+        span.append(el('strong', '', 'Atenção: '), a);
+        texto.append(span);
+        if (n === 0 && serie && serie.justa) {
+          const j = el('p', 'chat-justa');
+          j.append(`Comparando só os meses completos, ${serie.justa.de} a ${serie.justa.ate}:`,
+                   chipDelta(serie.justa.delta, serie.anoAnt ? ' vs ' + serie.anoAnt : ''));
+          texto.append(j);
+        }
+        div.append(icone('M8 1.8 15 14H1L8 1.8ZM8 6v3.5M8 11.5v.5'), texto);
+        art.append(div);
+      });
+
+      r.paragrafos.forEach(p => art.append(el('p', 'chat-texto', p)));
+
+      if (serie) desenharSerie(serie, art);
+      else if (r.itens.length && r.itens.every(i => i.num > 0 && !i.rotulo)) desenharRanking(r.itens, art);
+      else if (r.itens.length) {
+        const nums = r.itens.map(i => i.num).filter(n => n > 0);
+        const max = nums.length ? Math.max(...nums) : 0;
+        const rotulos = new Set(r.itens.map(i => i.rotulo));
+        const comum = rotulos.size === 1 ? [...rotulos][0] : '';
+        const bloco = el('div', 'chat-bloco chat-bloco--lista');
+        if (comum) { const c = el('div', 'chat-lista-cab', maiuscula(comum)); c.setAttribute('aria-hidden', 'true'); bloco.append(c); }
+
+        const ol = el('ol', 'chat-lista');
+        ol.setAttribute('role', 'list');
+        for (const it of r.itens) {
+          const li = el('li', 'chat-item');
+          const corpo = el('div', 'chat-item-corpo');
+          const vazio = /^\(?sem descri[çc][ãa]o\)?$/i.test(it.nome);
+          corpo.append(el('span', 'chat-item-nome' + (vazio ? ' chat-item-nome--vazio' : ''), vazio ? 'Sem descrição' : it.nome));
+          if (it.codigo) corpo.append(el('span', 'chat-item-codigo', it.codigo));
+          if (it.num > 0 && max > 0) {
+            const b = el('span', 'chat-item-barra'), f = el('span');
+            b.setAttribute('aria-hidden', 'true');
+            f.style.width = Math.max(2, it.num / max * 100) + '%';
+            b.append(f); corpo.append(b);
+          }
+          const val = el('div', 'chat-item-valor');
+          if (it.rotulo) val.append(el('span', comum ? 'so-leitor' : 'chat-item-rotulo', maiuscula(it.rotulo) + (comum ? ': ' : '')));
+          if (it.valor) val.append(el('strong', it.rotulo ? 'chat-data' : '', it.valor));
+          if (it.pct) val.append(el('span', 'chat-item-pct', it.pct));
+          if (it.delta != null) val.append(chipDelta(it.delta, it.anterior ? ' vs ' + it.anterior.ano : ''));
+          li.append(el('span', 'chat-item-pos', it.pos), corpo, val);
+          ol.append(li);
+        }
+        bloco.append(ol);
+        art.append(bloco);
+      }
+
+      const rod = el('div', 'chat-folha-rodape');
+      if (r.itens.length) {
+        const linhas = serie
+          ? [['Mês', serie.anoAtual, serie.anoAnt || '', 'Variação (%)'],
+             ...r.itens.map(i => [i.nome, i.valor, i.anterior ? i.anterior.valor : '', i.delta == null ? '' : String(i.delta).replace('.', ',')])]
+          : r.itens.map(i => [i.pos, i.nome, i.codigo, i.valor, i.pct]);
+        rod.append(botaoCopiar(linhas), botaoExportar(linhas));
+      }
+      if (r.nota) rod.append(el('p', 'chat-folha-meta', r.nota));
+      if (rod.childNodes.length) art.append(rod);
+      return art;
+    }
+
+    function folhaTabela(t) {
+      const art = el('article', 'chat-folha chat-folha--painel');
+      const [titulo, resumo] = t.antes.split(/:\s+(.*)/s);
+      const cab = el('div', 'chat-folha-cab');
+      art.append(cab);
+      if (titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(titulo.toLowerCase())));
+      if (resumo) desenharKpis({ resumo, factos: [] }, cab, art);   // "379 clientes em 9 grupos" num cartão
+
+      const barra = t.numericas.indexOf(true);
+      const maximo = barra < 0 ? 0 : Math.max(...t.linhas.map(l => paraNumero(l[barra])));
+      const tabela = el('table', 'chat-tabela');
+      const topo = tabela.createTHead().insertRow();
+      t.cabecalho.forEach((nome, c) => {
+        const th = el('th', t.numericas[c] ? 'chat-num' : '', nome);
+        th.scope = 'col';
+        topo.append(th);
+        if (c === 0 && barra >= 0) { const v = el('th'); v.append(el('span', 'so-leitor', 'Proporção')); topo.append(v); }
+      });
+      const corpo = tabela.createTBody();
+      for (const linha of t.linhas) {
+        const tr = corpo.insertRow();
+        linha.forEach((valor, c) => {
+          tr.append(el('td', t.numericas[c] ? 'chat-num' : '', valor));
+          if (c === 0 && barra >= 0) {
+            const td = el('td'), fundo = el('div', 'chat-barra'), cheio = el('span');
+            cheio.style.width = Math.max(3, paraNumero(linha[barra]) / maximo * 100) + '%';
+            fundo.setAttribute('aria-hidden', 'true');
+            fundo.append(cheio); td.append(fundo); tr.append(td);
+          }
+        });
+      }
+      const bloco = el('div', 'chat-bloco');
+      bloco.append(tabela);
+      if (t.depois) bloco.append(el('p', 'chat-texto', t.depois));
+      art.append(bloco);
+      const rod = el('div', 'chat-folha-rodape');
+      rod.append(botaoCopiar([t.cabecalho, ...t.linhas]), botaoExportar([t.cabecalho, ...t.linhas]));
+      art.append(rod);
+      return art;
+    }
+
+    function formatar(texto) {
+      const t = lerTabela(texto);
+      return t ? folhaTabela(t) : folhaLista(lerLista(texto), texto);
+    }
+
+    /* =========================================================
+       Ecrãs da zona de resposta
+       ========================================================= */
+    function tema() { return TEMAS.find(t => t.id === temaAtual); }
+
+    function blocoSugestoes(titulo) {
+      // só sugere o que ainda não tem resposta (as que deram erro ficam, para tentar de novo)
+      const feitas = new Set(historico.filter(h => !h.erro).map(h => h.pergunta.toLowerCase()));
+      const restantes = tema().perguntas.filter(p => !feitas.has(p.toLowerCase()));
+      const perguntas = restantes.length ? restantes : tema().perguntas;   // todas feitas: volta a sugerir todas
+      const sec = el('section', 'chat-sugestoes');
+      const lista = el('div');
+      perguntas.forEach(p => {
+        const b = botaoEl('chat-chip', p, () => { if (!ocupado) perguntar(p); });
+        b.disabled = ocupado;
+        lista.append(b);
+      });
+      sec.append(el('h3', '', titulo), lista);
+      return sec;
+    }
+
+    function mostrarInicio() {
+      const intro = el('div', 'chat-intro');
+      intro.append(el('h2', '', tema().nome), el('p', '', tema().descricao));
+      area.replaceChildren(intro, blocoSugestoes('Perguntas sugeridas'));
+      area.scrollTop = 0;
+    }
+
+    // A resposta com o avatar à frente (a mesma imagem do estado, já embebida)
+    function comAvatar(art) {
+      const linha = el('div', 'chat-resposta');
+      const avatar = document.getElementById('avatar').cloneNode();
+      avatar.removeAttribute('id');
+      linha.append(avatar, art);
+      return linha;
+    }
+
+    function mostrarItem(item) {
+      const filhos = [el('p', 'chat-pergunta', item.pergunta)];
+      if (item.erro) {
+        const art = el('article', 'chat-folha chat-folha--erro');
+        art.setAttribute('role', 'alert');
+        art.append(el('p', '', item.erro === 'vazio'
+          ? 'O agente não devolveu resposta. Tente de novo.'
+          : 'Sem ligação ao agente. Confirme que está a correr e tente de novo.'));
+        art.append(botaoEl('chat-acao', 'Tentar de novo', () => {
+          historico.splice(historico.indexOf(item), 1);
+          perguntar(item.pergunta);
+        }));
+        filhos.push(art);
+      } else {
+        try {
+          filhos.push(formatar(item.texto));
+        } catch (erro) {
+          // Se a formatação falhar, mostra o texto tal como veio: o painel nunca fica parado.
+          console.error('Falha a formatar a resposta:', erro);
+          const art = el('article', 'chat-folha');
+          art.append(el('p', 'chat-texto', item.texto.trim()));
+          filhos.push(art);
+        }
+      }
+      filhos[1] = comAvatar(filhos[1]);
+      filhos.push(blocoSugestoes('Mais sobre ' + tema().nome.toLowerCase()));
+      area.replaceChildren(...filhos);
+      area.scrollTop = 0;
+    }
+
+    function mostrarEspera(pergunta) {
+      const art = el('article', 'chat-folha chat-espera');
+      const bruto = el('p', 'chat-bruto');
+      const esq = el('div', 'chat-esqueleto');
+      esq.setAttribute('aria-hidden', 'true');
+      esq.append(el('span'), el('span'), el('span'));
+      const msg = el('p', '', 'A consultar os dados…');
+      // o modelo em CPU pode levar mais de um minuto; o contador mostra que não parou
+      const inicio = Date.now();
+      const relogio = setInterval(() => {
+        msg.textContent = `A consultar os dados… ${Math.round((Date.now() - inicio) / 1000)} s`;
+      }, 1000);
+      art.append(msg, esq, bruto);
+      area.replaceChildren(el('p', 'chat-pergunta', pergunta), comAvatar(art));
+      return { bruto, esq, relogio };
+    }
+
+    /* ---------- Barra lateral ---------- */
+    function desenharTemas() {
+      temasEl.replaceChildren(...TEMAS.map(t => {
+        const b = botaoEl('chat-tema', t.nome, () => {
+          if (ocupado) return;
+          temaAtual = t.id; atual = -1;
+          desenharTemas(); desenharHistorico(); mostrarInicio();
+        });
+        b.setAttribute('aria-pressed', String(t.id === temaAtual));
+        b.disabled = ocupado;
+        return b;
+      }));
+    }
+
+    function desenharHistorico() {
+      histVazio.hidden = historico.length > 0;
+      histEl.replaceChildren(...historico.map((item, i) => {
+        const li = el('li');
+        const b = botaoEl('', '', () => {
+          if (ocupado) return;
+          atual = i; desenharHistorico(); mostrarItem(item);
+        });
+        b.append(el('span', '', item.pergunta));
+        b.title = item.pergunta;   // texto completo quando cortado a 2 linhas
+        if (i === atual) b.setAttribute('aria-current', 'true');
+        b.disabled = ocupado;
+        li.append(b);
+        return li;
+      }));
+    }
+
+    /* =========================================================
+       Perguntar ao agente
+       ========================================================= */
     async function perguntar(texto) {
-      document.getElementById('sugestoes')?.remove();
-      mensagem(texto, 'eu');
-      const resposta = aEsperar();
+      if (ocupado) return;
+      const item = { pergunta: texto, texto: '', erro: null };
+      historico.unshift(item);
+      atual = 0;
       bloquear(true);
-      conversa.setAttribute('aria-busy', 'true'); // o leitor de ecrã lê a resposta no fim, não aos bocados
+      desenharTemas(); desenharHistorico();
+      const { bruto, esq, relogio } = mostrarEspera(texto);
+      area.setAttribute('aria-busy', 'true');   // o leitor de ecrã lê a resposta no fim, não aos bocados
       try {
         const r = await fetch('/perguntar', { method: 'POST', body: texto });
-        ligado(r.ok);
+        mostrarEstado(r.ok ? 'ocupado' : 'desligado');
         if (!r.ok) throw new Error('HTTP ' + r.status);
-
         const leitor = r.body.getReader();
         const descodificador = new TextDecoder();
-        let primeiro = true;
         for (;;) {
           const { done, value } = await leitor.read();
           if (done) break;
-          if (primeiro) { resposta.textContent = ''; primeiro = false; }
-          resposta.textContent += descodificador.decode(value, { stream: true });
-          descer();
+          item.texto += descodificador.decode(value, { stream: true });
+          bruto.textContent = item.texto;   // mostra o texto a chegar, formatado no fim
+          esq.hidden = true;
         }
-        resposta.textContent += descodificador.decode(); // últimos bytes que ficaram no descodificador
-
-        if (primeiro) {
-          resposta.textContent = 'Sem resposta. Tente novamente.';
-          resposta.classList.add('chat-msg--erro');
-        }
+        item.texto += descodificador.decode();
+        if (!item.texto.trim()) item.erro = 'vazio';
+        mostrarEstado('pronto');
       } catch {
-        ligado(false);
-        resposta.textContent = 'O assistente não está disponível. Confirme que o agente está a correr.';
-        resposta.classList.add('chat-msg--erro');
+        item.erro = 'ligacao';
+        mostrarEstado('desligado');
       } finally {
-        conversa.setAttribute('aria-busy', 'false');
+        clearInterval(relogio);
         bloquear(false);
-        descer();
+        if (estadoTexto.textContent === 'A consultar') mostrarEstado('pronto');
+        if (historico[atual] === item) mostrarItem(item);
+        area.setAttribute('aria-busy', 'false');
+        desenharTemas(); desenharHistorico();
         campo.focus();
       }
     }
 
+    /* ---------- Eventos ---------- */
     form.addEventListener('submit', e => {
       e.preventDefault();
-      const texto = campo.value.trim();
-      if (!texto || campo.disabled) return;
+      const texto = campo.value.replace(/\s+/g, ' ').trim();
+      if (!texto || ocupado) return;
       campo.value = '';
       perguntar(texto);
     });
 
-    // replace(/\s+/g, ' '): junta espaços e quebras de linha do HTML num só espaço
-    chips.forEach(b =>
-      b.addEventListener('click', () => {
-        if (!campo.disabled) perguntar(b.textContent.replace(/\s+/g, ' ').trim());
-      }));
-
+    desenharTemas();
+    desenharHistorico();
+    mostrarInicio();
     campo.focus();
   </script>
 </body>

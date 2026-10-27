@@ -139,10 +139,15 @@ public static class PoliticasSeguranca
           MesAtual é só para "este mês".
         - "Mesmo mês do ano passado": mes=<mês atual> e ano=<ano anterior>.
         - Evolução, "mês a mês" ou "qual o mês com mais": agrupar=Mes. Por trimestre ou comparar trimestres: agrupar=Trimestre.
-        - Um trimestre, semestre ou semana concreto: dataInicio e dataFim (dd-MM-aaaa).
+        - "Último trimestre" ou "trimestre passado": periodo=TrimestreAnterior; "este trimestre": TrimestreAtual.
+        - Um trimestre com número, semestre ou semana concreto: dataInicio e dataFim (dd-MM-aaaa).
             1.º trimestre = 01-01-<ano> a 31-03-<ano>; 1.º semestre = 01-01-<ano> a 30-06-<ano>.
-        - Comparar com o ano anterior/passado, variação, crescimento, "este ano vs o ano passado":
+        - Ticket médio = valor médio por documento: vem em todas as respostas de consultar_vendas (agrupar=Mes).
+        - Comparar dois meses entre si (ex.: maio e janeiro): agrupar=Mes, dataInicio=01-<mês mais antigo>-<ano>,
+          dataFim=<último dia do mês mais recente>-<ano>. Sem compararAnoAnterior.
+        - Comparar com o ano anterior/passado ("este ano vs o ano passado", variação face a <ano>):
           compararAnoAnterior=true com o período de agora (agrupar=Mes se não disserem outra coisa).
+          Só se falarem do ano anterior; "crescimento" entre meses não é comparar anos.
           Nunca emCada para comparar anos.
         - "X por Y" ou "X em cada Y" com duas coisas (artigo mais vendido por distrito, localidade
           com mais vendas em cada mês ou trimestre): agrupar=X, emCada=Y.
