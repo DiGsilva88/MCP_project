@@ -100,7 +100,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "Dado de cada cliente: Contribuinte (NIF), Email, Telefone, Morada, CodigoPostal, VolumeVendas, Plafond " +
         "(VolumeVendas = declarado na ficha, não faturado). maiores=true: do maior para o menor, para top N. " +
         "coluna/valor: filtra clientes (ex.: coluna=Localidade, valor=<localidade dita>). " +
-        "mostrarTambem: junta outra coluna a cada linha (ex.: Actividade). nomeComecaPor: início do nome. Devolve CSV.")]
+        "mostrarTambem: junta outra coluna a cada linha (ex.: Actividade). cliente: ID ou início do nome de um cliente. Devolve CSV.")]
     public async Task<string> ConsultarSensivelAsync(
         [Description("Dado a mostrar.")] CampoSensivel dado,
         [Description("Coluna para filtrar os clientes.")] Campo? coluna = null,
@@ -110,8 +110,11 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Página, 1 é a primeira.")] int pagina = 1,
         [Description("Início do nome do cliente.")] string? nomeComecaPor = null,
         [Description("Coluna a mostrar junto do dado.")] Campo? mostrarTambem = null,
+        [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
         CancellationToken ct = default)
     {
+        // "Email do cliente 1003": o modelo não chamava nada, porque só havia nomeComecaPor. O SQL aceita nome ou ID.
+        if (string.IsNullOrWhiteSpace(nomeComecaPor)) nomeComecaPor = cliente;
         var temValor = !string.IsNullOrWhiteSpace(valor);
         if ((coluna is not null) != temValor)
             return "coluna e valor têm de ser usados juntos.";

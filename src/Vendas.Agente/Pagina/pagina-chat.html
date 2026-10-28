@@ -595,7 +595,10 @@
       let i = s.lastIndexOf(' – ');            // travessão separa nome e valor
       if (i < 0) i = s.lastIndexOf(' - ');
       const esq = i < 0 ? s : s.slice(0, i);
-      const dir = i < 0 ? '' : s.slice(i + 3).trim();
+      let dir = i < 0 ? '' : s.slice(i + 3).trim(), media = '';
+      // "… · média 73,40 €" no fim (meses e trimestres): valor médio por documento
+      const med = dir.match(/^(.*?)\s*·\s*média\s+(.+)$/);
+      if (med) { dir = med[1]; media = med[2]; }
       let nome = esq.trim(), codigo = '';
       const c = esq.match(/^(.*\S)\s*\(([^()]+)\)\s*$/);   // último parêntesis = código
       if (c) { nome = c[1]; codigo = c[2]; }
@@ -612,8 +615,12 @@
         const d = valor.match(/^(.*?)\s*(\d{2}-\d{2}-\d{4})$/); // "última compra a 23-12-2025"
         if (d && d[1]) { rotulo = d[1].replace(/\s+(a|em)$/i, ''); valor = d[2]; }
       }
-      const num = /^-?[\d\s.\u00a0\u202f]+(,\d+)?\s*€?$/.test(valor) ? paraNumero(valor) : NaN;
-      return { pos, nome, codigo, valor, pct, rotulo, num, anterior, delta };
+      // "1 234 unidades (255 348,78 €)" (ordenar=Quantidade): as unidades são o valor, os euros vão por baixo.
+      // Sem isto o paraNumero juntava os dois números (1 234 255 348,78).
+      const un = valor.match(/^(.*\d)\s+unidades\s*\((.+)\)$/);
+      if (un) { valor = un[1] + ' unidades'; pct = un[2]; }
+      const num = un ? paraNumero(un[1]) : /^-?[\d\s.\u00a0\u202f]+(,\d+)?\s*€?$/.test(valor) ? paraNumero(valor) : NaN;
+      return { pos, nome, codigo, valor, pct, rotulo, num, anterior, delta, media, unidades: !!un };
     }
     function lerLista(texto) {
       const r = { titulo: '', periodo: '', resumo: '', factos: [], avisos: [], itens: [], paragrafos: [], nota: '' };
@@ -723,11 +730,12 @@
 
     // Lista em que todas as linhas são meses "AAAA-MM" -> série para o gráfico
     function lerSerie(r) {
-      if (r.itens.length < 2 || !r.itens.every(i => /^\d{4}-\d{2}$/.test(i.nome))) return null;
+      // Em unidades: o gráfico e a tabela falam em euros, por isso fica a lista com barras.
+      if (r.itens.length < 2 || r.itens.some(i => i.unidades) || !r.itens.every(i => /^\d{4}-\d{2}$/.test(i.nome))) return null;
       const meses = r.itens.map(i => {
         const [a, m] = i.nome.split('-').map(Number);
         return { a, m, atual: paraNumero(i.valor), anterior: i.anterior ? paraNumero(i.anterior.valor) : null,
-                 delta: i.delta, anoAnt: i.anterior ? i.anterior.ano : null };
+                 delta: i.delta, anoAnt: i.anterior ? i.anterior.ano : null, media: i.media };
       });
       // Meses do período que não vieram na lista: coluna vazia, para a falta de dados se ver
       const fim = r.periodo.match(/(\d{2})-(\d{4})$/);
@@ -836,6 +844,7 @@
         const bloco = (ano, v) => { const d = el('div'); d.append(el('small', '', String(ano)), el('span', '', v == null ? '—' : euros(v))); return d; };
         leitura.replaceChildren(el('strong', '', nomeMes(x)), bloco(x.a, x.atual));
         if (s.anoAnt) leitura.append(bloco(s.anoAnt, x.anterior));
+        if (x.media) { const d = el('div'); d.append(el('small', '', 'Valor médio'), el('span', '', x.media)); leitura.append(d); }
         leitura.append(variacao(x));
       };
       s.meses.forEach((x, i) => {
@@ -866,17 +875,22 @@
       const grelha = el('div');
       grelha.setAttribute('role', 'table');
       grelha.setAttribute('aria-label', 'Detalhe por mês');
+      // Colunas opcionais: ano anterior só com comparação, valor médio só quando vem em cada mês
+      const comMedia = s.meses.some(x => x.media);
       const linha = (celulas, cabecalho) => {
         const l = el('div', 'chat-meses-linha' + (cabecalho ? ' chat-meses-cab' : ''));
         l.setAttribute('role', 'row');
+        l.style.gridTemplateColumns = `minmax(0, 1fr) repeat(${celulas.length - 1}, minmax(80px, auto))`;
         celulas.forEach(c => { c.setAttribute('role', cabecalho ? 'columnheader' : 'cell'); l.append(c); });
         grelha.append(l);
       };
-      linha([el('span', '', 'Mês'), el('span', '', String(s.anoAtual)), el('span', '', s.anoAnt || ''), el('span', '', 'Variação')], true);
+      linha([el('span', '', 'Mês'), el('span', '', String(s.anoAtual)), ...(s.anoAnt ? [el('span', '', s.anoAnt)] : []),
+             ...(comMedia ? [el('span', '', 'Valor médio')] : []), el('span', '', 'Variação')], true);
       s.meses.filter(x => x.atual != null).forEach(x => {
         const v = el('span'); v.append(variacao(x, true));   // na tabela o cabeçalho já diz "Variação"
         linha([el('span', '', nomeMes(x) + (x.parcial ? ' (incompleto)' : '')), el('span', 'chat-atual', euros(x.atual)),
-               el('span', 'chat-ant', x.anterior == null ? '—' : euros(x.anterior)), v]);
+               ...(s.anoAnt ? [el('span', 'chat-ant', x.anterior == null ? '—' : euros(x.anterior))] : []),
+               ...(comMedia ? [el('span', '', x.media || '—')] : []), v]);
       });
       tab.append(el('h3', '', 'Detalhe por mês'), grelha);
       art.append(tab);
@@ -904,6 +918,7 @@
         const val = el('div', 'chat-rank-valor');
         val.append(el('strong', '', it.valor));
         if (it.pct) val.append(el('small', '', it.pct));
+        if (it.media) val.append(el('small', '', 'média ' + it.media));   // trimestres
         if (it.delta != null) val.append(chipDelta(it.delta, it.anterior ? ' vs ' + it.anterior.ano : ''));
         li.append(el('span', 'chat-rank-pos', it.pos), nome, pista, val);
         ol.append(li);
@@ -990,9 +1005,9 @@
       const rod = el('div', 'chat-folha-rodape');
       if (r.itens.length) {
         const linhas = serie
-          ? [['Mês', serie.anoAtual, serie.anoAnt || '', 'Variação (%)'],
-             ...r.itens.map(i => [i.nome, i.valor, i.anterior ? i.anterior.valor : '', i.delta == null ? '' : String(i.delta).replace('.', ',')])]
-          : r.itens.map(i => [i.pos, i.nome, i.codigo, i.valor, i.pct]);
+          ? [['Mês', serie.anoAtual, serie.anoAnt || '', 'Variação (%)', 'Valor médio'],
+             ...r.itens.map(i => [i.nome, i.valor, i.anterior ? i.anterior.valor : '', i.delta == null ? '' : String(i.delta).replace('.', ','), i.media])]
+          : r.itens.map(i => [i.pos, i.nome, i.codigo, i.valor, i.pct, i.media]);
         rod.append(botaoCopiar(linhas), botaoExportar(linhas));
       }
       if (r.nota) rod.append(el('p', 'chat-folha-meta', r.nota));

@@ -61,7 +61,8 @@ public class ConsultaClientesTests
         var (sql, aplicarParametros) = ConsultaClientes.Listar(
             [Campo.Zona], new Dictionary<Campo, string>(), deslocamento: 0, nome: " A% ");
 
-        Assert.Contains("WHERE c.NomeCliente COLLATE Latin1_General_CI_AI LIKE REPLACE(REPLACE(REPLACE(@nome", sql);
+        Assert.Contains("WHERE (c.NomeCliente COLLATE Latin1_General_CI_AI LIKE REPLACE(REPLACE(REPLACE(@nome", sql);
+        Assert.Contains("OR CAST(c.ClienteID AS nvarchar(50)) = @nome)", sql); // "cliente 1003": o ID também serve
         Assert.Equal("A%", Aplicar(aplicarParametros)["@nome"].Value); // o % chega como parâmetro, o SQL escapa-o
     }
 

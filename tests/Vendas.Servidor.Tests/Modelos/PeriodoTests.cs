@@ -50,6 +50,32 @@ public class PeriodoTests
     }
 
     [Theory]
+    [InlineData(1, 2026, "2026-01-01", "2026-04-01", "1.º trimestre de 2026")]
+    [InlineData(4, null, "2026-10-01", "2027-01-01", "4.º trimestre de 2026")] // o atual (hoje é 15-10)
+    [InlineData(2, 2025, "2025-04-01", "2025-07-01", "2.º trimestre de 2025")]
+    public void Resolver_Trimestre_DevolveOsTresMeses(int trimestre, int? ano, string desde, string ate, string descricao)
+    {
+        var (intervalo, erro) = Periodos.Resolver(Periodo.TrimestreAtual, null, ano, null, null, Hoje, trimestre);
+
+        Assert.Null(erro);
+        Assert.Equal(new IntervaloVendas(DateOnly.Parse(desde), DateOnly.Parse(ate), descricao), intervalo);
+    }
+
+    [Fact]
+    public void Resolver_TrimestreQueAindaNaoComecou_SemAno_EODoAnoPassado()
+    {
+        var (intervalo, _) = Periodos.Resolver(Periodo.AnoAtual, null, null, null, null, new DateOnly(2026, 2, 10), trimestre: 3);
+
+        Assert.Equal(new DateOnly(2025, 7, 1), intervalo!.Value.Desde);
+    }
+
+    [Theory]
+    [InlineData(5, null, "trimestre tem de ser de 1 a 4.")]
+    [InlineData(1, 3, "mes e trimestre não se combinam. Chama de novo só com um.")]
+    public void Resolver_TrimestreInvalido_DevolveErro(int trimestre, int? mes, string esperado)
+        => Assert.Equal(esperado, Periodos.Resolver(Periodo.AnoAtual, mes, null, null, null, Hoje, trimestre).Erro);
+
+    [Theory]
     [InlineData(13, null, null, null, "mes tem de ser de 1 a 12.")]
     [InlineData(null, 1999, null, null, "ano tem de ser de 2000 a 2026.")]
     [InlineData(null, 2027, null, null, "ano tem de ser de 2000 a 2026.")]

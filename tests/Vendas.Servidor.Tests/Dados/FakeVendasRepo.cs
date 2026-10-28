@@ -105,12 +105,13 @@ internal sealed class FakeVendasRepo : IVendasRepo
     public Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
-        DimensaoVenda? emCada = null, CancellationToken ct = default)
+        DimensaoVenda? emCada = null, bool menores = false, CancellationToken ct = default)
     {
         UltimoCliente = cliente;
         UltimosFiltros = filtros;
         UltimaDimensao = dimensao;
         UltimoEmCada = emCada;
+        UltimoMenores = menores;
         UltimoPeriodo = (desde, ate);
         UltimoLimite = limite;
         UltimoPorQuantidade = porQuantidade;
@@ -120,6 +121,7 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public bool? UltimoPorQuantidade { get; private set; }
     public DimensaoVenda? UltimoEmCada { get; private set; }
+    public bool? UltimoMenores { get; private set; }
     public IReadOnlyList<ClienteSemVendas> SemVendas { get; set; } = [];
     public DateOnly? UltimaVenda { get; set; }
 

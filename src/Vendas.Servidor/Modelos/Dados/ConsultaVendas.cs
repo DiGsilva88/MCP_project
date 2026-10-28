@@ -55,16 +55,19 @@ internal static class ConsultaVendas
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) RankingPorDimensao(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, string? cliente = null,
-        IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false, DimensaoVenda? emCada = null)
+        IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false, DimensaoVenda? emCada = null,
+        bool menores = false)
     {
         var (ficha, aplicarFicha) = FiltroFicha(filtros);
         var onde = Onde(cliente, ficha);
 
         var (nome, agrupar) = Colunas(dimensao);
         // Meses e trimestres por ordem cronológica (do mais antigo ao mais recente); o resto do maior para o menor
+        // (menores: do menor para o maior, os que vendem menos)
+        var sentido = menores ? "ASC" : "DESC";
         var ordem = Dimensoes.Cronologica(dimensao) ? "Nome"
-            : porQuantidade ? "Quantidade DESC, Nome"
-            : "Valor DESC, Nome";
+            : porQuantidade ? $"Quantidade {sentido}, Nome"
+            : $"Valor {sentido}, Nome";
 
         // Dimensão da ficha (Localidade, Distrito...): cada linha de venda vai buscar esse valor ao seu cliente.
         // OUTER APPLY e não JOIN: vendas de clientes sem ficha continuam a contar no total.

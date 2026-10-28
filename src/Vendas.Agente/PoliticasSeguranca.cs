@@ -72,6 +72,9 @@ public static class PoliticasSeguranca
             if (!ParametrosDeTexto.Contains(nome) || Texto(bruto) is not { } valor || string.IsNullOrWhiteSpace(valor)) continue;
             var normalizado = SemAcentos(valor.Trim());
             if (normalizado == "sem dados") continue; // valor especial da tool, não vem do utilizador
+            // "Pagamento por zona" dava valorCruzado=Zona: o nome da coluna está na pergunta, mas não é um valor.
+            if (NomesDeColunas.Contains(normalizado))
+                return $"{nome}={valor.Trim()} é o nome de uma coluna, não um valor. Chama de novo sem esse filtro.";
 
             var palavras = normalizado.Split([' ', ',', '.', '-', '/', '(', ')'], StringSplitOptions.RemoveEmptyEntries)
                 .Where(p => p.Length >= 3).ToList();
@@ -83,6 +86,21 @@ public static class PoliticasSeguranca
     }
 
     private static readonly HashSet<string> ParametrosDeTexto = ["valor", "valorCruzado", "cliente", "nomeComecaPor"];
+
+    // Sem acentos e em minúsculas, como o SemAcentos devolve.
+    private static readonly HashSet<string> NomesDeColunas =
+        ["zona", "localidade", "distrito", "vendedor", "actividade", "atividade", "tipocliente", "pagamento",
+         "cobranca", "expedicao", "situacaofinanceira", "escalaoplafond", "escalaovolumevendas"];
+
+    // "Localidades com menos vendas" ia a consultar com contar=true, que conta clientes e não vendas.
+    // Só olha a palavras de vendas: "vendedor" não conta. null = a chamada pode seguir.
+    public static string? ContarEmVezDeVendas(string tool, string pergunta, IEnumerable<KeyValuePair<string, object?>> argumentos)
+    {
+        if (tool != "consultar" || !argumentos.Any(a => a.Key == "contar" && Texto(a.Value) is "true" or "True")) return null;
+        return System.Text.RegularExpressions.Regex.IsMatch(SemAcentos(pergunta), @"\bvend(as?|e|em|eu|eram|ido|idos)\b|fatur|\bkpi\b|ticket")
+            ? "contar conta clientes, não vendas. Chama consultar_vendas com agrupar=<a coluna> (menores=true para os que vendem menos)."
+            : null;
+    }
 
     private static string SemAcentos(string texto) =>
         new string(texto.Normalize(System.Text.NormalizationForm.FormD)
@@ -138,16 +156,25 @@ public static class PoliticasSeguranca
         - Mês com nome (ex.: "em setembro"): mes=<número do mês>, nunca MesAtual; ano só se o utilizador o disser.
           MesAtual é só para "este mês".
         - "Mesmo mês do ano passado": mes=<mês atual> e ano=<ano anterior>.
-        - Evolução, "mês a mês" ou "qual o mês com mais": agrupar=Mes. Por trimestre ou comparar trimestres: agrupar=Trimestre.
+        - Evolução, "mês a mês" ou "qual o mês com mais": agrupar=Mes. Por trimestre ou comparar trimestres:
+          agrupar=Trimestre com periodo=AnoAtual (ou o ano dito), nunca TrimestreAtual.
         - "Último trimestre" ou "trimestre passado": periodo=TrimestreAnterior; "este trimestre": TrimestreAtual.
-        - Um trimestre com número, semestre ou semana concreto: dataInicio e dataFim (dd-MM-aaaa).
-            1.º trimestre = 01-01-<ano> a 31-03-<ano>; 1.º semestre = 01-01-<ano> a 30-06-<ano>.
-        - Ticket médio = valor médio por documento: vem em todas as respostas de consultar_vendas (agrupar=Mes).
+        - Trimestre com número ("1.º trimestre", "primeiro trimestre"): trimestre=<1 a 4>; ano só se o disserem.
+        - Semestre ou semana concreta: dataInicio e dataFim (dd-MM-aaaa). 1.º semestre = 01-01-<ano> a 30-06-<ano>.
+        - "Menos vendidos", "que vendem menos": menores=true. "Mais e menos": duas chamadas, uma com menores=true.
+        - Pergunta com várias partes (ex.: trimestres e artigos): uma chamada por cada parte.
+        - Um dia concreto: dataInicio e dataFim iguais a esse dia (dd-MM-aaaa).
+        - Ticket médio, KPI ou valor médio = valor médio por documento: consultar_vendas com agrupar=Mes
+          (ou Trimestre, Zona, Localidade, Artigo...); cada linha traz a sua média.
+        - Dados de um cliente pelo ID ou nome (NIF, email, telefone, morada): consultar_sensivel com cliente=<ID ou nome>.
+          "Dados de contacto" = Email e Telefone, uma chamada cada.
+        - Não existem: data de registo/cadastro de clientes, IVA, descontos, tipo de documento.
+          Para esses, não chames ferramentas e diz que não está disponível.
         - Comparar dois meses entre si (ex.: maio e janeiro): agrupar=Mes, dataInicio=01-<mês mais antigo>-<ano>,
           dataFim=<último dia do mês mais recente>-<ano>. Sem compararAnoAnterior.
         - Comparar com o ano anterior/passado ("este ano vs o ano passado", variação face a <ano>):
-          compararAnoAnterior=true com o período de agora (agrupar=Mes se não disserem outra coisa).
-          Só se falarem do ano anterior; "crescimento" entre meses não é comparar anos.
+          compararAnoAnterior=true com o período de agora (agrupar=Mes, ou Trimestre se disserem trimestre).
+          Só se falarem do ano anterior; "compare" sozinho ou "crescimento" entre meses não é comparar anos.
           Nunca emCada para comparar anos.
         - "X por Y" ou "X em cada Y" com duas coisas (artigo mais vendido por distrito, localidade
           com mais vendas em cada mês ou trimestre): agrupar=X, emCada=Y.

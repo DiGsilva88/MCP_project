@@ -92,7 +92,8 @@ IChatClient modelo = ollama
                 Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {invalido}");
                 return invalido;
             }
-            if (PoliticasSeguranca.ValorInventado(perguntaAtual, resultadosPergunta.ToString(), ctx.Arguments) is { } inventado)
+            if ((PoliticasSeguranca.ValorInventado(perguntaAtual, resultadosPergunta.ToString(), ctx.Arguments)
+                 ?? PoliticasSeguranca.ContarEmVezDeVendas(ctx.Function.Name, perguntaAtual, ctx.Arguments)) is { } inventado)
             {
                 Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {inventado}");
                 return inventado;
