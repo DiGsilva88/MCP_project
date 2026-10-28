@@ -395,6 +395,84 @@
     .chat-folha--erro p { margin: 0; color: var(--erro); }
 
     /* =========================================================
+       7b. Correções de 10/2026: ficha, filtros, grupos, estado vazio
+       ========================================================= */
+    /* Factos em texto (nome, condição de pagamento): lista rótulo | valor */
+    .chat-ficha {
+      display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px;
+      margin: 0; padding: 14px 18px;
+      background: var(--cartao); border: 1px solid var(--borda-cartao); border-radius: 8px;
+      font-size: 14px;
+    }
+    .chat-ficha dt { color: var(--suave); }
+    .chat-ficha dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+    /* Colunas com o mesmo valor em todas as linhas (ex.: Vendedor) */
+    .chat-filtros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .chat-filtro {
+      display: inline-flex; gap: 6px; padding: 3px 10px;
+      background: var(--cartao); border: 1px solid var(--borda-cartao); border-radius: 99px;
+      font-size: 12.5px;
+    }
+    .chat-filtro span { color: var(--nota); }
+
+    /* Lista com grupos (ex.: Clientes em Odivelas / Torre da Marinha) */
+    .chat-grupo-cab { padding: 12px 0 4px; border-bottom: 1px solid var(--borda); font-size: 13px; font-weight: 700; }
+    .chat-grupo-cab span { font-weight: 400; color: var(--nota); }
+    .chat-lista-titulo { margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--suave); }
+    .chat-item-barra--neg span { background: var(--desce); }
+
+    /* Sem correspondência: valores possíveis em botões */
+    .chat-vazio-titulo { margin: 0; font-size: 16px; font-weight: 700; color: var(--texto); }
+    .chat-opcoes-titulo { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--suave); }
+    .chat-opcoes { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chat-opcoes .chat-chip { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+    .chat-chip small { margin-left: 6px; color: var(--nota); font-variant-numeric: tabular-nums; }
+    .chat-mais summary { display: inline-flex; align-items: center; list-style: none; cursor: pointer; }
+    .chat-mais summary::-webkit-details-marker { display: none; }
+    .chat-mais[open] summary { margin-bottom: 8px; }
+
+    /* =========================================================
+       7c. Layout compacto (modelo Ember): cartões baixos, gráfico limpo
+       ========================================================= */
+    :root { --kpi-2: #0e8a85; --kpi-3: #13814f; --kpi-4: #6f5fe0; }
+    @media (prefers-color-scheme: dark) { :root { --kpi-2: #3cc4bd; --kpi-3: #5ccf97; --kpi-4: #a598ff; } }
+
+    .chat-folha-titulo { font-size: 15px; font-weight: 700; color: var(--texto); }
+    /* Total de uma lista ("5 clientes"): no cabeçalho, sem cartão */
+    .chat-folha-total { margin: 2px 0 0; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .chat-folha-total span { font-weight: 400; color: var(--nota); }
+
+    /* Cartões: rótulo, valor com variação ao lado, detalhe; barra de cor à esquerda */
+    .chat-kpis { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    .chat-kpi { min-height: 0; gap: 2px; padding: 10px 14px 12px; border-left: 3px solid var(--marca); }
+    .chat-kpi:nth-child(4n+2) { border-left-color: var(--kpi-2); }
+    .chat-kpi:nth-child(4n+3) { border-left-color: var(--kpi-3); }
+    .chat-kpi:nth-child(4n+4) { border-left-color: var(--kpi-4); }
+    .chat-kpi-icone { display: none; }
+    .chat-kpi-cab { font-size: 12.5px; }
+    .chat-kpi-linha { margin-top: 0; gap: 4px 8px; }
+    .chat-kpi-valor { font-size: 20px; font-weight: 700; }
+    .chat-kpi-detalhe { font-size: 12px; }
+    .chat-kpi .chat-delta { padding: 1px 7px; border-radius: 99px; font-size: 11.5px; }
+
+    /* Gráfico: leitura do mês numa linha por cima, tabela por mês fechada */
+    .chat-grafico { gap: 8px; }
+    .chat-leitura { padding: 0; background: none; border-radius: 0; gap: 4px 16px; font-size: 13px; }
+    .chat-leitura strong { min-width: 0; font-size: 13px; }
+    .chat-leitura div { flex-direction: row; align-items: baseline; gap: 6px; }
+    .chat-meses > summary { cursor: pointer; list-style: none; font-size: 13.5px; font-weight: 600; color: var(--marca); }
+    .chat-meses > summary::-webkit-details-marker { display: none; }
+    .chat-meses[open] > summary { margin-bottom: 10px; }
+
+    /* Ranking: uma linha por item, valor e % lado a lado */
+    .chat-rank-linha { min-height: 30px; }
+    .chat-rank-pista { height: 10px; }
+    .chat-rank-valor { flex-direction: row; align-items: baseline; justify-content: flex-end; gap: 8px; }
+    .chat-rank-valor small { min-width: 40px; text-align: right; }
+    .chat-rank-linha { grid-template-columns: 22px minmax(90px, 28%) minmax(60px, 1fr) 10.5rem; }
+
+    /* =========================================================
        8. Rodapé: pergunta + só leitura
        ========================================================= */
     .chat-rodape { flex: none; background: var(--cartao); border-top: 1px solid var(--borda); padding: 12px 16px 10px; display: flex; flex-direction: column; gap: 8px; }
@@ -544,6 +622,30 @@
       return svg;
     };
 
+    // Tira o markdown que o modelo às vezes acrescenta: "# Título" e "**negrito**".
+    // O marcador de lista ("- ") fica: lerLista() precisa dele para saber o que é item.
+    const limparMarkdown = l => l.replace(/^#{1,6}\s+/, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1');
+    const MARCADOR = /^[-*•]\s+/;
+    const semAcento = s => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+    // "ALDEIA DE PAIO PIRES" -> "Aldeia de Paio Pires" (só mexe em texto todo em maiúsculas)
+    const nomeProprio = s => s !== s.toUpperCase() ? s
+      : s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())
+         .replace(/ (Da|De|Do|Das|Dos|E) /g, w => w.toLowerCase());
+    // Quantas letras é preciso mudar para passar de a para b ("montija" -> "montijo" = 1)
+    function distancia(a, b) {
+      const d = Array.from({ length: b.length + 1 }, (_, j) => j);
+      for (let i = 1; i <= a.length; i++) {
+        let diagonal = d[0];
+        d[0] = i;
+        for (let j = 1; j <= b.length; j++) {
+          const cima = d[j];
+          d[j] = Math.min(d[j] + 1, d[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+          diagonal = cima;
+        }
+      }
+      return d[b.length];
+    }
+
     /* ---------- Estado no topo ---------- */
     
     function mostrarEstado(tipo) {   
@@ -563,13 +665,14 @@
 
     // A) Bloco CSV: "Zona, clientes, percentagem" + linhas. Vírgula+espaço separa colunas.
     // shortcut: lê a tabela do texto; quando o agente devolver colunas e linhas em JSON, trocar por isso.
-    function partir(linha) {
+    // sep = ', ' (vírgula e espaço, o formato antigo) ou ',' (CSV sem espaços: "Balcão,103,27.2")
+    function partir(linha, sep = ', ') {
       const campos = [];
       let atualC = '', aspas = false;
       for (let i = 0; i < linha.length; i++) {
         const c = linha[i];
         if (c === '"') aspas = !aspas;
-        else if (c === ',' && linha[i + 1] === ' ' && !aspas) { campos.push(atualC.trim()); atualC = ''; i++; }
+        else if (!aspas && linha.startsWith(sep, i)) { campos.push(atualC.trim()); atualC = ''; i += sep.length - 1; }
         else atualC += c;
       }
       campos.push(atualC.trim());
@@ -577,17 +680,29 @@
     }
     const eNumero = s => /^-?\d[\d.]*(,\d+)?%?$/.test(s);
     function lerTabela(texto) {
-      const blocos = texto.trim().split(/\n\s*\n/);
-      const i = blocos.findIndex(b => {
-        const linhas = b.trim().split('\n');
-        if (linhas.some(l => /^\d+\.\s/.test(l.trim()))) return false;   // lista numerada, não CSV
-        const cols = linhas.map(partir);
-        return cols.length >= 3 && cols[0].length >= 2 && cols.every(l => l.length === cols[0].length);
-      });
-      if (i < 0) return null;
-      const [cabecalho, ...linhas] = blocos[i].trim().split('\n').map(partir);
-      const numericas = cabecalho.map((_, c) => linhas.every(l => eNumero(l[c])));
-      return { antes: blocos.slice(0, i).join('\n\n'), depois: blocos.slice(i + 1).join('\n\n'), cabecalho, linhas, numericas };
+      const linhas = texto.trim().split('\n').map(l => l.trim());
+      for (let i = 0; i < linhas.length; i++) {
+        const l = linhas[i];
+        // Cabeçalho: tem vírgulas e não é item de lista, item numerado nem frase com ":"
+        if (!l.includes(',') || MARCADOR.test(l) || /^\d+\.\s/.test(l) || /:\s/.test(l)) continue;
+        // Com "Zona, clientes" separa em ", "; com "Zona,clientes" separa em ","
+        const sep = l.includes(', ') ? ', ' : ',';
+        const n = partir(l, sep).length;
+        if (n < 2) continue;
+        const bloco = [];
+        let j = i;
+        for (; j < linhas.length; j++) {
+          if (!linhas[j]) continue;                 // linhas em branco no meio do CSV
+          const campos = partir(linhas[j], sep);
+          if (campos.length !== n) break;
+          bloco.push(campos);
+        }
+        if (bloco.length < 3) continue;            // cabeçalho + pelo menos 2 linhas
+        const [cabecalho, ...dados] = bloco;
+        const numericas = cabecalho.map((_, c) => dados.every(d => eNumero(d[c])));
+        return { antes: linhas.slice(0, i).join('\n').trim(), depois: linhas.slice(j).join('\n').trim(), cabecalho, linhas: dados, numericas };
+      }
+      return null;
     }
 
     // B) Texto com título, factos, avisos e lista numerada (o formato atual do agente)
@@ -596,6 +711,7 @@
       if (i < 0) i = s.lastIndexOf(' - ');
       const esq = i < 0 ? s : s.slice(0, i);
       let dir = i < 0 ? '' : s.slice(i + 3).trim(), media = '';
+      dir = dir.replace(/\s*·\s*\d{4}:\s*[–—-]\s*$/, '');   // "· 2025: –" sem valor anterior não diz nada
       // "… · média 73,40 €" no fim (meses e trimestres): valor médio por documento
       const med = dir.match(/^(.*?)\s*·\s*média\s+(.+)$/);
       if (med) { dir = med[1]; media = med[2]; }
@@ -624,12 +740,20 @@
     }
     function lerLista(texto) {
       const r = { titulo: '', periodo: '', resumo: '', factos: [], avisos: [], itens: [], paragrafos: [], nota: '' };
-      texto.split('\n').map(l => l.trim()).filter(Boolean).forEach((l, i) => {
+      const ls = texto.split('\n').map(l => limparMarkdown(l.trim())).filter(Boolean);
+      const eFacto = s => /^[^:]{3,40}:\s/.test(s);   // "Rótulo: valor"
+      let grupo = '';                                  // "Clientes em Odivelas:" por cima de uma lista
+      ls.forEach((linha, i) => {
+        const marcador = MARCADOR.test(linha);         // a linha começa por "- ", "* " ou "• "
+        const l = linha.replace(MARCADOR, '');
+        const seguinte = ls[i + 1] || '';
         let m;
-        if ((m = l.match(/^(\d+)\.\s+(.+)$/))) r.itens.push(lerItem(m[1], m[2]));
+        if ((m = l.match(/^(\d+)\.\s+(.+)$/))) r.itens.push({ ...lerItem(m[1], m[2]), grupo });
+        else if (marcador && !eFacto(l)) r.itens.push({ pos: '', nome: l, codigo: '', valor: '', pct: '', rotulo: '', num: NaN, grupo });
+        else if (!marcador && l.endsWith(':') && MARCADOR.test(seguinte) && !eFacto(seguinte.replace(MARCADOR, ''))) grupo = l.slice(0, -1);
         else if ((m = l.match(/^Aten[çc][ãa]o:\s*(.+)$/i))) r.avisos.push(m[1]);
         else if ((m = l.match(/^Mostr[oa]\s+(.+)$/i))) r.nota = 'Mostra ' + semPonto(m[1]);
-        else if (i === 0 && (m = l.match(/^(.+?):\s+(.+)$/))) { r.titulo = m[1]; r.resumo = m[2]; }
+        else if (i === 0 && !marcador && !/^lista completa/i.test(l) && (m = l.match(/^(.+?):\s+(.+)$/))) { r.titulo = m[1]; r.resumo = m[2]; }
         else if ((m = l.match(/^([^:]{3,40}):\s+(.+)$/))) r.factos.push([m[1], semPonto(m[2])]);
         else r.paragrafos.push(l);
       });
@@ -641,27 +765,189 @@
     /* =========================================================
        Desenho das respostas
        ========================================================= */
-    function botaoCopiar(linhas) {
+    // Colunas que só têm células vazias não vão para o Excel
+    function semColunasVazias(linhas) {
+      const manter = linhas[0].map((_, c) => linhas.slice(1).some(l => String(l[c] ?? '').trim() !== ''));
+      return linhas.map(l => l.filter((_, c) => manter[c]));
+    }
+
+    // "15 373,55 €" -> "15373,55" e o cabeçalho ganha "(€)": o Excel em pt-PT lê como número e soma
+    const EUROS = /^-?[\d\s  .]+(,\d+)?\s*€$/;
+    function paraFolha(linhas) {
+      const [cab, ...dados] = linhas;
+      const emEuros = cab.map((_, c) => dados.some(l => l[c]) && dados.every(l => !l[c] || EUROS.test(String(l[c]).trim())));
+      return [
+        cab.map((h, c) => emEuros[c] && !String(h).includes('€') ? h + ' (€)' : h),
+        ...dados.map(l => l.map((v, c) => emEuros[c] && v ? String(v).replace(/[^\d,-]/g, '') : v))
+      ];
+    }
+
+    async function copiarTexto(texto) {
+      try { await navigator.clipboard.writeText(texto); return true; } catch { /* segue para o plano B */ }
+      // Sem localhost nem HTTPS não há navigator.clipboard: copia por uma caixa de texto escondida
+      const antes = document.activeElement;
+      const caixa = el('textarea');
+      caixa.value = texto;
+      caixa.setAttribute('readonly', '');
+      caixa.style.position = 'fixed'; caixa.style.opacity = '0';
+      document.body.append(caixa);
+      caixa.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch { ok = false; }
+      caixa.remove();
+      if (antes) antes.focus();
+      return ok;
+    }
+
+    // conteudo: texto simples, ou linhas [[cabeçalho...], [valores...], ...]
+    function botaoCopiar(conteudo) {
+      // Tabulações: cola em colunas no Excel
+      const texto = typeof conteudo === 'string' ? conteudo : paraFolha(conteudo).map(l => l.join('\t')).join('\n');
       const b = botaoEl('chat-acao', 'Copiar', async () => {
-        // Tabulações: cola em colunas no Excel
-        try { await navigator.clipboard.writeText(linhas.map(l => l.join('\t')).join('\n')); b.textContent = 'Copiado'; }
-        catch { b.textContent = 'Não foi possível copiar'; }
+        b.textContent = await copiarTexto(texto) ? 'Copiado' : 'Não foi possível copiar';
+        setTimeout(() => { b.textContent = 'Copiar'; }, 2000);
       });
       return b;
     }
 
-    function botaoExportar(linhas) {
-      return botaoEl('chat-acao', 'Exportar', () => {
+    function botaoExportar(linhas, titulo) {
+      return botaoEl('chat-acao', 'Exportar CSV', () => {
         // ";" e BOM: o Excel em pt-PT abre em colunas e com acentos certos
         const campo = v => /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-        const csv = '﻿' + linhas.map(l => l.map(v => campo(String(v ?? ''))).join(';')).join('\r\n');
+        const csv = '﻿' + paraFolha(linhas).map(l => l.map(v => campo(String(v ?? ''))).join(';')).join('\r\n');
+        // "Clientes por Zona" -> clientes-por-zona-2026-10-28.csv
+        const nome = semAcento(titulo || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'vendas';
         const a = el('a');
         a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-        a.download = `vendas-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `${nome}-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
-        URL.revokeObjectURL(a.href);
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);   // revogar logo pode cancelar o download
       });
     }
+
+        /* ---------- Gráficos como imagem (PNG) ---------- */
+    // Cores fixas e claras: a imagem vai para Word, PowerPoint ou email, que têm fundo branco
+    const COR = { marca: '#1d46c0', texto: '#16213a', nota: '#566179', grelha: '#e3e8f1', pista: '#e6ebf5', anterior: '#7f93cc' };
+    const fonte = (tamanho, peso = 400) => `${peso} ${tamanho}px system-ui, "Segoe UI", Arial, sans-serif`;
+    // Corta o texto com "…" para caber na largura
+    function cortar(g, texto, largura) {
+      if (g.measureText(texto).width <= largura) return texto;
+      while (texto.length > 1 && g.measureText(texto + '…').width > largura) texto = texto.slice(0, -1);
+      return texto + '…';
+    }
+    // Canvas com fundo branco, título e período; a escala 2 dá uma imagem nítida no Word
+    function novaTela(largura, altura, titulo, subtitulo) {
+      const cv = document.createElement('canvas');
+      cv.width = largura * 2; cv.height = altura * 2;
+      const g = cv.getContext('2d');
+      g.scale(2, 2);
+      g.fillStyle = '#fff'; g.fillRect(0, 0, largura, altura);
+      g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+      g.fillStyle = COR.texto; g.font = fonte(16, 700); g.fillText(titulo || 'Vendas', 24, 30);
+      if (subtitulo) { g.fillStyle = COR.nota; g.font = fonte(12); g.fillText(subtitulo, 24, 48); }
+      return { cv, g };
+    }
+
+    // Evolução por mês: os mesmos meses e valores do gráfico do ecrã
+    function pngSerie(s, titulo, subtitulo) {
+      const L = 960, A = 420, m = { t: 72, r: 24, b: 36, l: 80 };
+      const { cv, g } = novaTela(L, A, titulo, subtitulo);
+      const max = Math.max(...s.meses.flatMap(x => [x.atual, x.anterior]).filter(v => v > 0));
+      const passo = Math.pow(10, Math.floor(Math.log10(max))) / 2;
+      const topo = Math.ceil(max / passo) * passo;
+      const w = L - m.l - m.r, h = A - m.t - m.b, n = s.meses.length;
+      const X = i => m.l + (i + 0.5) / n * w;
+      const Y = v => m.t + h - v / topo * h;
+
+      // Legenda, em texto, no canto
+      const legenda = [String(s.anoAtual), s.anoAnt ? s.anoAnt + ' (tracejado)' : '', s.meses.some(x => x.parcial) ? 'ponto vazio = mês incompleto' : ''];
+      g.textAlign = 'right'; g.fillStyle = COR.nota; g.font = fonte(12);
+      g.fillText(legenda.filter(Boolean).join(' · '), L - m.r, 30);
+
+      // Grelha e eixos
+      g.textBaseline = 'middle'; g.lineWidth = 1;
+      [0, topo / 2, topo].forEach(v => {
+        g.strokeStyle = COR.grelha; g.beginPath(); g.moveTo(m.l, Y(v)); g.lineTo(L - m.r, Y(v)); g.stroke();
+        g.fillStyle = COR.nota; g.fillText(v ? milhares(v) : '0', m.l - 10, Y(v));
+      });
+      g.textAlign = 'center'; g.textBaseline = 'top';
+      s.meses.forEach((x, i) => g.fillText(MESES[x.m - 1].slice(0, 3).toLowerCase(), X(i), A - m.b + 10));
+
+      // Linhas: ano anterior tracejado, ano atual a cheio só nos meses completos
+      const linha = (pontos, cor, tracejado) => {
+        if (pontos.length < 2) return;
+        g.strokeStyle = cor; g.lineWidth = 2.5; g.lineJoin = 'round'; g.setLineDash(tracejado ? [6, 5] : []);
+        g.beginPath(); pontos.forEach(([x, y], k) => k ? g.lineTo(x, y) : g.moveTo(x, y)); g.stroke();
+        g.setLineDash([]);
+      };
+      linha(s.meses.map((x, i) => x.anterior != null ? [X(i), Y(x.anterior)] : null).filter(Boolean), COR.anterior, true);
+      linha(s.meses.map((x, i) => x.atual != null && !x.parcial ? [X(i), Y(x.atual)] : null).filter(Boolean), COR.marca, false);
+      s.meses.forEach((x, i) => {
+        if (x.atual == null) return;
+        g.beginPath(); g.arc(X(i), Y(x.atual), 4.5, 0, 2 * Math.PI);
+        g.fillStyle = x.parcial ? '#fff' : COR.marca; g.fill();
+        g.strokeStyle = COR.marca; g.lineWidth = 2; g.stroke();
+      });
+
+      // Valor só no melhor mês, para não amontoar números
+      const comDados = s.meses.filter(x => x.atual != null && !x.parcial);
+      if (comDados.length) {
+        const melhor = comDados.reduce((a, b) => b.atual > a.atual ? b : a);
+        const i = s.meses.indexOf(melhor);
+        g.fillStyle = COR.texto; g.font = fonte(12, 600); g.textAlign = 'center'; g.textBaseline = 'bottom';
+        g.fillText(euros(melhor.atual), X(i), Y(melhor.atual) - 10);
+      }
+      return cv;
+    }
+
+    // Ranking: posição e nome | barra | valor e %
+    function pngRanking(itens, titulo, subtitulo) {
+      const L = 960, alturaLinha = 32, m = { t: 72, r: 24, b: 24, l: 24 };
+      const A = m.t + itens.length * alturaLinha + m.b;
+      const { cv, g } = novaTela(L, A, titulo, subtitulo);
+      const max = Math.max(...itens.map(i => i.num));
+      const xBarra = m.l + 280, xValor = L - m.r, wBarra = xValor - 170 - xBarra;
+      g.textBaseline = 'middle';
+      itens.forEach((it, k) => {
+        const y = m.t + k * alturaLinha + alturaLinha / 2;
+        const nome = (it.pos ? it.pos + '. ' : '') + it.nome + (it.codigo ? ' (' + it.codigo + ')' : '');
+        g.textAlign = 'left'; g.fillStyle = COR.texto; g.font = fonte(13);
+        g.fillText(cortar(g, nome, 260), m.l, y);
+        g.fillStyle = COR.pista; g.fillRect(xBarra, y - 6, wBarra, 12);
+        g.fillStyle = COR.marca; g.fillRect(xBarra, y - 6, Math.max(2, it.num / max * wBarra), 12);
+        g.textAlign = 'right'; g.fillStyle = COR.texto; g.font = fonte(13, 600);
+        g.fillText(it.valor, xValor - (it.pct ? 56 : 0), y);
+        if (it.pct) { g.fillStyle = COR.nota; g.font = fonte(12); g.fillText(it.pct, xValor, y); }
+      });
+      return cv;
+    }
+
+    function botaoImagem(desenhar, titulo) {
+      return botaoEl('chat-acao', 'Guardar imagem', () => {
+        desenhar().toBlob(blob => {
+          const nome = semAcento(titulo || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'grafico';
+          const a = el('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `${nome}-${new Date().toISOString().slice(0, 10)}.png`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }, 'image/png');
+      });
+    }
+
+    // Rodapé de qualquer resposta com dados: Copiar, Exportar CSV e quantas linhas vão
+          rodapeDados(art, linhas, r.titulo, r.nota, imagem);
+    {
+      const rod = el('div', 'chat-folha-rodape');
+      const tabela = linhas && linhas.length > 1 ? semColunasVazias(linhas) : null;
+      const n = tabela ? tabela.length - 1 : 0;
+      if (tabela) rod.append(botaoCopiar(tabela), botaoExportar(tabela, titulo));
+      if (imagem) rod.append(botaoImagem(imagem, titulo));   // só quando há gráfico
+      const meta = [n ? `${n} ${n === 1 ? 'linha' : 'linhas'}` : '', nota || ''].filter(Boolean).join(' · ');
+      if (meta) rod.append(el('p', 'chat-folha-meta', meta));
+      if (rod.childNodes.length) art.append(rod);
+    }
+
 
     /* ---------- Números, variações e meses ---------- */
     const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -682,12 +968,12 @@
 
     // Resumo e factos -> cartões (Total, Valor médio, Melhor mês…)
     function desenharKpis(r, cab, art) {
-      const cartoes = [];
+      const cartoes = [], ficha = [];
       let resumoTexto = '';
       if (r.resumo) {
         const [principal, ...resto] = r.resumo.split(/\.\s+(?=\S)/);
         if (resto.length) cab.append(el('p', 'chat-folha-meta', resto.join('. ')));
-        const m = semPonto(principal).match(/^(?:total\s+)?(-?\d[\d\s.  ]*(?:,\d+)?\s*€)\s*(.*)$/i);
+        const m = semPonto(principal).match(/^(?:total\s+)?(-?\d[\d\s.\u00a0\u202f]*(?:,\d+)?\s*€)\s*(.*)$/i);
         if (m) cartoes.push({ rotulo: 'Total', valor: euros(paraNumero(m[1])), detalhe: maiuscula(m[2].replace(/^em\s+/i, '')), icone: ICONES.total });
         else if (/^\d/.test(principal)) {
           // "379 clientes em 9 grupos": "379 clientes" no valor, "9 grupos" por baixo, para caber numa linha
@@ -696,6 +982,8 @@
         }
         else resumoTexto = maiuscula(semPonto(principal));
       }
+      // Um número com, no máximo, uma palavra ou € ou %: "1 cliente", "58,54 €", "0,0%"
+      const eNumeroCurto = v => /^[-−+]?[\d\s.,  ]+\s*(€|%|\p{L}+)?$/u.test(v);
       for (const [k, v] of r.factos) {
         if (/^lista completa/i.test(k)) continue;   // não acrescenta informação
         const c = k.match(/^comparado com\s.*?(\d{4})$/i);
@@ -707,25 +995,41 @@
         }
         const mes = v.match(/^(\d{4})-(\d{2})\s+[–-]\s+(.+)$/);   // "2026-07 – 278 519,07 €"
         if (mes) { cartoes.push({ rotulo: k, valor: MESES[+mes[2] - 1], detalhe: euros(paraNumero(mes[3])), icone: ICONES.subida }); continue; }
+        // Texto (nome do cliente, condição de pagamento): vai para a ficha, não para um cartão grande
+        if (!eNumeroCurto(v)) { ficha.push([k, v]); continue; }
         cartoes.push({ rotulo: k, valor: v, icone: /m[ée]dio/i.test(k) ? ICONES.recibo : ICONES.barras });
       }
       if (resumoTexto) art.append(el('p', 'chat-folha-resumo', resumoTexto));
-      if (!cartoes.length) return;
-      const grelha = el('div', 'chat-kpis');
-      for (const c of cartoes) {
-        const k = el('div', 'chat-kpi');
-        const topo = el('div', 'chat-kpi-cab');
-        const ic = el('span', 'chat-kpi-icone');
-        ic.append(icone(c.icone, 14));
-        topo.append(el('span', '', c.rotulo), ic);
-        const linha = el('div', 'chat-kpi-linha');
-        linha.append(el('span', 'chat-kpi-valor', c.valor));
-        if (c.delta != null) linha.append(chipDelta(c.delta, ' ' + c.vs));
-        k.append(topo, linha);
-        if (c.detalhe) k.append(el('span', 'chat-kpi-detalhe', c.detalhe));
-        grelha.append(k);
+      // Só um total de contagem ("5 clientes"): vai para o cabeçalho, sem cartão
+      if (cartoes.length === 1 && cartoes[0].icone === ICONES.barras && cartoes[0].delta == null) {
+        const total = el('p', 'chat-folha-total', cartoes[0].valor);
+        if (cartoes[0].detalhe) total.append(el('span', '', ' · ' + cartoes[0].detalhe));
+        cab.append(total);
+      } else if (cartoes.length) {
+        const grelha = el('div', 'chat-kpis');
+        for (const c of cartoes) {
+          const k = el('div', 'chat-kpi');
+          const topo = el('div', 'chat-kpi-cab');
+          const ic = el('span', 'chat-kpi-icone');
+          ic.append(icone(c.icone, 14));
+          topo.append(el('span', '', c.rotulo), ic);
+          const linha = el('div', 'chat-kpi-linha');
+          linha.append(el('span', 'chat-kpi-valor', c.valor));
+          if (c.delta != null) linha.append(chipDelta(c.delta, ' ' + c.vs));
+          k.append(topo, linha);
+          if (c.detalhe) k.append(el('span', 'chat-kpi-detalhe', c.detalhe));
+          grelha.append(k);
+        }
+        art.append(grelha);
       }
-      art.append(grelha);
+      if (ficha.length) {
+        const dl = el('dl', 'chat-ficha');
+        for (const [k, v] of ficha) dl.append(el('dt', '', k), el('dd', '', v));
+        art.append(dl);
+      }
+      return [['Indicador', 'Valor', 'Detalhe'],
+              ...cartoes.map(c => [c.rotulo, c.valor, c.detalhe || '']),
+              ...ficha.map(([k, v]) => [k, v, ''])];
     }
 
     // Lista em que todas as linhas são meses "AAAA-MM" -> série para o gráfico
@@ -737,15 +1041,6 @@
         return { a, m, atual: paraNumero(i.valor), anterior: i.anterior ? paraNumero(i.anterior.valor) : null,
                  delta: i.delta, anoAnt: i.anterior ? i.anterior.ano : null, media: i.media };
       });
-      // Meses do período que não vieram na lista: coluna vazia, para a falta de dados se ver
-      const fim = r.periodo.match(/(\d{2})-(\d{4})$/);
-      if (fim) {
-        let { a, m } = meses[meses.length - 1];
-        while (a < +fim[2] || (a === +fim[2] && m < +fim[1])) {
-          if (++m > 12) { m = 1; a++; }
-          meses.push({ a, m, atual: null, anterior: null, delta: null });
-        }
-      }
       // O mês da última venda registada (aviso "Atenção") está incompleto
       const ultima = r.avisos.join(' ').match(/(\d{2})-(\d{2})-(\d{4})/);
       meses.forEach(x => { x.parcial = !!ultima && x.atual != null && x.a === +ultima[3] && x.m === +ultima[2]; });
@@ -816,14 +1111,9 @@
       const completos = comDados.filter(i => !s.meses[i].parcial);
       if (completos.length > 1) {
         const p0 = completos[0], p1 = completos[completos.length - 1];
-        forma('polygon', { points: `${X(p0)},200 ${pontos(completos)} ${X(p1)},200`, style: 'fill: var(--selecionado); opacity: .55; stroke: none' });
+        forma('polygon', { points: `${X(p0)},200 ${pontos(completos)} ${X(p1)},200`, style: 'fill: var(--selecionado); opacity: .3; stroke: none' });
         forma('polyline', { points: pontos(completos), style: 'fill: none; stroke: var(--marca); stroke-width: 2.5; stroke-linejoin: round' });
       }
-      comDados.forEach((i, k) => {
-        if (!s.meses[i].parcial) return;
-        const vizinho = comDados[k === 0 ? 1 : k - 1];   // 1.º mês liga ao seguinte; os outros ao anterior
-        if (vizinho != null) forma('polyline', { points: pontos([vizinho, i]), style: 'fill: none; stroke: var(--marca); stroke-width: 2; stroke-dasharray: 4 4' });
-      });
       barras.append(svg);
 
       const rotulos = el('div', 'chat-rotulos');
@@ -862,7 +1152,7 @@
       });
       colunas.append(barras, rotulos);
       corpo.append(eixo, colunas);
-      sec.append(cab, corpo, leitura);
+      sec.append(cab, leitura, corpo);
       art.append(sec);
 
       // Começa no melhor mês
@@ -871,7 +1161,7 @@
       escolher(melhor);
 
       // Tabela de detalhe: os mesmos números, para ler ou copiar
-      const tab = el('section', 'chat-bloco chat-meses');
+      const tab = el('details', 'chat-bloco chat-meses');
       const grelha = el('div');
       grelha.setAttribute('role', 'table');
       grelha.setAttribute('aria-label', 'Detalhe por mês');
@@ -892,7 +1182,7 @@
                ...(s.anoAnt ? [el('span', 'chat-ant', x.anterior == null ? '—' : euros(x.anterior))] : []),
                ...(comMedia ? [el('span', '', x.media || '—')] : []), v]);
       });
-      tab.append(el('h3', '', 'Detalhe por mês'), grelha);
+      tab.append(el('summary', '', 'Ver detalhe por mês'), grelha);
       art.append(tab);
     }
 
@@ -918,7 +1208,7 @@
         const val = el('div', 'chat-rank-valor');
         val.append(el('strong', '', it.valor));
         if (it.pct) val.append(el('small', '', it.pct));
-        if (it.media) val.append(el('small', '', 'média ' + it.media));   // trimestres
+        if (it.media) li.title = 'Valor médio por documento: ' + it.media;   // fora da linha, para não a encher
         if (it.delta != null) val.append(chipDelta(it.delta, it.anterior ? ' vs ' + it.anterior.ano : ''));
         li.append(el('span', 'chat-rank-pos', it.pos), nome, pista, val);
         ol.append(li);
@@ -933,10 +1223,81 @@
       art.append(bloco);
     }
 
+    // Lista simples: posição | nome e código | valor. Com grupos ("Clientes em Odivelas") e nomes repetidos.
+    function desenharLista(itens, art, titulo) {
+      const nums = itens.map(i => Math.abs(i.num)).filter(n => n > 0);
+      const max = nums.length ? Math.max(...nums) : 0;
+      const rotulos = new Set(itens.map(i => i.rotulo));
+      const comum = rotulos.size === 1 ? [...rotulos][0] : '';
+      const bloco = el('div', 'chat-bloco chat-bloco--lista');
+      if (titulo) bloco.append(el('h3', 'chat-lista-titulo', titulo));
+      if (comum) { const c = el('div', 'chat-lista-cab', maiuscula(comum)); c.setAttribute('aria-hidden', 'true'); bloco.append(c); }
+
+      // O mesmo nome repetido no mesmo grupo aparece uma vez, com a contagem
+      const chave = i => (i.grupo || '') + '|' + i.nome + '|' + i.valor;
+      const vezes = new Map(), porGrupo = new Map();
+      itens.forEach(i => {
+        vezes.set(chave(i), (vezes.get(chave(i)) || 0) + 1);
+        porGrupo.set(i.grupo || '', (porGrupo.get(i.grupo || '') || 0) + 1);
+      });
+
+      const ol = el('ol', 'chat-lista');
+      ol.setAttribute('role', 'list');
+      let grupoAnterior = '';
+      for (const it of itens) {
+        const n = vezes.get(chave(it));
+        if (!n) continue;                       // repetido já mostrado
+        vezes.set(chave(it), 0);
+        if (it.grupo && it.grupo !== grupoAnterior) {
+          const g = el('li', 'chat-grupo-cab', it.grupo + ' ');
+          g.append(el('span', '', '· ' + porGrupo.get(it.grupo)));
+          ol.append(g);
+        }
+        grupoAnterior = it.grupo || '';
+        const li = el('li', 'chat-item');
+        const corpo = el('div', 'chat-item-corpo');
+        const vazio = /^\(?sem descri[çc][ãa]o\)?$/i.test(it.nome);
+        corpo.append(el('span', 'chat-item-nome' + (vazio ? ' chat-item-nome--vazio' : ''), vazio ? 'Sem descrição' : it.nome));
+        if (it.codigo) corpo.append(el('span', 'chat-item-codigo', it.codigo));
+        if (n > 1) corpo.append(el('span', 'chat-item-codigo', n + ' registos com este nome'));
+        const v = Math.abs(it.num);
+        if (v > 0 && max > 0) {
+          const b = el('span', 'chat-item-barra' + (it.num < 0 ? ' chat-item-barra--neg' : '')), f = el('span');
+          b.setAttribute('aria-hidden', 'true');
+          f.style.width = Math.max(2, v / max * 100) + '%';
+          b.append(f); corpo.append(b);
+        }
+        const val = el('div', 'chat-item-valor');
+        if (it.rotulo) val.append(el('span', comum ? 'so-leitor' : 'chat-item-rotulo', maiuscula(it.rotulo) + (comum ? ': ' : '')));
+        if (it.valor) val.append(el('strong', it.rotulo ? 'chat-data' : '', it.valor));
+        if (it.pct) val.append(el('span', 'chat-item-pct', it.pct));
+        if (it.delta != null) val.append(chipDelta(it.delta, it.anterior ? ' vs ' + it.anterior.ano : ''));
+        li.append(el('span', 'chat-item-pos', it.pos), corpo, val);
+        ol.append(li);
+      }
+      bloco.append(ol);
+      art.append(bloco);
+    }
+
     function folhaLista(r, original) {
       const art = el('article', 'chat-folha');
       const simples = !r.titulo && !r.itens.length && !r.factos.length && !r.avisos.length;
-      if (simples) { art.append(el('p', 'chat-texto', original.trim())); return art; }
+      if (simples) {
+        art.append(el('p', 'chat-texto', original.trim()));
+        const rod = el('div', 'chat-folha-rodape');
+        rod.append(botaoCopiar(original.trim()));   // texto: só Copiar
+        art.append(rod);
+        return art;
+      }
+
+      // Período de um só dia: título com o dia da semana e sem "1 meses" no total
+      const dia = r.periodo.match(/^(\d{2})-(\d{2})-(\d{4}) a \1-\2-\3$/);
+      if (dia) {
+        const semana = new Date(+dia[3], +dia[2] - 1, +dia[1]).toLocaleDateString('pt-PT', { weekday: 'long' });
+        r.titulo = `Faturação de ${semana}, ${dia[1]}-${dia[2]}-${dia[3]}`;
+        r.periodo = '';
+        r.resumo = r.resumo.replace(/\bem 1 m[eê]s(es)?,\s*/i, 'em ');
+      }
 
       const cab = el('div', 'chat-folha-cab');
       if (r.titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(r.titulo)));
@@ -944,7 +1305,7 @@
       art.append(cab);
 
       art.classList.add('chat-folha--painel');
-      desenharKpis(r, cab, art);
+      const linhasKpis = desenharKpis(r, cab, art);
       const serie = lerSerie(r);
 
       r.avisos.forEach((a, n) => {
@@ -966,78 +1327,73 @@
 
       r.paragrafos.forEach(p => art.append(el('p', 'chat-texto', p)));
 
-      if (serie) desenharSerie(serie, art);
-      else if (r.itens.length && r.itens.every(i => i.num > 0 && !i.rotulo)) desenharRanking(r.itens, art);
-      else if (r.itens.length) {
-        const nums = r.itens.map(i => i.num).filter(n => n > 0);
-        const max = nums.length ? Math.max(...nums) : 0;
-        const rotulos = new Set(r.itens.map(i => i.rotulo));
-        const comum = rotulos.size === 1 ? [...rotulos][0] : '';
-        const bloco = el('div', 'chat-bloco chat-bloco--lista');
-        if (comum) { const c = el('div', 'chat-lista-cab', maiuscula(comum)); c.setAttribute('aria-hidden', 'true'); bloco.append(c); }
+      // Valores negativos (devoluções, notas de crédito) vão para um bloco à parte
+      const devolucoes = r.itens.filter(i => i.num < 0);
+      const itens = r.itens.filter(i => !(i.num < 0));
+      // Um só valor (ex.: um dia) já está nos cartões: não desenha uma barra sozinha
+      const soUm = itens.length === 1 && !devolucoes.length && !!art.querySelector('.chat-kpis');
 
-        const ol = el('ol', 'chat-lista');
-        ol.setAttribute('role', 'list');
-        for (const it of r.itens) {
-          const li = el('li', 'chat-item');
-          const corpo = el('div', 'chat-item-corpo');
-          const vazio = /^\(?sem descri[çc][ãa]o\)?$/i.test(it.nome);
-          corpo.append(el('span', 'chat-item-nome' + (vazio ? ' chat-item-nome--vazio' : ''), vazio ? 'Sem descrição' : it.nome));
-          if (it.codigo) corpo.append(el('span', 'chat-item-codigo', it.codigo));
-          if (it.num > 0 && max > 0) {
-            const b = el('span', 'chat-item-barra'), f = el('span');
-            b.setAttribute('aria-hidden', 'true');
-            f.style.width = Math.max(2, it.num / max * 100) + '%';
-            b.append(f); corpo.append(b);
-          }
-          const val = el('div', 'chat-item-valor');
-          if (it.rotulo) val.append(el('span', comum ? 'so-leitor' : 'chat-item-rotulo', maiuscula(it.rotulo) + (comum ? ': ' : '')));
-          if (it.valor) val.append(el('strong', it.rotulo ? 'chat-data' : '', it.valor));
-          if (it.pct) val.append(el('span', 'chat-item-pct', it.pct));
-          if (it.delta != null) val.append(chipDelta(it.delta, it.anterior ? ' vs ' + it.anterior.ano : ''));
-          li.append(el('span', 'chat-item-pos', it.pos), corpo, val);
-          ol.append(li);
-        }
-        bloco.append(ol);
-        art.append(bloco);
-      }
+      let imagem = null;   // gráfico que o botão "Guardar imagem" redesenha em PNG
+      const periodo = r.periodo ? 'Período: ' + r.periodo : '';
+      if (serie) { desenharSerie(serie, art); imagem = () => pngSerie(serie, r.titulo, periodo); }
+      else if (soUm) { /* nada a acrescentar */ }
+      else if (itens.length && itens.every(i => i.num > 0 && !i.rotulo)) { desenharRanking(itens, art); imagem = () => pngRanking(itens, r.titulo, periodo); }
+      if (devolucoes.length) desenharLista(devolucoes, art, 'Devoluções e notas de crédito');
 
-      const rod = el('div', 'chat-folha-rodape');
-      if (r.itens.length) {
-        const linhas = serie
-          ? [['Mês', serie.anoAtual, serie.anoAnt || '', 'Variação (%)', 'Valor médio'],
-             ...r.itens.map(i => [i.nome, i.valor, i.anterior ? i.anterior.valor : '', i.delta == null ? '' : String(i.delta).replace('.', ','), i.media])]
-          : r.itens.map(i => [i.pos, i.nome, i.codigo, i.valor, i.pct, i.media]);
-        rod.append(botaoCopiar(linhas), botaoExportar(linhas));
-      }
-      if (r.nota) rod.append(el('p', 'chat-folha-meta', r.nota));
-      if (rod.childNodes.length) art.append(rod);
+      const linhas = !r.itens.length ? linhasKpis
+        : serie ? [['Mês', serie.anoAtual, serie.anoAnt || '', 'Variação (%)', 'Valor médio'],
+                   ...r.itens.map(i => [i.nome, i.valor, i.anterior ? i.anterior.valor : '', i.delta == null ? '' : String(i.delta).replace('.', ','), i.media])]
+        : [['Posição', 'Grupo', 'Nome', 'Código', 'Valor', '%', 'Média'],
+           ...r.itens.map(i => [i.pos, i.grupo || '', i.nome, i.codigo, i.valor, i.pct, i.media])];
+      rodapeDados(art, linhas, r.titulo, r.nota);
       return art;
     }
 
     function folhaTabela(t) {
       const art = el('article', 'chat-folha chat-folha--painel');
-      const [titulo, resumo] = t.antes.split(/:\s+(.*)/s);
+      // Sem markdown e sem "Lista completa: …", que repete o total
+      const limpo = s => s.split('\n').map(l => limparMarkdown(l.trim()).replace(MARCADOR, ''))
+        .filter(l => l && !/^lista completa/i.test(l)).join('\n');
+      const antes = limpo(t.antes), depois = limpo(t.depois);
+      const [titulo, resumo] = antes.split(/:\s+(.*)/s);
       const cab = el('div', 'chat-folha-cab');
       art.append(cab);
-      if (titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(titulo.toLowerCase())));
+      if (titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(titulo)));   // sem toLowerCase: mantém "Paulo Afonso"
+
+      // Coluna de texto com o mesmo valor em todas as linhas (ex.: Vendedor): sai da tabela e vai para o cabeçalho
+      const fixa = t.cabecalho.map((_, c) => c > 0 && !t.numericas[c] && t.linhas.length > 1 && t.linhas.every(l => l[c] === t.linhas[0][c]));
+      if (fixa.some(Boolean)) {
+        const filtros = el('div', 'chat-filtros');
+        t.cabecalho.forEach((nome, c) => {
+          if (!fixa[c]) return;
+          const f = el('span', 'chat-filtro');
+          f.append(el('span', '', maiuscula(nome)), t.linhas[0][c]);
+          filtros.append(f);
+        });
+        cab.append(filtros);
+      }
       if (resumo) desenharKpis({ resumo, factos: [] }, cab, art);   // "379 clientes em 9 grupos" num cartão
 
-      const barra = t.numericas.indexOf(true);
-      const maximo = barra < 0 ? 0 : Math.max(...t.linhas.map(l => paraNumero(l[barra])));
+      const mostrar = (_, c) => !fixa[c];
+      const cabecalho = t.cabecalho.filter(mostrar);
+      const numericas = t.numericas.filter(mostrar);
+      const linhas = t.linhas.map(l => l.filter(mostrar));
+
+      const barra = numericas.indexOf(true);
+      const maximo = barra < 0 ? 0 : Math.max(...linhas.map(l => paraNumero(l[barra])));
       const tabela = el('table', 'chat-tabela');
       const topo = tabela.createTHead().insertRow();
-      t.cabecalho.forEach((nome, c) => {
-        const th = el('th', t.numericas[c] ? 'chat-num' : '', nome);
+      cabecalho.forEach((nome, c) => {
+        const th = el('th', numericas[c] ? 'chat-num' : '', nome);
         th.scope = 'col';
         topo.append(th);
         if (c === 0 && barra >= 0) { const v = el('th'); v.append(el('span', 'so-leitor', 'Proporção')); topo.append(v); }
       });
       const corpo = tabela.createTBody();
-      for (const linha of t.linhas) {
+      for (const linha of linhas) {
         const tr = corpo.insertRow();
         linha.forEach((valor, c) => {
-          tr.append(el('td', t.numericas[c] ? 'chat-num' : '', valor));
+          tr.append(el('td', numericas[c] ? 'chat-num' : '', valor));
           if (c === 0 && barra >= 0) {
             const td = el('td'), fundo = el('div', 'chat-barra'), cheio = el('span');
             cheio.style.width = Math.max(3, paraNumero(linha[barra]) / maximo * 100) + '%';
@@ -1048,15 +1404,66 @@
       }
       const bloco = el('div', 'chat-bloco');
       bloco.append(tabela);
-      if (t.depois) bloco.append(el('p', 'chat-texto', t.depois));
+      if (depois) bloco.append(el('p', 'chat-texto', depois));
       art.append(bloco);
-      const rod = el('div', 'chat-folha-rodape');
-      rod.append(botaoCopiar([t.cabecalho, ...t.linhas]), botaoExportar([t.cabecalho, ...t.linhas]));
-      art.append(rod);
+      // Exporta a tabela completa, com as colunas fixas incluídas
+      rodapeDados(art, [t.cabecalho, ...t.linhas], titulo);
       return art;
     }
 
-    function formatar(texto) {
+    // "Nenhuma correspondência. … Localidade: FERNAO FERRO (41); Corroios (21); … (mostrados 30 de 101)"
+    function lerSemResultado(texto) {
+      if (!/nenhuma correspond[êe]ncia/i.test(texto)) return null;
+      const m = texto.match(/([A-Za-zÀ-ú][A-Za-zÀ-ú ]*?):\s*[^:()]+\(\d+\)/);   // "Localidade: X (41)"
+      if (!m) return null;
+      const resto = texto.slice(m.index + m[1].length + 1);
+      const opcoes = [...resto.matchAll(/([^;()]+?)\s*\((\d+)\)/g)].map(x => [x[1].trim(), +x[2]]);
+      const contagem = texto.match(/mostrados\s+(\d+)\s+de\s+(\d+)/i);
+      return { campo: m[1].trim(), opcoes, mostrados: contagem ? +contagem[1] : opcoes.length, total: contagem ? +contagem[2] : 0 };
+    }
+
+    function folhaSemResultado(s, pergunta) {
+      const art = el('article', 'chat-folha');
+      const cab = el('div', 'chat-folha-cab');
+      cab.append(el('h2', 'chat-vazio-titulo', `Não encontrei esse valor de ${s.campo.toLowerCase()}`),
+                 el('p', 'chat-folha-meta', 'Escolha um dos valores existentes. A pergunta corrigida fica no campo, para rever antes de enviar.'));
+      art.append(cab);
+
+      // Palavra da pergunta mais parecida com um valor existente ("Montija" -> "Montijo")
+      const palavras = pergunta.split(/\s+/).filter(p => p.length > 3);
+      let errada = palavras[palavras.length - 1] || '';
+      const parecidas = [];
+      for (const p of palavras) {
+        for (const o of s.opcoes) {
+          if (!parecidas.includes(o) && distancia(semAcento(p), semAcento(o[0])) <= 2) { parecidas.push(o); errada = p; }
+        }
+      }
+      const escolher = nome => { campo.value = errada ? pergunta.replace(errada, nome) : pergunta + ' ' + nome; campo.focus(); };
+      const botoes = lista => {
+        const d = el('div', 'chat-opcoes');
+        lista.forEach(([nome, n]) => {
+          const b = botaoEl('chat-chip', nomeProprio(nome), () => escolher(nomeProprio(nome)));
+          b.append(el('small', '', String(n)));
+          d.append(b);
+        });
+        return d;
+      };
+      if (parecidas.length) art.append(el('h3', 'chat-opcoes-titulo', 'Parecidos'), botoes(parecidas));
+      const resto = s.opcoes.filter(o => !parecidas.includes(o) && !/^sem dados$/i.test(o[0]));
+      art.append(el('h3', 'chat-opcoes-titulo', 'Com mais clientes'), botoes(resto.slice(0, 8)));
+      if (resto.length > 8) {
+        const mais = el('details', 'chat-mais');
+        mais.append(el('summary', 'chat-acao', `Ver mais ${resto.length - 8}`), botoes(resto.slice(8)));
+        art.append(mais);
+      }
+      rodapeDados(art, [[maiuscula(s.campo), 'Clientes'], ...s.opcoes.map(([nome, n]) => [nomeProprio(nome), String(n)])],
+                  'valores ' + s.campo, s.total ? `mostrados ${s.mostrados} de ${s.total}` : '');
+      return art;
+    }
+
+    function formatar(texto, pergunta = '') {
+      const s = lerSemResultado(texto);
+      if (s) return folhaSemResultado(s, pergunta);
       const t = lerTabela(texto);
       return t ? folhaTabela(t) : folhaLista(lerLista(texto), texto);
     }
@@ -1113,7 +1520,7 @@
         filhos.push(art);
       } else {
         try {
-          filhos.push(formatar(item.texto));
+          filhos.push(formatar(item.texto, item.pergunta));
         } catch (erro) {
           // Se a formatação falhar, mostra o texto tal como veio: o painel nunca fica parado.
           console.error('Falha a formatar a resposta:', erro);
