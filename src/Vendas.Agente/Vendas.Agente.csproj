@@ -21,6 +21,8 @@
     <ItemGroup>
   <!-- O ficheiro passa a viajar dentro do .exe -->
   <EmbeddedResource Include="Pagina\pagina-chat.html" />
+  <EmbeddedResource Include="logo\logo.png" />
+  <EmbeddedResource Include="logo\avatar-assistente-vendas.svg" />
     </ItemGroup>
 
 </Project>

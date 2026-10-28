@@ -24,6 +24,9 @@ public class PeriodoTests
     [InlineData(Periodo.AnoAnterior, "2026-10-15", "2025-01-01", "2026-01-01")]
     [InlineData(Periodo.AnoAtual, "2026-10-15", "2026-01-01", "2026-10-16")]
     [InlineData(Periodo.Ultimos7Dias, "2026-10-15", "2026-10-09", "2026-10-16")]
+    [InlineData(Periodo.TrimestreAtual, "2026-10-15", "2026-10-01", "2026-10-16")]
+    [InlineData(Periodo.TrimestreAnterior, "2026-10-27", "2026-07-01", "2026-10-01")]
+    [InlineData(Periodo.TrimestreAnterior, "2026-02-10", "2025-10-01", "2026-01-01")] //muda o ano
     public void Intervalo_DevolveDesdeEAte(Periodo periodo, string hoje, string desde, string ate)
         => Assert.Equal((DateOnly.Parse(desde), DateOnly.Parse(ate)), Periodos.Intervalo(periodo, DateOnly.Parse(hoje)));
 

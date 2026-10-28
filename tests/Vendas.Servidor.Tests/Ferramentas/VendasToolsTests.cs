@@ -444,6 +444,45 @@ public class VendasToolsTests
         Assert.Single(repo.ChamadasRanking);
     }
 
+    [Fact]
+    public async Task Comparar_DadosPorAtualizar_AnoAnteriorCortaNaUltimaVenda()
+    {
+        var repo = new FakeVendasRepo
+        {
+            ValoresPor = desde => desde.Year == 2026
+                ? [new("2026-09", 10m, 1m, 1, 10m, 1, TotalDocumentos: 1, UltimaData: new DateOnly(2026, 9, 4))]
+                : [new("2025-09", 10m, 1m, 1, 10m, 1, TotalDocumentos: 1)],
+        };
+        var r = await CriarSutEm(repo, 2026, 10, 27).ConsultarVendasAsync(DimensaoVenda.Mes, compararAnoAnterior: true);
+
+        // 01-01-2026 a 04-09-2026 (onde os dados acabam) contra os mesmos dias de 2025, não até 27-10-2025.
+        Assert.Equal((new DateOnly(2025, 1, 1), new DateOnly(2025, 9, 5), 100), repo.ChamadasRanking[1]);
+        Assert.Contains("Comparado com 01-01-2025 a 04-09-2025", r);
+    }
+
+    // ---- Dois meses comparados entre si (intervalo de meses inteiros).
+
+    [Fact]
+    public async Task MesesInteiros_DizAVariacaoDoPrimeiroParaOUltimo()
+    {
+        var repo = new FakeVendasRepo
+        {
+            Valores = [new("2026-01", 200m, 1m, 1, 590m, 3), new("2026-03", 240m, 1m, 1, 590m, 3), new("2026-05", 150m, 1m, 1, 590m, 3)],
+        };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, dataInicio: "01-01-2026", dataFim: "31-05-2026");
+
+        Assert.Contains("Variação janeiro → maio: -25,0%.", r);
+    }
+
+    [Fact]
+    public async Task AnoAtual_NaoDizVariacao() // o mês atual vai a meio: a queda seria falsa
+    {
+        var repo = new FakeVendasRepo { Valores = [new("2026-01", 200m, 1m, 1, 210m, 2), new("2026-10", 10m, 1m, 1, 210m, 2)] };
+        var r = await CriarSutEm(repo, 2026, 10, 27).ConsultarVendasAsync(DimensaoVenda.Mes);
+
+        Assert.DoesNotContain("Variação", r);
+    }
+
     [Theory]
     [InlineData(true, null)]
     [InlineData(false, DimensaoVenda.Distrito)]
