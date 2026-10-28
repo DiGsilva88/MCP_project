@@ -119,7 +119,7 @@ internal static class ConsultaClientes
     // WHERE parametrizado a partir dos filtros (colunas de lista branca, valores como parâmetro).
     // valor "sem dados" não existe como texto na BD (a view guarda o marcador da coluna: "(sem ...)"
     // ou "0 - sem ...") por isso vira NULL/vazio/marcador em vez de comparação exata.
-    // "nome" (opcional): só clientes cujo NomeCliente começa por esse texto (sem acentos/maiúsculas).
+    // "nome" (opcional): só clientes cujo NomeCliente começa por esse texto (sem acentos/maiúsculas) ou com esse ID exato.
     internal static (string Sql, Action<SqlParameterCollection> Parametros) FiltrosWhere(
         IReadOnlyDictionary<Campo, string> filtros, string? nome = null)
     {
@@ -138,8 +138,9 @@ internal static class ConsultaClientes
               $"REPLACE(REPLACE(REPLACE(@filtro{i}, '[', '[[]'), '%', '[%]'), '_', '[_]') + ' %')");
         if (temNome)
             condicoes = condicoes.Append(
-                "c.NomeCliente COLLATE Latin1_General_CI_AI LIKE " +
-                "REPLACE(REPLACE(REPLACE(@nome, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%'");
+                "(c.NomeCliente COLLATE Latin1_General_CI_AI LIKE " +
+                "REPLACE(REPLACE(REPLACE(@nome, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%' " +
+                "OR CAST(c.ClienteID AS nvarchar(50)) = @nome)");
         var sql = "WHERE " + string.Join(" AND ", condicoes);
 
         void Parametros(SqlParameterCollection p)

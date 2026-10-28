@@ -19,6 +19,15 @@ public class VistasToolsTests
     // ---------- sensível ----------
 
     [Fact]
+    public async Task Sensivel_Cliente_FiltraPeloIdOuNome()
+    {
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarSensivelAsync(CampoSensivel.Email, cliente: "1003");
+
+        Assert.Equal("1003", repo.UltimoNome);
+    }
+
+    [Fact]
     public async Task Sensivel_MaioresNumaColunaDeTexto_RecusaSemIrAoRepo()
     {
         var repo = new FakeVendasRepo();

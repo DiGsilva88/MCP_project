@@ -113,6 +113,23 @@ public class PoliticasSegurancaTests
     }
 
     [Fact]
+    public void ValorInventado_NomeDaColunaComoValor_Recusa()
+        => Assert.StartsWith("valorCruzado=Zona é o nome de uma coluna",
+            PoliticasSeguranca.ValorInventado("Como está distribuído o pagamento por zona?", "", Args("valorCruzado", "Zona")));
+
+    [Theory]
+    [InlineData("Quais foram as localidades com menos vendas?", true)]
+    [InlineData("Que zona fatura mais?", true)]
+    [InlineData("Quantos clientes tem cada vendedor?", false)] // "vendedor" não é vendas
+    [InlineData("Quantos clientes há por zona?", false)]
+    public void ContarEmVezDeVendas_SoRecusaPerguntasDeVendas(string pergunta, bool recusa)
+    {
+        var r = PoliticasSeguranca.ContarEmVezDeVendas("consultar", pergunta,
+            new Dictionary<string, object?> { ["coluna"] = "Localidade", ["contar"] = true });
+        Assert.Equal(recusa, r is not null);
+    }
+
+    [Fact]
     public void ValorInventado_CorrigidoPorUmResultadoAnterior_Passa()
         => Assert.Null(PoliticasSeguranca.ValorInventado(
             "Vendas em Seixall", "Nenhuma correspondência. O valor tem de ser um dos existentes:\nLocalidade: Seixal (5)",

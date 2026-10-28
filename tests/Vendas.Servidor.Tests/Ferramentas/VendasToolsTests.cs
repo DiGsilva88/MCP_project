@@ -25,6 +25,35 @@ public class VendasToolsTests
         Assert.Equal("ano tem de ser de 2000 a 2026.", await sut.ConsultarVendasAsync(ano: 2027));
     }
 
+    [Theory]
+    [InlineData(DimensaoVenda.Trimestre, Periodo.TrimestreAtual)]
+    [InlineData(DimensaoVenda.Mes, Periodo.MesAnterior)]
+    public async Task AgruparNoTempo_NumPeriodoDeUmSoGrupo_PassaParaOAnoAtual(DimensaoVenda agrupar, Periodo periodo)
+    {
+        var repo = new FakeVendasRepo();
+        var sut = new VendasTools(repo, NullLogger<VendasTools>.Instance,
+            new RelogioFixo(new DateTimeOffset(2026, 10, 28, 12, 0, 0, TimeSpan.Zero)));
+
+        await sut.ConsultarVendasAsync(agrupar, periodo);
+
+        Assert.Equal((new DateOnly(2026, 1, 1), new DateOnly(2026, 10, 29)), repo.UltimoPeriodo);
+    }
+
+    [Fact]
+    public async Task Menores_ChegaAoRepoEDizNoTitulo()
+    {
+        var repo = new FakeVendasRepo { Valores = [new ValorAgrupado("Seixal", 10m, 1, 1, 10m, 1)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Localidade, menores: true);
+
+        Assert.True(repo.UltimoMenores);
+        Assert.Contains("do menor para o maior", r);
+    }
+
+    [Fact]
+    public async Task Menores_ComCliente_DevolveErroParaCorrigir()
+        => Assert.StartsWith("menores não se combina",
+            await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(DimensaoVenda.Cliente, menores: true));
+
     [Fact]
     public async Task Cliente_ChamaRankingPorCliente()
     {
@@ -97,6 +126,16 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task Mes_CadaLinhaTrazOValorMedioPorDocumento()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("2026-01", 300m, 0, 4, 500m, 2), new("2026-02", 200m, 0, 0, 500m, 2)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes);
+
+        Assert.Contains("1. 2026-01 – 300,00 € (60,0%) · média 75,00 €", r);
+        Assert.Contains("2. 2026-02 – 200,00 € (40,0%)\n", r.ReplaceLineEndings("\n")); // sem documentos: sem média
+    }
+
+    [Fact]
     public async Task ClienteInexistente_DizQueNaoExisteSemSomarVendas()
     {
         var repo = new FakeVendasRepo { Clientes = _ => [] };
@@ -132,8 +171,8 @@ public class VendasToolsTests
         var repo = new FakeVendasRepo { Valores = [new("Ana", 0m, 2m, 1, 0m, 1)] };
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo);
 
-        // Sem percentagem: a linha acaba logo a seguir ao valor.
-        Assert.Contains("1. Ana – 0,00 €" + Environment.NewLine, r);
+        // Sem percentagem: ao valor segue-se logo a média.
+        Assert.Contains("1. Ana – 0,00 € · média 0,00 €" + Environment.NewLine, r);
     }
 
     [Fact]
@@ -204,6 +243,34 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task ValorSemColuna_UsaAColunaDeAgrupar()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("Lisboa", 10m, 0, 1, 10m, 1)] };
+        await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Localidade, valor: "Lisboa");
+
+        Assert.Equal("Lisboa", repo.UltimosFiltros![Campo.Localidade]);
+    }
+
+    [Fact]
+    public async Task ValorSemColuna_ComArtigo_DizQueColunaUsar()
+        => Assert.StartsWith("valor precisa de coluna",
+            await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(DimensaoVenda.Artigo, valor: "Lisboa"));
+
+    [Fact]
+    public async Task LocalidadeQueEDistrito_FiltraPeloDistrito()
+    {
+        var repo = new FakeVendasRepo
+        {
+            ContagensPor = (_, f) => f.ContainsKey(Campo.Distrito) ? [new ContagemCliente("Setubal", 5, 5, 1)] : [],
+            Valores = [new("Artigo A", 10m, 0, 1, 10m, 1)],
+        };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo, coluna: Campo.Localidade, valor: "Setubal");
+
+        Assert.Contains("Distrito = Setubal", r);
+        Assert.Contains("1. Artigo A", r);
+    }
+
+    [Fact]
     public async Task LocalidadeInexistente_ListaAsExistentes()
     {
         var repo = new FakeVendasRepo
@@ -223,7 +290,7 @@ public class VendasToolsTests
 
         Assert.Equal(DimensaoVenda.Localidade, repo.UltimaDimensao);
         Assert.Contains("Vendas por localidade", r);
-        Assert.Contains("1. Seixal – 100,00 € (25,0%)", r);
+        Assert.Contains("1. Seixal – 100,00 € (25,0%) · média 50,00 €", r);
         Assert.Contains("Mostro 1 de 3 localidades.", r);
     }
 
@@ -490,8 +557,17 @@ public class VendasToolsTests
         => Assert.Equal("compararAnoAnterior não se combina com semVendas nem emCada. Chama de novo sem eles.",
             await CriarSut(new FakeVendasRepo()).ConsultarVendasAsync(DimensaoVenda.Artigo, semVendas: semVendas, emCada: emCada, compararAnoAnterior: true));
 
+    [Fact]
+    public async Task EmCadaIgualAAgrupar_Ignora()
+    {
+        var repo = new FakeVendasRepo();
+        await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, emCada: DimensaoVenda.Mes);
+
+        Assert.Equal(DimensaoVenda.Mes, repo.UltimaDimensao);
+        Assert.Null(repo.UltimoEmCada);
+    }
+
     [Theory]
-    [InlineData(DimensaoVenda.Artigo, DimensaoVenda.Artigo, "emCada tem de ser diferente de agrupar.")]
     [InlineData(DimensaoVenda.Cliente, DimensaoVenda.Distrito, "emCada não se aplica a Cliente")]
     [InlineData(DimensaoVenda.Artigo, DimensaoVenda.Cliente, "emCada não se aplica a Cliente")]
     [InlineData(DimensaoVenda.Localidade, DimensaoVenda.Distrito, "agrupar e emCada não podem ser os dois da ficha")]

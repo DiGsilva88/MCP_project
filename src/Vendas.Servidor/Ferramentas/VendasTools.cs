@@ -36,14 +36,14 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         "Mes ou Trimestre: evolução no tempo, completa, com o melhor; " +
         "Localidade, Distrito, Zona, Vendedor ou Actividade: onde/quem vende mais (vendas, não nº de clientes). " +
         "emCada: o 1.º de agrupar dentro de cada grupo (ex.: agrupar=Artigo, emCada=Distrito: o artigo mais vendido em cada distrito). " +
-        "ordenar=Quantidade: por unidades vendidas. " +
-        "mes/ano: mês ou ano concreto (mes=<1 a 12>, ano=<ano>). " +
+        "ordenar=Quantidade: por unidades vendidas. menores=true: os que vendem menos. " +
+        "mes/ano: mês ou ano concreto (mes=<1 a 12>, ano=<ano>). trimestre=<1 a 4>: 1.º, 2.º, 3.º ou 4.º trimestre. " +
         "dataInicio/dataFim: intervalo concreto (semana, trimestre, semestre), formato dd-MM-aaaa. " +
         "coluna/valor: só clientes dessa localidade, distrito, zona ou vendedor (ex.: agrupar=Cliente, coluna=Localidade, valor=<localidade dita>), só se o utilizador disser o valor. " +
         "cliente (ID ou nome) limita a esse cliente: o que compra, quanto, quando. " +
         "semVendas=true: clientes SEM compras no período, com a data da última compra. " +
         "compararAnoAnterior=true: comparar com o ano passado, variação, crescimento (cada linha com o mesmo período um ano antes). " +
-        "Devolve texto pronto a mostrar: título com total e período, valor médio por documento e lista numerada.")]
+        "Devolve texto pronto a mostrar: título com total e período, valor médio por documento (também em cada linha) e lista numerada.")]
     public async Task<string> ConsultarVendasAsync(
         [Description("Cliente, Artigo, Familia, Marca, Mes, Trimestre, Localidade, Distrito, Zona, Vendedor ou Actividade.")] DimensaoVenda agrupar = DimensaoVenda.Cliente,
         [Description("Ultimos7Dias, Ultimos30Dias, Ultimos90Dias, Ultimos12Meses, AnoAtual, AnoAnterior, MesAtual, MesAnterior, TrimestreAtual ou TrimestreAnterior (último trimestre completo).")] Periodo periodo = Periodo.AnoAtual,
@@ -56,38 +56,81 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         [Description("Opcional: coluna da ficha, ex.: Localidade, Distrito, Zona, Vendedor.")] Campo? coluna = null,
         [Description("Valor dessa coluna, tal como o utilizador o disse.")] string? valor = null,
         [Description("Valor (euros) ou Quantidade (unidades).")] OrdenarVenda ordenar = OrdenarVenda.Valor,
-        [Description("true: clientes sem compras no período.")] bool semVendas = false,
+        [Description("true: clientes sem compras no período (\"há 90 dias\": periodo=Ultimos90Dias).")] bool semVendas = false,
         [Description("Opcional: Mes, Trimestre, Localidade, Distrito, Zona, Vendedor ou Actividade. O melhor de agrupar em cada um.")] DimensaoVenda? emCada = null,
         [Description("true: compara cada linha com o mesmo período um ano antes (variação em %).")] bool compararAnoAnterior = false,
+        [Description("Opcional: trimestre 1 a 4 (1 = janeiro a março). Com ano opcional. Tem prioridade sobre mes e periodo.")] int? trimestre = null,
+        [Description("true: do menor para o maior (os que vendem menos).")] bool menores = false,
         CancellationToken ct = default)
     {
+        // O modelo repetia agrupar em emCada (ex.: Mes e Mes no "ticket médio por mês"): recusar custava outra volta.
+        if (emCada == agrupar) emCada = null;
+
         // Evolução no tempo vem sempre completa: com limite=10, 12 meses perdiam os 2 mais recentes.
         limite = Dimensoes.Cronologica(emCada ?? agrupar) ? Respostas.Maxlinhas : Math.Clamp(limite, 1, Respostas.Maxlinhas);
 
+        // "Vendas por trimestre" levava o modelo a periodo=TrimestreAtual: um trimestre só, que não dá evolução.
+        if (PeriodoCurtoDemais(emCada ?? agrupar, periodo) && mes is null && ano is null && trimestre is null && dataInicio is null && dataFim is null)
+            periodo = Periodo.AnoAtual;
+
         var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
-        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, mes, ano, dataInicio, dataFim, hoje);
+        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, mes, ano, dataInicio, dataFim, hoje, trimestre);
         if (intervalo is not { } janela) return erroPeriodo!;
 
         var temValor = !string.IsNullOrWhiteSpace(valor);
+        // "KPI em Lisboa" vinha com agrupar=Localidade e só valor=Lisboa: a coluna é a de agrupar.
+        if (temValor && coluna is null) coluna = Dimensoes.CampoDaFicha(agrupar);
         if ((ErroDoPedido(agrupar, ordenar, coluna, temValor, semVendas, cliente) ?? ErroEmCada(agrupar, emCada, semVendas)) is { } erro) return erro;
         if (compararAnoAnterior && (semVendas || emCada is not null))
             return "compararAnoAnterior não se combina com semVendas nem emCada. Chama de novo sem eles.";
+        // O ranking por cliente e o "melhor em cada" só sabem do maior para o menor.
+        if (menores && (agrupar == DimensaoVenda.Cliente || emCada is not null || semVendas))
+            return "menores não se combina com agrupar=Cliente, emCada nem semVendas. Chama de novo sem menores.";
 
         var filtros = new Dictionary<Campo, string>();
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
 
-        return await Respostas.ExecutarAsync(log, "consultar_vendas", $"{agrupar} {periodo}", () =>
-            semVendas
-                ? ListarSemVendasAsync(janela, limite, filtros, ct)
-                : ListarRankingAsync(agrupar, ordenar, emCada, compararAnoAnterior, janela, limite, cliente, filtros, ct));
+        return await Respostas.ExecutarAsync(log, "consultar_vendas", $"{agrupar} {periodo}", async () =>
+        {
+            await CorrigirColunaAsync(filtros, ct);
+            return semVendas
+                ? await ListarSemVendasAsync(janela, limite, filtros, ct)
+                : await ListarRankingAsync(agrupar, ordenar, emCada, compararAnoAnterior, menores, janela, limite, cliente, filtros, ct);
+        });
     }
+
+    private static readonly Campo[] Geograficas = [Campo.Localidade, Campo.Distrito, Campo.Zona];
+
+    // "Setubal" vinha como Localidade, mas é um distrito: o modelo pequeno quase só escolhe Localidade.
+    // Valor que não existe na coluna pedida mas existe noutra geográfica: usa essa (o título mostra qual).
+    private async Task CorrigirColunaAsync(Dictionary<Campo, string> filtros, CancellationToken ct)
+    {
+        if (filtros.Count != 1 || filtros.Keys.First() is var campo && !Geograficas.Contains(campo)) return;
+        if (!await FiltroSemClientesAsync(filtros, ct)) return;
+
+        foreach (var outra in Geograficas.Where(g => g != campo))
+        {
+            var tentativa = new Dictionary<Campo, string> { [outra] = filtros[campo] };
+            if (await FiltroSemClientesAsync(tentativa, ct)) continue;
+            filtros.Remove(campo);
+            filtros[outra] = tentativa[outra];
+            return;
+        }
+    }
+
+    // Agrupar por trimestre num só trimestre (ou por mês num só mês) dá uma linha: não é uma evolução.
+    private static bool PeriodoCurtoDemais(DimensaoVenda dimensao, Periodo periodo) => dimensao switch
+    {
+        DimensaoVenda.Trimestre => periodo is Periodo.TrimestreAtual or Periodo.TrimestreAnterior or Periodo.MesAtual or Periodo.MesAnterior,
+        DimensaoVenda.Mes => periodo is Periodo.MesAtual or Periodo.MesAnterior,
+        _ => false
+    };
 
     private static string? ErroEmCada(DimensaoVenda agrupar, DimensaoVenda? emCada, bool semVendas)
     {
         if (emCada is not { } grupo) return null;
         // Cada erro diz como corrigir: sem isso o modelo desistia e mostrava o erro ao utilizador.
         if (semVendas) return "semVendas não se combina com emCada. Chama de novo sem emCada.";
-        if (grupo == agrupar) return "emCada tem de ser diferente de agrupar. Chama de novo sem emCada.";
         // O nome do cliente vive noutra view: o ranking por cliente não tem como se partir em grupos.
         if (agrupar == DimensaoVenda.Cliente || grupo == DimensaoVenda.Cliente)
             return "emCada não se aplica a Cliente: use agrupar=Artigo, Familia, Marca, Mes ou Localidade.";
@@ -102,6 +145,8 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
     private static string? ErroDoPedido(
         DimensaoVenda agrupar, OrdenarVenda ordenar, Campo? coluna, bool temValor, bool semVendas, string? cliente)
     {
+        if (temValor && coluna is null)
+            return "valor precisa de coluna (Localidade, Distrito, Zona ou Vendedor). Chama de novo com coluna.";
         if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
         // Somar unidades de artigos diferentes por cliente não quer dizer nada.
         if (ordenar == OrdenarVenda.Quantidade && agrupar == DimensaoVenda.Cliente && !semVendas)
@@ -121,7 +166,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
     }
 
     private async Task<string> ListarRankingAsync(
-        DimensaoVenda agrupar, OrdenarVenda ordenar, DimensaoVenda? emCada, bool compararAnoAnterior, IntervaloVendas janela,
+        DimensaoVenda agrupar, OrdenarVenda ordenar, DimensaoVenda? emCada, bool compararAnoAnterior, bool menores, IntervaloVendas janela,
         int limite, string? cliente, Dictionary<Campo, string> filtros, CancellationToken ct)
     {
         var (idCliente, rotuloCliente, erro) = await ResolverClienteAsync(cliente, ct);
@@ -131,7 +176,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         // Um método por view de origem: os clientes precisam do nome que vive na ViewMCP_cliente.
         Task<IReadOnlyList<ValorAgrupado>> Ranking(DateOnly desde, DateOnly ate, int maximo) => agrupar == DimensaoVenda.Cliente
             ? repo.RankingPorClienteAsync(desde, ate, maximo, idCliente, filtros, ct)
-            : repo.RankingPorDimensaoAsync(agrupar, desde, ate, maximo, idCliente, filtros, porQuantidade, emCada, ct);
+            : repo.RankingPorDimensaoAsync(agrupar, desde, ate, maximo, idCliente, filtros, porQuantidade, emCada, menores, ct);
 
         var linhas = await Ranking(janela.Desde, janela.Ate, limite);
 
@@ -157,7 +202,8 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             ? await repo.UltimaVendaAsync(ct)
             : null;
 
-        return FormatarRanking(agrupar, porQuantidade, emCada, janela, rotuloCliente, filtros, linhas, ultimaVenda, comparacao);
+        return FormatarRanking(agrupar, porQuantidade, emCada, janela, rotuloCliente, filtros, linhas, ultimaVenda, comparacao,
+            menores && !Dimensoes.Cronologica(agrupar));
     }
 
     // O cliente tem de existir e ser um só: senão "Sem vendas" ou uma soma de vários clientes
@@ -198,7 +244,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
     private static string FormatarRanking(
         DimensaoVenda agrupar, bool porQuantidade, DimensaoVenda? emCada, IntervaloVendas janela, string? rotuloCliente,
         Dictionary<Campo, string> filtros, IReadOnlyList<ValorAgrupado> linhas, DateOnly? ultimaVenda,
-        (IntervaloVendas Janela, IReadOnlyList<ValorAgrupado> Linhas)? comparacao = null)
+        (IntervaloVendas Janela, IReadOnlyList<ValorAgrupado> Linhas)? comparacao = null, bool menores = false)
     {
         var intervalo = Intervalo(janela, filtros);
         if (rotuloCliente is not null)
@@ -214,7 +260,8 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         // Com emCada cada linha é um grupo (ex.: um distrito): a contagem e o rodapé falam desses grupos.
         var plural = Dimensoes.Plural(emCada ?? agrupar);
         var comQuantidade = porQuantidade && agrupar != DimensaoVenda.Cliente;
-        var ordem = porQuantidade && (emCada is not null || !Dimensoes.Cronologica(agrupar)) ? ", por quantidade" : "";
+        var ordem = (porQuantidade && (emCada is not null || !Dimensoes.Cronologica(agrupar)) ? ", por quantidade" : "")
+                    + (menores ? ", do menor para o maior" : "");
         var titulo = emCada is { } grupo ? $"Melhor {cabecalho} em cada {Dimensoes.Cabecalho(grupo)}" : $"Vendas por {cabecalho}";
 
         var texto = new StringBuilder()
@@ -267,15 +314,20 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
                 : $"Melhor {cabecalho}: {melhor.Nome} – {Euros(melhor.Valor)} €.");
         }
 
+        // Cada linha leva o seu valor médio por documento: "ticket médio por mês/zona" não se tirava do total.
+        string Media(ValorAgrupado l) => emCada is null && l.Documentos > 0
+            ? $" · média {Euros(l.Valor / l.Documentos)} €"
+            : "";
+
         for (var i = 0; i < linhas.Count; i++)
-            texto.AppendLine(emCada is { } g
+            texto.AppendLine((emCada is { } g
                 ? LinhaDoRanking(i + 1, linhas[i], linhas[i].TotalGrupo, comQuantidade,
                     (g is DimensaoVenda.Localidade or DimensaoVenda.Zona or DimensaoVenda.Actividade or DimensaoVenda.Familia or DimensaoVenda.Marca
                         ? " da " : " do ") + Dimensoes.Cabecalho(g))
                 : comparar is not null
                     // total 0: sem a % do total, a linha já leva a variação e ficava ilegível com as duas
                     ? LinhaDoRanking(i + 1, linhas[i], 0, comQuantidade) + comparar(linhas[i])
-                    : LinhaDoRanking(i + 1, linhas[i], total, comQuantidade));
+                    : LinhaDoRanking(i + 1, linhas[i], total, comQuantidade)) + Media(linhas[i]));
 
         // Diz sempre quantas linhas vieram e quantas há, para o modelo nunca ter de o adivinhar.
         texto.AppendLine(grupos > linhas.Count

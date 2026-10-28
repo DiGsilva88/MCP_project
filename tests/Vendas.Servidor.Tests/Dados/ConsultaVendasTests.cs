@@ -115,6 +115,11 @@ public class ConsultaVendasTests
             ConsultaVendas.RankingPorDimensao(DimensaoVenda.Artigo, Desde, Ate, porQuantidade: true).Sql);
 
     [Fact]
+    public void RankingPorDimensao_Menores_OrdenaDoMenorParaOMaior()
+        => Assert.Contains("ORDER BY Valor ASC, Nome;",
+            ConsultaVendas.RankingPorDimensao(DimensaoVenda.Localidade, Desde, Ate, menores: true).Sql);
+
+    [Fact]
     public void RankingPorDimensao_MesPorQuantidade_ContinuaCronologico()
         => Assert.Contains("ORDER BY Nome;",
             ConsultaVendas.RankingPorDimensao(DimensaoVenda.Mes, Desde, Ate, porQuantidade: true).Sql);
