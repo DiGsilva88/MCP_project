@@ -936,8 +936,7 @@
     }
 
     // Rodapé de qualquer resposta com dados: Copiar, Exportar CSV e quantas linhas vão
-          rodapeDados(art, linhas, r.titulo, r.nota, imagem);
-    {
+    function rodapeDados(art, linhas, titulo, nota, imagem) {
       const rod = el('div', 'chat-folha-rodape');
       const tabela = linhas && linhas.length > 1 ? semColunasVazias(linhas) : null;
       const n = tabela ? tabela.length - 1 : 0;
@@ -1338,6 +1337,7 @@
       if (serie) { desenharSerie(serie, art); imagem = () => pngSerie(serie, r.titulo, periodo); }
       else if (soUm) { /* nada a acrescentar */ }
       else if (itens.length && itens.every(i => i.num > 0 && !i.rotulo)) { desenharRanking(itens, art); imagem = () => pngRanking(itens, r.titulo, periodo); }
+      else if (itens.length) desenharLista(itens, art);
       if (devolucoes.length) desenharLista(devolucoes, art, 'Devoluções e notas de crédito');
 
       const linhas = !r.itens.length ? linhasKpis
@@ -1345,7 +1345,7 @@
                    ...r.itens.map(i => [i.nome, i.valor, i.anterior ? i.anterior.valor : '', i.delta == null ? '' : String(i.delta).replace('.', ','), i.media])]
         : [['Posição', 'Grupo', 'Nome', 'Código', 'Valor', '%', 'Média'],
            ...r.itens.map(i => [i.pos, i.grupo || '', i.nome, i.codigo, i.valor, i.pct, i.media])];
-      rodapeDados(art, linhas, r.titulo, r.nota);
+      rodapeDados(art, linhas, r.titulo, r.nota, imagem);
       return art;
     }
 
