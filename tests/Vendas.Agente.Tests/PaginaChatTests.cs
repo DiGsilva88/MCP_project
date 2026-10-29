@@ -13,6 +13,7 @@ public class PaginaChatTests
     public void Html_TemAvatarEmbebido()
     {
         Assert.DoesNotContain("{{AVATAR}}", PaginaChat.Html);
-        Assert.Contains("src=\"data:image/svg+xml;base64,", PaginaChat.Html);
+        // Logo e avatar são ambos PNG: procura-se pelo id para não passar só com o logo.
+        Assert.Contains("id=\"avatar\" src=\"data:image/png;base64,", PaginaChat.Html);
     }
 }

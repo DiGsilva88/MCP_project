@@ -94,6 +94,30 @@ internal static class Respostas
         return texto.ToString();
 
     }
+
+    // Quantos clientes se mostram quando o texto serve a vários.
+    private const int MaxClientes = 5;
+
+    // O cliente tem de existir e ser um só: senão "Sem vendas" ou uma soma de vários clientes
+    // pareceriam a resposta de um cliente (e na sensível, os contactos de vários). Sem texto: sem filtro de cliente.
+    internal static async Task<(string? Id, string? Rotulo, string? Erro)> ResolverClienteAsync(
+        IVendasRepo repo, string? cliente, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(cliente)) return (null, null, null);
+
+        var texto = cliente.Trim();
+        var encontrados = await repo.ProcurarClientesAsync(texto, MaxClientes + 1, ct);
+        if (encontrados.Count == 0)
+            return (null, null, $"Cliente \"{texto}\" não encontrado. Indique o ID ou o início do nome.");
+
+        // Um ID exato ganha aos nomes que começam pelo mesmo texto.
+        if (encontrados.Count > 1 && !encontrados[0].Id.Equals(texto, StringComparison.OrdinalIgnoreCase))
+            return (null, null, $"Vários clientes começam por \"{texto}\". Indique o ID de um deles:\nid,cliente\n" +
+                   string.Join('\n', encontrados.Take(MaxClientes).Select(c => $"{c.Id},{EscaparCsv(c.Nome)}")) +
+                   (encontrados.Count > MaxClientes ? $"\n# Há mais de {MaxClientes}." : ""));
+
+        return (encontrados[0].Id, $"{encontrados[0].Nome} ({encontrados[0].Id})", null);
+    }
 }
 
 

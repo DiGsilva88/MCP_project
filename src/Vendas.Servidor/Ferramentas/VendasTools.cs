@@ -15,9 +15,6 @@ namespace Vendas.Servidor.Ferramentas;
 [McpServerToolType]
 public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, TimeProvider? fonteTempo = null)
 {
-    // Quantos clientes se mostram quando o texto serve a vários.
-    private const int MaxClientes = 5;
-
     // Dias sem vendas no fim do período a partir dos quais se avisa que os dados acabam antes.
     private const int DiasSemDadosAviso = 7;
 
@@ -169,7 +166,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         DimensaoVenda agrupar, OrdenarVenda ordenar, DimensaoVenda? emCada, bool compararAnoAnterior, bool menores, IntervaloVendas janela,
         int limite, string? cliente, Dictionary<Campo, string> filtros, CancellationToken ct)
     {
-        var (idCliente, rotuloCliente, erro) = await ResolverClienteAsync(cliente, ct);
+        var (idCliente, rotuloCliente, erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
         if (erro is not null) return erro;
 
         var porQuantidade = ordenar == OrdenarVenda.Quantidade;
@@ -204,26 +201,6 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
 
         return FormatarRanking(agrupar, porQuantidade, emCada, janela, rotuloCliente, filtros, linhas, ultimaVenda, comparacao,
             menores && !Dimensoes.Cronologica(agrupar));
-    }
-
-    // O cliente tem de existir e ser um só: senão "Sem vendas" ou uma soma de vários clientes
-    // pareceriam a resposta de um cliente. Sem texto: sem filtro de cliente.
-    private async Task<(string? Id, string? Rotulo, string? Erro)> ResolverClienteAsync(string? cliente, CancellationToken ct)
-    {
-        if (string.IsNullOrWhiteSpace(cliente)) return (null, null, null);
-
-        var texto = cliente.Trim();
-        var encontrados = await repo.ProcurarClientesAsync(texto, MaxClientes + 1, ct);
-        if (encontrados.Count == 0)
-            return (null, null, $"Cliente \"{texto}\" não encontrado. Indique o ID ou o início do nome.");
-
-        // Um ID exato ganha aos nomes que começam pelo mesmo texto.
-        if (encontrados.Count > 1 && !encontrados[0].Id.Equals(texto, StringComparison.OrdinalIgnoreCase))
-            return (null, null, $"Vários clientes começam por \"{texto}\". Indique o ID de um deles:\nid,cliente\n" +
-                   string.Join('\n', encontrados.Take(MaxClientes).Select(c => $"{c.Id},{Respostas.EscaparCsv(c.Nome)}")) +
-                   (encontrados.Count > MaxClientes ? $"\n# Há mais de {MaxClientes}." : ""));
-
-        return (encontrados[0].Id, $"{encontrados[0].Nome} ({encontrados[0].Id})", null);
     }
 
     // Com filtro da ficha, "sem resultados" pode querer dizer que o valor não existe (ex.: "Seixall").

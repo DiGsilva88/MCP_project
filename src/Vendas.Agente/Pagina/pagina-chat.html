@@ -21,6 +21,8 @@
       --marca-escura: #173a9e;
       --marca-texto: #ffffff;
       --selecionado: #dce4fa;  
+      --balao-eu: #16213a;       /* balão de quem pergunta */
+      --balao-eu-texto: #ffffff;
       --barra-fundo: #e6ebf5;
       --aviso-fundo: #fff6e0;
       --aviso-borda: #e8c26a;
@@ -35,6 +37,8 @@
       --anterior-linha: #7f93cc; /* linha tracejada do ano anterior */
       --sobe: #0f6b3f; --sobe-fundo: #e2f4ea;
       --desce: #a51b0f; --desce-fundo: #fde8e6;
+      --borda-controlo: #7a8599; /* bordas de campos e botões: 3,5:1 */
+      --ligacao: #1d46c0;        /* texto de botões e barras */
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -49,6 +53,8 @@
         --marca: #3d63e6;
         --marca-escura: #3358d6;
         --selecionado: #24325a;
+        --balao-eu: #e8ebf2;
+        --balao-eu-texto: #0f1320;
         --barra-fundo: #232a3b;
         --aviso-fundo: #2e2612;
         --aviso-borda: #7a5f1c;
@@ -60,6 +66,8 @@
         --anterior-linha: #8597d6;
         --sobe: #7fd6a8; --sobe-fundo: #12372a;
         --desce: #ff9a8f; --desce-fundo: #3d1a17;
+        --borda-controlo: #5d6a85;
+        --ligacao: #8ea6ff;      /* 7,3:1 no cartão escuro */
       }
     }
 
@@ -183,9 +191,9 @@
       width: auto; max-width: min(85%, 816px);
       margin-right: max(0px, calc(100% - 960px));   /* alinha com a margem direita da resposta */
     }
-    .chat-intro { display: flex; flex-direction: column; gap: 4px; }
-    .chat-intro h2 { margin: 0; font-size: 22px; line-height: 1.2; }
-    .chat-intro p { margin: 0; color: var(--suave); }
+    .chat-intro { gap: 6px; }
+    .chat-intro p { margin: 0; }
+    .chat-intro-ola { font-size: 16px; font-weight: 700; }
 
     /* Avatar à esquerda, resposta ao lado */
     .chat-resposta { display: flex; align-items: flex-start; gap: 10px; }
@@ -204,7 +212,7 @@
     .chat-sugestoes div { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
     .chat-chip {
       min-height: 44px; padding: 10px 14px;
-      border: 1px solid var(--borda); border-radius: 8px;
+      border: 1px solid var(--borda-controlo); border-radius: 8px;
       background: var(--cartao); text-align: left; font-size: 14.5px;
     }
     .chat-chip:hover { border-color: var(--marca); }
@@ -256,7 +264,7 @@
     .chat-item-nome--vazio { font-style: italic; color: var(--suave); }
     .chat-item-codigo { font-size: 12.5px; color: var(--nota); }
     .chat-item-barra { display: block; height: 8px; margin-top: 6px; border-radius: 2px; background: var(--barra-fundo); }
-    .chat-item-barra span { display: block; height: 100%; border-radius: 2px; background: var(--marca); }
+    .chat-item-barra span { display: block; height: 100%; border-radius: 2px; background: var(--ligacao); }
     .chat-item-valor { display: flex; flex-direction: column; align-items: flex-end; text-align: right; font-size: 14.5px; white-space: nowrap; }
     .chat-item-valor strong { font-weight: 700; }
     .chat-item-valor .chat-data { font-variant-numeric: normal; }
@@ -319,7 +327,7 @@
     .chat-linha-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
     .chat-linha-marca { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--borda-forte); }
     .chat-ponto-mes {
-      position: absolute; width: 28px; height: 28px; padding: 0;
+      position: absolute; width: 44px; height: 44px; padding: 0;   /* área de toque; o ponto visível continua pequeno */
       transform: translate(-50%, -50%);
       display: grid; place-items: center;
       border: 0; border-radius: 50%; background: transparent;
@@ -346,7 +354,7 @@
     .chat-rank-nome span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .chat-rank-nome small { font-size: 12px; color: var(--nota); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .chat-rank-pista { display: block; height: 14px; border-radius: 3px; background: var(--barra-fundo); }
-    .chat-rank-pista span { display: block; height: 100%; border-radius: 3px; background: var(--marca); }
+    .chat-rank-pista span { display: block; height: 100%; border-radius: 3px; background: var(--ligacao); }
     .chat-rank-valor { display: flex; flex-direction: column; align-items: flex-end; font-size: 14px; white-space: nowrap; }
     .chat-rank-valor strong { font-weight: 600; }
     .chat-rank-valor small { font-size: 12px; color: var(--nota); }
@@ -371,7 +379,7 @@
     .chat-tabela td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--linha); }
     .chat-tabela .chat-num { text-align: right; padding-left: 8px; padding-right: 0; }
     .chat-barra { width: 64px; height: 8px; border-radius: 2px; background: var(--barra-fundo); }
-    .chat-barra span { display: block; height: 100%; border-radius: 2px; background: var(--marca); }
+    .chat-barra span { display: block; height: 100%; border-radius: 2px; background: var(--ligacao); }
 
     .chat-folha-rodape { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding-top: 2px; }
     .chat-folha-rodape .chat-folha-meta { margin-left: auto; }
@@ -379,7 +387,7 @@
       align-self: flex-start;
       min-height: 36px; padding: 0;
       border: 0; background: none;
-      color: var(--marca); font-size: 14px; font-weight: 600;
+      color: var(--ligacao); font-size: 14px; font-weight: 600;
     }
     .chat-acao:hover { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -466,11 +474,133 @@
     .chat-meses[open] > summary { margin-bottom: 10px; }
 
     /* Ranking: uma linha por item, valor e % lado a lado */
-    .chat-rank-linha { min-height: 30px; }
+    /* Ranking: todas as linhas partilham as mesmas colunas (subgrid), por isso nada se sobrepõe.
+       posição | nome | barra | valor (e valor secundário por baixo) | variação */
+    .chat-ranking { display: grid; grid-template-columns: 22px minmax(110px, 26%) minmax(60px, 1fr) max-content max-content; column-gap: 12px; }
+    .chat-rank, .chat-rank-linha { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; }
+    .chat-rank { row-gap: 2px; }
+    .chat-rank-linha { min-height: 40px; }
     .chat-rank-pista { height: 10px; }
-    .chat-rank-valor { flex-direction: row; align-items: baseline; justify-content: flex-end; gap: 8px; }
-    .chat-rank-valor small { min-width: 40px; text-align: right; }
-    .chat-rank-linha { grid-template-columns: 22px minmax(90px, 28%) minmax(60px, 1fr) 10.5rem; }
+    .chat-rank-valor { flex-direction: column; align-items: flex-end; gap: 0; }
+    .chat-rank-delta { display: flex; }
+    @container (max-width: 640px) {
+      /* Janela estreita: a barra e o eixo saem; ficam nome, valor e variação */
+      .chat-ranking { grid-template-columns: 22px minmax(0, 1fr) max-content max-content; }
+      .chat-rank-pista, .chat-rank-eixo { display: none; }
+    }
+
+    /* Ranking interativo: controlos, linha que abre o detalhe */
+    .chat-controlos { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+    .chat-seg { display: inline-flex; border: 1px solid var(--borda-controlo); border-radius: 8px; overflow: hidden; background: var(--cartao); }
+    .chat-seg button { border: 0; background: none; padding: 5px 12px; min-height: 34px; font-size: 13.5px; }
+    .chat-seg button + button { border-left: 1px solid var(--borda-controlo); }
+    .chat-seg button[aria-pressed="true"] { background: var(--marca); color: var(--marca-texto); font-weight: 600; }
+    .chat-rank > li { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; }
+    button.chat-rank-linha { align-items: center; margin: 0 -8px; padding: 2px 8px; border: 0; border-radius: 6px; background: none; text-align: left; }
+    button.chat-rank-linha:hover { background: var(--lateral); }
+    button.chat-rank-linha[aria-expanded="true"] { background: var(--selecionado); }
+    .chat-rank-detalhe { grid-column: 1 / -1; margin: 4px 0 10px 34px; padding: 12px 14px; border-left: 3px solid var(--ligacao); border-radius: 0 8px 8px 0; background: var(--lateral); display: flex; flex-direction: column; gap: 10px; }
+    .chat-rank-detalhe strong { font-size: 14.5px; }
+    .chat-factos { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 16px; }
+    .chat-factos div { display: flex; flex-direction: column; }
+    .chat-factos dt { font-size: 12px; color: var(--nota); }
+    .chat-factos dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .chat-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chat-acoes .chat-chip { min-height: 36px; padding: 6px 12px; font-size: 13.5px; }
+    @container (max-width: 640px) { .chat-rank-detalhe { margin-left: 0; } }
+
+    /* Tabela: cabeçalhos que ordenam, filtro e total */
+    .chat-ordenar { display: inline-flex; align-items: center; gap: 2px; min-height: 28px; padding: 0; border: 0; background: none; font-weight: 600; }
+    .chat-tabela th[aria-sort] .chat-ordenar { color: var(--texto); }
+    .chat-tabela tfoot td { padding-top: 8px; border-top: 1px solid var(--borda); border-bottom: 0; font-weight: 700; }
+    .chat-tabela-vazia { color: var(--nota); }
+    .chat-filtrar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--nota); }
+    .chat-filtrar input { min-height: 36px; padding: 0 10px; border: 1px solid var(--borda-controlo); border-radius: 8px; background: var(--cartao); width: min(260px, 100%); }
+
+    .chat-kpi--acao { cursor: pointer; }
+    .chat-kpi--acao:hover { border-color: var(--ligacao); }
+
+    /* Como li a pergunta, editar e repetir, destaque, feedback */
+    .chat-filtro--botao { border-color: var(--borda-controlo); font-size: 12.5px; cursor: pointer; }
+    .chat-filtro--botao:hover { border-color: var(--ligacao); }
+    .chat-periodos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .chat-periodos .chat-chip { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+    .chat-area > .chat-pergunta-bloco {
+      align-self: flex-end; width: auto; max-width: min(85%, 816px);
+      margin-right: max(0px, calc(100% - 960px));
+      display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    }
+    .chat-pergunta-bloco .chat-pergunta { max-width: 100%; }
+    .chat-pergunta-acoes { display: flex; gap: 14px; }
+    .chat-pergunta-acoes .chat-acao { min-height: 28px; font-size: 12.5px; }
+    .chat-destaque { margin: 0; font-size: 14.5px; line-height: 1.5; }
+    .chat-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-left: 42px; font-size: 13px; color: var(--nota); }
+    .chat-feedback .chat-acao { min-height: 32px; font-size: 13px; }
+    .chat-feedback .chat-acoes { flex-basis: 100%; }
+
+    /* =========================================================
+       7f. Conversa em balões: avatar, nome e hora dos dois lados
+       ========================================================= */
+    .chat-area { background: var(--cartao); }
+    .chat-msg { display: flex; gap: 10px; }
+    .chat-msg-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .chat-msg-nome { font-size: 12.5px; font-weight: 600; color: var(--suave); }
+    .chat-msg-meta { display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--nota); }
+    .chat-msg-meta .chat-acao { min-height: 28px; font-size: 12.5px; }
+    /* Quem pergunta: à direita, balão escuro, avatar à direita */
+    .chat-area > .chat-msg--eu { align-self: flex-end; width: auto; max-width: min(85%, 816px); margin-right: max(0px, calc(100% - 960px)); align-items: flex-end; }
+    .chat-msg--eu .chat-msg-corpo { align-items: flex-end; }
+    .chat-balao-eu { margin: 0; padding: 10px 16px; border-radius: 18px 18px 4px 18px; background: var(--balao-eu); color: var(--balao-eu-texto); overflow-wrap: anywhere; }
+    .chat-avatar-eu { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--selecionado); color: var(--ligacao); }
+    /* Assistente: à esquerda, nome por cima, resposta num balão claro */
+    .chat-msg--agente > .chat-avatar { width: 32px; height: 32px; flex: none; }
+    .chat-msg--agente .chat-folha, .chat-msg--agente .chat-folha--painel { background: var(--fundo); border: 0; border-radius: 4px 18px 18px 18px; padding: 14px 16px; }
+    .chat-msg--agente .chat-folha--erro { border: 1px solid var(--erro); }
+
+    /* =========================================================
+       7g. Proposta A: dados ao centro em separadores, conversa à direita
+       ========================================================= */
+    .chat-dados { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--fundo); }
+    .chat-abas { display: flex; align-items: flex-end; gap: 8px; padding: 10px 20px 0; background: var(--lateral); border-bottom: 1px solid var(--borda); }
+    .chat-abas-lista { display: flex; gap: 4px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+    .chat-aba { display: flex; align-items: center; flex: none; margin-bottom: -1px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; }
+    .chat-aba--ativa { background: var(--fundo); border-color: var(--borda); }
+    .chat-aba-abrir { max-width: 220px; padding: 9px 4px 9px 12px; border: 0; background: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--suave); font-size: 13.5px; }
+    .chat-aba--ativa .chat-aba-abrir { color: var(--texto); font-weight: 600; }
+    .chat-aba-fechar { width: 28px; height: 28px; margin-right: 4px; border: 0; border-radius: 6px; background: none; color: var(--nota); font-size: 16px; }
+    .chat-aba-fechar:hover { background: var(--linha); }
+    .chat-mostrar-conversa { margin-bottom: 4px; }
+    .chat-painel:not(.chat-painel--sem-conversa) .chat-mostrar-conversa { display: none; }
+    .chat-painel-dados { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; }
+    .chat-painel-dados > .chat-folha { max-width: 1100px; }
+    .chat-painel-vazio { max-width: 52ch; margin: 48px auto; text-align: center; display: flex; flex-direction: column; gap: 8px; color: var(--suave); }
+    .chat-painel-vazio h2 { margin: 0; font-size: 18px; color: var(--texto); }
+    .chat-painel-vazio p { margin: 0; }
+
+    .chat-conversa { width: 380px; flex: none; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--borda); background: var(--cartao); }
+    .chat-painel--sem-conversa .chat-conversa { display: none; }
+    .chat-conversa-cab { padding: 12px 16px; border-bottom: 1px solid var(--linha); display: flex; flex-direction: column; gap: 10px; }
+    .chat-conversa-topo { display: flex; align-items: center; justify-content: space-between; }
+    .chat-conversa-titulo { margin: 0; font-size: 14px; font-weight: 700; }
+    .chat-esconder { width: 32px; height: 32px; border: 0; border-radius: 6px; background: none; color: var(--nota); font-size: 16px; }
+    .chat-esconder:hover { background: var(--linha); }
+    .chat-conversa .chat-temas { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .chat-conversa .chat-tema { min-height: 30px; padding: 4px 12px; border: 1px solid var(--borda-controlo); border-radius: 99px; background: var(--cartao); font-size: 13px; }
+    .chat-conversa .chat-tema[aria-pressed="true"] { background: var(--marca); border-color: var(--marca); color: var(--marca-texto); }
+    .chat-conversa .chat-area { padding: 16px; gap: 14px; }
+    .chat-conversa .chat-folha { gap: 10px; }
+    .chat-conversa .chat-msg--agente ~ .chat-sugestoes, .chat-conversa .chat-feedback { margin-left: 0; padding-left: 42px; box-sizing: border-box; }
+    .chat-cartao { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--borda-controlo); border-radius: 8px; background: var(--cartao); text-align: left; color: var(--ligacao); }
+    .chat-cartao[aria-current="true"] { padding: 7px 9px; border: 2px solid var(--ligacao); }
+    .chat-cartao-texto { display: flex; flex-direction: column; min-width: 0; color: var(--texto); }
+    .chat-cartao-texto b { font-size: 13px; }
+    .chat-cartao-texto small { font-size: 12px; color: var(--nota); }
+
+    /* Janela estreita: os dados em cima, a conversa em baixo */
+    @container (max-width: 820px) {
+      .chat-corpo { flex-direction: column; }
+      .chat-conversa { width: auto; flex: 1; border-left: 0; border-top: 1px solid var(--borda); }
+    }
 
     /* =========================================================
        8. Rodapé: pergunta + só leitura
@@ -481,7 +611,7 @@
     .chat-campo {
       flex: 1; min-width: 0; min-height: 44px;
       padding: 0 12px;
-      border: 1px solid #a9b3c6; border-radius: 8px;  /* 3:1 contra o branco */
+      border: 1px solid var(--borda-controlo); border-radius: 8px;
       background: var(--lateral);
     }
     .chat-campo::placeholder { color: var(--nota); }
@@ -520,28 +650,32 @@
       <p class="chat-estado" id="estado" role="status">
         <!-- Decorativo (alt vazio). O JS copia-o para antes de cada resposta. -->
         <img class="chat-avatar" id="avatar" src="{{AVATAR}}" alt=""
-             onerror="this.onerror = null; this.src = '../logo/avatar-assistente-vendas.svg';">
+             onerror="this.onerror = null; this.src = '../logo/avatar-assistente-vendas.png';">
         <span class="chat-ponto" aria-hidden="true"></span>
         <span id="estado-texto">Pronto</span>
       </p>
     </header>
 
     <div class="chat-corpo">
-      <nav class="chat-lateral" aria-label="Temas e histórico">
-        <div class="chat-grupo">
-          <h2 class="chat-rotulo">Temas</h2>
-          <div class="chat-temas" id="temas"></div>
+      <!-- Proposta A: os dados ao centro, em separadores; a conversa numa aba à direita -->
+      <main class="chat-dados" aria-label="Dados">
+        <div class="chat-abas">
+          <nav class="chat-abas-lista" id="separadores" aria-label="Resultados abertos"></nav>
+          <button class="chat-acao chat-mostrar-conversa" id="mostrar-conversa" type="button">Mostrar a conversa</button>
         </div>
-        <div class="chat-grupo chat-historico">
-          <h2 class="chat-rotulo">Histórico</h2>
-          <p class="chat-dica" id="hist-vazio">As perguntas que fizer ficam aqui.</p>
-          <ol class="chat-hist" id="historico"></ol>
-        </div>
-      </nav>
+        <div class="chat-painel-dados" id="painel"></div>
+      </main>
 
-      <div class="chat-principal">
-        <!-- aria-live: a resposta é lida quando termina (aria-busy durante o streaming) -->
-        <main class="chat-area" id="area" aria-live="polite"></main>
+      <aside class="chat-conversa" aria-label="Conversa">
+        <div class="chat-conversa-cab">
+          <div class="chat-conversa-topo">
+            <h2 class="chat-conversa-titulo">Conversa</h2>
+            <button class="chat-esconder" id="esconder-conversa" type="button" aria-label="Esconder a conversa">»</button>
+          </div>
+          <div class="chat-temas" id="temas" role="group" aria-label="Tema"></div>
+        </div>
+        <div class="chat-area" id="area"></div>
+        <p class="so-leitor" id="anuncio" role="status"></p>
 
         <footer class="chat-rodape">
           <form class="chat-escrever" id="form">
@@ -562,7 +696,7 @@
             Só leitura. O assistente não altera a base de dados.
           </p>
         </footer>
-      </div>
+      </aside>
     </div>
   </div>
 
@@ -588,8 +722,19 @@
     const estadoTexto = document.getElementById('estado-texto');
     const area = document.getElementById('area');
     const temasEl = document.getElementById('temas');
-    const histEl = document.getElementById('historico');
-    const histVazio = document.getElementById('hist-vazio');
+
+    // Mensagem curta para o leitor de ecrã ("Copiado", "Resposta pronta"), sem ler a resposta inteira
+    const anuncio = document.getElementById('anuncio');
+    function anunciar(texto) {
+      anuncio.textContent = '';
+      setTimeout(() => { anuncio.textContent = texto; }, 50);   // limpar e voltar a escrever: repete o anúncio
+    }
+    // Escreve a pergunta no campo para a pessoa rever; não envia
+    function prepararPergunta(texto) {
+      campo.value = texto;
+      campo.focus();
+      anunciar('Pergunta escrita no campo. Carregue em Enter para enviar.');
+    }
 
     let temaAtual = TEMAS[0].id;
     const historico = [];   
@@ -624,7 +769,10 @@
 
     // Tira o markdown que o modelo às vezes acrescenta: "# Título" e "**negrito**".
     // O marcador de lista ("- ") fica: lerLista() precisa dele para saber o que é item.
-    const limparMarkdown = l => l.replace(/^#{1,6}\s+/, '').replace(/\*\*(.+?)\*\*/g, '$1').replace(/__(.+?)__/g, '$1');
+    const limparMarkdown = l => l
+      .replace(/^(\s*)#{1,6}\s+/, '$1')                         // "# Título"
+      .replace(/(\*{1,3}|_{2,3})(\S(?:.*?\S)?)\1/g, '$2')       // **negrito**, *itálico*, ***os dois***, __negrito__
+      .replace(/\*{2,}|_{2,}/g, '');                              // ** ou __ que ficaram sem par
     const MARCADOR = /^[-*•]\s+/;
     const semAcento = s => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
     // "ALDEIA DE PAIO PIRES" -> "Aldeia de Paio Pires" (só mexe em texto todo em maiúsculas)
@@ -655,7 +803,7 @@
     function bloquear(sim) {
       ocupado = sim;
       campo.disabled = botao.disabled = sim;
-      document.querySelectorAll('.chat-lateral button, .chat-chip').forEach(b => b.disabled = sim);
+      document.querySelectorAll('.chat-temas button, .chat-chip').forEach(b => b.disabled = sim);
       if (sim) mostrarEstado('ocupado');
     }
 
@@ -689,6 +837,7 @@
         const sep = l.includes(', ') ? ', ' : ',';
         const n = partir(l, sep).length;
         if (n < 2) continue;
+        if (!partir(l, sep).every(c => /^\p{L}[\p{L}\d _.%º/-]{0,30}$/u.test(c))) continue;   // cabeçalho = nomes de colunas curtos
         const bloco = [];
         let j = i;
         for (; j < linhas.length; j++) {
@@ -697,7 +846,7 @@
           if (campos.length !== n) break;
           bloco.push(campos);
         }
-        if (bloco.length < 3) continue;            // cabeçalho + pelo menos 2 linhas
+        if (bloco.length < 2) continue;            // cabeçalho + pelo menos 1 linha (1 linha = ficha)
         const [cabecalho, ...dados] = bloco;
         const numericas = cabecalho.map((_, c) => dados.every(d => eNumero(d[c])));
         return { antes: linhas.slice(0, i).join('\n').trim(), depois: linhas.slice(j).join('\n').trim(), cabecalho, linhas: dados, numericas };
@@ -718,6 +867,9 @@
       let nome = esq.trim(), codigo = '';
       const c = esq.match(/^(.*\S)\s*\(([^()]+)\)\s*$/);   // último parêntesis = código
       if (c) { nome = c[1]; codigo = c[2]; }
+      let sub = '';
+      const par = nome.match(/^(.+?):\s+(.+)$/);   // "FERNAO FERRO: CARV" (melhor marca em cada localidade)
+      if (par) { nome = par[1]; sub = par[2]; }
       let valor = dir, pct = '', rotulo = '', anterior = null, delta = null;
       // "255 348,78 € · 2025: 265 396,36 € (-3,8%)": valor, ano anterior e variação
       const cmp = dir.match(/^(.*?)\s*·\s*(\d{4}):\s*(.*?)\s*\(([+\-−]?[\d.,]+)\s*%\)$/);
@@ -726,8 +878,8 @@
         anterior = { ano: cmp[2], valor: cmp[3] };
         delta = parseFloat(cmp[4].replace('−', '-').replace(',', '.'));
       } else {
-        const p = dir.match(/^(.*\S)\s*\(([\d.,]+\s*%)\)$/);  // "(1,9%)"
-        if (p) { valor = p[1]; pct = p[2]; }
+        const p = dir.match(/^(.*\S)\s*\(([\d.,]+\s*%)(?:\s+([^)]+))?\)$/);  // "(1,9%)" ou "(10,6% da localidade)"
+        if (p) { valor = p[1]; pct = p[2] + (p[3] ? ' ' + p[3] : ''); }
         const d = valor.match(/^(.*?)\s*(\d{2}-\d{2}-\d{4})$/); // "última compra a 23-12-2025"
         if (d && d[1]) { rotulo = d[1].replace(/\s+(a|em)$/i, ''); valor = d[2]; }
       }
@@ -736,7 +888,7 @@
       const un = valor.match(/^(.*\d)\s+unidades\s*\((.+)\)$/);
       if (un) { valor = un[1] + ' unidades'; pct = un[2]; }
       const num = un ? paraNumero(un[1]) : /^-?[\d\s.\u00a0\u202f]+(,\d+)?\s*€?$/.test(valor) ? paraNumero(valor) : NaN;
-      return { pos, nome, codigo, valor, pct, rotulo, num, anterior, delta, media, unidades: !!un };
+      return { pos, nome, codigo, sub, valor, pct, rotulo, num, anterior, delta, media, unidades: !!un };
     }
     function lerLista(texto) {
       const r = { titulo: '', periodo: '', resumo: '', factos: [], avisos: [], itens: [], paragrafos: [], nota: '' };
@@ -753,7 +905,7 @@
         else if (!marcador && l.endsWith(':') && MARCADOR.test(seguinte) && !eFacto(seguinte.replace(MARCADOR, ''))) grupo = l.slice(0, -1);
         else if ((m = l.match(/^Aten[çc][ãa]o:\s*(.+)$/i))) r.avisos.push(m[1]);
         else if ((m = l.match(/^Mostr[oa]\s+(.+)$/i))) r.nota = 'Mostra ' + semPonto(m[1]);
-        else if (i === 0 && !marcador && !/^lista completa/i.test(l) && (m = l.match(/^(.+?):\s+(.+)$/))) { r.titulo = m[1]; r.resumo = m[2]; }
+        else if (i === 0 && !marcador && !/^lista completa/i.test(l) && (m = l.match(/^(.+?):\s+(.+)$/)) && /\s/.test(m[1])) { r.titulo = m[1]; r.resumo = m[2]; }
         else if ((m = l.match(/^([^:]{3,40}):\s+(.+)$/))) r.factos.push([m[1], semPonto(m[2])]);
         else r.paragrafos.push(l);
       });
@@ -805,6 +957,7 @@
       const texto = typeof conteudo === 'string' ? conteudo : paraFolha(conteudo).map(l => l.join('\t')).join('\n');
       const b = botaoEl('chat-acao', 'Copiar', async () => {
         b.textContent = await copiarTexto(texto) ? 'Copiado' : 'Não foi possível copiar';
+        anunciar(b.textContent);
         setTimeout(() => { b.textContent = 'Copiar'; }, 2000);
       });
       return b;
@@ -821,6 +974,7 @@
         a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
         a.download = `${nome}-${new Date().toISOString().slice(0, 10)}.csv`;
         a.click();
+        anunciar('Ficheiro CSV descarregado.');
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);   // revogar logo pode cancelar o download
       });
     }
@@ -930,6 +1084,7 @@
           a.href = URL.createObjectURL(blob);
           a.download = `${nome}-${new Date().toISOString().slice(0, 10)}.png`;
           a.click();
+          anunciar('Imagem guardada.');
           setTimeout(() => URL.revokeObjectURL(a.href), 1000);
         }, 'image/png');
       });
@@ -995,7 +1150,7 @@
         const mes = v.match(/^(\d{4})-(\d{2})\s+[–-]\s+(.+)$/);   // "2026-07 – 278 519,07 €"
         if (mes) { cartoes.push({ rotulo: k, valor: MESES[+mes[2] - 1], detalhe: euros(paraNumero(mes[3])), icone: ICONES.subida }); continue; }
         // Texto (nome do cliente, condição de pagamento): vai para a ficha, não para um cartão grande
-        if (!eNumeroCurto(v)) { ficha.push([k, v]); continue; }
+        if (!eNumeroCurto(v) || /^\d{6,}$/.test(v)) { ficha.push([k, v]); continue; }   // NIF e códigos não são totais
         cartoes.push({ rotulo: k, valor: v, icone: /m[ée]dio/i.test(k) ? ICONES.recibo : ICONES.barras });
       }
       if (resumoTexto) art.append(el('p', 'chat-folha-resumo', resumoTexto));
@@ -1023,12 +1178,12 @@
       }
       if (ficha.length) {
         const dl = el('dl', 'chat-ficha');
-        for (const [k, v] of ficha) dl.append(el('dt', '', k), el('dd', '', v));
+        for (const [k, v] of ficha) dl.append(el('dt', '', rotuloCampo(k)), el('dd', '', v));
         art.append(dl);
       }
       return [['Indicador', 'Valor', 'Detalhe'],
               ...cartoes.map(c => [c.rotulo, c.valor, c.detalhe || '']),
-              ...ficha.map(([k, v]) => [k, v, ''])];
+              ...ficha.map(([k, v]) => [rotuloCampo(k), v, ''])];
     }
 
     // Lista em que todas as linhas são meses "AAAA-MM" -> série para o gráfico
@@ -1127,7 +1282,7 @@
       const botoes = [];
       const escolher = i => {
         const x = s.meses[i];
-        botoes.forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.i === i)));
+        botoes.forEach(b => { b.setAttribute('aria-pressed', String(+b.dataset.i === i)); b.tabIndex = +b.dataset.i === i ? 0 : -1; });
         marca.style.left = X(i) + '%';
         [...rotulos.children].forEach((r, j) => r.classList.toggle('chat-rotulo--ativo', i === j));
         const bloco = (ano, v) => { const d = el('div'); d.append(el('small', '', String(ano)), el('span', '', v == null ? '—' : euros(v))); return d; };
@@ -1149,6 +1304,15 @@
         botoes.push(b);
         barras.append(b);
       });
+      // Uma só paragem do Tab no gráfico: as setas, Home e End mudam de mês
+      barras.addEventListener('keydown', e => {
+        const k = botoes.findIndex(b => b.tabIndex === 0);
+        const novo = { ArrowRight: k + 1, ArrowLeft: k - 1, Home: 0, End: botoes.length - 1 }[e.key];
+        if (novo == null || novo < 0 || novo >= botoes.length) return;
+        e.preventDefault();
+        botoes[novo].click();
+        botoes[novo].focus();
+      });
       colunas.append(barras, rotulos);
       corpo.append(eixo, colunas);
       sec.append(cab, leitura, corpo);
@@ -1160,7 +1324,7 @@
       escolher(melhor);
 
       // Tabela de detalhe: os mesmos números, para ler ou copiar
-      const tab = el('details', 'chat-bloco chat-meses');
+      const tab = el('section', 'chat-bloco chat-meses');
       const grelha = el('div');
       grelha.setAttribute('role', 'table');
       grelha.setAttribute('aria-label', 'Detalhe por mês');
@@ -1181,45 +1345,152 @@
                ...(s.anoAnt ? [el('span', 'chat-ant', x.anterior == null ? '—' : euros(x.anterior))] : []),
                ...(comMedia ? [el('span', '', x.media || '—')] : []), v]);
       });
-      tab.append(el('summary', '', 'Ver detalhe por mês'), grelha);
+      tab.append(el('h3', '', 'Detalhe por mês'), grelha);
       art.append(tab);
+
+      // Vista: gráfico ou tabela, com os mesmos números
+      tab.hidden = true;
+      const controlos = el('div', 'chat-controlos');
+      const vista = el('div', 'chat-seg');
+      vista.setAttribute('role', 'group');
+      vista.setAttribute('aria-label', 'Vista');
+      const mudarVista = grafico => {
+        sec.hidden = !grafico;
+        tab.hidden = grafico;
+        [...vista.children].forEach((b, k) => b.setAttribute('aria-pressed', String((k === 0) === grafico)));
+      };
+      vista.append(botaoEl('', 'Gráfico', () => mudarVista(true)), botaoEl('', 'Tabela', () => mudarVista(false)));
+      controlos.append(vista);
+      sec.before(controlos);
+      mudarVista(true);
+
+      // O cartão "Melhor mês" mostra esse mês no gráfico
+      const cartao = [...art.querySelectorAll('.chat-kpi')].find(k => /melhor m[eê]s/i.test(k.textContent));
+      const pontoMelhor = botoes.find(b => +b.dataset.i === melhor);
+      if (cartao && pontoMelhor) {
+        cartao.classList.add('chat-kpi--acao');
+        cartao.tabIndex = 0;
+        cartao.setAttribute('role', 'button');
+        cartao.setAttribute('aria-label', cartao.querySelector('.chat-kpi-valor').textContent + ', melhor mês. Mostrar no gráfico');
+        const ir = () => { mudarVista(true); pontoMelhor.click(); pontoMelhor.focus(); };
+        cartao.addEventListener('click', ir);
+        cartao.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ir(); } });
+      }
     }
 
-    // Ranking (top marcas, artigos, clientes): nome | barra | valor, com eixo por baixo
-    function desenharRanking(itens, art) {
-      const max = Math.max(...itens.map(i => i.num));
-      const passo = Math.pow(10, Math.floor(Math.log10(max))) / 2;
-      const topo = Math.ceil(max / passo) * passo;     // ex.: 299 053 -> 300 000
+    // Perguntas sobre uma linha de um ranking, conforme o que a lista compara ("por localidade", "por marca")
+    function perguntasDoItem(nome, dim) {
+      if (/^\(/.test(nome)) return [];   // "(sem localidade)" não dá boa pergunta
+      const n = nomeProprio(nome);
+      const deProduto = /artigo|marca|fam[ií]lia|produto/i.test(dim);
+      return [
+        `Evolução mensal das vendas de ${n} este ano`,
+        `Comparar as vendas de ${n} com o ano passado`,
+        deProduto ? `Que clientes compraram mais ${n} este ano?` : `Que artigos venderam mais em ${n} este ano?`
+      ];
+    }
+
+    // Ranking (top marcas, artigos, clientes): nome | barra | valor | variação.
+    // Cada linha abre o detalhe; a métrica e a ordem mudam sem nova pergunta.
+    function desenharRanking(itens, art, titulo) {
+      const comEuros = itens.every(i => i.unidades && /€/.test(i.pct));   // "18 390 unidades (436 176,07 €)"
+      const comDelta = itens.some(i => i.delta != null);
+      const estado = { metrica: 'principal', ordem: 'valor', aberto: -1 };
+      const valor = i => estado.metrica === 'euros' ? paraNumero(i.pct) : i.num;
+      const dim = ((titulo || '').match(/\bpor\s+(\S+)/i) || [])[1] || '';   // "Vendas por localidade" -> "localidade"
+
+      const controlos = el('div', 'chat-controlos');
+      const grupo = (rotulo, chave, opcoes) => {
+        const g = el('div', 'chat-seg');
+        g.setAttribute('role', 'group');
+        g.setAttribute('aria-label', rotulo);
+        opcoes.forEach(([id, texto]) => {
+          const b = botaoEl('', texto, () => { estado[chave] = id; estado.aberto = -1; desenhar(); });
+          b.dataset.id = id;
+          g.append(b);
+        });
+        g.dataset.chave = chave;
+        controlos.append(g);
+      };
+      if (comEuros) grupo('Métrica', 'metrica', [['principal', 'Unidades'], ['euros', 'Euros']]);
+      if (itens.length > 2) grupo('Ordenar por', 'ordem', [['valor', 'Valor'], ...(comDelta ? [['variacao', 'Variação']] : []), ['nome', 'Nome']]);
+      if (controlos.childNodes.length) art.append(controlos);
+
       const bloco = el('div', 'chat-bloco chat-ranking');
       const ol = el('ol', 'chat-rank');
       ol.setAttribute('role', 'list');
-      for (const it of itens) {
-        const li = el('li', 'chat-rank-linha');
-        const nome = el('div', 'chat-rank-nome');
-        const vazio = /^\(?sem descri[çc][ãa]o\)?$/i.test(it.nome);
-        nome.append(el('span', vazio ? 'chat-item-nome--vazio' : '', vazio ? 'Sem descrição' : it.nome));
-        if (it.codigo) nome.append(el('small', '', it.codigo));
-        nome.title = it.nome + (it.codigo ? ' (' + it.codigo + ')' : '');
-        const pista = el('span', 'chat-rank-pista'), cheio = el('span');
-        pista.setAttribute('aria-hidden', 'true');
-        cheio.style.width = Math.max(1, it.num / topo * 100) + '%';
-        pista.append(cheio);
-        const val = el('div', 'chat-rank-valor');
-        val.append(el('strong', '', it.valor));
-        if (it.pct) val.append(el('small', '', it.pct));
-        if (it.media) li.title = 'Valor médio por documento: ' + it.media;   // fora da linha, para não a encher
-        if (it.delta != null) val.append(chipDelta(it.delta, it.anterior ? ' vs ' + it.anterior.ano : ''));
-        li.append(el('span', 'chat-rank-pos', it.pos), nome, pista, val);
-        ol.append(li);
-      }
-      // Eixo alinhado com a coluna das barras
       const eixo = el('div', 'chat-rank-linha chat-rank-eixo');
       eixo.setAttribute('aria-hidden', 'true');
-      const marcas = el('div', 'chat-rank-marcas');
-      for (let k = 0; k <= 4; k++) marcas.append(el('span', '', k ? milhares(topo * k / 4).replace(' €', '') : '0'));
-      eixo.append(el('span'), el('span'), marcas, el('span'));
       bloco.append(ol, eixo);
       art.append(bloco);
+
+      function desenhar(foco) {
+        controlos.querySelectorAll('.chat-seg').forEach(g =>
+          [...g.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === estado[g.dataset.chave]))));
+        const max = Math.max(...itens.map(valor));
+        const passo = Math.pow(10, Math.floor(Math.log10(max))) / 2;
+        const topo = Math.ceil(max / passo) * passo;     // ex.: 299 053 -> 300 000
+        const lista = [...itens].sort(estado.ordem === 'nome' ? (a, b) => a.nome.localeCompare(b.nome, 'pt')
+          : estado.ordem === 'variacao' ? (a, b) => (b.delta ?? -Infinity) - (a.delta ?? -Infinity)
+          : (a, b) => valor(b) - valor(a));
+
+        ol.replaceChildren(...lista.map((it, k) => {
+          const n = itens.indexOf(it);
+          const li = el('li');
+          const linha = el('button', 'chat-rank-linha');
+          linha.type = 'button';
+          linha.setAttribute('aria-expanded', String(estado.aberto === n));
+          linha.setAttribute('aria-controls', 'detalhe-' + n);
+          linha.addEventListener('click', () => { estado.aberto = estado.aberto === n ? -1 : n; desenhar(n); });
+          const nome = el('span', 'chat-rank-nome');
+          const vazio = /^\(?sem descri[çc][ãa]o\)?$/i.test(it.nome);
+          nome.append(el('span', vazio ? 'chat-item-nome--vazio' : '', vazio ? 'Sem descrição' : it.nome));
+          if (it.codigo) nome.append(el('small', '', it.codigo));
+          if (it.sub) nome.append(el('small', '', it.sub));
+          nome.title = it.nome;   // nome inteiro ao passar o rato; no teclado, no detalhe
+          const pista = el('span', 'chat-rank-pista'), cheio = el('span');
+          pista.setAttribute('aria-hidden', 'true');
+          cheio.style.width = Math.max(1, valor(it) / topo * 100) + '%';
+          pista.append(cheio);
+          const val = el('span', 'chat-rank-valor');
+          const emEuros = estado.metrica === 'euros';
+          val.append(el('strong', '', emEuros ? it.pct : it.valor));
+          if (it.pct) val.append(el('small', '', emEuros ? it.valor : it.pct));
+          if (it.media) val.append(el('span', 'so-leitor', ', valor médio ' + it.media));
+          const variacao = el('span', 'chat-rank-delta');   // coluna própria: não empurra o valor para cima da barra
+          // Em euros, a variação continua a ser a das unidades (é a que vem na resposta): o texto diz isso
+          if (it.delta != null) variacao.append(chipDelta(it.delta, (it.anterior ? ' vs ' + it.anterior.ano : '') + (emEuros ? ' em unidades' : '')));
+          linha.append(el('span', 'chat-rank-pos', String(k + 1)), nome, pista, val, variacao);
+
+          const det = el('div', 'chat-rank-detalhe');
+          det.id = 'detalhe-' + n;   // só há uma resposta no ecrã de cada vez, por isso o id é único
+          det.hidden = estado.aberto !== n;
+          if (!det.hidden) {
+            const dl = el('dl', 'chat-factos');
+            const facto = (rotulo, v) => { if (!v) return; const g = el('div'); g.append(el('dt', '', rotulo), el('dd', '', v)); dl.append(g); };
+            facto(it.unidades ? 'Unidades' : 'Valor', it.valor);
+            facto(/€/.test(it.pct) ? 'Vendas' : /%\s+\S/.test(it.pct) ? 'Percentagem' : 'Parte do total', it.pct);
+            facto(rotuloSub(titulo), it.sub);
+            facto('Código', it.codigo);
+            if (it.anterior) facto('Em ' + it.anterior.ano, it.anterior.valor);
+            if (it.delta != null) facto('Variação', textoDelta(it.delta) + (it.anterior ? ' vs ' + it.anterior.ano : ''));
+            facto('Valor médio por documento', it.media);
+            const acoes = el('div', 'chat-acoes');
+            perguntasDoItem(it.nome, dim).forEach(q => acoes.append(botaoEl('chat-chip', q, () => prepararPergunta(q))));
+            det.append(el('strong', '', it.nome), dl);
+            if (acoes.childNodes.length) det.append(acoes);
+          }
+          li.append(linha, det);
+          return li;
+        }));
+
+        // Eixo alinhado com a coluna das barras
+        const marcas = el('div', 'chat-rank-marcas');
+        for (let k = 0; k <= 4; k++) marcas.append(el('span', '', k ? milhares(topo * k / 4).replace(' €', '') : '0'));
+        eixo.replaceChildren(el('span'), el('span'), marcas, el('span'), el('span'));
+        if (foco != null) ol.querySelector(`[aria-controls="detalhe-${foco}"]`).focus();
+      }
+      desenhar();
     }
 
     // Lista simples: posição | nome e código | valor. Com grupos ("Clientes em Odivelas") e nomes repetidos.
@@ -1258,6 +1529,7 @@
         const vazio = /^\(?sem descri[çc][ãa]o\)?$/i.test(it.nome);
         corpo.append(el('span', 'chat-item-nome' + (vazio ? ' chat-item-nome--vazio' : ''), vazio ? 'Sem descrição' : it.nome));
         if (it.codigo) corpo.append(el('span', 'chat-item-codigo', it.codigo));
+        if (it.sub) corpo.append(el('span', 'chat-item-codigo', it.sub));
         if (n > 1) corpo.append(el('span', 'chat-item-codigo', n + ' registos com este nome'));
         const v = Math.abs(it.num);
         if (v > 0 && max > 0) {
@@ -1278,7 +1550,101 @@
       art.append(bloco);
     }
 
-    function folhaLista(r, original) {
+    // Perguntas seguintes, calculadas a partir da própria resposta (em vez das sugestões fixas do tema)
+    function perguntasSeguintes(r, itens, serie) {
+      if (serie) {
+        const completos = serie.meses.filter(x => x.atual != null && !x.parcial);
+        if (completos.length < 2) return [];
+        const melhor = completos.reduce((a, b) => b.atual > a.atual ? b : a);
+        const pior = completos.reduce((a, b) => b.atual < a.atual ? b : a);
+        const mes = x => MESES[x.m - 1].toLowerCase() + ' de ' + x.a;
+        return [`Que artigos venderam mais em ${mes(melhor)}?`, `Que clientes compraram mais em ${mes(melhor)}?`, `Vendas por zona em ${mes(pior)}`];
+      }
+      const validos = itens.filter(i => i.num > 0 && !/^\(/.test(i.nome));   // "(sem localidade)" não dá boa pergunta
+      if (validos.length < 2) return [];
+      const dim = ((r.titulo || '').match(/\bpor\s+(\S+)/i) || [])[1] || '';
+      const deProduto = /artigo|marca|fam[ií]lia|produto/i.test(dim);
+      const n = i => nomeProprio(i.nome);
+      const primeiro = validos.reduce((a, b) => b.num > a.num ? b : a);
+      const ano = +((r.periodo.match(/(\d{4})$/) || [])[1] || new Date().getFullYear());
+      const comVariacao = validos.filter(i => i.delta != null);
+      if (comVariacao.length < 2) {
+        const segundo = validos.filter(i => i !== primeiro).reduce((a, b) => b.num > a.num ? b : a);
+        return [`Evolução mensal das vendas de ${n(primeiro)} em ${ano}`, `Comparar ${n(primeiro)} com ${n(segundo)}`,
+                deProduto ? `Que clientes compraram mais ${n(primeiro)}?` : `Que artigos venderam mais em ${n(primeiro)}?`];
+      }
+      const sobe = comVariacao.reduce((a, b) => b.delta > a.delta ? b : a);
+      const desce = comVariacao.reduce((a, b) => b.delta < a.delta ? b : a);
+      const lista = [];
+      if (sobe.delta > 0) lista.push(deProduto ? `Que clientes fizeram ${n(sobe)} subir ${textoDelta(sobe.delta)}?` : `Que artigos fizeram ${n(sobe)} subir ${textoDelta(sobe.delta)}?`);
+      if (desce.delta < 0) lista.push(`Porque caíram as vendas ${deProduto ? 'de' : 'em'} ${n(desce)} (${textoDelta(desce.delta)})?`);
+      lista.push(`Evolução mensal de ${n(primeiro)} em ${ano} e ${ano - 1}`);
+      return lista;
+    }
+
+    // Perguntas seguintes: escrevem no campo, para rever antes de enviar
+    function blocoSeguintes(perguntas) {
+      const sec = el('section', 'chat-sugestoes');
+      const lista = el('div');
+      perguntas.forEach(p => lista.append(botaoEl('chat-chip', p, () => prepararPergunta(p))));
+      sec.append(el('h3', '', 'Perguntas seguintes'), lista);
+      return sec;
+    }
+
+    // "Clientes com Vendedor = Paulo Afonso e Localidade = Corroios" -> título "Clientes" + filtros
+    function lerFiltros(titulo) {
+      const filtros = [...(titulo || '').matchAll(/(\p{L}[\p{L} ]*?)\s*=\s*(.+?)(?=\s+e\s+\p{L}[\p{L} ]*?\s*=|$)/gu)]
+        .map(m => [m[1].replace(/^(?:.*\bcom\s+|e\s+)/i, ''), m[2].trim()]);
+      return { titulo: filtros.length ? titulo.replace(/\s+com\s+.*=.*$/i, '') : titulo, filtros };
+    }
+
+    // "Qual foi a localidade que mais faturou este ano?" + "no mês passado" -> "... faturou no mês passado?"
+    function trocarPeriodo(pergunta, periodo) {
+      const sem = pergunta.replace(/\?\s*$/, '')
+        .replace(/\s+(?:(?:n?este|deste)\s+ano|(?:no|do|o)\s+ano\s+(?:atual|passado)|(?:no|do|n?este|deste)\s+m[eê]s(?:\s+(?:passado|atual))?|(?:no|do|neste)\s+[uú]ltimo\s+trimestre|(?:no|do)\s+1\.º\s+semestre|(?:no|do)\s+dia\s+\d{2}-\d{2}-\d{4}|(?:em|de)\s+\d{4})(?=\s|$)/i, '').replace(/\s{2,}/g, ' ').trim();
+      return `${sem} ${periodo}?`;
+    }
+
+    // "Como li a pergunta": filtros e período em etiquetas. O período muda-se com um clique.
+    const PERIODOS = ['este ano', 'no mês passado', 'no último trimestre', 'no ano passado'];
+    function etiquetasLeitura(cab, filtros, periodo, pergunta) {
+      if (!filtros.length && !periodo) return;
+      const div = el('div', 'chat-filtros');
+      div.setAttribute('role', 'group');
+      div.setAttribute('aria-label', 'Como li a pergunta');
+      filtros.forEach(([k, v]) => { const f = el('span', 'chat-filtro'); f.append(el('span', '', k), v); div.append(f); });
+      cab.append(div);
+      if (!periodo) return;
+      const menu = el('div', 'chat-periodos');
+      menu.hidden = true;
+      PERIODOS.forEach(p => menu.append(botaoEl('chat-chip', maiuscula(p.replace(/^no\s+/, '')), () => { if (!ocupado) perguntar(trocarPeriodo(pergunta, p)); })));
+      const b = botaoEl('chat-filtro chat-filtro--botao', '', () => {
+        menu.hidden = !menu.hidden;
+        b.setAttribute('aria-expanded', String(!menu.hidden));
+      });
+      b.setAttribute('aria-expanded', 'false');
+      b.append(el('span', '', 'Período'), periodo, el('span', '', ' ▾'));
+      div.append(b);
+      cab.append(menu);
+    }
+
+    // Destaque em texto: quem lidera, quem mais subiu e quem mais desceu, calculado a partir dos números
+    function fraseDestaque(itens) {
+      const comValor = itens.filter(i => i.num > 0);
+      if (comValor.length < 3 || itens.some(i => i.sub)) return '';   // "melhor X em cada Y": não há um líder
+      const primeiro = comValor.reduce((a, b) => b.num > a.num ? b : a);
+      let frase = `${nomeProprio(primeiro.nome)} lidera com ${primeiro.valor}` + (/%/.test(primeiro.pct) ? ` (${primeiro.pct} do total)` : '') + '.';
+      const comVariacao = comValor.filter(i => i.delta != null);
+      if (comVariacao.length > 1) {
+        const sobe = comVariacao.reduce((a, b) => b.delta > a.delta ? b : a);
+        const desce = comVariacao.reduce((a, b) => b.delta < a.delta ? b : a);
+        if (sobe.delta > 0) frase += ` A maior subida é de ${nomeProprio(sobe.nome)} (${textoDelta(sobe.delta)}).`;
+        if (desce.delta < 0) frase += ` A maior descida é de ${nomeProprio(desce.nome)} (${textoDelta(desce.delta)}).`;
+      }
+      return frase;
+    }
+
+    function folhaLista(r, original, pergunta = '') {
       const art = el('article', 'chat-folha');
       const simples = !r.titulo && !r.itens.length && !r.factos.length && !r.avisos.length;
       if (simples) {
@@ -1299,8 +1665,9 @@
       }
 
       const cab = el('div', 'chat-folha-cab');
-      if (r.titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(r.titulo)));
-      if (r.periodo) cab.append(el('p', 'chat-folha-meta', 'Período: ' + r.periodo));
+      const leitura = lerFiltros(r.titulo);
+      if (r.titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(leitura.titulo)));
+      etiquetasLeitura(cab, leitura.filtros, r.periodo, pergunta);
       art.append(cab);
 
       art.classList.add('chat-folha--painel');
@@ -1332,24 +1699,37 @@
       // Um só valor (ex.: um dia) já está nos cartões: não desenha uma barra sozinha
       const soUm = itens.length === 1 && !devolucoes.length && !!art.querySelector('.chat-kpis');
 
+      const destaque = serie ? '' : fraseDestaque(itens);
+      if (destaque) art.append(el('p', 'chat-destaque', destaque));
+
       let imagem = null;   // gráfico que o botão "Guardar imagem" redesenha em PNG
       const periodo = r.periodo ? 'Período: ' + r.periodo : '';
       if (serie) { desenharSerie(serie, art); imagem = () => pngSerie(serie, r.titulo, periodo); }
       else if (soUm) { /* nada a acrescentar */ }
-      else if (itens.length && itens.every(i => i.num > 0 && !i.rotulo)) { desenharRanking(itens, art); imagem = () => pngRanking(itens, r.titulo, periodo); }
+      else if (itens.length && itens.every(i => i.num > 0 && !i.rotulo)) { desenharRanking(itens, art, r.titulo); imagem = () => pngRanking(itens, r.titulo, periodo); }
       else if (itens.length) desenharLista(itens, art);
       if (devolucoes.length) desenharLista(devolucoes, art, 'Devoluções e notas de crédito');
 
       const linhas = !r.itens.length ? linhasKpis
         : serie ? [['Mês', serie.anoAtual, serie.anoAnt || '', 'Variação (%)', 'Valor médio'],
                    ...r.itens.map(i => [i.nome, i.valor, i.anterior ? i.anterior.valor : '', i.delta == null ? '' : String(i.delta).replace('.', ','), i.media])]
-        : [['Posição', 'Grupo', 'Nome', 'Código', 'Valor', '%', 'Média'],
-           ...r.itens.map(i => [i.pos, i.grupo || '', i.nome, i.codigo, i.valor, i.pct, i.media])];
+        : [['Posição', 'Grupo', 'Nome', rotuloSub(r.titulo), 'Código', 'Valor', '%', 'Média'],
+           ...r.itens.map(i => [i.pos, i.grupo || '', i.nome, i.sub || '', i.codigo, i.valor, i.pct, i.media])];
       rodapeDados(art, linhas, r.titulo, r.nota, imagem);
+      if (r.itens.length) art.sugestoes = perguntasSeguintes(r, itens, serie);   // lidas em mostrarItem
       return art;
     }
 
-    function folhaTabela(t) {
+    // Número de uma célula: "27.2" e "27,2" valem o mesmo; "1 234,50 €" também funciona
+    const numeroCelula = s => /^-?\d+\.\d+%?$/.test(s) ? parseFloat(s) : paraNumero(s);
+    // Escreve um total com o formato das células da coluna ("27.2", "97.6%", "1 234,50 €")
+    function formatarComo(amostra, n) {
+      const casas = ((amostra.match(/[.,](\d+)\D*$/) || [])[1] || '').length;
+      if (/€|\d\s\d{3}/.test(amostra)) return n.toLocaleString('pt-PT', { minimumFractionDigits: casas, maximumFractionDigits: casas }) + (/€/.test(amostra) ? ' €' : '');
+      return n.toFixed(casas).replace('.', amostra.includes(',') ? ',' : '.') + (/%$/.test(amostra) ? '%' : '');
+    }
+
+    function folhaTabela(t, pergunta = '') {
       const art = el('article', 'chat-folha chat-folha--painel');
       // Sem markdown e sem "Lista completa: …", que repete o total
       const limpo = s => s.split('\n').map(l => limparMarkdown(l.trim()).replace(MARCADOR, ''))
@@ -1358,14 +1738,17 @@
       const [titulo, resumo] = antes.split(/:\s+(.*)/s);
       const cab = el('div', 'chat-folha-cab');
       art.append(cab);
-      if (titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(titulo)));   // sem toLowerCase: mantém "Paulo Afonso"
+      const leitura = lerFiltros(titulo);
+      if (titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(leitura.titulo)));   // sem toLowerCase: mantém "Paulo Afonso"
+      etiquetasLeitura(cab, leitura.filtros, '', pergunta);
 
       // Coluna de texto com o mesmo valor em todas as linhas (ex.: Vendedor): sai da tabela e vai para o cabeçalho
       const fixa = t.cabecalho.map((_, c) => c > 0 && !t.numericas[c] && t.linhas.length > 1 && t.linhas.every(l => l[c] === t.linhas[0][c]));
-      if (fixa.some(Boolean)) {
+      const jaNoTitulo = nome => leitura.filtros.some(([k]) => semAcento(k) === semAcento(nome));   // "Vendedor" já está nas etiquetas
+      if (fixa.some((f, c) => f && !jaNoTitulo(t.cabecalho[c]))) {
         const filtros = el('div', 'chat-filtros');
         t.cabecalho.forEach((nome, c) => {
-          if (!fixa[c]) return;
+          if (!fixa[c] || jaNoTitulo(nome)) return;
           const f = el('span', 'chat-filtro');
           f.append(el('span', '', maiuscula(nome)), t.linhas[0][c]);
           filtros.append(f);
@@ -1378,30 +1761,86 @@
       const cabecalho = t.cabecalho.filter(mostrar);
       const numericas = t.numericas.filter(mostrar);
       const linhas = t.linhas.map(l => l.filter(mostrar));
+      const estado = { col: -1, dir: -1, filtro: '' };   // col -1: a ordem em que a resposta veio
+
+      // Filtro só em tabelas compridas
+      const contagem = el('span', '');
+      contagem.setAttribute('role', 'status');
+      if (linhas.length > 8) {
+        const filtro = el('label', 'chat-filtrar');
+        const caixa = el('input');
+        caixa.type = 'search';
+        caixa.autocomplete = 'off';
+        caixa.placeholder = maiuscula(cabecalho[0] || 'texto');
+        caixa.addEventListener('input', () => { estado.filtro = caixa.value; desenharLinhas(); });
+        filtro.append(el('span', '', 'Filtrar'), caixa, contagem);
+        art.append(filtro);
+      }
 
       const barra = numericas.indexOf(true);
-      const maximo = barra < 0 ? 0 : Math.max(...linhas.map(l => paraNumero(l[barra])));
+      const maximo = barra < 0 ? 0 : Math.max(...linhas.map(l => numeroCelula(l[barra])));
       const tabela = el('table', 'chat-tabela');
       const topo = tabela.createTHead().insertRow();
-      cabecalho.forEach((nome, c) => {
-        const th = el('th', numericas[c] ? 'chat-num' : '', nome);
+      const cabecalhos = cabecalho.map((nome, c) => {
+        const th = el('th', numericas[c] ? 'chat-num' : '');
         th.scope = 'col';
+        const b = botaoEl('chat-ordenar', maiuscula(nome), () => {
+          // 1.º clique: números do maior para o menor, texto de A a Z; 2.º clique inverte
+          estado.dir = estado.col === c ? -estado.dir : (numericas[c] ? -1 : 1);
+          estado.col = c;
+          desenharLinhas();
+        });
+        b.append(el('span', 'chat-seta'));
+        th.append(b);
         topo.append(th);
         if (c === 0 && barra >= 0) { const v = el('th'); v.append(el('span', 'so-leitor', 'Proporção')); topo.append(v); }
+        return th;
       });
       const corpo = tabela.createTBody();
-      for (const linha of linhas) {
-        const tr = corpo.insertRow();
-        linha.forEach((valor, c) => {
-          tr.append(el('td', numericas[c] ? 'chat-num' : '', valor));
-          if (c === 0 && barra >= 0) {
-            const td = el('td'), fundo = el('div', 'chat-barra'), cheio = el('span');
-            cheio.style.width = Math.max(3, paraNumero(linha[barra]) / maximo * 100) + '%';
-            fundo.setAttribute('aria-hidden', 'true');
-            fundo.append(cheio); td.append(fundo); tr.append(td);
-          }
+      const total = linhas.length > 1 && numericas.some(Boolean) ? tabela.createTFoot().insertRow() : null;
+
+      function desenharLinhas() {
+        cabecalhos.forEach((th, c) => {
+          if (c === estado.col) th.setAttribute('aria-sort', estado.dir < 0 ? 'descending' : 'ascending');
+          else th.removeAttribute('aria-sort');
+          th.querySelector('.chat-seta').textContent = c === estado.col ? (estado.dir < 0 ? ' ↓' : ' ↑') : '';
         });
+        const f = semAcento(estado.filtro.trim());
+        let visiveis = linhas.filter(l => !f || l.some((v, c) => !numericas[c] && semAcento(v).includes(f)));
+        if (estado.col >= 0) {
+          const c = estado.col;
+          visiveis = [...visiveis].sort((a, b) => (numericas[c] ? numeroCelula(a[c]) - numeroCelula(b[c]) : a[c].localeCompare(b[c], 'pt')) * estado.dir);
+        }
+        corpo.replaceChildren();
+        for (const linha of visiveis) {
+          const tr = corpo.insertRow();
+          linha.forEach((valor, c) => {
+            tr.append(el('td', numericas[c] ? 'chat-num' : '', valor));
+            if (c === 0 && barra >= 0) {
+              const td = el('td'), fundo = el('div', 'chat-barra'), cheio = el('span');
+              cheio.style.width = Math.max(3, numeroCelula(linha[barra]) / maximo * 100) + '%';
+              fundo.setAttribute('aria-hidden', 'true');
+              fundo.append(cheio); td.append(fundo); tr.append(td);
+            }
+          });
+        }
+        if (!visiveis.length) {
+          const td = el('td', 'chat-tabela-vazia', 'Nenhuma linha com esse texto.');
+          td.colSpan = cabecalho.length + (barra >= 0 ? 1 : 0);
+          corpo.insertRow().append(td);
+        }
+        if (total) {
+          total.replaceChildren();
+          cabecalho.forEach((_, c) => {
+            const soma = numericas[c] ? visiveis.reduce((s, l) => s + numeroCelula(l[c]), 0) : null;
+            total.append(el('td', numericas[c] ? 'chat-num' : '', c === 0 ? 'Total' : soma == null ? '' : formatarComo(linhas[0][c], soma)));
+            if (c === 0 && barra >= 0) total.append(el('td'));
+          });
+        }
+        contagem.textContent = estado.filtro ? `${visiveis.length} de ${linhas.length} linhas` : '';
       }
+      desenharLinhas();
+
       const bloco = el('div', 'chat-bloco');
       bloco.append(tabela);
       if (depois) bloco.append(el('p', 'chat-texto', depois));
@@ -1420,6 +1859,44 @@
       const opcoes = [...resto.matchAll(/([^;()]+?)\s*\((\d+)\)/g)].map(x => [x[1].trim(), +x[2]]);
       const contagem = texto.match(/mostrados\s+(\d+)\s+de\s+(\d+)/i);
       return { campo: m[1].trim(), opcoes, mostrados: contagem ? +contagem[1] : opcoes.length, total: contagem ? +contagem[2] : 0 };
+    }
+
+    // "Sem vendas: Trimestre atual (01-10-2026 a 29-10-2026)" + "Atenção: …": o período não tem vendas
+    function lerSemVendas(texto) {
+      const linhas = texto.split('\n').map(l => l.trim()).filter(Boolean);
+      const m = (linhas[0] || '').match(/^sem vendas\b(?:\s+registadas)?[\s:,-]*(?:n[oa]s?\s+|em\s+)?(.*?)\.?$/i);
+      if (!m || linhas.length > 3) return null;
+      const aviso = linhas.find(l => /^aten[çc][ãa]o\s*:/i.test(l));
+      return { periodo: m[1], aviso: aviso ? aviso.replace(/^aten[çc][ãa]o\s*:\s*/i, '') : '' };
+    }
+
+    function folhaSemVendas(s, pergunta) {
+      const art = el('article', 'chat-folha');
+      const cab = el('div', 'chat-folha-cab');
+      cab.append(el('h2', 'chat-vazio-titulo', 'Sem vendas neste período'));
+      if (s.periodo) cab.append(el('p', 'chat-folha-meta', maiuscula(s.periodo)));
+      art.append(cab);
+      if (s.aviso) {
+        const div = el('div', 'chat-aviso');
+        div.setAttribute('role', 'note');
+        const span = el('span');
+        span.append(el('strong', '', 'Atenção: '), s.aviso);
+        div.append(icone('M8 1.8 15 14H1L8 1.8ZM8 6v3.5M8 11.5v.5'), span);
+        art.append(div);
+      }
+      // Outro período para tentar: o trimestre anterior (se era um trimestre), este ano e o ano passado
+      const opcoes = [];
+      const inicio = s.periodo.match(/(\d{2})-(\d{2})-(\d{4})/);
+      if (/trimestre/i.test(s.periodo) && inicio) {
+        const ini = new Date(+inicio[3], +inicio[2] - 4, 1), fim = new Date(+inicio[3], +inicio[2] - 1, 0);
+        const d = x => x.toLocaleDateString('pt-PT').replace(/\//g, '-');
+        opcoes.push([`Trimestre anterior (${d(ini)} a ${d(fim)})`, `entre ${d(ini)} e ${d(fim)}`]);
+      }
+      opcoes.push(['Este ano', 'este ano'], ['Ano passado', 'no ano passado']);
+      const lista = el('div', 'chat-opcoes');
+      opcoes.forEach(([nome, periodo]) => lista.append(botaoEl('chat-chip', nome, () => { if (!ocupado) perguntar(trocarPeriodo(pergunta, periodo)); })));
+      art.append(el('h3', 'chat-opcoes-titulo', 'Ver outro período'), lista);
+      return art;
     }
 
     function folhaSemResultado(s, pergunta) {
@@ -1461,11 +1938,36 @@
       return art;
     }
 
+    // "NomeCliente" -> "Nome do cliente"; "Contribuinte" -> "NIF"; outros nomes de coluna: separa as palavras
+    const CAMPOS = { nomecliente: 'Nome do cliente', contribuinte: 'NIF', nif: 'NIF', codcliente: 'Código do cliente', email: 'Email',
+                     telefone: 'Telefone', telemovel: 'Telemóvel', localidade: 'Localidade', vendedor: 'Vendedor', zona: 'Zona', tipocliente: 'Tipo de cliente' };
+    const rotuloCampo = k => /\s/.test(k) ? k
+      : CAMPOS[semAcento(k).replace(/[^a-z]/g, '')] || maiuscula(k.replace(/(\p{Ll})(\p{Lu})/gu, '$1 $2').toLowerCase());
+    // "Melhor marca em cada localidade" -> "Marca": nome da segunda coluna quando cada linha é "Localidade: Marca"
+    const rotuloSub = titulo => maiuscula(((titulo || '').match(/\bmelhor(?:es)?\s+(\S+)/i) || [])[1] || 'Detalhe');
+
+    // Um só registo (ex.: dados de um cliente): campo | valor, em vez de uma tabela com uma linha
+    function folhaFicha(t) {
+      const art = el('article', 'chat-folha chat-folha--painel');
+      const antes = t.antes.split('\n').map(l => l.replace(MARCADOR, '').trim()).filter(Boolean).join(' ').replace(/:\s*$/, '');
+      if (antes) { const cab = el('div', 'chat-folha-cab'); cab.append(el('h2', 'chat-folha-titulo', maiuscula(antes))); art.append(cab); }
+      const dl = el('dl', 'chat-ficha');
+      t.cabecalho.forEach((k, c) => dl.append(el('dt', '', rotuloCampo(k)), el('dd', '', t.linhas[0][c])));
+      art.append(dl);
+      if (t.depois) art.append(el('p', 'chat-texto', t.depois));
+      rodapeDados(art, [['Campo', 'Valor'], ...t.cabecalho.map((k, c) => [rotuloCampo(k), t.linhas[0][c]])], antes || 'ficha');
+      return art;
+    }
+
     function formatar(texto, pergunta = '') {
+      texto = texto.split('\n').map(limparMarkdown).join('\n');   // uma vez para todas as respostas, incluindo tabelas
       const s = lerSemResultado(texto);
       if (s) return folhaSemResultado(s, pergunta);
+      const v = lerSemVendas(texto);
+      if (v) return folhaSemVendas(v, pergunta);
       const t = lerTabela(texto);
-      return t ? folhaTabela(t) : folhaLista(lerLista(texto), texto);
+      if (!t) return folhaLista(lerLista(texto), texto, pergunta);
+      return t.linhas.length === 1 ? folhaFicha(t) : folhaTabela(t, pergunta);
     }
 
     /* =========================================================
@@ -1489,53 +1991,218 @@
       return sec;
     }
 
-    function mostrarInicio() {
-      const intro = el('div', 'chat-intro');
-      intro.append(el('h2', '', tema().nome), el('p', '', tema().descricao));
-      area.replaceChildren(intro, blocoSugestoes('Perguntas sugeridas'));
-      area.scrollTop = 0;
-    }
 
-    // A resposta com o avatar à frente (a mesma imagem do estado, já embebida)
-    function comAvatar(art) {
-      const linha = el('div', 'chat-resposta');
-      const avatar = document.getElementById('avatar').cloneNode();
-      avatar.removeAttribute('id');
-      linha.append(avatar, art);
+    // Hora curta para a conversa: "10:25"
+    const horaCurta = d => d ? d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' }) : '';
+
+    // Mensagem de quem pergunta: balão à direita, avatar, hora e (opcional) Editar / Repetir
+    function mensagemEu(texto, hora, acoes) {
+      const linha = el('div', 'chat-msg chat-msg--eu');
+      const corpo = el('div', 'chat-msg-corpo');
+      const balao = el('p', 'chat-balao-eu');
+      balao.append(el('span', 'so-leitor', 'Pergunta: '), texto);
+      const meta = el('div', 'chat-msg-meta');
+      if (acoes) meta.append(...acoes);
+      if (hora) meta.append(el('span', '', horaCurta(hora)));
+      corpo.append(balao, meta);
+      const avatar = el('span', 'chat-avatar-eu');
+      avatar.append(icone('M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2.5 14.2c.7-2.7 2.9-4.2 5.5-4.2s4.8 1.5 5.5 4.2', 16));
+      linha.append(corpo, avatar);
       return linha;
     }
 
-    function mostrarItem(item) {
-      const filhos = [el('p', 'chat-pergunta', item.pergunta)];
+    // Resposta do assistente: avatar à esquerda, nome por cima, hora por baixo
+    function comAvatar(art, hora) {
+      const linha = el('div', 'chat-resposta chat-msg chat-msg--agente');
+      const avatar = document.getElementById('avatar').cloneNode();
+      avatar.removeAttribute('id');
+      const corpo = el('div', 'chat-msg-corpo');
+      corpo.append(el('span', 'chat-msg-nome', 'Assistente de vendas'), art);
+      if (hora) { const meta = el('div', 'chat-msg-meta'); meta.append(el('span', '', horaCurta(hora))); corpo.append(meta); }
+      linha.append(avatar, corpo);
+      return linha;
+    }
+
+    // Feedback na resposta: "Sim" ou "Não" + motivo. Envia para /feedback; se falhar, diz que falhou.
+    function blocoFeedback(item) {
+      const sec = el('div', 'chat-feedback');
+      const motivos = el('div', 'chat-acoes');
+      motivos.hidden = true;
+      const enviar = async (avaliacao, motivo = '') => {
+        sec.replaceChildren(el('span', '', 'A enviar a avaliação…'));
+        try {
+          const r = await fetch('/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pergunta: item.pergunta, resposta: item.texto, avaliacao, motivo, data: new Date().toISOString() })
+          });
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          sec.replaceChildren(el('span', '', 'Obrigado. A avaliação foi enviada.'));
+          anunciar('Avaliação enviada.');
+        } catch {
+          sec.replaceChildren(el('span', '', 'Não foi possível enviar a avaliação.'));
+          anunciar('Não foi possível enviar a avaliação.');
+        }
+      };
+      ['Números errados', 'Não respondeu à pergunta', 'Difícil de ler'].forEach(m => motivos.append(botaoEl('chat-chip', m, () => enviar('nao', m))));
+      const nao = botaoEl('chat-acao', 'Não', () => { motivos.hidden = false; nao.setAttribute('aria-expanded', 'true'); motivos.querySelector('button').focus(); });
+      nao.setAttribute('aria-expanded', 'false');
+      sec.append(el('span', '', 'Esta resposta está certa?'), botaoEl('chat-acao', 'Sim', () => enviar('sim')), nao, motivos);
+      return sec;
+    }
+
+    /* ---------- Proposta A: painel de dados em separadores + conversa ---------- */
+    const separadoresEl = document.getElementById('separadores');
+    const painelEl = document.getElementById('painel');
+    const painelRaiz = document.querySelector('.chat-painel');
+    const abas = [];          // respostas abertas em separadores (no máximo 6)
+    let abaAtiva = null;
+
+    // Desenha a resposta uma só vez; a conversa e o painel usam o mesmo resultado
+    function desenharResposta(item) {
+      if (item.art) return item.art;
+      try {
+        item.art = formatar(item.texto, item.pergunta);
+      } catch (erro) {
+        // Se a formatação falhar, mostra o texto tal como veio: o painel nunca fica parado.
+        console.error('Falha a formatar a resposta:', erro);
+        item.art = el('article', 'chat-folha');
+        item.art.append(el('p', 'chat-texto', item.texto.trim()));
+      }
+      // Com números (cartões, lista, tabela, gráfico, ficha) vai para o painel; texto e "não encontrei" ficam na conversa
+      item.noPainel = !!item.art.querySelector('.chat-kpis, .chat-folha-total, .chat-rank, .chat-lista, .chat-tabela, .chat-grafico, .chat-ficha');
+      return item.art;
+    }
+    const tituloDaResposta = item => ((item.art && item.art.querySelector('.chat-folha-titulo')) || {}).textContent || item.pergunta;
+    // Frase curta para a conversa: o destaque, ou o título e o valor principal
+    function resumoDaResposta(art) {
+      const texto = s => (art.querySelector(s) || {}).textContent || '';
+      if (texto('.chat-destaque')) return texto('.chat-destaque');
+      const titulo = texto('.chat-folha-titulo'), valor = texto('.chat-folha-total') || texto('.chat-kpi-valor');
+      if (titulo && valor) return `${titulo}: ${valor}.`;
+      return titulo ? titulo + '.' : 'Os dados estão no painel.';
+    }
+
+    // O que o assistente diz na conversa: o erro, a resposta sem dados, ou uma frase e o cartão do resultado
+    function mensagemAgente(item) {
       if (item.erro) {
         const art = el('article', 'chat-folha chat-folha--erro');
         art.setAttribute('role', 'alert');
-        art.append(el('p', '', item.erro === 'vazio'
-          ? 'O agente não devolveu resposta. Tente de novo.'
+        art.append(el('p', '', item.erro === 'vazio' ? 'O agente não devolveu resposta. Tente de novo.'
+          : item.erro === 'parado' ? 'Parou a resposta antes de terminar.'
           : 'Sem ligação ao agente. Confirme que está a correr e tente de novo.'));
         art.append(botaoEl('chat-acao', 'Tentar de novo', () => {
           historico.splice(historico.indexOf(item), 1);
           perguntar(item.pergunta);
         }));
-        filhos.push(art);
-      } else {
-        try {
-          filhos.push(formatar(item.texto, item.pergunta));
-        } catch (erro) {
-          // Se a formatação falhar, mostra o texto tal como veio: o painel nunca fica parado.
-          console.error('Falha a formatar a resposta:', erro);
-          const art = el('article', 'chat-folha');
-          art.append(el('p', 'chat-texto', item.texto.trim()));
-          filhos.push(art);
-        }
+        return art;
       }
-      filhos[1] = comAvatar(filhos[1]);
-      filhos.push(blocoSugestoes('Mais sobre ' + tema().nome.toLowerCase()));
-      area.replaceChildren(...filhos);
-      area.scrollTop = 0;
+      const art = desenharResposta(item);
+      if (!item.noPainel) return art;
+      const bolha = el('article', 'chat-folha');
+      bolha.append(el('p', 'chat-texto', resumoDaResposta(art)));
+      const cartao = botaoEl('chat-cartao', '', () => abrirAba(item));
+      if (item === abaAtiva) cartao.setAttribute('aria-current', 'true');
+      const textos = el('span', 'chat-cartao-texto');
+      textos.append(el('b', '', tituloDaResposta(item)), el('small', '', item === abaAtiva ? 'Aberto no painel' : 'Abrir no painel'));
+      cartao.append(icone('M3 13V8M8 13V3M13 13V6', 18), textos);
+      bolha.append(cartao);
+      return bolha;
     }
 
-    function mostrarEspera(pergunta) {
+    // A conversa inteira, da primeira pergunta à última; feedback e sugestões só na última resposta
+    function desenharConversa() {
+      const filhos = [];
+      if (!historico.length) {
+        // Boas-vindas num balão do assistente: olá, como usar e o tema escolhido
+        const intro = el('article', 'chat-folha chat-intro');
+        intro.append(el('p', 'chat-intro-ola', 'Olá! Sou o assistente de vendas.'),
+                     el('p', 'chat-texto', 'Escolha um tema e carregue numa pergunta, ou escreva a sua em baixo. Os números aparecem no painel de dados.'),
+                     el('p', 'chat-texto', `${tema().nome}: ${tema().descricao.charAt(0).toLowerCase() + tema().descricao.slice(1)}`));
+        filhos.push(comAvatar(intro), blocoSugestoes('Perguntas sugeridas'));
+      }
+      const lista = [...historico].reverse();   // o histórico guarda a mais recente primeiro
+      lista.forEach((item, k) => {
+        filhos.push(mensagemEu(item.pergunta, item.hora, [
+          botaoEl('chat-acao', 'Editar', () => prepararPergunta(item.pergunta)),
+          botaoEl('chat-acao', 'Repetir', () => { if (!ocupado) perguntar(item.pergunta); })]));
+        if (item.pendente) return;                // a espera é desenhada por mostrarEspera
+        filhos.push(comAvatar(mensagemAgente(item), item.horaResposta));
+        if (k === lista.length - 1 && !item.erro) {
+          filhos.push(blocoFeedback(item));
+          const seguintes = (item.art && item.art.sugestoes) || [];
+          filhos.push(seguintes.length ? blocoSeguintes(seguintes) : blocoSugestoes('Mais sobre ' + tema().nome.toLowerCase()));
+        }
+      });
+      area.replaceChildren(...filhos);
+      area.scrollTop = area.scrollHeight;
+    }
+
+    // Separadores e o resultado aberto
+    function desenharPainel() {
+      separadoresEl.replaceChildren(...abas.map(item => {
+        const sep = el('div', 'chat-aba' + (item === abaAtiva ? ' chat-aba--ativa' : ''));
+        const abrir = botaoEl('chat-aba-abrir', tituloDaResposta(item), () => abrirAba(item));
+        abrir.title = tituloDaResposta(item);
+        if (item === abaAtiva) abrir.setAttribute('aria-current', 'true');
+        const fechar = botaoEl('chat-aba-fechar', '×', () => fecharAba(item));
+        fechar.setAttribute('aria-label', 'Fechar ' + tituloDaResposta(item));
+        sep.append(abrir, fechar);
+        return sep;
+      }));
+      if (abaAtiva) {
+        painelEl.replaceChildren(abaAtiva.art);
+      } else {
+        const vazio = el('div', 'chat-painel-vazio');
+        vazio.append(el('h2', '', 'Os dados aparecem aqui'),
+                     el('p', '', 'Faça uma pergunta na conversa. Cada resposta com números abre num separador, para comparar e voltar atrás.'));
+        painelEl.replaceChildren(vazio);
+      }
+      painelEl.scrollTop = 0;
+    }
+    function abrirAba(item) {
+      if (!abas.includes(item)) {
+        abas.push(item);
+        if (abas.length > 6) abas.shift();      // shortcut: só os 6 mais recentes; os outros reabrem pelo cartão na conversa
+      }
+      abaAtiva = item;
+      desenharPainel();
+      desenharConversa();
+    }
+    function fecharAba(item) {
+      abas.splice(abas.indexOf(item), 1);
+      if (abaAtiva === item) abaAtiva = abas[abas.length - 1] || null;
+      desenharPainel();
+      desenharConversa();
+    }
+    // Resposta nova: com dados abre um separador; sem dados fica só na conversa
+    function mostrarResposta(item) {
+      if (!item.erro) desenharResposta(item);
+      if (!item.erro && item.noPainel) abrirAba(item);
+      else desenharConversa();
+    }
+
+    document.getElementById('esconder-conversa').addEventListener('click', () => {
+      painelRaiz.classList.add('chat-painel--sem-conversa');
+      document.getElementById('mostrar-conversa').focus();
+    });
+    document.getElementById('mostrar-conversa').addEventListener('click', () => {
+      painelRaiz.classList.remove('chat-painel--sem-conversa');
+      campo.focus();
+    });
+
+    function mostrarInicio() {
+      desenharConversa();
+      desenharPainel();
+    }
+
+    // Mostra uma resposta já guardada (também usado para testar na consola)
+    function mostrarItem(item) {
+      if (!historico.includes(item)) historico.unshift(item);
+      mostrarResposta(item);
+    }
+
+    function mostrarEspera(pergunta, parar) {
       const art = el('article', 'chat-folha chat-espera');
       const bruto = el('p', 'chat-bruto');
       const esq = el('div', 'chat-esqueleto');
@@ -1547,8 +2214,10 @@
       const relogio = setInterval(() => {
         msg.textContent = `A consultar os dados… ${Math.round((Date.now() - inicio) / 1000)} s`;
       }, 1000);
-      art.append(msg, esq, bruto);
-      area.replaceChildren(el('p', 'chat-pergunta', pergunta), comAvatar(art));
+      art.append(msg, esq, bruto, botaoEl('chat-acao', 'Parar', parar));
+      desenharConversa();                          // a pergunta já aparece na conversa
+      area.append(comAvatar(art));
+      area.scrollTop = area.scrollHeight;
       return { bruto, esq, relogio };
     }
 
@@ -1566,37 +2235,24 @@
       }));
     }
 
-    function desenharHistorico() {
-      histVazio.hidden = historico.length > 0;
-      histEl.replaceChildren(...historico.map((item, i) => {
-        const li = el('li');
-        const b = botaoEl('', '', () => {
-          if (ocupado) return;
-          atual = i; desenharHistorico(); mostrarItem(item);
-        });
-        b.append(el('span', '', item.pergunta));
-        b.title = item.pergunta;   // texto completo quando cortado a 2 linhas
-        if (i === atual) b.setAttribute('aria-current', 'true');
-        b.disabled = ocupado;
-        li.append(b);
-        return li;
-      }));
-    }
+    // O histórico passou a ser a própria conversa (e os separadores do painel)
+    function desenharHistorico() {}
 
     /* =========================================================
        Perguntar ao agente
        ========================================================= */
     async function perguntar(texto) {
       if (ocupado) return;
-      const item = { pergunta: texto, texto: '', erro: null };
+      const item = { pergunta: texto, texto: '', erro: null, hora: new Date(), pendente: true };
       historico.unshift(item);
       atual = 0;
       bloquear(true);
       desenharTemas(); desenharHistorico();
-      const { bruto, esq, relogio } = mostrarEspera(texto);
+      const controlo = new AbortController();   // "Parar" cancela o pedido
+      const { bruto, esq, relogio } = mostrarEspera(texto, () => controlo.abort());
       area.setAttribute('aria-busy', 'true');   // o leitor de ecrã lê a resposta no fim, não aos bocados
       try {
-        const r = await fetch('/perguntar', { method: 'POST', body: texto });
+        const r = await fetch('/perguntar', { method: 'POST', body: texto, signal: controlo.signal });
         mostrarEstado(r.ok ? 'ocupado' : 'desligado');
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const leitor = r.body.getReader();
@@ -1611,14 +2267,17 @@
         item.texto += descodificador.decode();
         if (!item.texto.trim()) item.erro = 'vazio';
         mostrarEstado('pronto');
-      } catch {
-        item.erro = 'ligacao';
-        mostrarEstado('desligado');
+      } catch (e) {
+        item.erro = e.name === 'AbortError' ? 'parado' : 'ligacao';
+        mostrarEstado(item.erro === 'parado' ? 'pronto' : 'desligado');
       } finally {
         clearInterval(relogio);
         bloquear(false);
         if (estadoTexto.textContent === 'A consultar') mostrarEstado('pronto');
-        if (historico[atual] === item) mostrarItem(item);
+        item.horaResposta = new Date();
+        item.pendente = false;
+        mostrarResposta(item);
+        anunciar(item.erro ? 'A resposta falhou.' : 'Resposta pronta.');
         area.setAttribute('aria-busy', 'false');
         desenharTemas(); desenharHistorico();
         campo.focus();
