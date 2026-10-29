@@ -10,6 +10,11 @@ internal static class ConsultaClientes
     internal const string Origem =
         "[mcp].[ViewMCP_cliente] AS c JOIN [mcp].[ViewMCP_cliente_faturacao] AS f ON c.ClienteID = f.ClienteID";
 
+    // Nas listagens, um cliente sem linha de faturação (ou sem linha sensível) aparecia como "não existe";
+    // com LEFT JOIN aparece com "sem dados". As contagens continuam com Origem (os totais não mudam).
+    private const string OrigemListar =
+        "[mcp].[ViewMCP_cliente] AS c LEFT JOIN [mcp].[ViewMCP_cliente_faturacao] AS f ON c.ClienteID = f.ClienteID";
+
     public static (string Sql, Action<SqlParameterCollection> Parametros) Contar(
         Campo agrupar, IReadOnlyDictionary<Campo, string> filtros)
     {
@@ -42,7 +47,7 @@ internal static class ConsultaClientes
         var sql = $"""
             SELECT c.NomeCliente, {colunas},
                    COUNT(*) OVER () AS Total
-            FROM   {Origem}
+            FROM   {OrigemListar}
             {whereSql}
             ORDER BY c.NomeCliente, c.ClienteID
             OFFSET @deslocamento ROWS FETCH NEXT @limite ROWS ONLY;
@@ -69,8 +74,8 @@ internal static class ConsultaClientes
         var sql = $"""
             SELECT c.NomeCliente, {coluna}{extra},
                    COUNT(*) OVER () AS Total
-            FROM   {Origem}
-            JOIN   [mcp].[ViewMCP_cliente_sensivel] AS s ON s.ClienteID = c.ClienteID
+            FROM   {OrigemListar}
+            LEFT JOIN [mcp].[ViewMCP_cliente_sensivel] AS s ON s.ClienteID = c.ClienteID
             {whereSql}
             ORDER BY {(maiores ? coluna + " DESC, " : "")}c.NomeCliente, c.ClienteID
             OFFSET @deslocamento ROWS FETCH NEXT @limite ROWS ONLY;

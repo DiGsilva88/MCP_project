@@ -19,7 +19,9 @@ public class ConsultaClientesTests
         var filtros = new Dictionary<Campo, string> { [Campo.Localidade] = "Azeitão" };
         var (sql, aplicarParametros) = ConsultaClientes.ListarSensivel(CampoSensivel.VolumeVendas, filtros, maiores: true, deslocamento: 0);
 
-        Assert.Contains("JOIN   [mcp].[ViewMCP_cliente_sensivel] AS s", sql);
+        // LEFT: um cliente sem linha sensível ou de faturação aparece com "sem dados", não desaparece
+        Assert.Contains("LEFT JOIN [mcp].[ViewMCP_cliente_sensivel] AS s", sql);
+        Assert.Contains("LEFT JOIN [mcp].[ViewMCP_cliente_faturacao] AS f", sql);
         Assert.Contains("ORDER BY s.[VolumeVendas] DESC, c.NomeCliente", sql);
         Assert.Contains("WHERE (c.[Localidade] COLLATE", sql);
         Assert.Equal("Azeitão", Aplicar(aplicarParametros)["@filtro0"].Value);

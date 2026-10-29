@@ -29,7 +29,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         "contar=true: nº de clientes por valor da coluna (ex.: top 5 localidades: coluna=Localidade, contar=true, limite=5). " +
         "valor: filtra a coluna. cruzarCom/valorCruzado: filtra também por outra coluna " +
         "(ex.: actividade com mais clientes numa localidade: coluna=Actividade, contar=true, cruzarCom=Localidade, valorCruzado=<localidade dita>). " +
-        "nomeComecaPor: clientes cujo nome começa por esse texto. " +
+        "nomeComecaPor: clientes cujo nome começa por esse texto. cliente: ID ou nome de um cliente (a sua ficha e condições de faturação). " +
         "Faturação real (top clientes, artigos, familias, marcas, vendas por localidade/distrito/zona/vendedor/actividade, " +
         "vendas de um cliente): usar consultar_vendas. " +
         "Volume declarado na ficha ou plafond: usar consultar_sensivel. " +
@@ -45,8 +45,14 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Máximo de linhas ou grupos, 1 a 100.")] int limite = 10,
         [Description("Página das linhas, 1 é a primeira (não pagina contagens).")] int pagina = 1,
         [Description("Opcional: início do nome do cliente, tal como o utilizador o disse.")] string? nomeComecaPor = null,
+        [Description("Opcional: ID ou nome de um só cliente.")] string? cliente = null,
         CancellationToken ct = default)
     {
+        // "Ficha do cliente 28121": sem este parâmetro o modelo não tinha forma de pedir um cliente pelo ID.
+        var temCliente = !string.IsNullOrWhiteSpace(cliente);
+        if (temCliente && (contar || !string.IsNullOrWhiteSpace(nomeComecaPor)))
+            return "cliente não se combina com contar nem com nomeComecaPor.";
+
         var temValor = !string.IsNullOrWhiteSpace(valor);
         var temValorCruzado = !string.IsNullOrWhiteSpace(valorCruzado);
 
@@ -87,6 +93,13 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
                     : FormatarContagem(coluna.Value.ToString(), contagens, filtros);
             }
 
+            if (temCliente)
+            {
+                var (id, _, erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
+                if (erro is not null) return erro;
+                nomeComecaPor = id;
+            }
+
             var resultado = await repo.ListarAsync(
                 coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, nomeComecaPor, ct);
             return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
@@ -113,8 +126,11 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
         CancellationToken ct = default)
     {
-        // "Email do cliente 1003": o modelo não chamava nada, porque só havia nomeComecaPor. O SQL aceita nome ou ID.
-        if (string.IsNullOrWhiteSpace(nomeComecaPor)) nomeComecaPor = cliente;
+        // "Email do cliente 1003": o modelo não chamava nada, porque só havia nomeComecaPor.
+        // cliente resolve-se para um só ID (como em consultar_vendas): um prefixo não devolve contactos de vários clientes.
+        var temCliente = !string.IsNullOrWhiteSpace(cliente);
+        if (temCliente && !string.IsNullOrWhiteSpace(nomeComecaPor))
+            return "Use cliente ou nomeComecaPor, não os dois.";
         var temValor = !string.IsNullOrWhiteSpace(valor);
         if ((coluna is not null) != temValor)
             return "coluna e valor têm de ser usados juntos.";
@@ -138,8 +154,20 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             // Sem valores no log de erros: são dados pessoais.
             return await Respostas.ExecutarAsync(log, "consultar_sensivel", dado, async () =>
             {
+                string? rotulo = null;
+                if (temCliente)
+                {
+                    (nomeComecaPor, rotulo, var erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
+                    if (erro is not null) return erro;
+                }
+
                 var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, nomeComecaPor, mostrarTambem, ct);
                 linhas = resultado.Linhas.Count;
+                // Diz qual cliente é: a linha só traz o nome, e "Nenhuma linha" parecia "o cliente não existe".
+                if (rotulo is not null)
+                    return resultado.Linhas.Count == 0
+                        ? $"Cliente {rotulo}: sem {dado} com esse filtro."
+                        : $"Cliente {rotulo}:\n{FormatarDados(resultado, filtros)}";
                 return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
                     ? await Respostas.SemCorrespondenciaAsync(repo, filtros, ct)
                     : FormatarDados(resultado, filtros);
