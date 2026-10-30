@@ -21,8 +21,8 @@
       --marca-escura: #173a9e;
       --marca-texto: #ffffff;
       --selecionado: #dce4fa;  
-      --balao-eu: #16213a;       /* balão de quem pergunta */
-      --balao-eu-texto: #ffffff;
+      --balao-eu: var(--marca);  /* balão de quem pergunta: o azul do topo */
+      --balao-eu-texto: var(--marca-texto);
       --barra-fundo: #e6ebf5;
       --aviso-fundo: #fff6e0;
       --aviso-borda: #e8c26a;
@@ -39,6 +39,8 @@
       --desce: #a51b0f; --desce-fundo: #fde8e6;
       --borda-controlo: #7a8599; /* bordas de campos e botões: 3,5:1 */
       --ligacao: #1d46c0;        /* texto de botões e barras */
+      /* Gráfico circular: 6 cores por ordem fixa, validadas para daltonismo */
+      --serie-1: #2a78d6; --serie-2: #eb6834; --serie-3: #1baf7a; --serie-4: #eda100; --serie-5: #e87ba4; --serie-6: #6250d6;
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -53,8 +55,8 @@
         --marca: #3d63e6;
         --marca-escura: #3358d6;
         --selecionado: #24325a;
-        --balao-eu: #e8ebf2;
-        --balao-eu-texto: #0f1320;
+        --balao-eu: var(--marca);
+        --balao-eu-texto: #ffffff;
         --barra-fundo: #232a3b;
         --aviso-fundo: #2e2612;
         --aviso-borda: #7a5f1c;
@@ -68,6 +70,7 @@
         --desce: #ff9a8f; --desce-fundo: #3d1a17;
         --borda-controlo: #5d6a85;
         --ligacao: #8ea6ff;      /* 7,3:1 no cartão escuro */
+        --serie-1: #3987e5; --serie-2: #d95926; --serie-3: #199e70; --serie-4: #c98500; --serie-5: #d55181; --serie-6: #9085e9;
       }
     }
 
@@ -558,6 +561,21 @@
     .chat-msg--agente .chat-folha--erro { border: 1px solid var(--erro); }
 
     /* =========================================================
+       7h. Gráfico circular (partes de um total)
+       ========================================================= */
+    .chat-circulo { display: flex; flex-direction: row; align-items: center; gap: 32px; flex-wrap: wrap; }
+    .chat-circulo-roda { position: relative; width: 180px; height: 180px; flex: none; }
+    .chat-circulo-roda svg { width: 100%; height: 100%; transform: none; }
+    .chat-circulo-roda circle { fill: none; stroke-width: 20; }
+    .chat-circulo-centro { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 40px; }
+    .chat-circulo-centro strong { font-size: 20px; }
+    .chat-circulo-centro span { font-size: 12px; color: var(--nota); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .chat-circulo-legenda { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 240px; max-width: 520px; display: flex; flex-direction: column; gap: 10px; }
+    .chat-circulo-legenda li { display: grid; grid-template-columns: 12px 1fr max-content 52px; align-items: center; gap: 10px; }
+    .chat-circulo-cor { width: 12px; height: 12px; border-radius: 3px; }
+    .chat-circulo-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-circulo-legenda small { text-align: right; color: var(--nota); font-size: 12.5px; }
+    /* =========================================================
        7g. Proposta A: dados ao centro em separadores, conversa à direita
        ========================================================= */
     .chat-dados { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--fundo); }
@@ -603,6 +621,76 @@
     }
 
     /* =========================================================
+       7i. Layout C: conversa numa janela flutuante, estilo widget de chat
+       ========================================================= */
+    .chat-corpo { position: relative; }
+    /* os dados e os separadores não ficam por baixo da janela */
+    .chat-painel:not(.chat-painel--sem-conversa) :is(.chat-abas, .chat-painel-dados) { padding-right: 408px; }
+    .chat-conversa {
+      position: absolute; z-index: 5; top: 16px; right: 20px; bottom: 84px; width: 368px;
+      border: 1px solid var(--borda); border-radius: 18px; overflow: hidden;
+      box-shadow: 0 12px 32px rgb(22 33 58 / .18);
+      font-size: 13.5px;
+    }
+    .chat-conversa-cab { padding: 0; gap: 0; }
+    .chat-conversa-topo { gap: 10px; padding: 12px 10px 12px 14px; border-bottom: 1px solid var(--linha); }
+    .chat-conversa-topo .chat-avatar { width: 32px; height: 32px; }
+    .chat-conversa-nome { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .chat-conversa .chat-estado { font-size: 12px; color: var(--suave); }
+    .chat-conversa .chat-ponto { width: 7px; height: 7px; background: #1f9d62; }
+    .chat-conversa .chat-temas { padding: 8px 14px; border-bottom: 1px solid var(--linha); }
+    .chat-conversa .chat-tema { min-height: 28px; padding: 3px 11px; font-size: 12.5px; }
+    .chat-conversa .chat-tema[aria-pressed="true"] { background: var(--texto); border-color: var(--texto); color: var(--cartao); }
+
+    /* Balões compactos, sem avatar em cada mensagem */
+    .chat-conversa .chat-area { padding: 12px 14px; gap: 10px; }
+    .chat-conversa .chat-msg > .chat-avatar, .chat-conversa .chat-avatar-eu { display: none; }
+    .chat-conversa .chat-msg-corpo { gap: 3px; }
+    .chat-conversa .chat-msg--agente .chat-folha, .chat-conversa .chat-msg--agente .chat-folha--painel { max-width: 88%; padding: 8px 12px; border-radius: 16px; gap: 8px; }
+    .chat-conversa .chat-balao-eu { padding: 8px 12px; border-radius: 16px; line-height: 1.45; }
+    .chat-conversa .chat-area > .chat-msg--eu { max-width: 82%; }
+    .chat-conversa .chat-msg-meta { gap: 10px; }
+    .chat-conversa .chat-intro-ola { font-size: 13.5px; }
+    .chat-conversa .chat-cartao { padding: 7px 10px; border-radius: 12px; }
+    .chat-conversa .chat-msg--agente ~ .chat-sugestoes, .chat-conversa .chat-feedback { padding-left: 0; }
+    .chat-conversa .chat-sugestoes .chat-chip { padding: 6px 11px; border-radius: 99px; font-size: 12.5px; }
+    .chat-conversa .chat-opcoes .chat-chip { min-height: 30px; padding: 4px 10px; font-size: 12.5px; }
+    .chat-conversa .chat-acao, .chat-conversa .chat-vazio-titulo { font-size: 13.5px; }
+
+    /* Caixa de escrita com contorno, botão de enviar redondo */
+    .chat-conversa .chat-rodape { margin: 0 12px 10px; padding: 8px 8px 8px 12px; border: 1.5px solid var(--texto); border-radius: 14px; gap: 4px; }
+    .chat-conversa .chat-rodape:focus-within { outline: 2px solid var(--ligacao); outline-offset: 2px; }
+    .chat-conversa .chat-campo { min-height: 32px; padding: 0; border: 0; background: none; font-size: 13.5px; }
+    .chat-conversa .chat-campo:focus-visible { outline: none; }   /* o contorno vai na caixa toda */
+    .chat-conversa .chat-enviar { width: 32px; height: 32px; border-radius: 50%; }
+    .chat-conversa .chat-rodape-texto { font-size: 11.5px; }
+
+    /* Botão redondo: mostra e esconde a janela */
+    .chat-lancador {
+      position: absolute; z-index: 6; right: 20px; bottom: 20px; width: 52px; height: 52px;
+      display: grid; place-items: center; border: 0; border-radius: 50%;
+      background: var(--texto); color: var(--cartao); box-shadow: 0 6px 16px rgb(22 33 58 / .25);
+    }
+    .chat-lancador[aria-expanded="true"] .chat-lancador-abrir, .chat-lancador[aria-expanded="false"] .chat-lancador-fechar { display: none; }
+
+    /* Janela estreita: a conversa ocupa o painel todo quando está aberta */
+    @container (max-width: 820px) {
+      .chat-painel:not(.chat-painel--sem-conversa) :is(.chat-abas, .chat-painel-dados) { padding-right: 20px; }
+      .chat-conversa { top: 8px; left: 8px; right: 8px; bottom: 80px; width: auto; }
+    }
+    /* =========================================================
+       7j. Painel de dados: uma só escala de letra e o mesmo espaçamento
+       15px títulos · 13,5px texto e valores (igual à conversa) · 12px notas · 20px cartões
+       ========================================================= */
+    .chat-painel-dados { font-size: 13.5px; line-height: 1.45; }
+    .chat-painel-dados :is(.chat-item-nome, .chat-item-valor, .chat-destaque, .chat-rank-nome, .chat-rank-valor, .chat-folha-total, .chat-seg button, .chat-texto, .chat-ficha, .chat-acao) { font-size: 13.5px; }
+    .chat-painel-dados :is(.chat-item-pos, .chat-item-codigo, .chat-item-rotulo, .chat-item-pct, .chat-folha-meta, .chat-filtro, .chat-chip, .chat-kpi-cab, .chat-kpi-detalhe, .chat-rank-pos, .chat-rank-nome small, .chat-rank-valor small, .chat-filtrar) { font-size: 12px; }
+    .chat-painel-dados .chat-item { padding: 7px 0; gap: 2px 10px; }
+    .chat-painel-dados .chat-item-nome { line-height: 1.4; }
+    .chat-painel-dados :is(.chat-item-valor strong, .chat-ficha dd) { font-weight: 600; }
+    .chat-painel-dados .chat-barra { width: 100%; min-width: 64px; max-width: 200px; }   /* a barra da tabela usa a coluna toda */
+
+    /* =========================================================
        8. Rodapé: pergunta + só leitura
        ========================================================= */
     .chat-rodape { flex: none; background: var(--cartao); border-top: 1px solid var(--borda); padding: 12px 16px 10px; display: flex; flex-direction: column; gap: 8px; }
@@ -645,15 +733,6 @@
            onerror="this.onerror = null; this.src = '../logo/logo.png';">
       <span class="chat-separador" aria-hidden="true"></span>
       <h1 class="chat-titulo">Assistente de vendas</h1>
-      
-      <!-- role="status": o leitor de ecrã anuncia quando muda -->
-      <p class="chat-estado" id="estado" role="status">
-        <!-- Decorativo (alt vazio). O JS copia-o para antes de cada resposta. -->
-        <img class="chat-avatar" id="avatar" src="{{AVATAR}}" alt=""
-             onerror="this.onerror = null; this.src = '../logo/avatar-assistente-vendas.png';">
-        <span class="chat-ponto" aria-hidden="true"></span>
-        <span id="estado-texto">Pronto</span>
-      </p>
     </header>
 
     <div class="chat-corpo">
@@ -661,16 +740,27 @@
       <main class="chat-dados" aria-label="Dados">
         <div class="chat-abas">
           <nav class="chat-abas-lista" id="separadores" aria-label="Resultados abertos"></nav>
-          <button class="chat-acao chat-mostrar-conversa" id="mostrar-conversa" type="button">Mostrar a conversa</button>
         </div>
         <div class="chat-painel-dados" id="painel"></div>
       </main>
 
       <aside class="chat-conversa" aria-label="Conversa">
         <div class="chat-conversa-cab">
+          <!-- Cabeçalho da janela: avatar, nome e estado do agente -->
           <div class="chat-conversa-topo">
-            <h2 class="chat-conversa-titulo">Conversa</h2>
-            <button class="chat-esconder" id="esconder-conversa" type="button" aria-label="Esconder a conversa">»</button>
+            <img class="chat-avatar" id="avatar" src="{{AVATAR}}" alt=""
+                 onerror="this.onerror = null; this.src = '../logo/avatar-assistente-vendas.svg';">
+            <div class="chat-conversa-nome">
+              <h2 class="chat-conversa-titulo">Assistente de vendas</h2>
+              <!-- role="status": o leitor de ecrã anuncia quando muda -->
+              <p class="chat-estado" id="estado" role="status">
+                <span class="chat-ponto" aria-hidden="true"></span>
+                <span id="estado-texto">Pronto</span>
+              </p>
+            </div>
+            <button class="chat-esconder" id="esconder-conversa" type="button" aria-label="Esconder a conversa">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3l10 10M13 3 3 13"/></svg>
+            </button>
           </div>
           <div class="chat-temas" id="temas" role="group" aria-label="Tema"></div>
         </div>
@@ -697,6 +787,12 @@
           </p>
         </footer>
       </aside>
+
+      <!-- Botão redondo no canto: mostra e esconde a conversa -->
+      <button class="chat-lancador" id="mostrar-conversa" type="button" aria-expanded="true" aria-label="Esconder a conversa">
+        <svg class="chat-lancador-fechar" width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>
+        <svg class="chat-lancador-abrir" width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>
+      </button>
     </div>
   </div>
 
@@ -1379,25 +1475,143 @@
     }
 
     // Perguntas sobre uma linha de um ranking, conforme o que a lista compara ("por localidade", "por marca")
+    // "por zona," -> "zona"; "da zona Balcão" / "do artigo X": o agente sabe em que campo procurar
+    const FEMININO = /^(zona|localidade|marca|fam[ií]lia|a?c?tividade|categoria|regi[ãa]o)/i;
+    // De que se fala: "Vendas por zona" -> "zona"; sem "por", a primeira palavra conhecida ("A marca que mais faturou…" -> "marca")
+    const dimensao = titulo => ((titulo || '').match(/\bpor\s+(\S+)/i) || [])[1]
+      || (((titulo || '').match(/\b(marca|artigo|fam[ií]lia|zona|localidade|cliente|vendedor)s?\b/i) || [])[1] || '').toLowerCase();
+    const limparDim = dim => (dim || '').replace(/[^\p{L}]/gu, '').toLowerCase();
+    const daDim = (dim, nome) => limparDim(dim) ? `${FEMININO.test(limparDim(dim)) ? 'da' : 'do'} ${limparDim(dim)} ${nome}` : `de ${nome}`;
+    const naDim = (dim, nome) => limparDim(dim) ? `${FEMININO.test(limparDim(dim)) ? 'na' : 'no'} ${limparDim(dim)} ${nome}` : `em ${nome}`;
+
+    // "artigos da marca Bosch"; um artigo fica só com o nome
+    const artigosDe = (dim, nome) => !limparDim(dim) || /^artigo/.test(limparDim(dim)) ? nome : 'artigos ' + daDim(dim, nome);
+
     function perguntasDoItem(nome, dim) {
       if (/^\(/.test(nome)) return [];   // "(sem localidade)" não dá boa pergunta
       const n = nomeProprio(nome);
       const deProduto = /artigo|marca|fam[ií]lia|produto/i.test(dim);
       return [
-        `Evolução mensal das vendas de ${n} este ano`,
-        `Comparar as vendas de ${n} com o ano passado`,
-        deProduto ? `Que clientes compraram mais ${n} este ano?` : `Que artigos venderam mais em ${n} este ano?`
+        `Evolução mensal das vendas ${daDim(dim, n)} este ano`,
+        `Comparar as vendas ${daDim(dim, n)} com o ano passado`,
+        deProduto ? `Que clientes compraram mais ${artigosDe(dim, n)} este ano?` : `Que artigos venderam mais ${naDim(dim, n)} este ano?`
       ];
     }
 
     // Ranking (top marcas, artigos, clientes): nome | barra | valor | variação.
     // Cada linha abre o detalhe; a métrica e a ordem mudam sem nova pergunta.
+    /* ---------- Gráfico circular: partes de um total ---------- */
+    // Cores por ordem fixa (validadas para daltonismo); a 1.ª parte é sempre a maior
+    const CORES_CIRCULO = ['--serie-1', '--serie-2', '--serie-3', '--serie-4', '--serie-5', '--serie-6'];
+    const percentagem = i => /^\d+(?:[.,]\d+)?\s*%$/.test(i.pct || '') ? parseFloat(i.pct.replace(',', '.')) : null;
+    // Circular só quando a resposta divide um total: 2 a 6 partes, todas com "% do total" e a somar ~100%
+    function eParteDoTodo(itens) {
+      if (itens.length < 2 || itens.length > 6) return false;
+      if (itens.some(i => i.delta != null || i.unidades || percentagem(i) == null)) return false;
+      const soma = itens.reduce((s, i) => s + percentagem(i), 0);
+      return soma >= 97 && soma <= 103;
+    }
+
+    function desenharCirculo(itens, art, titulo) {
+      const estado = { vista: 'circulo' };
+      const g = el('div', 'chat-seg');
+      g.setAttribute('role', 'group');
+      g.setAttribute('aria-label', 'Ver como');
+      const controlos = el('div', 'chat-controlos');
+      controlos.append(g);
+      const zona = el('div');
+      art.append(controlos, zona);
+      [['circulo', 'Circular'], ['barras', 'Barras']].forEach(([id, texto]) => {
+        const b = botaoEl('', texto, () => { estado.vista = id; desenhar(); });
+        b.dataset.id = id;
+        g.append(b);
+      });
+
+      function desenhar() {
+        [...g.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === estado.vista)));
+        zona.replaceChildren();
+        if (estado.vista === 'barras') { desenharRanking(itens, zona, titulo); return; }
+
+        const lista = [...itens].sort((a, b) => b.num - a.num);
+        const bloco = el('div', 'chat-bloco chat-circulo');
+        const NS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 120 120');
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', lista.map(i => `${i.nome} ${i.pct}`).join(', '));
+        let inicio = 0;
+        const folga = lista.length > 1 ? 0.6 : 0;      // 2px de fundo entre as fatias
+        lista.forEach((it, k) => {
+          const parte = percentagem(it);
+          const c = document.createElementNS(NS, 'circle');
+          c.setAttribute('cx', 60); c.setAttribute('cy', 60); c.setAttribute('r', 46);
+          c.setAttribute('pathLength', 100);
+          c.setAttribute('stroke-dasharray', `${Math.max(0.4, parte - folga)} ${100 - Math.max(0.4, parte - folga)}`);
+          c.setAttribute('stroke-dashoffset', String(25 - inicio));   // começa às 12 horas
+          c.style.stroke = `var(${CORES_CIRCULO[k]})`;
+          const dica = document.createElementNS(NS, 'title');
+          dica.textContent = `${it.nome}: ${it.valor} (${it.pct})`;
+          c.append(dica);
+          svg.append(c);
+          inicio += parte;
+        });
+        const centro = el('div', 'chat-circulo-centro');
+        centro.append(el('strong', '', lista[0].pct), el('span', '', lista[0].nome));
+        const roda = el('div', 'chat-circulo-roda');
+        roda.append(svg, centro);
+
+        // Legenda com nome, valor e % (a cor nunca é a única pista)
+        const legenda = el('ul', 'chat-circulo-legenda');
+        lista.forEach((it, k) => {
+          const li = el('li');
+          const cor = el('span', 'chat-circulo-cor');
+          cor.style.background = `var(${CORES_CIRCULO[k]})`;
+          cor.setAttribute('aria-hidden', 'true');
+          li.append(cor, el('span', 'chat-circulo-nome', it.nome), el('strong', '', it.valor), el('small', '', it.pct));
+          legenda.append(li);
+        });
+        bloco.append(roda, legenda);
+        zona.append(bloco);
+      }
+      desenhar();
+    }
+
+    // O mesmo gráfico em PNG, para o botão "Guardar imagem"
+    function pngCirculo(itens, titulo, subtitulo) {
+      const lista = [...itens].sort((a, b) => b.num - a.num);
+      const cores = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#6250d6'];
+      const L = 720, A = Math.max(320, 96 + lista.length * 32);
+      const { cv, g } = novaTela(L, A, titulo, subtitulo);
+      const cx = 150, cy = 72 + (A - 72) / 2 - 8, r = 92;
+      let ang = -Math.PI / 2;
+      g.lineWidth = 36;
+      lista.forEach((it, k) => {
+        const fim = ang + percentagem(it) / 100 * 2 * Math.PI;
+        g.strokeStyle = cores[k];
+        g.beginPath(); g.arc(cx, cy, r, ang + 0.01, Math.max(ang + 0.02, fim - 0.01)); g.stroke();
+        ang = fim;
+      });
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = COR.texto; g.font = fonte(20, 700); g.fillText(lista[0].pct, cx, cy - 8);
+      g.fillStyle = COR.nota; g.font = fonte(12); g.fillText(cortar(g, lista[0].nome, 110), cx, cy + 14);
+      g.textAlign = 'left';
+      lista.forEach((it, k) => {
+        const y = cy - (lista.length - 1) * 16 + k * 32;
+        g.fillStyle = cores[k]; g.fillRect(300, y - 6, 12, 12);
+        g.fillStyle = COR.texto; g.font = fonte(13); g.fillText(cortar(g, it.nome, 220), 322, y);
+        g.textAlign = 'right'; g.font = fonte(13, 600); g.fillText(it.valor, L - 84, y);
+        g.fillStyle = COR.nota; g.font = fonte(12); g.fillText(it.pct, L - 24, y);
+        g.textAlign = 'left';
+      });
+      return cv;
+    }
+
     function desenharRanking(itens, art, titulo) {
       const comEuros = itens.every(i => i.unidades && /€/.test(i.pct));   // "18 390 unidades (436 176,07 €)"
       const comDelta = itens.some(i => i.delta != null);
       const estado = { metrica: 'principal', ordem: 'valor', aberto: -1 };
       const valor = i => estado.metrica === 'euros' ? paraNumero(i.pct) : i.num;
-      const dim = ((titulo || '').match(/\bpor\s+(\S+)/i) || [])[1] || '';   // "Vendas por localidade" -> "localidade"
+      const dim = dimensao(titulo);   // "Vendas por localidade" -> "localidade"
 
       const controlos = el('div', 'chat-controlos');
       const grupo = (rotulo, chave, opcoes) => {
@@ -1562,7 +1776,7 @@
       }
       const validos = itens.filter(i => i.num > 0 && !/^\(/.test(i.nome));   // "(sem localidade)" não dá boa pergunta
       if (validos.length < 2) return [];
-      const dim = ((r.titulo || '').match(/\bpor\s+(\S+)/i) || [])[1] || '';
+      const dim = dimensao(r.titulo || (r.paragrafos || []).join(' '));   // sem título: "A marca que mais faturou…"
       const deProduto = /artigo|marca|fam[ií]lia|produto/i.test(dim);
       const n = i => nomeProprio(i.nome);
       const primeiro = validos.reduce((a, b) => b.num > a.num ? b : a);
@@ -1570,15 +1784,15 @@
       const comVariacao = validos.filter(i => i.delta != null);
       if (comVariacao.length < 2) {
         const segundo = validos.filter(i => i !== primeiro).reduce((a, b) => b.num > a.num ? b : a);
-        return [`Evolução mensal das vendas de ${n(primeiro)} em ${ano}`, `Comparar ${n(primeiro)} com ${n(segundo)}`,
-                deProduto ? `Que clientes compraram mais ${n(primeiro)}?` : `Que artigos venderam mais em ${n(primeiro)}?`];
+        return [`Evolução mensal das vendas ${daDim(dim, n(primeiro))} em ${ano}`, `Comparar as vendas ${daDim(dim, n(primeiro))} com ${n(segundo)}`,
+                deProduto ? `Que clientes compraram mais ${artigosDe(dim, n(primeiro))}?` : `Que artigos venderam mais ${naDim(dim, n(primeiro))}?`];
       }
       const sobe = comVariacao.reduce((a, b) => b.delta > a.delta ? b : a);
       const desce = comVariacao.reduce((a, b) => b.delta < a.delta ? b : a);
       const lista = [];
-      if (sobe.delta > 0) lista.push(deProduto ? `Que clientes fizeram ${n(sobe)} subir ${textoDelta(sobe.delta)}?` : `Que artigos fizeram ${n(sobe)} subir ${textoDelta(sobe.delta)}?`);
-      if (desce.delta < 0) lista.push(`Porque caíram as vendas ${deProduto ? 'de' : 'em'} ${n(desce)} (${textoDelta(desce.delta)})?`);
-      lista.push(`Evolução mensal de ${n(primeiro)} em ${ano} e ${ano - 1}`);
+      if (sobe.delta > 0) lista.push(`Que ${deProduto ? 'clientes' : 'artigos'} fizeram subir as vendas ${daDim(dim, n(sobe))} ${textoDelta(sobe.delta)}?`);
+      if (desce.delta < 0) lista.push(`Porque caíram as vendas ${daDim(dim, n(desce))} (${textoDelta(desce.delta)})?`);
+      lista.push(`Evolução mensal das vendas ${daDim(dim, n(primeiro))} em ${ano} e ${ano - 1}`);
       return lista;
     }
 
@@ -1706,6 +1920,7 @@
       const periodo = r.periodo ? 'Período: ' + r.periodo : '';
       if (serie) { desenharSerie(serie, art); imagem = () => pngSerie(serie, r.titulo, periodo); }
       else if (soUm) { /* nada a acrescentar */ }
+      else if (itens.length && itens.every(i => i.num > 0 && !i.rotulo) && eParteDoTodo(itens)) { desenharCirculo(itens, art, r.titulo); imagem = () => pngCirculo(itens, r.titulo, periodo); }
       else if (itens.length && itens.every(i => i.num > 0 && !i.rotulo)) { desenharRanking(itens, art, r.titulo); imagem = () => pngRanking(itens, r.titulo, periodo); }
       else if (itens.length) desenharLista(itens, art);
       if (devolucoes.length) desenharLista(devolucoes, art, 'Devoluções e notas de crédito');
@@ -1760,7 +1975,8 @@
       const mostrar = (_, c) => !fixa[c];
       const cabecalho = t.cabecalho.filter(mostrar);
       const numericas = t.numericas.filter(mostrar);
-      const linhas = t.linhas.map(l => l.filter(mostrar));
+      // "27.2" (ponto do SQL) passa a "27,2", como no resto da página
+      const linhas = t.linhas.map(l => l.filter(mostrar).map((v, c) => numericas[c] && /^-?\d+\.\d{1,2}$/.test(v) ? v.replace('.', ',') : v));
       const estado = { col: -1, dir: -1, filtro: '' };   // col -1: a ordem em que a resposta veio
 
       // Filtro só em tabelas compridas
@@ -1852,6 +2068,14 @@
 
     // "Nenhuma correspondência. … Localidade: FERNAO FERRO (41); Corroios (21); … (mostrados 30 de 101)"
     function lerSemResultado(texto) {
+      // "Não foi possível encontrar dados para a actividade "Balcão". Os valores disponíveis para actividade são: Empresas (195); …"
+      const naoEncontrou = texto.match(/n[ãa]o foi poss[íi]vel encontrar[^"“«]*?\bpara\s+(?:a|o)\s+([\p{L} ]+?)\s+["“«]([^"”»]+)["”»]/iu);
+      if (naoEncontrou) {
+        const resto = texto.slice(naoEncontrou.index + naoEncontrou[0].length).replace(/^[^:]*:/, '');
+        // Separa por ";" e tira o número do fim: "JOGADOR (EMPREGADO) (29)" -> ["JOGADOR (EMPREGADO)", 29]
+        const opcoes = resto.split(';').map(p => p.trim().match(/^(.+?)\s*\((\d+)\)\s*\.?$/)).filter(Boolean).map(x => [x[1], +x[2]]);
+        if (opcoes.length) return { campo: naoEncontrou[1].trim(), errado: naoEncontrou[2].trim(), opcoes, mostrados: opcoes.length, total: 0 };
+      }
       if (!/nenhuma correspond[êe]ncia/i.test(texto)) return null;
       const m = texto.match(/([A-Za-zÀ-ú][A-Za-zÀ-ú ]*?):\s*[^:()]+\(\d+\)/);   // "Localidade: X (41)"
       if (!m) return null;
@@ -1908,7 +2132,7 @@
 
       // Palavra da pergunta mais parecida com um valor existente ("Montija" -> "Montijo")
       const palavras = pergunta.split(/\s+/).filter(p => p.length > 3);
-      let errada = palavras[palavras.length - 1] || '';
+      let errada = s.errado && pergunta.includes(s.errado) ? s.errado : palavras[palavras.length - 1] || '';
       const parecidas = [];
       for (const p of palavras) {
         for (const o of s.opcoes) {
@@ -2014,12 +2238,11 @@
     // Resposta do assistente: avatar à esquerda, nome por cima, hora por baixo
     function comAvatar(art, hora) {
       const linha = el('div', 'chat-resposta chat-msg chat-msg--agente');
-      const avatar = document.getElementById('avatar').cloneNode();
-      avatar.removeAttribute('id');
       const corpo = el('div', 'chat-msg-corpo');
-      corpo.append(el('span', 'chat-msg-nome', 'Assistente de vendas'), art);
-      if (hora) { const meta = el('div', 'chat-msg-meta'); meta.append(el('span', '', horaCurta(hora))); corpo.append(meta); }
-      linha.append(avatar, corpo);
+      const meta = el('div', 'chat-msg-meta');
+      meta.append(el('span', '', 'Assistente de vendas' + (hora ? ' · ' + horaCurta(hora) : '')));
+      corpo.append(art, meta);
+      linha.append(corpo);
       return linha;
     }
 
@@ -2070,7 +2293,7 @@
         item.art.append(el('p', 'chat-texto', item.texto.trim()));
       }
       // Com números (cartões, lista, tabela, gráfico, ficha) vai para o painel; texto e "não encontrei" ficam na conversa
-      item.noPainel = !!item.art.querySelector('.chat-kpis, .chat-folha-total, .chat-rank, .chat-lista, .chat-tabela, .chat-grafico, .chat-ficha');
+      item.noPainel = !!item.art.querySelector('.chat-kpis, .chat-folha-total, .chat-rank, .chat-circulo, .chat-lista, .chat-tabela, .chat-grafico, .chat-ficha');
       return item.art;
     }
     const tituloDaResposta = item => ((item.art && item.art.querySelector('.chat-folha-titulo')) || {}).textContent || item.pergunta;
@@ -2182,14 +2405,16 @@
       else desenharConversa();
     }
 
-    document.getElementById('esconder-conversa').addEventListener('click', () => {
-      painelRaiz.classList.add('chat-painel--sem-conversa');
-      document.getElementById('mostrar-conversa').focus();
-    });
-    document.getElementById('mostrar-conversa').addEventListener('click', () => {
-      painelRaiz.classList.remove('chat-painel--sem-conversa');
-      campo.focus();
-    });
+    // Mostrar ou esconder a janela da conversa; o botão redondo diz sempre o que vai fazer
+    const lancador = document.getElementById('mostrar-conversa');
+    function verConversa(sim) {
+      painelRaiz.classList.toggle('chat-painel--sem-conversa', !sim);
+      lancador.setAttribute('aria-expanded', String(sim));
+      lancador.setAttribute('aria-label', sim ? 'Esconder a conversa' : 'Mostrar a conversa');
+      (sim ? campo : lancador).focus();
+    }
+    document.getElementById('esconder-conversa').addEventListener('click', () => verConversa(false));
+    lancador.addEventListener('click', () => verConversa(painelRaiz.classList.contains('chat-painel--sem-conversa')));
 
     function mostrarInicio() {
       desenharConversa();
