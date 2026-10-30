@@ -237,7 +237,9 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         // Com emCada cada linha é um grupo (ex.: um distrito): a contagem e o rodapé falam desses grupos.
         var plural = Dimensoes.Plural(emCada ?? agrupar);
         var comQuantidade = porQuantidade && agrupar != DimensaoVenda.Cliente;
-        var ordem = (porQuantidade && (emCada is not null || !Dimensoes.Cronologica(agrupar)) ? ", por quantidade" : "")
+        // Por mês/trimestre a ordem é a do tempo: "em quantidade", senão o título era igual ao da análise em euros.
+        var emUnidades = comQuantidade && emCada is null && Dimensoes.Cronologica(agrupar);
+        var ordem = (emUnidades ? ", em quantidade" : porQuantidade ? ", por quantidade" : "")
                     + (menores ? ", do menor para o maior" : "");
         var titulo = emCada is { } grupo ? $"Melhor {cabecalho} em cada {Dimensoes.Cabecalho(grupo)}" : $"Vendas por {cabecalho}";
 
@@ -245,6 +247,9 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             .AppendLine($"{titulo}{ordem}, {janela.Descricao} ({intervalo}): total {Euros(total)} € em {grupos} {plural}, " +
                         $"{documentos.ToString("#,##0", Pt)} documentos. Valores em euros, sem IVA.")
             .AppendLine(documentos == 0 ? "Valor médio por documento: -" : $"Valor médio por documento: {Euros(total / documentos)} €.");
+        // A evolução vem completa (todos os meses), por isso a soma das linhas é o total do período.
+        if (emUnidades)
+            texto.AppendLine($"Total em unidades: {linhas.Sum(l => l.Quantidade).ToString("#,##0.##", Pt)} unidades.");
 
         var dadosAcabamAntes = DadosAcabamAntes(janela, linhas[0].UltimaData);
         if (dadosAcabamAntes)

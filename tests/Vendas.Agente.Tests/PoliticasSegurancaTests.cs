@@ -130,6 +130,22 @@ public class PoliticasSegurancaTests
     }
 
     [Fact]
+    public void PeriodoEmFalta_HaNoventaDiasSemPeriodo_DevolveOPeriodo()
+    {
+        Assert.Equal("Ultimos90Dias", PoliticasSeguranca.PeriodoEmFalta("consultar_vendas", "Clientes que não compram há 90 dias?",
+            new Dictionary<string, object?> { ["semVendas"] = true }));
+        Assert.Equal("Ultimos12Meses", PoliticasSeguranca.PeriodoEmFalta("consultar_vendas", "Vendas nos últimos 12 meses", Args("agrupar", "Mes")));
+    }
+
+    [Fact]
+    public void PeriodoEmFalta_ComPeriodoOuSemPrazo_Segue()
+    {
+        Assert.Null(PoliticasSeguranca.PeriodoEmFalta("consultar_vendas", "Clientes que não compram há 90 dias?",
+            Args("periodo", "Ultimos90Dias")));
+        Assert.Null(PoliticasSeguranca.PeriodoEmFalta("consultar_vendas", "Melhores clientes este ano", Args("agrupar", "Cliente")));
+    }
+
+    [Fact]
     public void ValorInventado_CorrigidoPorUmResultadoAnterior_Passa()
         => Assert.Null(PoliticasSeguranca.ValorInventado(
             "Vendas em Seixall", "Nenhuma correspondência. O valor tem de ser um dos existentes:\nLocalidade: Seixal (5)",

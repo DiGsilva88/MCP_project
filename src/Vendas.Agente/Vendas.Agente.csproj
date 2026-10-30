@@ -25,4 +25,9 @@
   <EmbeddedResource Include="logo\avatar-assistente-vendas.png" />
     </ItemGroup>
 
+  <ItemGroup>
+  <!-- Bibliotecas da página do chat: ficam dentro do assembly com o nome "lib/<ficheiro>" -->
+  <EmbeddedResource Include="wwwroot\lib\*.js" LogicalName="lib/%(Filename)%(Extension)" />
+  </ItemGroup> 
+
 </Project>
