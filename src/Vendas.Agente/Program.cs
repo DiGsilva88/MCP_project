@@ -98,6 +98,8 @@ IChatClient modelo = ollama
                 Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {inventado}");
                 return inventado;
             }
+            if (PoliticasSeguranca.PeriodoEmFalta(ctx.Function.Name, perguntaAtual, ctx.Arguments) is { } periodo)
+                ctx.Arguments["periodo"] = periodo;
 
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var texto = PoliticasSeguranca.TextoDoResultado(resultado);

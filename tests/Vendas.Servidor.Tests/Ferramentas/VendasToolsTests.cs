@@ -396,6 +396,8 @@ public class VendasToolsTests
         var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, ordenar: OrdenarVenda.Quantidade);
 
         Assert.Contains("Melhor mês: 2026-07 – 9 unidades (100,00 €).", r);
+        Assert.StartsWith("Vendas por mês, em quantidade,", r); // distinto da análise em euros
+        Assert.Contains("Total em unidades: 14 unidades.", r);
     }
 
     [Fact]

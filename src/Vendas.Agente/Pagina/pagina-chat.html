@@ -396,7 +396,11 @@
 
     /* Espera e erro */
     .chat-espera p { margin: 0; color: var(--suave); }
-    .chat-espera .chat-bruto { font-size: 13px; color: var(--nota); white-space: pre-wrap; max-height: 9em; overflow: hidden; }
+    .chat-pontos { display: flex; gap: 5px; margin: 0; }
+    .chat-pontos[hidden], .chat-esqueleto[hidden] { display: none; }   /* o display: flex anulava o hidden */
+    .chat-pontos span { width: 7px; height: 7px; border-radius: 50%; background: var(--suave); animation: chat-pulsar 1.2s infinite ease-in-out; }
+    .chat-pontos span:nth-child(2) { animation-delay: .2s; }
+    .chat-pontos span:nth-child(3) { animation-delay: .4s; }
     .chat-esqueleto { display: flex; flex-direction: column; gap: 9px; }
     .chat-esqueleto span { display: block; height: 10px; border-radius: 3px; background: var(--linha); animation: chat-pulsar 1.2s infinite ease-in-out; }
     .chat-esqueleto span:nth-child(1) { width: 90%; }
@@ -719,7 +723,7 @@
     @keyframes chat-entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     @keyframes chat-pulsar { 50% { opacity: .5; } }
     @media (prefers-reduced-motion: reduce) {
-      .chat-folha, .chat-esqueleto span { animation: none; }
+      .chat-folha, .chat-esqueleto span, .chat-pontos span { animation: none; }
     }
   </style>
 </head>
@@ -1244,7 +1248,8 @@
           continue;
         }
         const mes = v.match(/^(\d{4})-(\d{2})\s+[–-]\s+(.+)$/);   // "2026-07 – 278 519,07 €"
-        if (mes) { cartoes.push({ rotulo: k, valor: MESES[+mes[2] - 1], detalhe: euros(paraNumero(mes[3])), icone: ICONES.subida }); continue; }
+        // "10 130,5 unidades (268 120,74 €)" (em quantidade): fica tal como vem, não é um valor em euros
+        if (mes) { cartoes.push({ rotulo: k, valor: MESES[+mes[2] - 1], detalhe: /unidades/.test(mes[3]) ? mes[3] : euros(paraNumero(mes[3])), icone: ICONES.subida }); continue; }
         // Texto (nome do cliente, condição de pagamento): vai para a ficha, não para um cartão grande
         if (!eNumeroCurto(v) || /^\d{6,}$/.test(v)) { ficha.push([k, v]); continue; }   // NIF e códigos não são totais
         cartoes.push({ rotulo: k, valor: v, icone: /m[ée]dio/i.test(k) ? ICONES.recibo : ICONES.barras });
@@ -1484,17 +1489,24 @@
     const daDim = (dim, nome) => limparDim(dim) ? `${FEMININO.test(limparDim(dim)) ? 'da' : 'do'} ${limparDim(dim)} ${nome}` : `de ${nome}`;
     const naDim = (dim, nome) => limparDim(dim) ? `${FEMININO.test(limparDim(dim)) ? 'na' : 'no'} ${limparDim(dim)} ${nome}` : `em ${nome}`;
 
-    // "artigos da marca Bosch"; um artigo fica só com o nome
-    const artigosDe = (dim, nome) => !limparDim(dim) || /^artigo/.test(limparDim(dim)) ? nome : 'artigos ' + daDim(dim, nome);
+    // O servidor só filtra vendas por cliente e pelas colunas da ficha (zona, localidade...), não por artigo,
+    // marca ou família: para esses só há perguntas sobre o ranking inteiro, senão a sugestão dava erro.
+    const filtravel = dim => /^(zona|localidade|distrito|vendedor|a?c?tividade|cliente)/.test(limparDim(dim));
+    const perguntasDoRanking = dim => {
+      const d = limparDim(dim) === 'familia' ? 'família' : limparDim(dim);
+      const [o, s] = FEMININO.test(d) ? ['a', 'as'] : ['o', 'os'];
+      return [`Qual foi ${o} ${d} mais vendid${o} em cada distrito?`, `Comparar as vendas por ${d} com o ano passado`,
+              `Quais ${d === 'família' ? 'as famílias' : `${s} ${d}s`} que venderam menos este ano?`];
+    };
 
-    function perguntasDoItem(nome, dim) {
-      if (/^\(/.test(nome)) return [];   // "(sem localidade)" não dá boa pergunta
+    function perguntasDoItem(nome, dim, quando = 'este ano') {
+      if (/^\(/.test(nome) || /^(m[eê]s|trimestre)/.test(limparDim(dim))) return [];   // "(sem localidade)", "2026-03" não dão boa pergunta
+      if (!filtravel(dim)) return /artigo|marca|fam[ií]lia/i.test(dim) ? perguntasDoRanking(dim) : [];
       const n = nomeProprio(nome);
-      const deProduto = /artigo|marca|fam[ií]lia|produto/i.test(dim);
       return [
-        `Evolução mensal das vendas ${daDim(dim, n)} este ano`,
+        `Evolução mensal das vendas ${daDim(dim, n)} ${quando}`,
         `Comparar as vendas ${daDim(dim, n)} com o ano passado`,
-        deProduto ? `Que clientes compraram mais ${artigosDe(dim, n)} este ano?` : `Que artigos venderam mais ${naDim(dim, n)} este ano?`
+        `Que artigos venderam mais ${naDim(dim, n)} ${quando}?`
       ];
     }
 
@@ -1609,7 +1621,8 @@
     function desenharRanking(itens, art, titulo) {
       const comEuros = itens.every(i => i.unidades && /€/.test(i.pct));   // "18 390 unidades (436 176,07 €)"
       const comDelta = itens.some(i => i.delta != null);
-      const estado = { metrica: 'principal', ordem: 'valor', aberto: -1 };
+      // Meses/trimestres em unidades ("2026-03", "2026-T1"): evolução, por ordem do tempo
+      const estado = { metrica: 'principal', ordem: itens.every(i => /^\d{4}-(\d{2}|T\d)$/.test(i.nome)) ? 'nome' : 'valor', aberto: -1 };
       const valor = i => estado.metrica === 'euros' ? paraNumero(i.pct) : i.num;
       const dim = dimensao(titulo);   // "Vendas por localidade" -> "localidade"
 
@@ -1777,22 +1790,19 @@
       const validos = itens.filter(i => i.num > 0 && !/^\(/.test(i.nome));   // "(sem localidade)" não dá boa pergunta
       if (validos.length < 2) return [];
       const dim = dimensao(r.titulo || (r.paragrafos || []).join(' '));   // sem título: "A marca que mais faturou…"
-      const deProduto = /artigo|marca|fam[ií]lia|produto/i.test(dim);
       const n = i => nomeProprio(i.nome);
       const primeiro = validos.reduce((a, b) => b.num > a.num ? b : a);
       const ano = +((r.periodo.match(/(\d{4})$/) || [])[1] || new Date().getFullYear());
       const comVariacao = validos.filter(i => i.delta != null);
-      if (comVariacao.length < 2) {
-        const segundo = validos.filter(i => i !== primeiro).reduce((a, b) => b.num > a.num ? b : a);
-        return [`Evolução mensal das vendas ${daDim(dim, n(primeiro))} em ${ano}`, `Comparar as vendas ${daDim(dim, n(primeiro))} com ${n(segundo)}`,
-                deProduto ? `Que clientes compraram mais ${artigosDe(dim, n(primeiro))}?` : `Que artigos venderam mais ${naDim(dim, n(primeiro))}?`];
-      }
+      // Sem variação, ou artigo/marca/família (não se filtram): as mesmas perguntas do detalhe da linha
+      if (comVariacao.length < 2 || !filtravel(dim)) return perguntasDoItem(primeiro.nome, dim, `em ${ano}`);
+      // Só o que as ferramentas respondem: o "porquê" de uma descida não está nos dados
       const sobe = comVariacao.reduce((a, b) => b.delta > a.delta ? b : a);
       const desce = comVariacao.reduce((a, b) => b.delta < a.delta ? b : a);
       const lista = [];
-      if (sobe.delta > 0) lista.push(`Que ${deProduto ? 'clientes' : 'artigos'} fizeram subir as vendas ${daDim(dim, n(sobe))} ${textoDelta(sobe.delta)}?`);
-      if (desce.delta < 0) lista.push(`Porque caíram as vendas ${daDim(dim, n(desce))} (${textoDelta(desce.delta)})?`);
-      lista.push(`Evolução mensal das vendas ${daDim(dim, n(primeiro))} em ${ano} e ${ano - 1}`);
+      if (sobe.delta > 0) lista.push(`Que artigos venderam mais ${naDim(dim, n(sobe))} face ao ano passado?`);
+      if (desce.delta < 0) lista.push(`Comparar as vendas ${daDim(dim, n(desce))} mês a mês com o ano passado`);
+      lista.push(`Evolução mensal das vendas ${daDim(dim, n(primeiro))} em ${ano}`);
       return lista;
     }
 
@@ -2429,21 +2439,27 @@
 
     function mostrarEspera(pergunta, parar) {
       const art = el('article', 'chat-folha chat-espera');
-      const bruto = el('p', 'chat-bruto');
       const esq = el('div', 'chat-esqueleto');
       esq.setAttribute('aria-hidden', 'true');
       esq.append(el('span'), el('span'), el('span'));
-      const msg = el('p', '', 'A consultar os dados…');
+      // Quando a resposta começa a chegar: só três pontos, o texto em bruto não se mostra (é formatado no fim)
+      const pontos = el('p', 'chat-pontos');
+      pontos.setAttribute('aria-hidden', 'true');
+      pontos.append(el('span'), el('span'), el('span'));
+      pontos.hidden = true;
+      const msg = el('p', '', 'A consultar…');
       // o modelo em CPU pode levar mais de um minuto; o contador mostra que não parou
       const inicio = Date.now();
       const relogio = setInterval(() => {
-        msg.textContent = `A consultar os dados… ${Math.round((Date.now() - inicio) / 1000)} s`;
+        msg.textContent = `A consultar… ${Math.round((Date.now() - inicio) / 1000)} s`;
       }, 1000);
-      art.append(msg, esq, bruto, botaoEl('chat-acao', 'Parar', parar));
+      art.append(msg, esq, pontos, botaoEl('chat-acao', 'Parar', parar));
       desenharConversa();                          // a pergunta já aparece na conversa
       area.append(comAvatar(art));
       area.scrollTop = area.scrollHeight;
-      return { bruto, esq, relogio };
+      // Chamada no 1.º bocado da resposta: para o relógio e troca a mensagem pelos pontos
+      const aChegar = () => { clearInterval(relogio); msg.hidden = true; esq.hidden = true; pontos.hidden = false; };
+      return { aChegar, relogio };
     }
 
     /* ---------- Barra lateral ---------- */
@@ -2474,7 +2490,7 @@
       bloquear(true);
       desenharTemas(); desenharHistorico();
       const controlo = new AbortController();   // "Parar" cancela o pedido
-      const { bruto, esq, relogio } = mostrarEspera(texto, () => controlo.abort());
+      const { aChegar, relogio } = mostrarEspera(texto, () => controlo.abort());
       area.setAttribute('aria-busy', 'true');   // o leitor de ecrã lê a resposta no fim, não aos bocados
       try {
         const r = await fetch('/perguntar', { method: 'POST', body: texto, signal: controlo.signal });
@@ -2486,8 +2502,7 @@
           const { done, value } = await leitor.read();
           if (done) break;
           item.texto += descodificador.decode(value, { stream: true });
-          bruto.textContent = item.texto;   // mostra o texto a chegar, formatado no fim
-          esq.hidden = true;
+          aChegar();
         }
         item.texto += descodificador.decode();
         if (!item.texto.trim()) item.erro = 'vazio';

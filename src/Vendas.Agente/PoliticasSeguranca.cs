@@ -102,6 +102,17 @@ public static class PoliticasSeguranca
             : null;
     }
 
+    // "Não compram há 90 dias" vinha sem periodo: o servidor usava AnoAtual e respondia sobre outro intervalo.
+    // Recusar não chegava (o modelo repetia a chamada igual), por isso o agente preenche-o.
+    // Só os prazos que o enum tem (7, 30, 90 dias, 12 meses). null = deixar como está.
+    public static string? PeriodoEmFalta(string tool, string pergunta, IEnumerable<KeyValuePair<string, object?>> argumentos)
+    {
+        if (tool != "consultar_vendas" || argumentos.Any(a => a.Key is "periodo" or "dataInicio" or "mes" or "ano" or "trimestre" && Texto(a.Value) is not null))
+            return null;
+        var m = System.Text.RegularExpressions.Regex.Match(SemAcentos(pergunta), @"\b(7|30|90) dias\b|\b12 meses\b");
+        return !m.Success ? null : m.Groups[1].Success ? $"Ultimos{m.Groups[1].Value}Dias" : "Ultimos12Meses";
+    }
+
     private static string SemAcentos(string texto) =>
         new string(texto.Normalize(System.Text.NormalizationForm.FormD)
             .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
@@ -168,8 +179,9 @@ public static class PoliticasSeguranca
           (ou Trimestre, Zona, Localidade, Artigo...); cada linha traz a sua média.
         - Dados de um cliente pelo ID ou nome (NIF, email, telefone, morada): consultar_sensivel com cliente=<ID ou nome>.
           "Dados de contacto" = Email e Telefone, uma chamada cada.
-        - Não existem: data de registo/cadastro de clientes, IVA, descontos, tipo de documento.
-          Para esses, não chames ferramentas e diz que não está disponível.
+        - Não existem: data de registo/cadastro de clientes, IVA, descontos, tipo de documento,
+          vendas de UMA marca, família ou artigo concreto (evolução, clientes que a compram): coluna/valor
+          é só para a ficha do cliente. Para esses, não chames ferramentas e diz que não está disponível.
         - Comparar dois meses entre si (ex.: maio e janeiro): agrupar=Mes, dataInicio=01-<mês mais antigo>-<ano>,
           dataFim=<último dia do mês mais recente>-<ano>. Sem compararAnoAnterior.
         - Comparar com o ano anterior/passado ("este ano vs o ano passado", variação face a <ano>):
