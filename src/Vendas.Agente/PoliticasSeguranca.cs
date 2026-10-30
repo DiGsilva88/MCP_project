@@ -113,6 +113,67 @@ public static class PoliticasSeguranca
         return !m.Success ? null : m.Groups[1].Success ? $"Ultimos{m.Groups[1].Value}Dias" : "Ultimos12Meses";
     }
 
+    // Leituras erradas do modelo pequeno em consultar_vendas, corrigidas aqui sem outra volta ao modelo
+    // (pedir-lhe que corrija não chegava: repetia a chamada). null = nada mudou.
+    public static string? CorrigirVendas(string tool, string pergunta, IDictionary<string, object?> argumentos)
+    {
+        if (tool != "consultar_vendas") return null;
+        var p = SemAcentos(pergunta);
+        var tempo = System.Text.RegularExpressions.Regex.IsMatch(p, @"mes a mes|cada mes|por mes|mensal|evolucao") ? "Mes"
+            : p.Contains("trimestr") ? "Trimestre" : null;
+        var mudancas = new List<string>();
+
+        // "Melhor artigo mês a mês em Lisboa" vinha com emCada=Localidade: emCada de uma coluna que a pergunta nem nomeia.
+        var colunaEmCada = Coluna(Argumento(argumentos, "emCada"));
+        if (colunaEmCada is not null && !p.Contains(PalavraDaColuna[colunaEmCada]))
+        {
+            if (tempo is null) argumentos.Remove("emCada"); else argumentos["emCada"] = tempo;
+            mudancas.Add($"emCada={tempo ?? "nenhum"}");
+        }
+
+        // "Evolução mensal da localidade Seixal" vinha com agrupar=Localidade e o filtro Seixal: uma linha só.
+        var colunaAgrupar = Coluna(Argumento(argumentos, "agrupar"));
+        var colunaFiltro = Argumento(argumentos, "coluna") ?? (Argumento(argumentos, "valor") is null ? null : colunaAgrupar);
+        if (colunaAgrupar is not null && tempo is not null && Argumento(argumentos, "emCada") is null
+            && colunaAgrupar.Equals(colunaFiltro, StringComparison.OrdinalIgnoreCase))
+        {
+            argumentos["agrupar"] = tempo;
+            argumentos["coluna"] = colunaAgrupar;
+            mudancas.Add($"agrupar={tempo}");
+        }
+
+        // "... em Lisboa" ou "na zona Balcão" sem filtro nenhum: o nome próprio é o valor (o servidor troca
+        // a coluna se for um distrito ou zona, ou usa-o como cliente). Meses com maiúscula não contam.
+        var nome = System.Text.RegularExpressions.Regex.Match(pergunta,
+            @"\b(?:(?:no|na|do|da)\s+(localidade|distrito|zona|vendedor|a?c?tividade)\s+|(?:em|no|na)\s+)(\p{Lu}[\p{L}'-]*(?:\s+\p{Lu}[\p{L}'-]*)*)");
+        var dito = nome.Groups[2].Value;
+        if (nome.Success && Argumento(argumentos, "valor") is null && Argumento(argumentos, "cliente") is null
+            && !Meses.Contains(SemAcentos(dito)))
+        {
+            argumentos["coluna"] = Coluna(nome.Groups[1].Value is "atividade" or "actividade" ? "Actividade" : nome.Groups[1].Value)
+                                   ?? colunaEmCada ?? "Localidade";
+            argumentos["valor"] = dito;
+            mudancas.Add($"{argumentos["coluna"]}={dito}");
+        }
+        return mudancas.Count == 0 ? null : string.Join(", ", mudancas);
+    }
+
+    private static readonly HashSet<string> Meses =
+        ["janeiro", "fevereiro", "marco", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+    private static string? Argumento(IDictionary<string, object?> argumentos, string nome)
+        => argumentos.TryGetValue(nome, out var v) && Texto(v) is { } t && !string.IsNullOrWhiteSpace(t) ? t.Trim() : null;
+
+    // Coluna da ficha com esse nome (Localidade, Distrito...), ou null para Mes, Artigo, etc.
+    private static string? Coluna(string? nome)
+        => nome is null ? null : PalavraDaColuna.Keys.FirstOrDefault(k => k.Equals(nome, StringComparison.OrdinalIgnoreCase));
+
+    // Sem acentos e em minúsculas; "tividade" apanha actividade e atividade.
+    private static readonly Dictionary<string, string> PalavraDaColuna = new()
+    {
+        ["Localidade"] = "localidade", ["Distrito"] = "distrito", ["Zona"] = "zona", ["Vendedor"] = "vendedor", ["Actividade"] = "tividade",
+    };
+
     private static string SemAcentos(string texto) =>
         new string(texto.Normalize(System.Text.NormalizationForm.FormD)
             .Where(c => System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
@@ -162,7 +223,8 @@ public static class PoliticasSeguranca
         - Quem compra mais, faturação, artigos, famílias ou marcas mais vendidos:
           consultar_vendas com agrupar e periodo (sem período dito: AnoAtual; "este mês":
           MesAtual; "ano passado": AnoAnterior).
-          Vendas, artigos ou atividade de um cliente: consultar_vendas com cliente=ID ou nome.
+          Vendas, artigos ou atividade de um cliente ("do cliente <nome>"): consultar_vendas com
+          cliente=<ID ou nome>, nunca coluna/valor.
           Valor vendido = valor (líquido sem IVA).
         - Mês com nome (ex.: "em setembro"): mes=<número do mês>, nunca MesAtual; ano só se o utilizador o disser.
           MesAtual é só para "este mês".
@@ -189,7 +251,8 @@ public static class PoliticasSeguranca
           Só se falarem do ano anterior; "compare" sozinho ou "crescimento" entre meses não é comparar anos.
           Nunca emCada para comparar anos.
         - "X por Y" ou "X em cada Y" com duas coisas (artigo mais vendido por distrito, localidade
-          com mais vendas em cada mês ou trimestre): agrupar=X, emCada=Y.
+          com mais vendas em cada mês ou trimestre): agrupar=X, emCada=Y. "Mês a mês" = emCada=Mes.
+          "Em <nome>" (ex.: em <localidade dita>) é um filtro coluna/valor, nunca emCada.
         - "Em quantidade" ou unidades: ordenar=Quantidade e responde em unidades, não em euros.
         - Vendas ou melhores clientes de uma localidade, distrito, zona ou vendedor:
           consultar_vendas com coluna/valor (ex.: coluna=Localidade, valor=<localidade dita>). cliente= é só para um cliente.

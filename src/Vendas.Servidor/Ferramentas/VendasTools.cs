@@ -90,6 +90,14 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         return await Respostas.ExecutarAsync(log, "consultar_vendas", $"{agrupar} {periodo}", async () =>
         {
             await CorrigirColunaAsync(filtros, ct);
+            // "Vendas do cliente X" vinha como coluna=Localidade, valor=X: um valor que não existe na ficha
+            // mas é o nome de um só cliente passa a ser o filtro de cliente.
+            if (cliente is null && !semVendas && filtros.Count == 1 && await FiltroSemClientesAsync(filtros, ct)
+                && (await repo.ProcurarClientesAsync(filtros.Values.First(), 2, ct)).Count == 1)
+            {
+                cliente = filtros.Values.First();
+                filtros.Clear();
+            }
             return semVendas
                 ? await ListarSemVendasAsync(janela, limite, filtros, ct)
                 : await ListarRankingAsync(agrupar, ordenar, emCada, compararAnoAnterior, menores, janela, limite, cliente, filtros, ct);
@@ -334,8 +342,10 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         if (comQuantidade)
             return $"{posicao}. {nome} – {linha.Quantidade.ToString("#,##0.##", Pt)} unidades ({Euros(linha.Valor)} €)";
 
-        // Total 0 (ex.: só notas de crédito que anulam as vendas): sem percentagem, evita dividir por zero
-        var percentagem = total == 0 ? "" : $" ({(100 * linha.Valor / total).ToString("0.0", Pt)}%{sufixo})";
+        // Total 0 ou negativo (notas de crédito acima das vendas, ex.: um mês com quase só devoluções) ou uma parte
+        // maior que o todo: a percentagem não quer dizer nada (saía -56,5% ou 283,4% do distrito). Fica sem ela.
+        var parte = total > 0 ? 100 * linha.Valor / total : 0;
+        var percentagem = total <= 0 || Math.Abs(parte) > 100 ? "" : $" ({parte.ToString("0.0", Pt)}%{sufixo})";
         return $"{posicao}. {nome} – {Euros(linha.Valor)} €{percentagem}";
     }
 

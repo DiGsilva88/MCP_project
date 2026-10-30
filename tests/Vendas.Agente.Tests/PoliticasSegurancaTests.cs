@@ -137,6 +137,32 @@ public class PoliticasSegurancaTests
         Assert.Equal("Ultimos12Meses", PoliticasSeguranca.PeriodoEmFalta("consultar_vendas", "Vendas nos últimos 12 meses", Args("agrupar", "Mes")));
     }
 
+    // Chamadas reais do modelo nas rondas de teste, e a chamada que devem ficar.
+    [Theory]
+    [InlineData("Melhor artigo mês a mês em Lisboa", "Artigo", "Localidade", null, null, "Artigo", "Mes", "Localidade", "Lisboa")]
+    [InlineData("Melhor artigo mês a mês em Lisboa", "Artigo", "Mes", null, null, "Artigo", "Mes", "Localidade", "Lisboa")]
+    [InlineData("Que artigos venderam mais na zona Balcão face ao ano passado?", "Artigo", null, null, null, "Artigo", null, "Zona", "Balcão")]
+    [InlineData("Evolução mensal das vendas da localidade Seixal este ano", "Localidade", null, "Localidade", "Seixal", "Mes", null, "Localidade", "Seixal")]
+    public void CorrigirVendas_LeiturasErradas_FicamCertas(string pergunta, string agrupar, string? emCada, string? coluna, string? valor,
+        string agruparFica, string? emCadaFica, string colunaFica, string valorFica)
+    {
+        var args = new Dictionary<string, object?> { ["agrupar"] = agrupar, ["emCada"] = emCada, ["coluna"] = coluna, ["valor"] = valor };
+        Assert.NotNull(PoliticasSeguranca.CorrigirVendas("consultar_vendas", pergunta, args));
+
+        Assert.Equal(agruparFica, args["agrupar"]);
+        Assert.Equal(emCadaFica, args.TryGetValue("emCada", out var e) ? e : null);
+        Assert.Equal(colunaFica, args["coluna"]);
+        Assert.Equal(valorFica, args["valor"]);
+    }
+
+    [Theory]
+    [InlineData("Artigo mais vendido em cada localidade", "Artigo", "Localidade")]   // é mesmo emCada
+    [InlineData("Que artigos venderam mais em Setembro?", "Artigo", null)]            // mês, não localidade
+    [InlineData("Que artigos venderam mais no cliente Público Com Desconto?", "Artigo", null)] // cliente vai noutro parâmetro
+    public void CorrigirVendas_ChamadasCertas_NaoMexe(string pergunta, string agrupar, string? emCada)
+        => Assert.Null(PoliticasSeguranca.CorrigirVendas("consultar_vendas", pergunta,
+            new Dictionary<string, object?> { ["agrupar"] = agrupar, ["emCada"] = emCada }));
+
     [Fact]
     public void PeriodoEmFalta_ComPeriodoOuSemPrazo_Segue()
     {
