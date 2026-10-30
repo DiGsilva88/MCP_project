@@ -176,6 +176,17 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task TotalNegativoOuParteMaiorQueOTodo_SemPercentagem()
+    {
+        // Total do período negativo (mais notas de crédito do que vendas): -56,5% não quer dizer nada.
+        var repo = new FakeVendasRepo { Valores = [new("Ana", 16m, 2m, 1, -29m, 2), new("Rui", -45m, 1m, 1, -29m, 2)] };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Artigo);
+
+        Assert.Contains("1. Ana – 16,00 € · média", r);
+        Assert.DoesNotContain("%", r);
+    }
+
+    [Fact]
     public async Task MesEAno_PedemEsseMes()
     {
         var repo = new FakeVendasRepo();
@@ -233,7 +244,7 @@ public class VendasToolsTests
     [Fact]
     public async Task Localidade_ChegaAoRepoEDaAMedia()
     {
-        var repo = new FakeVendasRepo { Valores = [new("Ana (1)", 10m, 0, 2, 10m, 1, TotalDocumentos: 2)] };
+        var repo = new FakeVendasRepo { Valores = [new("Ana (1)", 10m, 0, 2, 10m, 1, TotalDocumentos: 2)], Clientes = _ => [] };
         var r = await CriarSut(repo).ConsultarVendasAsync(coluna: Campo.Localidade, valor: " Seixal ");
 
         Assert.Equal("Seixal", repo.UltimosFiltros![Campo.Localidade]);
@@ -245,7 +256,7 @@ public class VendasToolsTests
     [Fact]
     public async Task ValorSemColuna_UsaAColunaDeAgrupar()
     {
-        var repo = new FakeVendasRepo { Valores = [new("Lisboa", 10m, 0, 1, 10m, 1)] };
+        var repo = new FakeVendasRepo { Valores = [new("Lisboa", 10m, 0, 1, 10m, 1)], Clientes = _ => [] };
         await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Localidade, valor: "Lisboa");
 
         Assert.Equal("Lisboa", repo.UltimosFiltros![Campo.Localidade]);
@@ -276,10 +287,27 @@ public class VendasToolsTests
         var repo = new FakeVendasRepo
         {
             ContagensPor = (_, f) => f.Count > 0 ? [] : [new ContagemCliente("Seixal", 5, 5, 1)],
+            Clientes = _ => [],
         };
         var r = await CriarSut(repo).ConsultarVendasAsync(coluna: Campo.Localidade, valor: "Seixall");
 
         Assert.StartsWith("Nenhuma correspondência", r);
+    }
+
+    [Fact]
+    public async Task ValorQueEUmCliente_FiltraPeloCliente()
+    {
+        // "Vendas do cliente Público Com Desconto" vinha como coluna=Localidade: não há essa localidade, há esse cliente.
+        var repo = new FakeVendasRepo
+        {
+            Valores = [new("2026-01", 10m, 1m, 1, 10m, 1)],
+            Clientes = c => c.StartsWith("Público") ? [("1003", "PÚBLICO COM DESCONTO OFICINAL")] : [],
+        };
+        var r = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, coluna: Campo.Localidade, valor: "Público Com Desconto");
+
+        Assert.Equal("1003", repo.UltimoCliente);
+        Assert.Empty(repo.UltimosFiltros!);
+        Assert.Contains("cliente \"PÚBLICO COM DESCONTO OFICINAL (1003)\"", r);
     }
 
     [Fact]
