@@ -10,7 +10,6 @@ public static class PaginaChat
     // static readonly em vez de const: o valor só se conhece ao arrancar.
     // Quem usa PaginaChat.Html não precisa de mudar nada.
     public static readonly string Html = Ler("pagina-chat.html")
-        .Replace("{{LOGO}}", DataUri("logo.png", "image/png"))
         .Replace("{{AVATAR}}", DataUri("avatar-assistente-vendas.png", "image/png"));
     
     private static Stream Abrir(string nomeFicheiro)

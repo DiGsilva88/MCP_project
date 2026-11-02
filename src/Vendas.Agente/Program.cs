@@ -340,6 +340,11 @@ async Task ModoWebAsync()
                     });
                 }
             }
+            // Separador "Resumo": outra página não pode pedir (o browser diz Sec-Fetch-Site em todos os pedidos).
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/resumo" && pedido.Headers["Sec-Fetch-Site"] == "cross-site")
+                resposta.StatusCode = 403;
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/resumo")
+                await ResumoAsync(pedido.QueryString, resposta);
             else resposta.StatusCode = 404;
         }
         catch (Exception ex) when (ex is System.Net.HttpListenerException or IOException)
@@ -351,6 +356,56 @@ async Task ModoWebAsync()
             try { resposta.Close(); } catch { }
         }
     }
+}
+
+// Resumo das vendas (geral, de uma zona ou de um cliente): chama a ferramenta diretamente, sem modelo, por isso é rápido
+// e os números são os da BD. Devolve os textos tal como a ferramenta os escreve; a página lê-os com o mesmo leitor do chat.
+async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, System.Net.HttpListenerResponse resposta)
+{
+    string[] periodos = ["Ultimos7Dias", "MesAtual", "TrimestreAtual", "AnoAtual", "Ultimos12Meses", "AnoAnterior"];
+    var periodo = periodos.Contains(q["periodo"]) ? q["periodo"]! : "AnoAtual";
+    var cliente = q["cliente"]?.Trim() is { Length: > 0 and <= 100 } c ? c : null;
+    var zona = q["zona"]?.Trim() is { Length: > 0 and <= 100 } z ? z : null;
+
+    async Task<string> Vendas(Dictionary<string, object?> argumentos)
+    {
+        argumentos.TryAdd("periodo", periodo);
+        if (cliente is not null) argumentos["cliente"] = cliente;
+        if (zona is not null) { argumentos["coluna"] = "Zona"; argumentos["valor"] = zona; }
+        var r = await mcp.CallToolAsync("consultar_vendas", argumentos);
+        return string.Concat(r.Content.OfType<TextContentBlock>().Select(b => b.Text));
+    }
+
+    var partes = new Dictionary<string, Task<string>>
+    {
+        // "Este mês" por mês: a ferramenta alargaria a AnoAtual (um mês só não é evolução); mes/ano mantêm os totais do mês.
+        ["meses"] = Vendas(periodo == "MesAtual"
+            ? new() { ["agrupar"] = "Mes", ["compararAnoAnterior"] = true, ["mes"] = DateTime.Today.Month, ["ano"] = DateTime.Today.Year }
+            : new() { ["agrupar"] = "Mes", ["compararAnoAnterior"] = true }),
+        ["artigos"] = Vendas(new() { ["agrupar"] = "Artigo", ["limite"] = 10, ["compararAnoAnterior"] = true }),
+    };
+    // Só cliente: os rankings de zonas e clientes e os clientes parados não dizem nada sobre um cliente.
+    if (cliente is null)
+    {
+        partes["zonas"] = Vendas(new() { ["agrupar"] = "Zona", ["limite"] = 8, ["compararAnoAnterior"] = true });
+        partes["clientes"] = Vendas(new() { ["agrupar"] = "Cliente", ["limite"] = 10, ["compararAnoAnterior"] = true });
+        partes["semVendas"] = Vendas(new() { ["semVendas"] = true, ["periodo"] = "Ultimos90Dias", ["limite"] = 1 });
+    }
+
+    try
+    {
+        await Task.WhenAll(partes.Values);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Falha ao montar o resumo: {ex.Message}");
+        resposta.StatusCode = 500;
+        return;
+    }
+    Console.WriteLine($"[resumo {periodo}{(cliente is null ? "" : ", cliente")}{(zona is null ? "" : ", zona")}]"); // sem o nome: pode ser dado pessoal
+    resposta.ContentType = "application/json; charset=utf-8";
+    await resposta.OutputStream.WriteAsync(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(
+        partes.ToDictionary(p => p.Key, p => p.Value.Result)));
 }
 
 // ---- Modo menu: sem modelo, chama a ferramenta MCP "consultar" diretamente a partir de escolhas numeradas.
