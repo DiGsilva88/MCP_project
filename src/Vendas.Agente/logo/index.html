@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inforap Flow — Vendas por mês</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app chat-aberto" id="app">
+
+  <!-- ===== Painel lateral: resumo guardado ===== -->
+  <aside class="lateral" id="lateral" aria-label="Resumo guardado">
+    <div class="marca">
+      <div class="marca-logo"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M4 18 9 12l4 3 7-9"/></svg></div>
+      <div class="marca-texto so-aberto"><p><strong>Inforap Flow</strong></p><p>Assistente de vendas</p></div>
+      <button class="btn-lateral" id="btnLateral" aria-label="Recolher resumo guardado" aria-expanded="true">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path id="setaLateral" d="m15 6-6 6 6 6"/></svg>
+      </button>
+    </div>
+    <p class="recolhido-total num so-recolhido" id="totalRecolhido"></p>
+
+    <section class="resumo so-aberto" aria-labelledby="h-resumo">
+      <div class="resumo-topo"><h2 id="h-resumo">Resumo das vendas</h2><span class="tag" id="resumoPeriodo"></span></div>
+      <p class="legenda" id="resumoGuardado" style="margin: 2px 0 12px;"></p>
+      <p class="legenda" style="font-size: 13px;">Faturação</p>
+      <p class="valor"><strong class="num" id="resumoTotal"></strong><span class="chip grande num" id="resumoDelta"></span></p>
+      <svg class="spark" id="spark" viewBox="0 0 260 58" role="img"></svg>
+      <p class="spark-legenda" aria-hidden="true"><span><b style="color: var(--sobe-linha);">━</b> sobe</span><span><b style="color: var(--desce-linha);">━</b> desce</span></p>
+      <dl id="resumoIndicadores"></dl>
+      <div class="perda"><p class="legenda">Maior perda</p><p id="resumoPerda" style="margin: 0;"></p></div>
+    </section>
+
+    <section class="vistas so-aberto" aria-labelledby="h-vistas">
+      <h2 id="h-vistas">Vistas guardadas</h2>
+      <ul id="vistas"></ul>
+      <button class="btn-guardar" id="btnGuardar">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg><span>Guardar vista atual</span>
+      </button>
+    </section>
+
+    <nav class="so-aberto" aria-label="Secções">
+      <a href="#"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4"/></svg>Qualidade dos dados</a>
+      <a href="#"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5M12 17v.5"/></svg>Ajuda</a>
+    </nav>
+  </aside>
+
+  <!-- ===== Área principal ===== -->
+
+  <div class="conteudo">
+    <header class="cabecalho">
+      <nav class="separadores" aria-label="Separadores abertos">
+        <a href="#" aria-current="page">Vendas por mês</a>
+        <a href="#">Artigos, julho 2026</a>
+        <a href="#">Vendas por zona</a>
+      </nav>
+
+      <div class="acoes">
+        <button class="btn-sub" id="btnExport" aria-haspopup="menu" aria-expanded="false">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Exportar dados
+        </button>
+        <button class="btn-sub" id="btnEmail" aria-haspopup="dialog" aria-expanded="false">
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg><span id="btnEmailTexto">Enviar por email à segunda</span>
+        </button>
+
+        <div class="popover menu-export" id="menuExport" role="menu" aria-label="Formato de exportação" hidden>
+          <p>Vendas por mês · este ano</p>
+          <button role="menuitem" data-formato="xlsx">Excel (.xlsx)</button>
+          <button role="menuitem" data-formato="csv">CSV</button>
+          <button role="menuitem" data-formato="pdf">PDF com gráficos</button>
+        </div>
+
+        <div class="popover painel-email" id="painelEmail" role="dialog" aria-label="Enviar resumo por email" hidden>
+          <div>
+            <p style="font-size: 14px; font-weight: 700;">Resumo por email</p>
+            <p style="color: var(--cinza);">Enviado à segunda-feira às 08:00, com os números, o gráfico e os alertas.</p>
+          </div>
+          <fieldset>
+            <legend>Que período?</legend>
+            <label class="opcao"><input type="radio" name="freq" value="semanal" checked><span><b>Semanal</b><small>Todas as segundas, com a semana anterior</small></span></label>
+            <label class="opcao"><input type="radio" name="freq" value="mensal"><span><b>Mensal</b><small>Na 1.ª segunda do mês, com o mês anterior</small></span></label>
+          </fieldset>
+          <label style="display: flex; flex-direction: column; gap: 4px;"><b>Enviar para</b><input type="email" id="emailDestino" placeholder="nome@empresa.pt"></label>
+          <p class="ok" id="emailOk" role="status" hidden></p>
+          <div class="linha-botoes">
+            <button class="btn-sec" id="btnEmailFechar">Fechar</button>
+            <button class="btn-prim" id="btnAgendar">Agendar envio</button>
+          </div>
+        </div>
+      </div>
+
+      <label class="pesquisa">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <span class="sr-only">Procurar</span><input placeholder="Procurar cliente ou artigo">
+      </label>
+      <button class="btn-redondo" aria-label="Notificações, 1 nova"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="ponto" aria-hidden="true"></span></button>
+      <div class="utilizador" id="iniciais" aria-label=""></div>
+    </header>
+
+    <main id="conteudo">
+      <div>
+        <p class="saudacao" id="saudacao"></p>
+        <p class="data" id="hoje"></p>
+        <h1>Vendas por mês, ano atual</h1>
+      </div>
+
+      <div class="linha-grafico">
+        <section class="cartao grafico" aria-labelledby="h-grafico">
+          <div class="grafico-topo">
+            <div>
+              <h2 id="h-grafico">Evolução das vendas em 2026</h2>
+              <p>Faturação por mês, em milhares de euros, comparada com 2025.</p>
+            </div>
+            <div class="legenda-cores" aria-hidden="true">
+              <span><i style="background: var(--azul);"></i>2026</span>
+              <span><i style="background: var(--azul-2025);"></i>2025</span>
+            </div>
+          </div>
+          <div class="barras" id="barras" role="group" aria-label="Meses. Passe o rato ou use Tab para ver os valores."></div>
+        </section>
+
+        <section class="mes-sel" aria-labelledby="h-mes" aria-live="polite">
+          <h2 id="h-mes">Mês selecionado</h2>
+          <p class="nome" id="selNome"></p>
+          <p class="nota" id="selNota"></p>
+          <p class="v26 num" id="selV26"></p>
+          <p class="num" id="selV25"></p>
+          <p class="chip grande num" id="selDelta"></p>
+          <p class="dif num" id="selDif"></p>
+          <a href="#" id="selPerguntar"></a>
+        </section>
+      </div>
+
+      <div class="mini" id="mini"></div>
+    </main>
+  </div>
+
+  <!-- ===== Avatar Flow (abre/fecha o chat) ===== -->
+  <button class="avatar a-falar" id="avatar" aria-expanded="true" aria-label="Flow, assistente de vendas: fechar chat" title="Flow, o assistente de vendas">
+    <svg aria-hidden="true" width="54" height="54" viewBox="0 0 54 54">
+      <rect x="10" y="8" width="34" height="30" rx="12" fill="#fff" opacity=".14"/>
+      <ellipse class="olho" cx="20" cy="22" rx="3.6" ry="4.6" fill="#fff"/>
+      <ellipse class="olho" cx="34" cy="22" rx="3.6" ry="4.6" fill="#fff"/>
+      <path class="boca" d="M20 31 Q27 37 34 31" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      <path d="M38 44h8l-4 4Z" fill="#5ee0a1"/>
+    </svg>
+    <span class="contador" id="contador" aria-hidden="true" hidden>1</span>
+  </button>
+
+  <!-- ===== Balão de sugestão (aparece quando o chat está fechado) ===== -->
+  <aside class="flutuante balao" id="balao" role="status" aria-label="Mensagem do assistente" hidden>
+    <span class="cauda" aria-hidden="true"></span>
+    <p class="quem">Flow · assistente de vendas</p>
+    <p id="balaoTexto" style="margin-top: 2px;"></p>
+    <div class="linha-botoes">
+      <button class="btn-prim" id="balaoSim" style="min-height: 40px;">Sim, mostrar</button>
+      <button class="btn-sec" id="balaoNao" style="min-height: 40px;">Agora não</button>
+    </div>
+  </aside>
+
+  <!-- ===== Chat ===== -->
+  <aside class="flutuante chat" id="chat" aria-label="Assistente de vendas">
+    <div class="chat-topo">
+      <span class="icone" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg></span>
+      <div class="nome"><p>Flow</p><p class="estado">Pronto</p></div>
+      <button class="btn-min" id="chatMin" aria-label="Minimizar chat" title="Minimizar chat"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14"/></svg></button>
+      <button class="btn-fechar" id="chatFechar" aria-label="Fechar e recomeçar conversa" title="Fechar">×</button>
+    </div>
+
+    <div class="chat-corpo" id="chatCorpo">
+      <!-- modo: inicio -->
+      <div data-modo="inicio">
+        <div class="msg">
+          <p><b id="chatOla"></b></p>
+          <p>Respondo a perguntas sobre vendas, clientes e artigos com os dados da base de dados.</p>
+          <ul>
+            <li>Pergunte por palavras suas, como a um colega.</li>
+            <li>Ou escolha um tema: os gráficos abrem no painel ao lado.</li>
+            <li>Guarde o que lhe interessa no resumo, à esquerda.</li>
+          </ul>
+          <small>Só consulto dados — não altero nada na base de dados.</small>
+        </div>
+        <p class="msg destaque" id="chatAlerta"></p>
+        <p class="pergunta">Como quer começar?</p>
+        <button class="modo" data-ir="conversa">
+          <span class="ic" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2"><path d="M4 5h16v11H9l-5 4Z"/></svg></span>
+          <span><b>Vamos conversar</b><small>Pergunte por palavras suas, como faria a um colega.</small></span>
+        </button>
+        <button class="modo" data-ir="dados">
+          <span class="ic escuro" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M6 20V12M12 20V5M18 20v-8"/></svg></span>
+          <span><b>Vamos analisar dados</b><small>Escolha um tema. Os resultados abrem no painel.</small></span>
+        </button>
+      </div>
+      <!-- modo: conversa -->
+      <div data-modo="conversa" hidden>
+        <p class="modo-atual">Modo: conversa <button data-ir="inicio">Mudar</button></p>
+        <p class="msg">Diga-me o que precisa de saber. Por exemplo: "Como correu o Balcão em agosto?" ou "Porque caiu Sta. Marta?"</p>
+      </div>
+      <!-- modo: dados -->
+      <div data-modo="dados" hidden>
+        <p class="modo-atual">Modo: análise de dados <button data-ir="inicio">Mudar</button></p>
+        <p class="pergunta" style="margin: 0;">O que quer analisar?</p>
+        <div class="temas">
+          <button data-tema="faturacao"><b>Faturação</b><small>Mês, trimestre, ano</small></button>
+          <button data-tema="clientes"><b>Clientes</b><small>Melhores e em quebra</small></button>
+          <button data-tema="artigos"><b>Artigos</b><small>Mais vendidos</small></button>
+          <button data-tema="zonas"><b>Zonas</b><small>Comparar com 2025</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input">
+      <form id="chatForm">
+        <label class="sr-only" for="chatPergunta">Pergunta</label>
+        <input id="chatPergunta" placeholder="Escreva a sua pergunta…" autocomplete="off">
+        <button class="enviar" aria-label="Enviar"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      </form>
+      <p>Só leitura. O assistente não altera a base de dados.</p>
+    </div>
+  </aside>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

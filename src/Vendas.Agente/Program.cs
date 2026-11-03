@@ -312,6 +312,17 @@ async Task ModoWebAsync()
                 resposta.ContentType = "text/html; charset=utf-8";
                 await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(PaginaChat.Html));
             }
+            // Só devolve recursos embutidos com este nome exato: um caminho com ../ simplesmente não existe.
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath is { } caminho && caminho.StartsWith("/fonts/")
+                     && typeof(PaginaChat).Assembly.GetManifestResourceStream(caminho[1..]) is { } fonte)
+            {
+                using (fonte)
+                {
+                    resposta.ContentType = "font/woff2";
+                    resposta.Headers["Cache-Control"] = "max-age=86400";
+                    await fonte.CopyToAsync(resposta.OutputStream);
+                }
+            }
             // Outra página aberta no browser pode fazer POST para localhost sem CORS; o browser diz sempre a Origin.
             else if (pedido.HttpMethod == "POST" && pedido.Headers["Origin"] is { } origem && origem != endereco.TrimEnd('/'))
                 resposta.StatusCode = 403;

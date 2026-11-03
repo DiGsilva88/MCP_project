@@ -282,6 +282,17 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             var ultimoDia = c.Janela.Ate.AddDays(-1);
             texto.AppendLine($"Comparado com {Data(c.Janela.Desde)} a {Data(ultimoDia)}: total {Euros(totalAntes)} €{Variacao(total, totalAntes)}.");
 
+            // Os mesmos indicadores do cabeçalho, um ano antes (vêm do OVER() do SQL, como o total): clientes, documentos, valor médio.
+            // Por mês/trimestre o n.º de grupos é o n.º de meses, que não diz nada: fica de fora.
+            if (emCada is null && c.Linhas.Count > 0 && c.Linhas[0].TotalDocumentos > 0)
+            {
+                var a = c.Linhas[0];
+                var mediaAntes = a.Total / a.TotalDocumentos;
+                var gruposAntes = Dimensoes.Cronologica(agrupar) ? "" : $"{a.Grupos.ToString("#,##0", Pt)} {plural}{Variacao(grupos, a.Grupos)}, ";
+                texto.AppendLine($"Um ano antes: {gruposAntes}{a.TotalDocumentos.ToString("#,##0", Pt)} documentos{Variacao(documentos, a.TotalDocumentos)}, " +
+                                 $"valor médio por documento {Euros(mediaAntes)} €{(documentos > 0 ? Variacao(total / documentos, mediaAntes) : "")}.");
+            }
+
             // Meses e trimestres: "2026-01" emparelha com "2025-01" (ano menos 1, não só o mês: em 12 meses o
             // outubro aparece duas vezes). O resto pelo nome.
             string Chave(ValorAgrupado l) =>
