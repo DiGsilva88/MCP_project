@@ -706,6 +706,154 @@
     .chat-painel-dados .chat-barra { width: 100%; min-width: 64px; max-width: 200px; }   /* a barra da tabela usa a coluna toda */
 
     /* =========================================================
+       7k. REDESIGN 11/2026 — Inforap Flow
+       Separador Resumo, só depois de pedido (dados de GET /resumo, geral ou de um cliente), barra fixa,
+       voltar ao topo e gráfico mensal em barras. A conversa NÃO muda.
+       ========================================================= */
+    .chat-titulo { font-size: 16px; font-weight: 800; }
+
+    /* Barra fixa no topo do painel ao fazer scroll */
+    .res-barra {
+      position: sticky; top: -20px; z-index: 4;
+      margin: -20px -24px 14px; padding: 14px 24px 10px;
+      background: var(--fundo); border-bottom: 1px solid var(--borda);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .res-linha { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; }
+    .res-titulo { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .res-icone { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 9px; background: var(--marca); color: var(--marca-texto); }
+    .res-titulo h2 { margin: 0; font-size: 18px; font-weight: 800; }
+    .res-data { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 99px; background: var(--selecionado); color: var(--texto); font-size: 13.5px; font-weight: 600; }
+    .res-btn { min-height: 38px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--borda-controlo); border-radius: 8px; background: var(--cartao); font-size: 13.5px; font-weight: 700; }
+    .res-btn[aria-expanded="true"] { border: 2px solid var(--ligacao); background: var(--selecionado); }
+    .res-btn--primario { border-color: var(--marca); background: var(--marca); color: var(--marca-texto); }
+    .res-contador { min-width: 20px; height: 20px; padding: 0 5px; display: inline-grid; place-items: center; border-radius: 99px; background: var(--marca); color: var(--marca-texto); font-size: 12px; }
+    .res-info { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12.5px; color: var(--nota); }
+    .res-aviso { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 99px; background: var(--aviso-fundo); border: 1px solid var(--aviso-borda); color: var(--aviso-texto); font-weight: 600; }
+    .res-filtro-ativo { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px; border: 2px solid var(--ligacao); border-radius: 8px; background: var(--selecionado); font-size: 13px; }
+
+    /* Menu Filtros */
+    .res-menu-wrap { position: relative; }
+    .res-menu {
+      position: absolute; top: calc(100% + 8px); left: 0; z-index: 7; width: 340px;
+      padding: 14px; display: flex; flex-direction: column; gap: 12px;
+      background: var(--cartao); border: 1px solid var(--borda-cartao); border-radius: 12px;
+      box-shadow: 0 12px 32px rgb(22 33 58 / .18);
+    }
+    .res-menu h3 { margin: 0 0 6px; font-size: 12px; font-weight: 700; color: var(--suave); text-transform: uppercase; letter-spacing: .05em; }
+    .res-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .res-chip { min-height: 34px; padding: 0 12px; border: 1px solid var(--borda-controlo); border-radius: 99px; background: var(--cartao); font-size: 13px; }
+    .res-chip[aria-pressed="true"] { background: var(--marca); border-color: var(--marca); color: var(--marca-texto); font-weight: 700; }
+    .res-menu-rodape { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--linha); }
+    .res-cliente { display: flex; gap: 6px; margin: 0; }
+    .res-cliente input { flex: 1; min-width: 0; min-height: 38px; padding: 0 10px; border: 1px solid var(--borda-controlo); border-radius: 8px; background: var(--lateral); }
+    .res-nota { margin: 0; font-size: 12.5px; color: var(--nota); }
+
+    /* Conteúdo do Resumo */
+    .res-conteudo { display: flex; flex-direction: column; gap: 14px; max-width: 1400px; font-variant-numeric: tabular-nums; }
+    .res-grelha { display: flex; flex-wrap: wrap; gap: 14px; align-items: stretch; }
+    .res-cartao { flex: 1 1 420px; min-width: 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; background: var(--cartao); border: 1px solid var(--borda-cartao); border-radius: 8px; }
+    .res-cartao--largo { flex: 2 1 520px; }
+    .res-cartao--atencao { flex: 1 1 280px; border-top: 3px solid #b45309; }
+    .res-cartao h3 { margin: 0; font-size: 15px; font-weight: 700; }
+    .res-sub { margin: 2px 0 0; font-size: 12px; color: var(--nota); }
+    .res-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .res-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+    .res-kpis .chat-kpi-valor { font-size: 19px; }
+    .res-legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--suave); }
+    .res-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+
+    .res-grafico { position: relative; margin-left: 54px; }
+    .res-grafico svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .res-y { position: absolute; left: -58px; width: 52px; text-align: right; font-size: 11px; color: var(--nota); white-space: nowrap; transform: translateY(-50%); }
+    .res-x { position: relative; height: 18px; margin-left: 54px; font-size: 12px; }
+    .res-x span { position: absolute; transform: translateX(-50%); font-weight: 600; }
+    .res-ponto { position: absolute; transform: translate(-50%, -50%); }
+    .res-rotulo { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; font-size: 11px; font-weight: 700; }
+    .res-zona { position: absolute; top: 0; height: 100%; padding: 0; border: 0; background: transparent; cursor: crosshair; }
+    .res-tooltip { position: absolute; top: 4px; z-index: 3; transform: translateX(-50%); padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: var(--cartao); border: 1px solid var(--borda-controlo); border-radius: 8px; box-shadow: 0 6px 16px rgb(22 33 58 / .15); font-size: 12.5px; white-space: nowrap; pointer-events: none; }
+
+    .res-alertas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .res-alertas li { display: flex; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--linha); }
+    .res-alerta-ic { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 6px; font-size: 12px; font-weight: 800; }
+    .res-alerta-tag { font-size: 11.5px; font-weight: 700; color: var(--suave); text-transform: uppercase; letter-spacing: .05em; }
+
+    .res-tabela { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .res-tabela th, .res-tabela td { padding: 6px; }
+    .res-tabela thead th { font-size: 12px; font-weight: 600; color: var(--nota); text-align: right; }
+    .res-tabela thead th:first-child, .res-tabela tbody th { text-align: left; }
+    .res-tabela tbody tr { border-top: 1px solid var(--linha); }
+    .res-tabela tbody th { font-weight: 600; }
+    .res-tabela td { text-align: right; white-space: nowrap; color: var(--suave); }
+    .res-tabela td.forte { font-weight: 700; color: var(--texto); }
+    .res-pista { display: block; height: 6px; max-width: 220px; margin-top: 4px; border-radius: 3px; background: var(--barra-fundo); }
+    .res-pista > span { display: block; height: 100%; border-radius: 3px; }
+    .res-destaques { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .res-destaque { padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--borda-cartao); border-radius: 8px; font-size: 12.5px; color: var(--suave); }
+    .res-destaque strong { font-size: 13.5px; color: var(--texto); }
+    .res-sobe { color: var(--sobe); font-weight: 700; } .res-desce { color: var(--desce); font-weight: 700; }
+
+    .res-locais { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }   /* sempre numa linha */
+    .res-local { width: 100%; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 1px solid var(--linha); border-radius: 8px; background: var(--cartao); }
+    .res-local[aria-pressed="true"] { border: 2px solid var(--ligacao); background: var(--selecionado); }
+    .res-local-area { width: 100%; height: 160px; display: flex; align-items: flex-end; justify-content: center; border-bottom: 2px solid var(--borda-forte); }
+    .res-local-barra { width: 70%; max-width: 54px; border-radius: 5px 5px 0 0; background: var(--anterior-linha); }
+    .res-local[aria-pressed="true"] .res-local-barra { background: var(--marca); }
+
+    .res-clientes { list-style: none; margin: 0; padding: 0; }
+    .res-clientes li { display: grid; grid-template-columns: 22px minmax(0, 1fr) 96px 70px; align-items: center; gap: 8px; min-height: 34px; border-top: 1px solid var(--linha); font-size: 13.5px; }
+    .res-clientes .chat-acao { display: block; width: 100%; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+
+    .res-pedir { margin: 40px auto; gap: 14px; }
+    .res-exemplo { display: inline-flex; padding: 2px 8px; border: 1px dashed var(--borda-controlo); border-radius: 6px; font-size: 12px; color: var(--nota); }
+    .res-esqueleto span { display: block; border-radius: 6px; background: var(--linha); animation: chat-pulsar 1.2s infinite ease-in-out; }
+
+    /* Voltar ao topo: ao lado do botão redondo da conversa */
+    .res-topo {
+      position: absolute; z-index: 6; right: 26px; bottom: 84px; width: 40px; height: 40px;   /* por cima do botão da conversa */
+      display: grid; place-items: center; border: 1px solid var(--borda-controlo); border-radius: 50%;
+      background: var(--cartao); color: var(--texto); box-shadow: 0 4px 12px rgb(22 33 58 / .15);
+    }
+
+    /* Gráfico mensal em barras (substitui a linha nas respostas por mês) */
+    .chat-barra-mes { position: absolute; bottom: 0; transform: translateX(-50%); border-radius: 4px 4px 0 0; background: var(--marca); pointer-events: none; }
+    .chat-barra-mes--ant { background: var(--anterior); }
+    .chat-barra-mes--parcial { background: repeating-linear-gradient(135deg, var(--aviso-borda) 0 5px, var(--cartao) 5px 10px); border: 2px dashed #c2410c; border-bottom: 0; }
+    .chat-barra-valor { position: absolute; transform: translate(-50%, -100%); padding: 0 3px; border-radius: 3px; background: var(--cartao); font-size: 11px; font-weight: 700; white-space: nowrap; pointer-events: none; }
+    .chat-legenda-barra { width: 10px !important; height: 10px !important; border-radius: 2px !important; background: var(--marca); }
+    .chat-legenda-barra--ant { background: var(--anterior); }
+    .chat-legenda-barra--parcial { background: repeating-linear-gradient(135deg, var(--aviso-borda) 0 3px, var(--cartao) 3px 6px); outline: 1px dashed #c2410c; }
+    .chat-linha-area .chat-ponto-mes span { opacity: 0; }
+    .chat-linha-area .chat-ponto-mes:hover span, .chat-linha-area .chat-ponto-mes[aria-pressed="true"] span { opacity: 1; width: 10px; height: 10px; background: var(--texto); box-shadow: 0 0 0 2px var(--cartao); }
+
+    @container (max-width: 820px) { .res-destaques { grid-template-columns: 1fr; } }
+
+    /* Posição e alinhamento do modelo "Resumo — chat minimizado" */
+    /* Separadores e Resumo centrados na mesma coluna em ecrã largo (com a conversa aberta fica o padding de 408px) */
+    .chat-dados:has(.res-barra, .res-pedir) :is(.chat-abas, .chat-painel-dados) { padding-left: max(20px, calc((100% - 1520px) / 2)); }
+    .chat-painel.chat-painel--sem-conversa .chat-dados:has(.res-barra, .res-pedir) :is(.chat-abas, .chat-painel-dados) { padding-right: max(20px, calc((100% - 1520px) / 2)); }
+    .res-conteudo, .chat-painel-dados > .chat-folha:has(> .res-barra) { max-width: none; }
+    /* Indicadores: todos numa linha, mesma largura; valor, variação e frase por baixo uns dos outros */
+    .res-kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+    .res-kpis .chat-kpi { gap: 4px; padding: 12px 14px; border-left: 1px solid var(--borda-cartao); }
+    .res-var { font-size: 12.5px; }
+    .res-aviso svg { flex: none; }
+    .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 84px; bottom: 26px; }   /* conversa aberta: ao lado, não por cima da janela */
+    /* Balão flutuante à esquerda do botão da conversa, com a ponta virada para ele */
+    .res-balao {
+      position: absolute; z-index: 6; right: 84px; bottom: 26px;
+      display: flex; align-items: center; gap: 2px; padding: 4px 4px 4px 12px;
+      background: var(--cartao); border: 1px solid var(--borda-controlo); border-radius: 18px 18px 4px 18px;
+      box-shadow: 0 6px 16px rgb(22 33 58 / .18); animation: chat-entrar .18s ease-out;
+    }
+    .res-balao-abrir { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 4px; border: 0; background: none; color: var(--ligacao); font-size: 13.5px; font-weight: 700; }
+    .res-balao-abrir:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .res-balao-fechar { width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: var(--nota); font-size: 16px; }
+    .res-balao-fechar:hover { background: var(--linha); }
+    .res-contagem { padding: 2px 10px; border-radius: 99px; background: #fde7cf; color: #9a3412; font-size: 12px; font-weight: 700; }
+    .res-tabela--maiusculas thead th { text-transform: uppercase; letter-spacing: .04em; font-size: 11.5px; }
+
+    /* =========================================================
        8. Rodapé: pergunta + só leitura
        ========================================================= */
     .chat-rodape { flex: none; background: var(--cartao); border-top: 1px solid var(--borda); padding: 12px 16px 10px; display: flex; flex-direction: column; gap: 8px; }
@@ -734,7 +882,7 @@
     @keyframes chat-entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     @keyframes chat-pulsar { 50% { opacity: .5; } }
     @media (prefers-reduced-motion: reduce) {
-      .chat-folha, .chat-esqueleto span, .chat-pontos span, .chat-painel-esqueleto * { animation: none; }
+      .chat-folha, .chat-esqueleto span, .chat-pontos span, .chat-painel-esqueleto *, .res-balao { animation: none; }
     }
   </style>
 </head>
@@ -742,12 +890,8 @@
   <div class="chat-painel">
 
     <header class="chat-topo">
-      <!-- O marcador LOGO é trocado pelo PaginaChat.cs pela imagem embebida (data URI).
-           Aberto como ficheiro (pré-visualização), não há troca: vai buscar a imagem à pasta logo. -->
-      <img class="chat-logo" src="{{LOGO}}" alt="Inforap"
-           onerror="this.onerror = null; this.src = '../logo/logo.png';">
-      <span class="chat-separador" aria-hidden="true"></span>
-      <h1 class="chat-titulo">Assistente de vendas</h1>
+      <!-- REDESIGN 11/2026: nome do produto, sem logótipo -->
+      <h1 class="chat-titulo">Inforap Flow</h1>
     </header>
 
     <div class="chat-corpo">
@@ -802,6 +946,20 @@
           </p>
         </footer>
       </aside>
+
+      <!-- REDESIGN 11/2026: voltar ao topo do painel de dados -->
+      <button class="res-topo" id="voltar-topo" type="button" aria-label="Voltar ao topo" title="Voltar ao topo" hidden>
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg>
+      </button>
+
+      <!-- Balão flutuante junto ao botão da conversa: sugere o Resumo enquanto a conversa está escondida -->
+      <div class="res-balao" id="balao-resumo" role="complementary" aria-label="Sugestão" hidden>
+        <button class="res-balao-abrir" id="balao-resumo-abrir" type="button">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 2v12h12M5 10l3-3 2 2 4-5"/></svg>
+          Faça um resumo das vendas
+        </button>
+        <button class="res-balao-fechar" id="balao-resumo-fechar" type="button" aria-label="Fechar sugestão">×</button>
+      </div>
 
       <!-- Botão redondo no canto: mostra e esconde a conversa -->
       <button class="chat-lancador" id="mostrar-conversa" type="button" aria-expanded="true" aria-label="Esconder a conversa">
@@ -967,7 +1125,10 @@
 
     // B) Texto com título, factos, avisos e lista numerada (o formato atual do agente)
     function lerItem(pos, s) {
-      let i = s.lastIndexOf(' – ');            // travessão separa nome e valor
+      // Travessão separa nome e valor: o último seguido de um número. "· 2025: –" (não vendeu no ano anterior)
+      // também tem travessão; com lastIndexOf partia a linha aí e o valor ficava NaN (lista sem barras).
+      const seps = [...s.matchAll(/ [–-] (?=[-−]?\d)/g)];
+      let i = seps.length ? seps[seps.length - 1].index : s.lastIndexOf(' – ');   // sem número: "– última compra a…", "– nunca comprou"
       if (i < 0) i = s.lastIndexOf(' - ');
       const esq = i < 0 ? s : s.slice(0, i);
       let dir = i < 0 ? '' : s.slice(i + 3).trim(), media = '';
@@ -1337,9 +1498,10 @@
       const cab = el('div', 'chat-grafico-cab');
       const leg = el('div', 'chat-legenda');
       const legenda = (cls, txt) => { const i = el('span'); i.append(el('span', 'chat-legenda-cor ' + cls), txt); leg.append(i); };
-      legenda('chat-legenda-atual', String(s.anoAtual));
-      if (s.anoAnt) legenda('chat-legenda-traco', s.anoAnt);
-      if (s.meses.some(x => x.parcial)) legenda('chat-legenda-oca', 'Mês incompleto');
+      // REDESIGN 11/2026: barras (com poucos meses, uma linha engana)
+      legenda('chat-legenda-barra', String(s.anoAtual));
+      if (s.anoAnt) legenda('chat-legenda-barra chat-legenda-barra--ant', s.anoAnt);
+      if (s.meses.some(x => x.parcial)) legenda('chat-legenda-barra chat-legenda-barra--parcial', 'Mês incompleto');
       cab.append(el('h3', '', 'Evolução das vendas'), leg);
 
       const corpo = el('div', 'chat-grafico-corpo');
@@ -1361,26 +1523,27 @@
       marca.setAttribute('aria-hidden', 'true');
       barras.append(marca);
 
-      const ns = 'http://www.w3.org/2000/svg';
-      const svg = document.createElementNS(ns, 'svg');
-      svg.setAttribute('class', 'chat-linha-svg');
-      svg.setAttribute('viewBox', '0 0 100 200');
-      svg.setAttribute('preserveAspectRatio', 'none');
-      svg.setAttribute('aria-hidden', 'true');
-      const forma = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); e.setAttribute('vector-effect', 'non-scaling-stroke'); svg.append(e); };
-      const pontos = lista => lista.map(i => X(i) + ',' + Y(s.meses[i].atual)).join(' ');
-      // Ano anterior: tracejado
-      const ant = s.meses.map((x, i) => x.anterior != null ? X(i) + ',' + Y(x.anterior) : null).filter(Boolean);
-      if (ant.length > 1) forma('polyline', { points: ant.join(' '), style: 'fill: none; stroke: var(--anterior-linha); stroke-width: 2; stroke-dasharray: 5 4' });
-      // Ano atual: área + linha a cheio nos meses completos, tracejado até cada mês incompleto
-      const comDados = s.meses.map((x, i) => i).filter(i => s.meses[i].atual != null);
-      const completos = comDados.filter(i => !s.meses[i].parcial);
-      if (completos.length > 1) {
-        const p0 = completos[0], p1 = completos[completos.length - 1];
-        forma('polygon', { points: `${X(p0)},200 ${pontos(completos)} ${X(p1)},200`, style: 'fill: var(--selecionado); opacity: .3; stroke: none' });
-        forma('polyline', { points: pontos(completos), style: 'fill: none; stroke: var(--marca); stroke-width: 2.5; stroke-linejoin: round' });
-      }
-      barras.append(svg);
+      // REDESIGN 11/2026: uma barra por mês (ano anterior ao lado, mais clara), com o valor por cima
+      const largura = 100 / n;
+      s.meses.forEach((x, i) => {
+        const duas = x.anterior != null;
+        const w = largura * (duas ? 0.34 : 0.55);
+        const barra = (v, cls, desvio) => {
+          if (v == null || v <= 0) return;
+          const b = el('span', 'chat-barra-mes ' + cls);
+          b.setAttribute('aria-hidden', 'true');
+          b.style.left = (X(i) + desvio) + '%'; b.style.width = w + '%'; b.style.height = Math.max(3, v / topo * 200) + 'px';
+          barras.append(b);
+        };
+        barra(x.anterior, 'chat-barra-mes--ant', duas ? -w / 2 - 0.4 : 0);
+        barra(x.atual, x.parcial ? 'chat-barra-mes--parcial' : '', duas ? w / 2 + 0.4 : 0);
+        if (x.atual != null && x.atual > 0) {
+          const r = el('span', 'chat-barra-valor', milhares(x.atual).replace(' €', ''));
+          r.setAttribute('aria-hidden', 'true');
+          r.style.left = (X(i) + (duas ? w / 2 + 0.4 : 0)) + '%'; r.style.top = (Y(x.atual) - 3) + 'px';
+          barras.append(r);
+        }
+      });
 
       const rotulos = el('div', 'chat-rotulos');
       rotulos.setAttribute('aria-hidden', 'true');
@@ -1714,6 +1877,7 @@
             if (it.delta != null) facto('Variação', textoDelta(it.delta) + (it.anterior ? ' vs ' + it.anterior.ano : ''));
             facto('Valor médio por documento', it.media);
             const acoes = el('div', 'chat-acoes');
+            if (limparDim(dim) === 'cliente' && it.codigo) acoes.append(botaoEl('chat-chip', 'Ver resumo deste cliente', () => pedirResumo(null, it.codigo)));
             perguntasDoItem(it.nome, dim).forEach(q => acoes.append(botaoEl('chat-chip', q, () => prepararPergunta(q))));
             det.append(el('strong', '', it.nome), dl);
             if (acoes.childNodes.length) det.append(acoes);
@@ -1864,17 +2028,20 @@
     }
 
     // Destaque em texto: quem lidera, quem mais subiu e quem mais desceu, calculado a partir dos números
+    // Nome com o código: muitos artigos chamam-se todos "(sem descrição)", só o código os distingue
+    const nomeECodigo = i => nomeProprio(i.nome) + (i.codigo ? ` (${i.codigo})` : '');
+
     function fraseDestaque(itens) {
       const comValor = itens.filter(i => i.num > 0);
       if (comValor.length < 3 || itens.some(i => i.sub)) return '';   // "melhor X em cada Y": não há um líder
       const primeiro = comValor.reduce((a, b) => b.num > a.num ? b : a);
-      let frase = `${nomeProprio(primeiro.nome)} lidera com ${primeiro.valor}` + (/%/.test(primeiro.pct) ? ` (${primeiro.pct} do total)` : '') + '.';
+      let frase = `${nomeECodigo(primeiro)} lidera com ${primeiro.valor}` + (/%/.test(primeiro.pct) ? ` (${primeiro.pct} do total)` : '') + '.';
       const comVariacao = comValor.filter(i => i.delta != null);
       if (comVariacao.length > 1) {
         const sobe = comVariacao.reduce((a, b) => b.delta > a.delta ? b : a);
         const desce = comVariacao.reduce((a, b) => b.delta < a.delta ? b : a);
-        if (sobe.delta > 0) frase += ` A maior subida é de ${nomeProprio(sobe.nome)} (${textoDelta(sobe.delta)}).`;
-        if (desce.delta < 0) frase += ` A maior descida é de ${nomeProprio(desce.nome)} (${textoDelta(desce.delta)}).`;
+        if (sobe.delta > 0) frase += ` A maior subida é de ${nomeECodigo(sobe)} (${textoDelta(sobe.delta)}).`;
+        if (desce.delta < 0) frase += ` A maior descida é de ${nomeECodigo(desce)} (${textoDelta(desce.delta)}).`;
       }
       return frase;
     }
@@ -1953,6 +2120,14 @@
            ...r.itens.map(i => [i.pos, i.grupo || '', i.nome, i.sub || '', i.codigo, i.valor, i.pct, i.media])];
       rodapeDados(art, linhas, r.titulo, r.nota, imagem);
       if (r.itens.length) art.sugestoes = perguntasSeguintes(r, itens, serie);   // lidas em mostrarItem
+      // Resposta de faturação de um período que o Resumo tem: o balão de sugestão propõe o resumo desse período
+      art.periodoResumo = /^vendas por/i.test(r.titulo) ? periodoEmPalavras(r.periodo) : null;
+      // ... e o próprio resultado também, no rodapé (passa por perguntar: fica a pergunta e a resposta na conversa)
+      if (art.periodoResumo) {
+        const p = art.periodoResumo, rod = art.querySelector('.chat-folha-rodape');
+        const b = botaoEl('chat-acao', `Ver o resumo das vendas ${p}`, () => { if (!ocupado) perguntar(`Resumo das vendas ${p}`); });
+        if (rod) rod.insertBefore(b, rod.querySelector('.chat-folha-meta')); else art.append(b);
+      }
       return art;
     }
 
@@ -2302,6 +2477,482 @@
     const abas = [];          // respostas abertas em separadores (no máximo 6)
     let abaAtiva = null;
 
+    /* =========================================================
+       REDESIGN 11/2026 — separador fixo "Resumo"
+       GET /resumo?periodo=AnoAtual[&cliente=1003][&zona=Balcão] devolve os textos da ferramenta consultar_vendas
+       (os mesmos do chat): lêem-se com lerLista/lerSerie e montam-se os blocos.
+       Os dados só carregam quando pedidos: botão "Ver resumo", "resumo do cliente X" na conversa,
+       um cliente do Top clientes ou "Ver resumo deste cliente" num ranking de clientes.
+       ========================================================= */
+    const RES_PERIODOS = [['Ultimos7Dias', 'Últimos 7 dias'], ['MesAtual', 'Este mês'], ['TrimestreAtual', 'Trimestre'], ['AnoAtual', 'Este ano'], ['Ultimos12Meses', 'Últimos 12 meses'], ['AnoAnterior', 'Ano passado']];
+    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, pedido: false };
+    let vistaResumo = false;  // o separador Resumo está à frente (só existe depois de ser pedido)
+    let pedidosResumo = 0;    // só a resposta do último pedido conta (mudar de filtro a meio)
+
+    // Formatação pt-PT com espaço fino nos milhares (também em números de 4 algarismos: 1 240)
+    const rNB = ' ';
+    const rGrupos = n => { let s = String(Math.round(Math.abs(n))), o = ''; while (s.length > 3) { o = rNB + s.slice(-3) + o; s = s.slice(0, -3); } return (n < 0 ? '−' : '') + s + o; };
+    const rDec = (n, d) => { const [i, f] = Math.abs(n).toFixed(d).split('.'); return (n < 0 ? '−' : '') + rGrupos(+i) + (f ? ',' + f : ''); };
+    const rEur = n => rGrupos(n) + rNB + '€';
+    const rEur2 = n => rDec(n, 2) + rNB + '€';
+    const rMil = n => rDec(n / 1000, 1) + rNB + 'mil' + rNB + '€';
+    const rCurto = n => Math.abs(n) >= 1e6 ? rDec(n / 1e6, 2) + rNB + 'M€' : Math.abs(n) >= 1000 ? rMil(n) : rEur(n);   // um cliente pode faturar centenas, não milhões
+    const rPct = n => rDec(n, 1) + '%';
+    const rVar = v => v == null ? '–' : (v >= 0 ? '▲ ' : '▼ ') + rDec(Math.abs(v), 1) + '%';
+    const rVarCls = v => v == null ? '' : v >= 0 ? 'res-sobe' : 'res-desce';
+    const rEsc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const rValorKpi = k => k.valor == null ? '—' : k.tipo === 'eur' ? rEur(k.valor) : k.tipo === 'eur2' ? rEur2(k.valor) : rGrupos(k.valor);
+    // Escala do eixo: passos "redondos" (50 mil, 5 mil, 500 €), no máximo 6 linhas
+    function rEscala(valores) {
+      const maxV = Math.max(...valores), minV = Math.max(0, Math.min(...valores));
+      let passo = Math.pow(10, Math.floor(Math.log10(Math.max(maxV, 1)))) / 2;
+      while ((maxV - minV) / passo > 6) passo *= 2;
+      return { passo, max: Math.ceil(maxV / passo) * passo + passo / 5, min: Math.floor(minV / passo) * passo };
+    }
+    function rCurva(p) {
+      let d = `M${p[0][0]},${p[0][1]}`;
+      for (let i = 0; i < p.length - 1; i++) {
+        const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
+        d += ` C${(p1[0] + (p2[0] - p0[0]) / 6).toFixed(1)},${(p1[1] + (p2[1] - p0[1]) / 6).toFixed(1)} ${(p2[0] - (p3[0] - p1[0]) / 6).toFixed(1)},${(p2[1] - (p3[1] - p1[1]) / 6).toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+      }
+      return d;
+    }
+
+    // A única porta para os dados do Resumo: conversa, sugestões, botão "Ver resumo", Top clientes e rankings chamam todos esta.
+    // Os dados só carregam aqui, quando alguém os pede. cliente: ID ou início do nome (null = todas as vendas).
+    function pedirResumo(periodo, cliente = null) {
+      Object.assign(resumoEstado, { periodo: periodo || resumoEstado.periodo, cliente: cliente || null, zona: null, pedido: true, menu: null });
+      vistaResumo = true;
+      abaAtiva = null;
+      desenharConversa();   // o cartão da resposta aberta deixa de dizer "Aberto no painel"
+      carregarResumo();
+    }
+
+    // Pedido de resumo escrito na conversa -> { periodo, cliente }, ou null para seguir para o agente.
+    // Estreita de propósito: "faturação por zona", "comparar com o ano passado" ou um artigo/zona concretos são perguntas ao agente.
+    // "Hoje" também segue para o agente: o Resumo não tem esse período.
+    function intencaoResumo(texto) {
+      const t = semAcento(texto);
+      if (!/\b(resumo|relatorio|visao geral|panorama|como (estao|esta|vao|vai) a?s? ?(vendas|faturacao))\b/.test(t)) return null;
+      if (/\b(hoje|por|cada|face|compar\w*|top|melhor\w*|artigos?|familias?|marcas?|zonas?|localidades?|distritos?|vendedor\w*)\b/.test(t)) return null;
+      const cliente = (texto.match(/\bcliente\s+["“«]?(.+?)["”»]?\s*\??$/i) || [])[1] || null;
+      if (/\bclientes?\b/.test(t) && !cliente) return null;   // "resumo dos clientes": pergunta ao agente
+      const periodo = /\bano passado\b/.test(t) ? 'AnoAnterior' : /\b12 meses\b/.test(t) ? 'Ultimos12Meses' : /\bsemana\b/.test(t) ? 'Ultimos7Dias'
+        : /\btrimestre\b/.test(t) ? 'TrimestreAtual' : /\bmes\b/.test(t) ? 'MesAtual' : 'AnoAtual';
+      return { periodo, cliente };
+    }
+
+    // "Abri o resumo das vendas de 2026 no painel."
+    function fraseResumo({ periodo, cliente }) {
+      const ano = new Date().getFullYear();
+      const quando = { AnoAtual: `de ${ano}`, AnoAnterior: `de ${ano - 1}`, MesAtual: 'deste mês', TrimestreAtual: 'deste trimestre',
+                       Ultimos12Meses: 'dos últimos 12 meses', Ultimos7Dias: 'dos últimos 7 dias' }[periodo];
+      return `Abri o resumo das vendas ${quando}${cliente ? ` do cliente ${cliente}` : ''} no painel.`;
+    }
+
+    // Pedido escrito: bolha da pergunta + resposta curta com o cartão, como as outras respostas, mas sem passar pelo modelo
+    function responderComResumo(texto, pedido) {
+      historico.unshift({ pergunta: texto, texto: fraseResumo(pedido), resumo: pedido, erro: null, hora: new Date(), horaResposta: new Date() });
+      pedirResumo(pedido.periodo, pedido.cliente);
+      anunciar('Resumo aberto no painel.');
+    }
+
+    // Período de uma resposta ("01-01-2026 a 02-11-2026") em palavras que intencaoResumo percebe; null se não for um dos do Resumo
+    function periodoEmPalavras(periodo) {
+      const m = (periodo || '').match(/^(\d{2})-(\d{2})-(\d{4}) a (\d{2})-(\d{2})-(\d{4})$/);
+      if (!m) return null;
+      const hoje = new Date(), ano = hoje.getFullYear(), mes = hoje.getMonth() + 1;
+      const [, d1, m1, a1, d2, m2, a2] = m.map(Number);
+      if (d1 === 1 && m1 === 1 && a1 === ano - 1 && d2 === 31 && m2 === 12 && a2 === ano - 1) return 'do ano passado';
+      if (d2 !== hoje.getDate() || m2 !== mes || a2 !== ano) return null;   // os períodos "deste …" acabam hoje
+      if (d1 === 1 && a1 === ano && m1 === 1) return 'deste ano';
+      if (d1 === 1 && a1 === ano && m1 === mes) return 'deste mês';
+      if (d1 === 1 && a1 === ano && m1 === mes - (mes - 1) % 3) return 'deste trimestre';
+      return null;
+    }
+
+    async function carregarResumo() {
+      if (!resumoEstado.pedido) return;
+      const n = ++pedidosResumo;
+      Object.assign(resumoEstado, { aCarregar: true, erro: null, menu: null });
+      if (vistaResumo) desenharPainel();
+      try {
+        const q = new URLSearchParams({ periodo: resumoEstado.periodo });
+        if (resumoEstado.cliente) q.set('cliente', resumoEstado.cliente);
+        if (resumoEstado.zona) q.set('zona', resumoEstado.zona);
+        const r = await fetch('/resumo?' + q);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        if (n !== pedidosResumo) return;
+        resumoEstado.dados = montarResumo(j);
+        if (!resumoEstado.zona && !resumoEstado.cliente && resumoEstado.dados.locais) resumoEstado.zonas = resumoEstado.dados.locais;
+      } catch (erro) {
+        if (n !== pedidosResumo) return;
+        console.error('Falha a carregar o resumo:', erro);
+        resumoEstado.dados = null;
+        resumoEstado.erro = 'Não foi possível carregar o resumo. Confirme que o agente está a correr e tente de novo.';
+      }
+      resumoEstado.aCarregar = false;
+      if (vistaResumo) desenharPainel();
+    }
+
+    // Textos da ferramenta -> números dos blocos. Sem dados para um bloco, o bloco fica vazio (nunca inventa).
+    function montarResumo(j) {
+      const textoMeses = j.meses || '';
+      const linha1 = textoMeses.split('\n')[0].trim();
+      // "Cliente … não encontrado", "Vários clientes começam por …" (com a lista id,cliente) ou "Sem vendas: …"
+      if (!/^Vendas por/.test(linha1)) {
+        const [mensagem, lista = ''] = textoMeses.split(/\r?\nid,cliente\r?\n/);
+        const opcoes = lista.split(/\r?\n/).map(l => partir(l.trim(), ',')).filter(c => c.length === 2 && c[0] && !c[0].startsWith('#'));
+        return { erro: mensagem.trim(), opcoes };
+      }
+      const hoje = new Date();
+      const num = (txt, re) => { const m = (txt || '').match(re); return m ? paraNumero(m[1]) : null; };
+      const facto = (r, re) => r.factos.find(([k]) => re.test(k)) || ['', ''];
+      const rm = lerLista(textoMeses), serie = lerSerie(rm);
+      const comparado = facto(rm, /^comparado com/i);
+      const anoAnt = (comparado[0].match(/(\d{4})$/) || [])[1] || null;
+      const total = num(rm.resumo, /total\s+(-?[\d\s.,]+?)\s*€/);
+      const delta = num(comparado[1], /\(([+\-−]?[\d,]+)%\)/);
+      const datas = linha1.match(/\((\d{2}-\d{2}-\d{4}) a (\d{2}-\d{2}-\d{4})/);
+      const nomePeriodo = (RES_PERIODOS.find(p => p[0] === resumoEstado.periodo) || [])[1] || '';
+      const meses = serie ? serie.meses : [];
+      const agora = x => x.a === hoje.getFullYear() && x.m === hoje.getMonth() + 1;
+      const incompleto = meses.find(x => x.atual != null && (x.parcial || agora(x)));
+      const rc = j.clientes ? lerLista(j.clientes) : null;
+      const ativos = rc ? num(rc.resumo, /em\s+([\d\s]+?)\s+clientes/) : null;
+      const positivos = texto => lerLista(texto || '').itens.filter(i => i.num > 0);
+      const subida = itens => itens.filter(i => i.delta > 0).sort((a, b) => b.delta - a.delta)[0];
+      const descida = itens => itens.filter(i => i.delta < 0).sort((a, b) => a.delta - b.delta)[0];
+
+      const kpis = [
+        { nome: 'Faturação total', valor: total, tipo: 'eur', variacao: delta,
+          contexto: delta == null ? 'Sem comparação com o ano anterior.' : `${rDec(Math.abs(delta), 1)}% ${delta >= 0 ? 'acima' : 'abaixo'} do mesmo período de ${anoAnt}.` },
+        { nome: 'N.º de documentos', valor: num(rm.resumo, /,\s*([\d\s]+?)\s+documentos/), tipo: 'int', contexto: 'Faturas e talões emitidos no período.' },
+        { nome: 'Valor médio por documento', valor: num(facto(rm, /^valor m[ée]dio/i)[1], /^(-?[\d\s.,]+)/), tipo: 'eur2', contexto: 'Valor médio de cada venda.' }
+      ];
+      if (ativos != null) kpis.push({ nome: 'Clientes ativos', valor: ativos, tipo: 'int', contexto: 'Clientes com compras no período.' });
+
+      // Previsão: tendência linear dos últimos 6 meses completos, 3 meses à frente.
+      // shortcut: reta simples + intervalo de ±1,28 desvios (≈80%); trocar por um modelo com sazonalidade se houver vários anos de histórico.
+      let previsao = null, semPrevisao = '';
+      const completos = meses.filter(x => x.atual != null && !x.parcial && !agora(x));
+      if (!['AnoAtual', 'Ultimos12Meses'].includes(resumoEstado.periodo)) semPrevisao = 'A previsão só se calcula para "Este ano" ou "Últimos 12 meses".';
+      else if (completos.length < 6) semPrevisao = 'Ainda não há 6 meses completos para prever a faturação.';
+      else {
+        const ult = completos.slice(-6), ys = ult.map(x => x.atual), my = ys.reduce((s, v) => s + v, 0) / 6;
+        const b = ys.reduce((s, y, i) => s + (i - 2.5) * (y - my), 0) / ys.reduce((s, _, i) => s + (i - 2.5) ** 2, 0), a = my - b * 2.5;
+        const desvio = Math.sqrt(ys.reduce((s, y, i) => s + (y - (a + b * i)) ** 2, 0) / 4);
+        const futuros = [1, 2, 3].map(h => {
+          const d = new Date(ult[5].a, ult[5].m - 1 + h, 1), v = Math.max(0, a + b * (5 + h)), e = 1.28 * desvio * Math.sqrt(h);
+          return { m: d.getMonth() + 1, v, inf: Math.max(0, v - e), sup: v + e };
+        });
+        const todos = [...ult, ...futuros];
+        previsao = { meses: todos.map(x => MESES[x.m - 1].slice(0, 3)), nomes: todos.map(x => MESES[x.m - 1]), real: ys,
+                     previsto: [ys[5], ...futuros.map(f => f.v)], inferior: [ys[5], ...futuros.map(f => f.inf)], superior: [ys[5], ...futuros.map(f => f.sup)] };
+      }
+
+      const artigos = positivos(j.artigos);
+      const zonas = positivos(j.zonas).filter(i => !/^\(/.test(i.nome));   // "(sem descrição)" não se filtra
+      const alertas = rm.avisos.map(a => ({ tipo: 'dados', tag: 'Dados incompletos', texto: maiuscula(a), pergunta: '' }));
+      const pa = descida(artigos), pz = descida(zonas);
+      if (pa) alertas.push({ tipo: 'artigo', tag: 'Artigo em quebra', texto: `${nomeECodigo(pa)}: ${rVar(pa.delta)} face a ${anoAnt}.`,
+                             pergunta: resumoEstado.cliente ? '' : 'Comparar as vendas por artigo com o ano passado' });
+      if (pz) alertas.push({ tipo: 'local', tag: 'Zona em quebra', texto: `${nomeProprio(pz.nome)} faturou ${rVar(pz.delta)} face a ${anoAnt}.`,
+                             pergunta: `Comparar as vendas da zona ${nomeProprio(pz.nome)} mês a mês com o ano passado` });
+      const parados = num(j.semVendas, /^Clientes sem vendas[^:]*:\s*([\d\s]+?)\s+clientes/);
+      if (parados) alertas.push({ tipo: 'cliente', tag: 'Clientes sem compras', texto: `${rGrupos(parados)} clientes não compram há 90 dias.`, pergunta: 'Clientes que não compram há 90 dias?' });
+
+      let acumulado = null;
+      if (anoAnt && meses.length > 1) {
+        let sa = 0, sb = 0;
+        const ultimo = meses.findLastIndex(x => x.atual != null);
+        acumulado = { anoAtual: serie.anoAtual, anoAnterior: anoAnt, rotulos: meses.map(x => MESES[x.m - 1][0]), nomes: meses.map(x => MESES[x.m - 1].toLowerCase()),
+                      atual: meses.slice(0, ultimo + 1).map(x => sa += x.atual || 0), anterior: meses.map(x => sb += x.anterior || 0) };
+      }
+
+      return {
+        cliente: (linha1.match(/cliente "([^"]+)"/) || [])[1] || null,
+        periodoTexto: nomePeriodo + (datas ? ` · ${datas[1]} a ${datas[2]}` : ''),
+        mesIncompleto: incompleto ? MESES[incompleto.m - 1] : '',
+        anoAnt, total, kpis, previsao, semPrevisao, alertas, acumulado,
+        artigos, artigosSobe: subida(artigos), artigosDesce: pa,
+        locais: j.zonas ? zonas.map(i => ({ id: i.nome, nome: nomeProprio(i.nome), fat: i.num, variacao: i.delta, media: i.media })) : null,
+        locaisSobe: subida(zonas), locaisDesce: pz,
+        clientes: j.clientes ? positivos(j.clientes) : null,
+        tabela: rm.itens.length ? [['Mês', 'Faturação', anoAnt ? 'Em ' + anoAnt : '', 'Variação (%)', 'Valor médio'],
+          ...rm.itens.map(i => [i.nome, i.valor, i.anterior ? i.anterior.valor : '', i.delta == null ? '' : String(i.delta).replace('.', ','), i.media])] : null
+      };
+    }
+
+    // "▲ MAIOR SUBIDA" / "▼ MAIOR DESCIDA" por baixo de um bloco
+    function resDestaques(sobe, desce, anoAnt, nome = i => i.nome) {
+      if (!sobe && !desce) return '';
+      const caixa = (i, cls, txt) => i ? `<div class="res-destaque"><span class="${cls}">${txt}</span><strong>${rEsc(nome(i))}</strong>${rVar(i.delta)} face a ${rEsc(anoAnt)}</div>` : '';
+      return `<div class="res-destaques">${caixa(sobe, 'res-sobe', '▲ MAIOR SUBIDA')}${caixa(desce, 'res-desce', '▼ MAIOR DESCIDA')}</div>`;
+    }
+
+    function resumoHtml(D) {
+      const htmlKpis = `<div class="res-kpis" data-bloco="kpis">${D.kpis.map(k => `
+        <div class="chat-kpi">
+          <div class="chat-kpi-cab"><span>${rEsc(k.nome)}</span></div>
+          <span class="chat-kpi-valor">${rValorKpi(k)}</span>
+          ${k.variacao == null ? '' : `<span class="res-var ${rVarCls(k.variacao)}">${rVar(k.variacao)} vs. ${rEsc(D.anoAnt)}</span>`}
+          <span class="chat-kpi-detalhe">${rEsc(k.contexto)}</span>
+        </div>`).join('')}</div>`;
+
+      // Previsão
+      const P = D.previsao;
+      let htmlPrev;
+      if (!P) {
+        htmlPrev = `<section class="res-cartao res-cartao--largo" data-bloco="prev"><div><h3>Previsão de faturação mensal</h3><p class="res-sub">Tendência dos últimos 6 meses completos</p></div>
+          <p class="chat-texto">${rEsc(D.semPrevisao)}</p></section>`;
+      } else {
+        const { passo, max, min } = rEscala(P.real.concat(P.superior, P.inferior));
+        const n = P.meses.length, off = P.real.length - 1;
+        const X = i => 40 + i * (920 / (n - 1));
+        const Y = v => 15 + (max - v) / (max - min) * 270;
+        const pt = (arr, start) => arr.map((v, i) => [X(i + start), Y(v)]);
+        const hi = pt(P.superior, off), lo = pt(P.inferior, off);
+        const grelha = []; for (let g = Math.ceil(min / passo) * passo; g <= max; g += passo) grelha.push(g);
+        const soma = a => a.slice(1).reduce((s, v) => s + v, 0);
+        htmlPrev = `<section class="res-cartao res-cartao--largo" data-bloco="prev">
+          <div><h3>Previsão de faturação mensal</h3><p class="res-sub">Tendência dos últimos 6 meses completos</p></div>
+          <div class="res-legenda">
+            <span><svg width="26" height="10" aria-hidden="true"><line x1="0" y1="5" x2="26" y2="5" stroke="#15803D" stroke-width="3"/><circle cx="13" cy="5" r="4" fill="#15803D"/></svg>Vendas</span>
+            <span><svg width="26" height="10" aria-hidden="true"><line x1="0" y1="5" x2="26" y2="5" stroke="#4F46E5" stroke-width="3" stroke-dasharray="5 3"/><rect x="9" y="1" width="8" height="8" fill="#fff" stroke="#4F46E5" stroke-width="2" transform="rotate(45 13 5)"/></svg>Previsão</span>
+            <span><svg width="26" height="10" aria-hidden="true"><line x1="0" y1="5" x2="26" y2="5" stroke="#8B87F0" stroke-width="2" stroke-dasharray="2 3"/></svg>Limite superior e inferior</span>
+          </div>
+          <div class="res-grafico" style="height:240px;margin-top:6px">
+            ${grelha.map(g => `<span class="res-y" style="top:${Y(g) / 3}%">${rCurto(g)}</span>`).join('')}
+            <svg viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+              ${grelha.map(g => `<line x1="0" y1="${Y(g)}" x2="1000" y2="${Y(g)}" stroke="var(--linha)" vector-effect="non-scaling-stroke"/>`).join('')}
+              <line x1="${X(off)}" y1="0" x2="${X(off)}" y2="300" stroke="var(--borda-forte)" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
+              <path d="${rCurva(hi)} ${rCurva(lo.slice().reverse()).replace('M', 'L')} Z" fill="#6366F1" fill-opacity="0.10"/>
+              <path d="${rCurva(hi)}" fill="none" stroke="#8B87F0" stroke-width="2" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>
+              <path d="${rCurva(lo)}" fill="none" stroke="#8B87F0" stroke-width="2" stroke-dasharray="2 4" vector-effect="non-scaling-stroke"/>
+              <path d="${rCurva(pt(P.real, 0))}" fill="none" stroke="#15803D" stroke-width="3" vector-effect="non-scaling-stroke"/>
+              <path d="${rCurva(pt(P.previsto, off))}" fill="none" stroke="#4F46E5" stroke-width="3" stroke-dasharray="8 5" vector-effect="non-scaling-stroke"/>
+            </svg>
+            <span class="res-nota" style="position:absolute;top:-4px;left:${X(off) / 10}%;transform:translateX(-50%);background:var(--cartao);padding:0 4px;white-space:nowrap;font-size:11px">Último mês completo</span>
+            ${P.real.map((v, i) => `<span class="res-ponto" style="left:${X(i) / 10}%;top:${Y(v) / 3}%;width:11px;height:11px;border-radius:50%;background:#15803D;border:2px solid var(--cartao)"></span>
+              <span class="res-rotulo" style="left:${X(i) / 10}%;top:calc(${Y(v) / 3}% - 9px);color:var(--sobe)">${rCurto(v)}</span>`).join('')}
+            ${P.previsto.slice(1).map((v, j) => { const i = j + 1 + off; return `<span class="res-ponto" style="left:${X(i) / 10}%;top:${Y(v) / 3}%;width:10px;height:10px;background:var(--cartao);border:2px solid #4F46E5;transform:translate(-50%,-50%) rotate(45deg)"></span>
+              <span class="res-rotulo" style="left:${X(i) / 10}%;top:calc(${Y(v) / 3}% - 10px);color:#4F46E5">${rCurto(v)}</span>`; }).join('')}
+            ${P.meses.map((m, i) => { const real = i <= off;
+              const aria = real ? `${P.nomes[i]}: vendas ${rEur(P.real[i])}` : `${P.nomes[i]}: previsão ${rEur(P.previsto[i - off])}, intervalo provável de ${rEur(P.inferior[i - off])} a ${rEur(P.superior[i - off])}`;
+              return `<button type="button" class="res-zona" data-prev="${i}" aria-label="${rEsc(aria)}" style="left:${((X(i) - 46) / 10).toFixed(2)}%;width:9.2%"></button>`; }).join('')}
+            <div class="res-tooltip" id="res-tooltip" role="status" hidden></div>
+          </div>
+          <div class="res-x">${P.meses.map((m, i) => `<span style="left:${X(i) / 10}%;${i > off ? 'font-style:italic;color:#4F46E5' : ''}">${m}</span>`).join('')}</div>
+          <p class="chat-destaque"><strong>Até ${P.nomes[n - 1].toLowerCase()}, prevê-se cerca de ${rCurto(soma(P.previsto))}</strong> (entre ${rCurto(soma(P.inferior))} e ${rCurto(soma(P.superior))}).</p>
+        </section>`;
+      }
+
+      // Precisa de atenção
+      const IC = { dados: ['!', 'background:var(--aviso-fundo);color:var(--aviso-texto)'], artigo: ['■', 'background:var(--linha);color:var(--suave)'],
+                   local: ['▼', 'background:var(--desce-fundo);color:var(--desce);border-radius:50%'], cliente: ['◷', 'background:var(--selecionado);color:var(--ligacao);border-radius:50%'] };
+      const htmlAten = `<section class="res-cartao res-cartao--atencao" data-bloco="aten">
+        <div class="res-cab"><h3>Precisa de atenção</h3><span class="res-contagem">${D.alertas.length} ${D.alertas.length === 1 ? 'ponto' : 'pontos'}</span></div>
+        ${D.alertas.length ? `<ul class="res-alertas">${D.alertas.map(a => `<li><span class="res-alerta-ic" style="${(IC[a.tipo] || IC.dados)[1]}" aria-hidden="true">${(IC[a.tipo] || IC.dados)[0]}</span>
+          <div style="display:flex;flex-direction:column;gap:2px"><span class="res-alerta-tag">${rEsc(a.tag)}</span><span>${rEsc(a.texto)}</span>
+          ${a.pergunta ? `<button type="button" class="chat-acao" data-perguntar="${rEsc(a.pergunta)}">Perguntar ao assistente</button>` : ''}</div></li>`).join('')}</ul>`
+          : '<p class="res-nota">Nada a assinalar neste período.</p>'}
+      </section>`;
+
+      // Artigos mais vendidos (por faturação: a ferramenta devolve o valor e a variação)
+      const maxA = D.artigos.length ? Math.max(...D.artigos.map(a => a.num)) : 0;
+      const htmlArt = `<section class="res-cartao" data-bloco="art">
+        <div class="res-cab"><h3>Artigos mais vendidos</h3><span class="res-sub">Por faturação</span></div>
+        ${D.artigos.length ? `<div style="overflow-x:auto"><table class="res-tabela res-tabela--maiusculas" style="min-width:380px"><thead><tr><th scope="col">Artigo</th><th scope="col">Faturação</th><th scope="col">% total</th><th scope="col">${D.anoAnt ? 'vs ' + rEsc(D.anoAnt) : 'Variação'}</th></tr></thead>
+          <tbody>${D.artigos.map((a, i) => `<tr><th scope="row">${i + 1}. ${rEsc(a.nome)}${a.codigo ? ` <small style="font-weight:400;color:var(--nota)">${rEsc(a.codigo)}</small>` : ''}<span class="res-pista"><span style="width:${(a.num / maxA * 100).toFixed(1)}%;background:#c2410c"></span></span></th>
+            <td class="forte">${rEur(a.num)}</td><td>${D.total > 0 ? rPct(a.num / D.total * 100) : '–'}</td><td class="${rVarCls(a.delta)}">${rVar(a.delta)}</td></tr>`).join('')}</tbody></table></div>`
+          : '<p class="res-nota">Sem vendas de artigos neste período.</p>'}
+        ${resDestaques(D.artigosSobe, D.artigosDesce, D.anoAnt, nomeECodigo)}
+      </section>`;
+
+      // Vendas por zona (barras verticais; clicar filtra o painel). Num cliente não se mostra.
+      let htmlLoc = '';
+      if (D.locais && D.locais.length) {
+        const locais = D.locais, maxL = Math.max(...locais.map(l => l.fat));
+        htmlLoc = `<section class="res-cartao" data-bloco="loc">
+          <div class="res-cab"><h3>Vendas por zona</h3><span class="res-sub">Clique numa zona para filtrar o painel</span></div>
+          <ul class="res-locais">${locais.map(l => `<li style="display:flex"><button type="button" class="res-local" data-zona="${rEsc(l.id)}" aria-pressed="${resumoEstado.zona === l.id}"
+              aria-label="${rEsc(`${l.nome}: ${rEur(l.fat)}${D.total > 0 ? ', ' + rPct(l.fat / D.total * 100) + ' do total' : ''}${l.variacao == null ? '' : ', ' + rVar(l.variacao) + ' face a ' + D.anoAnt}. Carregar para filtrar.`)}">
+              <span style="font-size:12px;font-weight:700;text-align:center;line-height:1.2">${rCurto(l.fat)}</span>
+              <span class="res-local-area"><span class="res-local-barra" style="height:${Math.max(Math.round(l.fat / maxL * 150), 6)}px"></span></span>
+              <span style="font-size:13px;font-weight:700;text-align:center;line-height:1.2;max-width:100%;overflow-wrap:anywhere">${rEsc(l.nome)}</span>
+              ${D.total > 0 ? `<span style="font-size:11.5px;color:var(--nota);text-align:center">${rPct(l.fat / D.total * 100)}</span>` : ''}
+              <span class="${rVarCls(l.variacao)}" style="font-size:12px">${rVar(l.variacao)}</span></button></li>`).join('')}</ul>
+          ${resDestaques(D.locaisSobe, D.locaisDesce, D.anoAnt, i => nomeProprio(i.nome))}
+          <div style="overflow-x:auto"><table class="res-tabela"><caption style="text-align:left;padding:0 0 4px;font-weight:600">Valor médio por documento</caption>
+            <thead><tr>${locais.map(l => `<th scope="col" style="text-align:center">${rEsc(l.nome)}</th>`).join('')}</tr></thead>
+            <tbody><tr>${locais.map(l => `<td class="forte" style="text-align:center">${rEsc(l.media || '–')}</td>`).join('')}</tr></tbody></table></div>
+        </section>`;
+      }
+
+      // Top clientes: o nome abre o resumo desse cliente
+      let htmlCli = '';
+      if (D.clientes && D.clientes.length) {
+        const maxC = Math.max(...D.clientes.map(c => c.num));
+        htmlCli = `<section class="res-cartao" data-bloco="cli"><div><h3>Top clientes</h3><p class="res-sub">Carregue num cliente para ver o resumo dele</p></div>
+          <ol class="res-clientes">${D.clientes.map((c, i) => `<li><span style="color:var(--nota);text-align:right">${i + 1}</span>
+            <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><button type="button" class="chat-acao" data-cliente="${rEsc(c.codigo || c.nome)}" title="${rEsc(c.nome)}: ver resumo">${rEsc(c.nome)}${c.codigo ? ` (${rEsc(c.codigo)})` : ''}</button>
+            <span class="res-pista" style="max-width:none;margin:0;height:5px"><span style="width:${(c.num / maxC * 100).toFixed(1)}%;background:var(--ligacao)"></span></span></span>
+            <strong style="text-align:right">${rEur(c.num)}</strong><span class="${rVarCls(c.delta)}" style="text-align:right;font-size:12.5px">${rVar(c.delta)}</span></li>`).join('')}</ol></section>`;
+      }
+
+      // Faturação acumulada vs. ano anterior (os mesmos dias do ano anterior)
+      let htmlAcum = '';
+      const A = D.acumulado;
+      if (A) {
+        const n = A.rotulos.length, na = A.atual.length;
+        const topo = rEscala([...A.anterior, ...A.atual]).max;
+        const BX = i => 20 + i * (960 / Math.max(1, n - 1)), BY = v => 300 - v / topo * 285;
+        const linha = arr => arr.map((v, i) => (i ? 'L' : 'M') + BX(i).toFixed(1) + ',' + BY(v).toFixed(1)).join(' ');
+        const at = A.atual[na - 1], an = A.anterior[na - 1], dif = at - an;
+        htmlAcum = `<section class="res-cartao" data-bloco="acum">
+          <div><h3>Faturação acumulada vs. ${A.anoAnterior}</h3><p class="res-sub">Sem objetivo definido: compara com o mesmo período do ano anterior</p></div>
+          ${an > 0 ? `<p class="chat-destaque"><strong>Até ${A.nomes[na - 1]}, vai ${rDec(Math.abs(dif / an * 100), 1)}% ${dif >= 0 ? 'à frente de' : 'atrás de'} ${A.anoAnterior}</strong> (${dif >= 0 ? 'mais' : 'menos'} ${rEur(Math.abs(dif))}).</p>` : ''}
+          <div class="res-legenda"><span><svg width="26" height="10" aria-hidden="true"><line x1="0" y1="5" x2="26" y2="5" stroke="var(--marca)" stroke-width="3"/></svg>${A.anoAtual}</span>
+            <span><svg width="26" height="10" aria-hidden="true"><line x1="0" y1="5" x2="26" y2="5" stroke="var(--anterior-linha)" stroke-width="2" stroke-dasharray="5 3"/></svg>${A.anoAnterior}</span></div>
+          <div class="res-grafico" style="height:200px;margin-left:50px">
+            ${[0, topo / 2, topo].map(g => `<span class="res-y" style="left:-50px;width:44px;top:${BY(g) / 3}%">${g ? rCurto(g) : '0'}</span>`).join('')}
+            <svg viewBox="0 0 1000 300" preserveAspectRatio="none" role="img" aria-label="${rEsc(`Faturação acumulada: ${A.anoAtual} chega a ${rCurto(at)} em ${A.nomes[na - 1]}; em ${A.anoAnterior}, no mesmo mês, eram ${rCurto(an)}.`)}">
+              <line x1="0" y1="${BY(topo / 2)}" x2="1000" y2="${BY(topo / 2)}" stroke="var(--linha)" vector-effect="non-scaling-stroke"/>
+              <line x1="0" y1="300" x2="1000" y2="300" stroke="var(--borda-forte)" vector-effect="non-scaling-stroke"/>
+              <path d="${linha(A.anterior)}" fill="none" stroke="var(--anterior-linha)" stroke-width="2" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>
+              <path d="${linha(A.atual)}" fill="none" stroke="var(--marca)" stroke-width="3" vector-effect="non-scaling-stroke"/>
+            </svg>
+            <span class="res-rotulo" style="left:${BX(na - 1) / 10}%;top:calc(${BY(at) / 3}% - 6px);transform:translate(6px,-100%);color:var(--texto);background:var(--cartao);padding:0 3px">${A.anoAtual}: ${rCurto(at)}</span>
+            <span class="res-rotulo" style="left:${BX(na - 1) / 10}%;top:calc(${BY(an) / 3}% + 20px);transform:translate(6px,-100%);color:var(--suave);background:var(--cartao);padding:0 3px">${A.anoAnterior}: ${rCurto(an)}</span>
+          </div>
+          <div class="res-x" style="margin-left:50px">${A.rotulos.map((m, i) => `<span style="left:${BX(i) / 10}%;color:var(--nota)">${m}</span>`).join('')}</div>
+        </section>`;
+      }
+
+      return `${htmlKpis}
+        <div class="res-grelha">${htmlPrev}${htmlAten}</div>
+        <div class="res-grelha">${htmlArt}${htmlLoc}</div>
+        ${htmlCli || htmlAcum ? `<div class="res-grelha">${htmlCli}${htmlAcum}</div>` : ''}`;
+    }
+
+    const resChipsPeriodo = () => `<div class="res-chips" role="group" aria-label="Período">${RES_PERIODOS.map(p => `<button type="button" class="res-chip" data-periodo="${p[0]}" aria-pressed="${resumoEstado.periodo === p[0]}">${p[1]}</button>`).join('')}</div>`;
+    // Enter ou "Ver": abre o resumo desse cliente; vazio = resumo geral
+    const resFormCliente = botao => `<form class="res-cliente"><label class="so-leitor" for="res-cliente">ID ou nome do cliente</label>
+      <input id="res-cliente" name="cliente" maxlength="100" autocomplete="off" placeholder="Cliente: ID ou início do nome (opcional)" value="${rEsc(resumoEstado.cliente || '')}">
+      <button class="res-btn res-btn--primario">${botao}</button></form>`;
+
+    function barraResumoHtml() {
+      const D = resumoEstado.dados || {};
+      const periodo = D.periodoTexto || (RES_PERIODOS.find(p => p[0] === resumoEstado.periodo) || [])[1] || '';
+      const aberto = resumoEstado.menu === 'filtros';
+      const nFiltros = (resumoEstado.zona ? 1 : 0) + (resumoEstado.cliente ? 1 : 0);
+      return `<div class="res-barra">
+        <div class="res-linha">
+          <div class="res-titulo">
+            <span class="res-icone" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2v12h12M5 10l3-3 2 2 4-5"/></svg></span>
+            <h2>Resumo das vendas${D.cliente ? ' · ' + rEsc(D.cliente) : ''}</h2>
+            <div class="res-menu-wrap">
+              <button type="button" class="res-btn" data-menu="filtros" aria-expanded="${aberto}" aria-controls="res-menu-filtros">
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+                Filtros ${nFiltros ? `<span class="res-contador">${nFiltros}</span>` : ''}</button>
+              <div class="res-menu" id="res-menu-filtros" role="dialog" aria-label="Filtros" ${aberto ? '' : 'hidden'}>
+                <div><h3>Período</h3>${resChipsPeriodo()}</div>
+                ${!resumoEstado.cliente && resumoEstado.zonas.length ? `<div><h3>Zona</h3><div class="res-chips" role="group" aria-label="Zona">${[{ id: '', nome: 'Todas' }].concat(resumoEstado.zonas).map(l => `<button type="button" class="res-chip" data-zona="${rEsc(l.id)}" aria-pressed="${(resumoEstado.zona || '') === l.id}">${rEsc(l.nome)}</button>`).join('')}</div></div>` : ''}
+                <div><h3>Cliente</h3>${resFormCliente('Ver')}</div>
+                <div class="res-menu-rodape"><button type="button" class="chat-acao" data-limpar>Limpar filtros</button><button type="button" class="res-btn" data-fechar>Fechar</button></div>
+              </div>
+            </div>
+          </div>
+          <span class="res-data"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1.5v3M11 1.5v3M2 7h12"/></svg>${rEsc(periodo)}</span>
+        </div>
+        <div class="res-info">
+          ${D.mesIncompleto ? `<span class="res-aviso"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.8V8l2.2 1.6"/></svg>${rEsc(D.mesIncompleto)} incompleto</span>` : ''}
+          ${resumoEstado.zona ? `<button type="button" class="res-filtro-ativo" data-zona="" aria-label="Remover filtro de zona">Zona: <strong>${rEsc(nomeProprio(resumoEstado.zona))}</strong> ×</button>` : ''}
+          ${resumoEstado.cliente ? `<button type="button" class="res-filtro-ativo" data-sem-cliente aria-label="Remover filtro de cliente">Cliente: <strong>${rEsc(D.cliente || resumoEstado.cliente)}</strong> ×</button>` : ''}
+          <span>Valores em euros, sem IVA</span>
+        </div>
+      </div>`;
+    }
+
+    function folhaResumo() {
+      const raiz = el('article', 'chat-folha chat-folha--painel');
+      raiz.style.animation = 'none';   // redesenha a cada clique: sem a animação de entrada, não pisca
+      ligarResumo(raiz);
+      if (resumoEstado.aCarregar) {
+        raiz.innerHTML = barraResumoHtml() + '<div class="res-esqueleto res-conteudo" aria-busy="true"><span style="height:96px"></span><span style="height:280px"></span><span class="so-leitor">A carregar o resumo…</span></div>';
+        return raiz;
+      }
+      const D = resumoEstado.dados;
+      if (resumoEstado.erro || !D || D.erro) {
+        // Cliente não encontrado ou ambíguo: os candidatos em botões; sem vendas ou sem ligação: a mensagem
+        const opcoes = D && D.opcoes || [];
+        raiz.innerHTML = barraResumoHtml() + `<div class="chat-painel-vazio res-pedir" role="alert">
+          <p class="chat-texto">${rEsc(resumoEstado.erro || (D && D.erro) || 'Sem dados.')}</p>
+          ${opcoes.length ? `<div class="res-chips" style="justify-content:center">${opcoes.map(([id, nome]) => `<button type="button" class="res-chip" data-cliente="${rEsc(id)}">${rEsc(nome)} (${rEsc(id)})</button>`).join('')}</div>` : ''}
+          ${resumoEstado.erro ? '<button type="button" class="res-btn res-btn--primario" data-repetir style="align-self:center">Tentar de novo</button>' : ''}
+        </div>`;
+        return raiz;
+      }
+      raiz.innerHTML = barraResumoHtml() + '<div class="res-conteudo">' + resumoHtml(D) + '</div>';
+      // Copiar e Exportar CSV: os mesmos botões das outras respostas (faturação por mês)
+      rodapeDados(raiz.querySelector('.res-conteudo'), D.tabela, 'resumo das vendas' + (D.cliente ? ' ' + D.cliente : ''));
+      ligarPrevisao(raiz, D.previsao);
+      return raiz;
+    }
+
+    function ligarResumo(raiz) {
+      const redesenhar = () => painelEl.replaceChildren(folhaResumo());
+      raiz.addEventListener('submit', e => {
+        e.preventDefault();
+        pedirResumo(null, String(new FormData(e.target).get('cliente') || '').replace(/\s+/g, ' ').trim());
+      });
+      raiz.addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        const d = b.dataset;
+        if (d.menu) { resumoEstado.menu = resumoEstado.menu === d.menu ? null : d.menu; redesenhar(); painelEl.querySelector(`[data-menu="${d.menu}"]`)?.focus(); return; }
+        if ('fechar' in d) { resumoEstado.menu = null; redesenhar(); painelEl.querySelector('[data-menu]')?.focus(); return; }
+        if (d.periodo) {
+          resumoEstado.periodo = d.periodo;
+          if (resumoEstado.pedido) carregarResumo();
+          else { redesenhar(); painelEl.querySelector(`[data-periodo="${d.periodo}"]`)?.focus(); }
+          return;
+        }
+        if ('zona' in d) { resumoEstado.zona = !d.zona || d.zona === resumoEstado.zona ? null : d.zona; carregarResumo(); return; }
+        if (d.cliente) { pedirResumo(null, d.cliente); return; }
+        if ('semCliente' in d) { pedirResumo(null); return; }
+        if ('repetir' in d) { carregarResumo(); return; }
+        if ('limpar' in d) { Object.assign(resumoEstado, { zona: null, cliente: null, periodo: 'AnoAtual' }); carregarResumo(); return; }
+        if (d.perguntar) { verConversa(true); prepararPergunta(d.perguntar); }
+      });
+    }
+
+    // Tooltip da previsão: rato e teclado
+    function ligarPrevisao(raiz, P) {
+      const tip = raiz.querySelector('#res-tooltip');
+      if (!P || !tip) return;
+      raiz.querySelectorAll('[data-prev]').forEach(z => {
+        const mostrar = () => {
+          const i = +z.dataset.prev, off = P.real.length - 1, real = i <= off;
+          tip.style.left = Math.min(Math.max(parseFloat(z.style.left) + 4.6, 14), 80) + '%';
+          tip.innerHTML = `<strong>${P.nomes[i]}</strong><span>${real ? 'Vendas: ' + rEur(P.real[i]) : 'Previsão: ' + rEur(P.previsto[i - off])}</span>
+            <span style="color:var(--nota)">${real ? (i === off ? 'Último mês completo' : 'Valor real') : 'Intervalo provável: ' + rEur(P.inferior[i - off]) + ' a ' + rEur(P.superior[i - off])}</span>`;
+          tip.hidden = false;
+        };
+        z.addEventListener('mouseenter', mostrar); z.addEventListener('focus', mostrar);
+        z.addEventListener('mouseleave', () => { tip.hidden = true; }); z.addEventListener('blur', () => { tip.hidden = true; });
+      });
+    }
+
+    // Esc fecha o menu do Resumo
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && resumoEstado.menu && vistaResumo) {
+        resumoEstado.menu = null; painelEl.replaceChildren(folhaResumo());
+        painelEl.querySelector('[data-menu]')?.focus();
+      }
+    });
+
     // Desenha a resposta uma só vez; a conversa e o painel usam o mesmo resultado
     function desenharResposta(item) {
       if (item.art) return item.art;
@@ -2341,6 +2992,19 @@
         }));
         return art;
       }
+      // Pedido de resumo: frase curta e o cartão, que volta a abrir este resumo
+      if (item.resumo) {
+        const pr = item.resumo, aberto = vistaResumo && resumoEstado.pedido && resumoEstado.periodo === pr.periodo && resumoEstado.cliente === pr.cliente;
+        const bolha = el('article', 'chat-folha');
+        bolha.append(el('p', 'chat-texto', item.texto));
+        const cartao = botaoEl('chat-cartao', '', () => pedirResumo(pr.periodo, pr.cliente));
+        if (aberto) cartao.setAttribute('aria-current', 'true');
+        const textos = el('span', 'chat-cartao-texto');
+        textos.append(el('b', '', 'Resumo das vendas' + (pr.cliente ? ' · cliente ' + pr.cliente : '')), el('small', '', aberto ? 'Aberto no painel' : 'Abrir no painel'));
+        cartao.append(icone('M3 13V8M8 13V3M13 13V6', 18), textos);
+        bolha.append(cartao);
+        return bolha;
+      }
       const art = desenharResposta(item);
       if (!item.noPainel) return art;
       const bolha = el('article', 'chat-folha');
@@ -2352,6 +3016,16 @@
       cartao.append(icone('M3 13V8M8 13V3M13 13V6', 18), textos);
       bolha.append(cartao);
       return bolha;
+    }
+
+    // Balão do assistente que sugere o Resumo; o botão passa por perguntar(), por isso fica a pergunta e a resposta na conversa
+    function balaoResumo(periodo) {
+      const art = el('article', 'chat-folha');
+      const pergunta = `Resumo das vendas ${periodo}`;
+      const b = botaoEl('chat-chip', `Ver o resumo das vendas ${periodo}`, () => { if (!ocupado) perguntar(pergunta); });
+      b.disabled = ocupado;
+      art.append(el('p', 'chat-texto', 'Também posso abrir o resumo das vendas no painel: indicadores, previsão e o que precisa de atenção.'), b);
+      return art;
     }
 
     // A conversa inteira, da primeira pergunta à última; feedback e sugestões só na última resposta
@@ -2373,18 +3047,32 @@
         if (item.pendente) return;                // a espera é desenhada por mostrarEspera
         filhos.push(comAvatar(mensagemAgente(item), item.horaResposta));
         if (k === lista.length - 1 && !item.erro) {
-          filhos.push(blocoFeedback(item));
+          if (!item.resumo) filhos.push(blocoFeedback(item));   // o resumo não vem do agente: não há resposta a avaliar
+          // Depois de a conversa começar, o assistente sugere o Resumo num balão, enquanto ainda não foi aberto
+          if (!item.resumo && !resumoEstado.pedido) filhos.push(comAvatar(balaoResumo((item.art && item.art.periodoResumo) || 'deste ano')));
           const seguintes = (item.art && item.art.sugestoes) || [];
           filhos.push(seguintes.length ? blocoSeguintes(seguintes) : blocoSugestoes('Mais sobre ' + tema().nome.toLowerCase()));
         }
       });
       area.replaceChildren(...filhos);
       area.scrollTop = area.scrollHeight;
+      atualizarBalao();   // a conversa começou: o balão flutuante pode aparecer
     }
 
     // Separadores e o resultado aberto
     function desenharPainel() {
-      separadoresEl.replaceChildren(...abas.map(item => {
+      // Separador "Resumo": só existe depois de o resumo ser pedido, e fecha-se como os outros
+      const sepResumo = [];
+      if (resumoEstado.pedido) {
+        const abaResumo = el('div', 'chat-aba' + (vistaResumo ? ' chat-aba--ativa' : ''));
+        const abrirResumoBtn = botaoEl('chat-aba-abrir', 'Resumo', () => { vistaResumo = true; abaAtiva = null; desenharPainel(); desenharConversa(); });
+        if (vistaResumo) abrirResumoBtn.setAttribute('aria-current', 'true');
+        const fecharResumoBtn = botaoEl('chat-aba-fechar', '×', fecharResumo);
+        fecharResumoBtn.setAttribute('aria-label', 'Fechar Resumo');
+        abaResumo.append(abrirResumoBtn, fecharResumoBtn);
+        sepResumo.push(abaResumo);
+      }
+      separadoresEl.replaceChildren(...sepResumo, ...abas.map(item => {
         const sep = el('div', 'chat-aba' + (item === abaAtiva ? ' chat-aba--ativa' : ''));
         const abrir = botaoEl('chat-aba-abrir', tituloDaResposta(item), () => abrirAba(item));
         abrir.title = tituloDaResposta(item);
@@ -2403,6 +3091,9 @@
         formas.forEach(f => f.setAttribute('aria-hidden', 'true'));   // só decoração; o leitor de ecrã ouve o texto escondido
         esq.append(el('span', 'so-leitor', 'A preparar os dados…'), ...formas);
         painelEl.replaceChildren(esq);
+      } else if (resumoEstado.pedido && (vistaResumo || !abaAtiva)) {
+        vistaResumo = true;
+        painelEl.replaceChildren(folhaResumo());
       } else if (abaAtiva) {
         painelEl.replaceChildren(abaAtiva.art);
       } else {
@@ -2412,6 +3103,16 @@
         painelEl.replaceChildren(vazio);
       }
       painelEl.scrollTop = 0;
+      atualizarBalao();
+    }
+    // Fechar o Resumo: tira o separador e os dados (voltam a carregar se for pedido outra vez)
+    function fecharResumo() {
+      pedidosResumo++;   // uma resposta ainda a caminho já não conta
+      Object.assign(resumoEstado, { pedido: false, aCarregar: false, dados: null, erro: null, menu: null });
+      vistaResumo = false;
+      abaAtiva = abaAtiva || abas[abas.length - 1] || null;
+      desenharPainel();
+      desenharConversa();
     }
     function abrirAba(item) {
       if (!abas.includes(item)) {
@@ -2419,6 +3120,7 @@
         if (abas.length > 6) abas.shift();      // shortcut: só os 6 mais recentes; os outros reabrem pelo cartão na conversa
       }
       abaAtiva = item;
+      vistaResumo = false;
       desenharPainel();
       desenharConversa();
     }
@@ -2441,10 +3143,26 @@
       painelRaiz.classList.toggle('chat-painel--sem-conversa', !sim);
       lancador.setAttribute('aria-expanded', String(sim));
       lancador.setAttribute('aria-label', sim ? 'Esconder a conversa' : 'Mostrar a conversa');
+      atualizarBalao();
       (sim ? campo : lancador).focus();
     }
     document.getElementById('esconder-conversa').addEventListener('click', () => verConversa(false));
     lancador.addEventListener('click', () => verConversa(painelRaiz.classList.contains('chat-painel--sem-conversa')));
+
+    // Balão flutuante "Faça um resumo das vendas": só depois de a conversa começar, com a conversa escondida
+    // (aberta, há o balão dentro da conversa), enquanto o Resumo não está aberto e até a pessoa o fechar no ×.
+    const balaoResumoEl = document.getElementById('balao-resumo');
+    let balaoDispensado = false;
+    function atualizarBalao() {
+      balaoResumoEl.hidden = balaoDispensado || !historico.length || resumoEstado.pedido || !painelRaiz.classList.contains('chat-painel--sem-conversa');
+    }
+    document.getElementById('balao-resumo-abrir').addEventListener('click', () => { if (!ocupado) perguntar('Resumo das vendas deste ano'); });
+    document.getElementById('balao-resumo-fechar').addEventListener('click', () => { balaoDispensado = true; atualizarBalao(); lancador.focus(); });
+
+    // REDESIGN 11/2026: voltar ao topo do painel
+    const voltarTopo = document.getElementById('voltar-topo');
+    painelEl.addEventListener('scroll', () => { voltarTopo.hidden = painelEl.scrollTop < 300; });
+    voltarTopo.addEventListener('click', () => { painelEl.scrollTo({ top: 0, behavior: 'smooth' }); voltarTopo.hidden = true; separadoresEl.querySelector('button')?.focus(); });
 
     function mostrarInicio() {
       desenharConversa();
@@ -2504,6 +3222,9 @@
        ========================================================= */
     async function perguntar(texto) {
       if (ocupado) return;
+      // Pedido de resumo: abre o Resumo em vez de chamar o agente (instantâneo, números diretos do SQL)
+      const pedidoResumo = intencaoResumo(texto);
+      if (pedidoResumo) { responderComResumo(texto, pedidoResumo); return; }
       const item = { pergunta: texto, texto: '', erro: null, hora: new Date(), pendente: true };
       historico.unshift(item);
       atual = 0;
