@@ -9,9 +9,9 @@ public static class PaginaChat
 {
     // static readonly em vez de const: o valor só se conhece ao arrancar.
     // Quem usa PaginaChat.Html não precisa de mudar nada.
-    public static readonly string Html = Ler("pagina-chat.html")
-        .Replace("{{AVATAR}}", DataUri("avatar-assistente-vendas.png", "image/png"));
-    
+    // O avatar do Flow é um SVG dentro da página: já não há imagem para embutir.
+    public static readonly string Html = Ler("pagina-chat.html");
+
     private static Stream Abrir(string nomeFicheiro)
     {
         var assembly = Assembly.GetExecutingAssembly();
@@ -22,16 +22,5 @@ public static class PaginaChat
     {
         using var leitor = new StreamReader(Abrir(nomeFicheiro));
         return leitor.ReadToEnd();
-    }
-      
-
-    private static string DataUri(string nomeFicheiro, string tipo)
-    {
-        using var stream = Abrir(nomeFicheiro);
-        using var memoria = new MemoryStream();
-        stream.CopyTo(memoria);
-        return $"data:{tipo};base64,{Convert.ToBase64String(memoria.ToArray())}";
-      
-
     }
 }

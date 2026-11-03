@@ -494,8 +494,26 @@ public class VendasToolsTests
         // 01-01-2026 a 26-10-2026 contra 01-01-2025 a 26-10-2025: os mesmos dias, não o ano 2025 inteiro.
         Assert.Equal((new DateOnly(2025, 1, 1), new DateOnly(2025, 10, 27), 100), repo.ChamadasRanking[1]);
         Assert.Contains("Comparado com 01-01-2025 a 26-10-2025: total 200,00 € (-20,0%).", r);
+        // Por mês não se compara o n.º de meses: só documentos e valor médio (160/2 = 80 € contra 200/2 = 100 €)
+        Assert.Contains("Um ano antes: 2 documentos (0,0%), valor médio por documento 100,00 € (-20,0%).", r);
         Assert.Contains("1. 2026-01 – 110,00 € · 2025: 100,00 € (+10,0%)", r);
         Assert.Contains("2. 2026-02 – 50,00 € · 2025: 100,00 € (-50,0%)", r);
+    }
+
+    [Fact]
+    public async Task Comparar_PorCliente_DizClientesDocumentosEValorMedioUmAnoAntes()
+    {
+        // 2026: 3 clientes, 4 documentos, 300 €; 2025: 2 clientes, 5 documentos, 250 €
+        var repo = new FakeVendasRepo
+        {
+            ValoresPor = desde => desde.Year == 2026
+                ? [new("Ana (1)", 300m, 0, 4, 300m, 3, TotalDocumentos: 4)]
+                : [new("Ana (1)", 250m, 0, 5, 250m, 2, TotalDocumentos: 5)],
+            Clientes = _ => [],
+        };
+        var r = await CriarSutEm(repo, 2026, 10, 26).ConsultarVendasAsync(DimensaoVenda.Cliente, compararAnoAnterior: true);
+
+        Assert.Contains("Um ano antes: 2 clientes (+50,0%), 5 documentos (-20,0%), valor médio por documento 50,00 € (+50,0%).", r);
     }
 
     [Fact]

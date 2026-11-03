@@ -9,6 +9,7 @@
        1. Tokens
        ========================================================= */
     :root {
+      --navy: #0f1b3d;
       --fundo: #eef1f6;        
       --lateral: #f7f8fb;     
       --cartao: #ffffff;
@@ -34,16 +35,17 @@
       --borda-forte: #b4becf;  /* eixos e tracejados */
       --borda-cartao: #c3cbd8; /* contorno nítido dos cartões */
       --anterior: #b9c6ea;     /* barras do ano anterior */
-      --anterior-linha: #7f93cc; /* linha tracejada do ano anterior */
+      --anterior-linha: #7f93cc; 
       --sobe: #0f6b3f; --sobe-fundo: #e2f4ea;
       --desce: #a51b0f; --desce-fundo: #fde8e6;
-      --borda-controlo: #7a8599; /* bordas de campos e botões: 3,5:1 */
-      --ligacao: #1d46c0;        /* texto de botões e barras */
+      --borda-controlo: #7a8599; 
+      --ligacao: #1d46c0;        
       /* Gráfico circular: 6 cores por ordem fixa, validadas para daltonismo */
       --serie-1: #2a78d6; --serie-2: #eb6834; --serie-3: #1baf7a; --serie-4: #eda100; --serie-5: #e87ba4; --serie-6: #6250d6;
     }
     @media (prefers-color-scheme: dark) {
       :root {
+        --navy: #0b1222;
         --fundo: #0f1320;
         --lateral: #131826;
         --cartao: #171c2a;
@@ -77,13 +79,17 @@
     /* =========================================================
        2. Base
        ========================================================= */
+    /* Fonte 72 (licença em fonts/LICENSE-72.txt); servida pelo agente em /fonts/ */
+    @font-face { font-family: "72"; src: url("/fonts/72-Regular-full.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: "72"; src: url("/fonts/72-Semibold-full.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: "72"; src: url("/fonts/72-Bold-full.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
       background: var(--cartao);
       color: var(--texto);
-      font: 15px/1.45 system-ui, "Segoe UI", Tahoma, Roboto, Arial, sans-serif;   /* a letra do Windows, como o phpMyAdmin */
+      font: 15px/1.45 "72", system-ui, "Segoe UI", Tahoma, Roboto, Arial, sans-serif;
     }
     button, input { font: inherit; color: inherit; }
     button { cursor: pointer; }
@@ -686,7 +692,6 @@
       display: grid; place-items: center; border: 0; border-radius: 50%;
       background: var(--texto); color: var(--cartao); box-shadow: 0 6px 16px rgb(22 33 58 / .25);
     }
-    .chat-lancador[aria-expanded="true"] .chat-lancador-abrir, .chat-lancador[aria-expanded="false"] .chat-lancador-fechar { display: none; }
 
     /* Janela estreita: a conversa ocupa o painel todo quando está aberta */
     @container (max-width: 820px) {
@@ -707,7 +712,7 @@
 
     /* =========================================================
        7k. REDESIGN 11/2026 — Inforap Flow
-       Separador Resumo, só depois de pedido (dados de GET /resumo, geral ou de um cliente), barra fixa,
+       Resumo como painel inicial (dados de GET /resumo, geral ou de um cliente), barra fixa,
        voltar ao topo e gráfico mensal em barras. A conversa NÃO muda.
        ========================================================= */
     .chat-titulo { font-size: 16px; font-weight: 800; }
@@ -723,7 +728,6 @@
     .res-titulo { display: flex; align-items: center; gap: 12px; min-width: 0; }
     .res-icone { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 9px; background: var(--marca); color: var(--marca-texto); }
     .res-titulo h2 { margin: 0; font-size: 18px; font-weight: 800; }
-    .res-data { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 99px; background: var(--selecionado); color: var(--texto); font-size: 13.5px; font-weight: 600; }
     .res-btn { min-height: 38px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--borda-controlo); border-radius: 8px; background: var(--cartao); font-size: 13.5px; font-weight: 700; }
     .res-btn[aria-expanded="true"] { border: 2px solid var(--ligacao); background: var(--selecionado); }
     .res-btn--primario { border-color: var(--marca); background: var(--marca); color: var(--marca-texto); }
@@ -831,7 +835,6 @@
     /* Posição e alinhamento do modelo "Resumo — chat minimizado" */
     /* Separadores e Resumo centrados na mesma coluna em ecrã largo (com a conversa aberta fica o padding de 408px) */
     .chat-dados:has(.res-barra, .res-pedir) :is(.chat-abas, .chat-painel-dados) { padding-left: max(20px, calc((100% - 1520px) / 2)); }
-    .chat-painel.chat-painel--sem-conversa .chat-dados:has(.res-barra, .res-pedir) :is(.chat-abas, .chat-painel-dados) { padding-right: max(20px, calc((100% - 1520px) / 2)); }
     .res-conteudo, .chat-painel-dados > .chat-folha:has(> .res-barra) { max-width: none; }
     /* Indicadores: todos numa linha, mesma largura; valor, variação e frase por baixo uns dos outros */
     .res-kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
@@ -839,19 +842,225 @@
     .res-var { font-size: 12.5px; }
     .res-aviso svg { flex: none; }
     .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 84px; bottom: 26px; }   /* conversa aberta: ao lado, não por cima da janela */
-    /* Balão flutuante à esquerda do botão da conversa, com a ponta virada para ele */
-    .res-balao {
-      position: absolute; z-index: 6; right: 84px; bottom: 26px;
-      display: flex; align-items: center; gap: 2px; padding: 4px 4px 4px 12px;
-      background: var(--cartao); border: 1px solid var(--borda-controlo); border-radius: 18px 18px 4px 18px;
-      box-shadow: 0 6px 16px rgb(22 33 58 / .18); animation: chat-entrar .18s ease-out;
-    }
-    .res-balao-abrir { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 4px; border: 0; background: none; color: var(--ligacao); font-size: 13.5px; font-weight: 700; }
-    .res-balao-abrir:hover { text-decoration: underline; text-underline-offset: 3px; }
-    .res-balao-fechar { width: 30px; height: 30px; border: 0; border-radius: 50%; background: none; color: var(--nota); font-size: 16px; }
-    .res-balao-fechar:hover { background: var(--linha); }
     .res-contagem { padding: 2px 10px; border-radius: 99px; background: #fde7cf; color: #9a3412; font-size: 12px; font-weight: 700; }
     .res-tabela--maiusculas thead th { text-transform: uppercase; letter-spacing: .04em; font-size: 11.5px; }
+
+
+    /* =========================================================
+       7l. PROPOSTA D 11/2026 — painel lateral, avatar no topo
+       Fica depois das outras secções: ganha às regras antigas com a mesma especificidade
+       ========================================================= */
+    /* Cores da proposta (logo/index.html): sobe/desce das linhas, texto claro no painel escuro */
+    :root { --flow-sobe: #0b6e45; --flow-desce: #b3261e; --flow-claro: #b3bdd0; --flow-navy-borda: #2c3a62; --flow-azul-escuro: #1e3a8a; --flow-azul-borda: #c3d1f7; --flow-tinta-azul: #1e3a8a; }
+    @media (prefers-color-scheme: dark) { :root { --flow-tinta-azul: #c3d1f7; --flow-azul-borda: #3d63e6; } }
+
+    /* ---------- Painel lateral ---------- */
+    .flow-lateral { width: 300px; flex: none; padding: 18px 16px 24px; display: flex; flex-direction: column; gap: 18px; background: var(--navy); color: #e9edf5; overflow-y: auto; scrollbar-width: thin; }
+    .flow-lateral :focus-visible { outline-color: #fff; }
+    .flow-lateral--recolhido { width: 72px; align-items: center; padding: 16px 0; }
+    .flow-lateral--recolhido .flow-so-aberto { display: none !important; }
+    .flow-lateral--recolhido .flow-btn-lateral svg { transform: rotate(180deg); }
+    .flow-lateral--recolhido .flow-marca { flex-direction: column; }
+    .flow-marca { display: flex; align-items: center; gap: 10px; }
+    .flow-marca-logo { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--marca); }
+    .flow-marca-texto { margin-right: auto; }
+    .flow-marca-texto p { margin: 0; font-size: 15px; }
+    .flow-marca-texto p + p { font-size: 12px; color: var(--flow-claro); }
+    .flow-btn-lateral { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 1px solid var(--flow-navy-borda); border-radius: 10px; background: transparent; color: #e9edf5; }
+    .flow-btn-lateral:hover { background: rgb(255 255 255 / .06); }
+
+    /* Cartão branco do Resumo (fica branco também no modo escuro) */
+    .flow-resumo { margin-top: 28px; padding: 16px; border-radius: 14px; background: #fff; color: var(--marca); text-align: center; }
+    .flow-resumo p { margin: 0; }
+    .flow-resumo-topo { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .flow-resumo h2 { margin: 0; font-size: 14px; }
+    .flow-etiqueta { padding: 1px 8px; border-radius: 6px; background: #e6edff; font-size: 12px; }
+    .flow-nota { font-size: 12px; color: var(--flow-azul-escuro); }
+    .flow-resumo > .flow-nota:first-of-type { margin: 2px 0 12px; }
+    .flow-nota--rotulo { font-size: 13px; }
+    .flow-total { font-size: 22px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
+    .flow-resumo .chat-delta { margin-top: 4px; font-weight: 800; }
+    .flow-resumo .chat-delta--sobe { background: #dcf3e7; color: #0b5236; }
+    .flow-resumo .chat-delta--desce { background: #fde7e4; color: #8a1c14; }
+    .flow-spark { display: block; width: 100%; height: auto; margin-top: 8px; overflow: visible; }
+    .flow-spark text { font-size: 9px; fill: var(--flow-azul-escuro); }
+    .flow-spark-legenda { display: flex; justify-content: center; gap: 12px; font-size: 11px; color: var(--flow-azul-escuro); }
+    .flow-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0 0; }
+    .flow-kpis dt { font-size: 12px; color: var(--flow-azul-escuro); }
+    .flow-kpis dd { margin: 0; }
+    .flow-valor { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .flow-perda { margin-top: 14px; padding-top: 12px; border-top: 1px solid #d5dbe6; font-size: 13px; }
+
+    /* Vistas guardadas */
+    .flow-vistas h2 { margin: 0 0 6px; font-size: 13px; color: var(--flow-claro); }
+    .flow-vistas ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+    .flow-vista { width: 100%; min-height: 44px; padding: 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 0; border-radius: 10px; background: transparent; color: #e9edf5; text-align: left; font-size: 14px; }
+    .flow-vista:hover { background: rgb(255 255 255 / .06); }
+    .flow-vista span + span { flex: none; font-size: 12px; color: var(--flow-claro); font-variant-numeric: tabular-nums; }
+    .flow-vista[aria-current="true"] { background: var(--marca); color: #fff; }
+    .flow-vista[aria-current="true"] span + span { color: #fff; }
+    .flow-pedir { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px dashed #4a5a85; border-radius: 10px; background: transparent; color: #e9edf5; font-size: 13px; }
+    .flow-vistas .flow-pedir { margin-top: 8px; }
+    .flow-carregar { margin: 28px 0 0; font-size: 13px; color: var(--flow-claro); }
+    .flow-pedir:hover:not(:disabled) { background: rgb(255 255 255 / .06); }
+    @container (max-width: 820px) { .flow-lateral { display: none; } }
+
+    /* ---------- Barra do topo: separadores, ações, procurar ---------- */
+    .chat-abas { flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 24px; background: var(--fundo); border-bottom: 0; }
+    .chat-painel:not(.chat-painel--sem-conversa) .chat-abas { padding-right: 24px; }   /* a conversa abre por baixo desta barra */
+    .chat-abas-lista { flex-wrap: wrap; align-items: center; gap: 4px; margin-right: auto; overflow: visible; }
+    .chat-aba { margin: 0; min-height: 28px; border: 1px solid var(--linha); border-radius: 6px; background: var(--cartao); }
+    .chat-aba--ativa { background: var(--selecionado); border-color: var(--flow-azul-borda); }
+    .chat-aba-abrir { padding: 0 2px 0 10px; font-size: 12px; color: var(--suave); }
+    .chat-aba--ativa .chat-aba-abrir { color: var(--flow-tinta-azul); font-weight: 700; }
+    .chat-aba-fechar { width: 24px; height: 24px; margin-right: 2px; font-size: 14px; }
+    .flow-acoes { display: flex; gap: 6px; }
+    .flow-btn-sub { min-height: 32px; padding: 0 10px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--linha); border-radius: 6px; background: var(--cartao); color: var(--texto); font-size: 12px; }
+    .flow-btn-sub:hover:not(:disabled) { border-color: var(--marca); }
+    .flow-pesquisa { min-height: 44px; padding: 0 14px; display: flex; align-items: center; gap: 8px; margin: 0; border: 1px solid var(--borda); border-radius: 999px; background: var(--cartao); color: var(--nota); }
+    .flow-pesquisa:focus-within { outline: 2px solid var(--marca); outline-offset: 2px; }
+    .flow-pesquisa input { width: 200px; border: 0; background: transparent; color: var(--texto); font-size: 13px; outline: none; }
+    .flow-iniciais { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--selecionado); color: var(--flow-tinta-azul); font-weight: 700; }
+
+    /* ---------- Topo do Resumo: saudação grande, período e os 2 números principais ---------- */
+    .chat-painel-dados { padding: 4px 100px 40px 24px; }   /* 100px: o avatar não tapa os dados com a conversa fechada */
+    .res-barra { position: static; margin: 0 0 16px; padding: 0; background: none; border: 0; }
+    .flow-topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 40px; margin: 8px 0 20px; }
+    .flow-topo-ola { display: flex; flex-direction: column; align-items: flex-start; }
+    .flow-ola { margin: 0; font-size: 38px; line-height: 1.15; font-weight: 400; color: var(--suave); letter-spacing: -.01em; }
+    .flow-ola strong { color: var(--texto); font-weight: 700; }
+    .flow-periodo-btn { display: flex; align-items: center; gap: 8px; margin: 2px 0 0 -6px; padding: 2px 6px; border: 0; border-radius: 8px; background: transparent; color: var(--texto); font: inherit; font-size: 32px; line-height: 1.2; font-weight: 700; letter-spacing: -.01em; }
+    .flow-periodo-btn:hover, .flow-periodo-btn[aria-expanded="true"] { background: var(--selecionado); }
+    .flow-hoje { margin: 8px 0 0; font-size: 14px; color: var(--suave); }
+    .flow-hoje::first-letter { text-transform: uppercase; }
+    .flow-topo-kpis { display: flex; align-items: stretch; gap: 32px; margin-right: auto; }
+    .flow-topo-kpi > span { font-size: 14px; color: var(--suave); }
+    .flow-topo-kpi > div { display: flex; align-items: center; gap: 14px; }
+    .flow-topo-kpi strong { font-size: 46px; line-height: 1.1; font-weight: 400; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .flow-topo-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .flow-topo-chips .chat-delta { font-weight: 800; }
+    .flow-chip-neutro { border: 1px solid var(--borda); border-radius: 999px; background: var(--cartao); color: var(--texto); font-weight: 400 !important; }
+    .flow-topo-sep { width: 1px; background: var(--borda); }
+    @container (max-width: 640px) { .flow-ola { font-size: 28px; } .flow-periodo-btn { font-size: 24px; } .flow-topo-kpi strong { font-size: 32px; } .flow-topo-kpis { flex-wrap: wrap; } }
+
+    /* ---------- Vendas por mês: cartão do gráfico + cartão azul do mês + 3 números ---------- */
+    .flow-serie { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+    .flow-serie-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+    .flow-serie-titulo { margin: 0; font-size: 22px; letter-spacing: -.01em; color: var(--marca); }
+    .chat-bloco.chat-grafico { padding: 0; background: none; border: 0; }
+    .flow-linha-grafico { display: flex; gap: 16px; align-items: center; }
+    .flow-grafico-lado { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 16px; padding: 20px 22px; background: var(--cartao); border: 1px solid var(--linha); border-radius: 16px; }
+    .flow-grafico-lado .chat-grafico-cab { flex-direction: column; align-items: flex-start; }
+    .chat-grafico .flow-grafico-lado h3 { font-size: 15px; font-weight: 700; color: var(--texto); }
+    .chat-grafico-sub { margin: 2px 0 0; font-size: 13px; color: var(--suave); }
+    .flow-grafico-lado .chat-legenda { font-size: 13px; }
+
+    /* área (4+ meses) */
+    .flow-area { position: absolute; inset: 0 0 auto 0; width: 100%; height: 200px; overflow: visible; pointer-events: none; }
+    .flow-area-fundo { fill: rgb(29 70 192 / .14); }
+    .flow-linha { fill: none; stroke: var(--marca); stroke-width: 3; stroke-linejoin: round; }
+    .flow-linha-ant { fill: none; stroke: var(--anterior-linha); stroke-width: 2; stroke-dasharray: 5 4; }
+    .flow-linha-parcial { fill: none; stroke: var(--marca); stroke-width: 2; stroke-dasharray: 2 4; }
+    .chat-linha-area:has(.flow-area) .chat-guia { border-top: 1px solid var(--linha); }
+    /* faixa do mês escolhido: desce até ao nome do mês */
+    .flow-marca-mes { top: -10px; bottom: -30px; transform: translateX(-50%); border-left: 0; border-radius: 8px; background: rgb(29 70 192 / .09); pointer-events: none; }
+    /* pontos só com área (com barras continuam escondidos): brancos com contorno azul; o escolhido fica cheio */
+    .chat-linha-area:has(.flow-area) .chat-ponto-mes span { opacity: 1; box-sizing: border-box; width: 12px; height: 12px; background: var(--cartao); border: 3px solid var(--marca); box-shadow: none; }
+    .chat-linha-area:has(.flow-area) .chat-ponto-mes--parcial span { border: 2px dashed var(--marca); }
+    .chat-linha-area:has(.flow-area) .chat-ponto-mes:hover span,
+    .chat-linha-area:has(.flow-area) .chat-ponto-mes[aria-pressed="true"] span { width: 18px; height: 18px; background: var(--cartao); border: 4px solid var(--marca); box-shadow: 0 0 0 3px rgb(29 70 192 / .25); }
+    .chat-barra-valor { background: transparent; font-weight: 500; }
+    .chat-barra-valor--ativo { padding: 1px 6px; border-radius: 5px; background: var(--marca); color: #fff; font-weight: 800; }
+    .chat-grafico .chat-rotulos { font-size: 13px; }
+    .flow-legenda-linha { width: 18px !important; height: 3px !important; border-radius: 2px !important; background: var(--marca); }
+    .flow-legenda-linha--ant { height: 0 !important; background: none; border-top: 2px dashed var(--anterior-linha); }
+    .flow-legenda-linha--parcial { height: 0 !important; background: none; border-top: 2px dotted var(--marca); }
+
+    /* cartão azul do mês escolhido, fora do cartão do gráfico */
+    .chat-leitura { flex: 0 0 220px; align-self: center; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 2px; padding: 16px 18px; border-radius: 12px; background: var(--marca); color: #fff; font-size: 13px; }
+    .chat-leitura h4 { margin: 0; font-size: 12px; font-weight: 600; }
+    .chat-leitura .chat-leitura-nome { min-width: 0; font-size: 18px; font-weight: 800; }
+    .chat-leitura small { font-size: 12px; color: rgb(255 255 255 / .85); }
+    .chat-leitura-valor { margin-top: 10px; font-size: 22px; line-height: 1.15; font-weight: 800; }
+    .chat-leitura .chat-delta { align-self: flex-start; margin: 8px 0 4px; font-size: 13px; font-weight: 800; }
+    .chat-leitura .chat-delta--sobe { background: #dcf3e7; color: #0b5236; }
+    .chat-leitura .chat-delta--desce { background: #fde7e4; color: #8a1c14; }
+    .chat-leitura-btn { margin-top: 12px; min-height: 36px; border: 0; border-radius: 6px; background: #fff; color: var(--marca); font-size: 13px; font-weight: 700; }
+    .chat-leitura-btn:hover { background: #e6edff; }
+    .chat-leitura :focus-visible { outline-color: #fff; }
+    @container (max-width: 640px) { .flow-linha-grafico { flex-wrap: wrap; } .chat-leitura { flex-basis: 100%; } }
+
+    .flow-mini { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .flow-mini-cartao { min-width: 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 1px; background: var(--cartao); border: 1px solid var(--linha); border-radius: 12px; }
+    .flow-mini-cartao span, .flow-mini-cartao small { font-size: 12.5px; color: var(--suave); }
+    .flow-mini-cartao strong { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    /* ---------- Janela do email à segunda ---------- */
+    #dlg-email { width: min(340px, calc(100% - 32px)); padding: 16px; border: 1px solid var(--linha); border-radius: 12px; background: var(--cartao); color: var(--texto); font-size: 13px; box-shadow: 0 12px 28px rgb(19 32 59 / .16); }
+    #dlg-email::backdrop { background: rgb(15 27 61 / .45); }
+    #dlg-email form { display: flex; flex-direction: column; gap: 12px; }
+    #dlg-email h2 { margin: 0; font-size: 15px; }
+    .dlg-nota { margin: 2px 0 0; color: var(--suave); }
+    #dlg-email fieldset { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 6px; }
+    #dlg-email legend { margin-bottom: 4px; padding: 0; font-weight: 700; }
+    .dlg-opcao { display: flex; gap: 8px; align-items: flex-start; padding: 8px; border: 1px solid var(--linha); border-radius: 8px; cursor: pointer; }
+    .dlg-opcao:has(input:checked) { border-color: var(--marca); background: var(--selecionado); }
+    .dlg-opcao input { margin: 2px 0 0; accent-color: var(--marca); }
+    .dlg-opcao small { display: block; font-size: 12px; color: var(--suave); }
+    .dlg-campo { display: flex; flex-direction: column; gap: 4px; }
+    .dlg-campo input { min-height: 36px; padding: 0 10px; border: 1px solid var(--borda-controlo); border-radius: 6px; background: var(--cartao); }
+    .dlg-botoes { display: flex; justify-content: flex-end; gap: 8px; }
+
+    /* ---------- Conversa por baixo da barra do topo, aberta pelo avatar Flow ---------- */
+    @keyframes ava-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @keyframes ava-blink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+    @keyframes ava-talk { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.35); } }
+    @keyframes pop { 0% { opacity: 0; transform: translateX(24px) scale(.4); } 70% { opacity: 1; transform: translateX(-2px) scale(1.03); } 100% { transform: none; } }
+    .chat-lancador { top: 76px; bottom: auto; right: 24px; width: 60px; height: 60px; padding: 0; border: 3px solid #fff; border-radius: 20px; background: var(--marca); box-shadow: 0 8px 20px rgb(29 78 216 / .35); animation: ava-bob 3.2s ease-in-out infinite; transition: transform .2s; }
+    .chat-lancador:hover { transform: rotate(-6deg) scale(1.06); animation-play-state: paused; }
+    .chat-lancador .olho { transform-box: fill-box; transform-origin: center; animation: ava-blink 4s infinite; }
+    .chat-lancador .boca { transform-box: fill-box; transform-origin: center; }
+    .chat-lancador.a-falar .boca { animation: ava-talk .45s ease-in-out infinite; }
+    .chat-conversa { top: 76px; bottom: auto; right: 98px; width: 290px; max-height: calc(100% - 92px); border-color: var(--linha); border-radius: 16px; box-shadow: 0 16px 40px rgb(19 32 59 / .2); font-size: 13px; animation: pop .35s cubic-bezier(.2, .8, .3, 1.2) both; transform-origin: right 30px; }
+    .chat-painel:not(.chat-painel--sem-conversa) .chat-painel-dados { padding-right: 404px; }
+    .chat-conversa-topo { padding: 12px 14px; border-bottom-color: #e5e9f0; }
+    .flow-chat-icone { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--selecionado); color: var(--marca); }
+    .chat-conversa-titulo { font-size: 14px; }
+    .chat-conversa .chat-esconder { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--flow-azul-borda); border-radius: 6px; background: var(--selecionado); color: var(--flow-tinta-azul); }
+    .flow-btn-fechar { width: 32px; height: 32px; border: 0; border-radius: 6px; background: transparent; color: var(--texto); font-size: 20px; }
+    .flow-btn-fechar:hover { background: var(--linha); }
+    .chat-conversa .chat-area { padding: 14px; gap: 10px; }
+
+    /* boas-vindas: mensagem, nota do Resumo, "Como quer começar?" */
+    .flow-msg { margin: 0; padding: 10px 12px; border-radius: 14px 14px 14px 4px; background: var(--fundo); }
+    .flow-msg p { margin: 0; }
+    .flow-msg p + p, .flow-msg ul { margin-top: 4px; }
+    .flow-msg ul { margin-bottom: 0; padding-left: 18px; }
+    .flow-msg small { display: block; margin-top: 6px; font-size: 12px; color: var(--suave); }
+    .flow-msg-ola { font-weight: 700; }
+    .flow-msg--destaque { background: var(--selecionado); }
+    .flow-pergunta { margin: 4px 0 0; font-size: 14px; font-weight: 700; }
+    .flow-modo { width: 100%; display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid var(--linha); border-radius: 12px; background: var(--cartao); color: var(--texto); text-align: left; }
+    .flow-modo:hover { border-color: var(--marca); }
+    .flow-modo-ic { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--selecionado); color: var(--marca); }
+    .flow-modo-ic--escuro { background: var(--texto); color: var(--cartao); }
+    .flow-modo b, .flow-tema b { display: block; font-size: 14px; }
+    .flow-modo small { display: block; font-size: 13px; color: var(--suave); }
+    .flow-modo-atual { margin: 0; display: flex; justify-content: space-between; align-items: center; color: var(--suave); }
+    .flow-mudar { min-height: 32px; padding: 0; border: 0; background: none; color: var(--ligacao); text-decoration: underline; text-underline-offset: 3px; }
+    .flow-temas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .flow-tema { padding: 10px; border: 1px solid var(--linha); border-radius: 10px; background: var(--cartao); color: var(--texto); text-align: left; }
+    .flow-tema[aria-pressed="true"] { border-color: var(--marca); background: var(--selecionado); }
+    .flow-tema small { display: block; font-size: 12px; color: var(--suave); }
+    .chat-conversa .chat-rodape { border-width: 1px; border-radius: 12px; }
+
+    @container (max-width: 820px) {
+      .chat-painel-dados, .chat-painel:not(.chat-painel--sem-conversa) .chat-painel-dados { padding-right: 24px; }
+      .chat-conversa { top: 144px; left: 8px; right: 8px; width: auto; max-height: calc(100% - 152px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .chat-lancador, .chat-lancador .olho, .chat-lancador.a-falar .boca, .chat-conversa { animation: none; }
+    }
 
     /* =========================================================
        8. Rodapé: pergunta + só leitura
@@ -882,23 +1091,54 @@
     @keyframes chat-entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     @keyframes chat-pulsar { 50% { opacity: .5; } }
     @media (prefers-reduced-motion: reduce) {
-      .chat-folha, .chat-esqueleto span, .chat-pontos span, .chat-painel-esqueleto *, .res-balao { animation: none; }
+      .chat-folha, .chat-esqueleto span, .chat-pontos span, .chat-painel-esqueleto * { animation: none; }
     }
   </style>
 </head>
-<body>
+<body data-utilizador="{{UTILIZADOR}}">
   <div class="chat-painel">
 
-    <header class="chat-topo">
-      <!-- REDESIGN 11/2026: nome do produto, sem logótipo -->
-      <h1 class="chat-titulo">Inforap Flow</h1>
-    </header>
+    <!-- PROPOSTA D: o nome passa para o painel lateral -->
+    <header class="chat-topo" hidden></header>
 
     <div class="chat-corpo">
-      <!-- Proposta A: os dados ao centro, em separadores; a conversa numa aba à direita -->
+      <!-- Proposta D: painel lateral com o Resumo, dados ao centro em separadores, conversa no topo à direita -->
+      <aside class="flow-lateral" id="lateral" aria-label="Resumo guardado">
+        <div class="flow-marca">
+          <span class="flow-marca-logo" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M4 18 9 12l4 3 7-9"/></svg></span>
+          <div class="flow-marca-texto flow-so-aberto"><p><strong>Inforap Flow</strong></p><p>Assistente de vendas</p></div>
+          <button class="flow-btn-lateral" id="btn-lateral" type="button" aria-label="Recolher o resumo guardado" aria-expanded="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
+          </button>
+        </div>
+        <p class="flow-carregar flow-so-aberto" id="lateral-carregar" role="status">A carregar o resumo das vendas…</p>
+        <button class="flow-pedir flow-so-aberto" id="lateral-pedir" type="button" hidden>Carregar o resumo outra vez</button>
+        <section class="flow-resumo flow-so-aberto" id="lateral-resumo" aria-label="Resumo das vendas" hidden></section>
+        <button class="flow-pedir flow-so-aberto" id="ver-inicio" type="button" hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Voltar ao painel inicial</button>
+        <section class="flow-vistas flow-so-aberto" aria-labelledby="vistas-titulo">
+          <h2 id="vistas-titulo">Vistas guardadas</h2>
+          <ul id="vistas"></ul>
+          <button class="flow-pedir" id="guardar-vista" type="button" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Guardar vista atual</button>
+        </section>
+      </aside>
+
       <main class="chat-dados" aria-label="Dados">
         <div class="chat-abas">
           <nav class="chat-abas-lista" id="separadores" aria-label="Resultados abertos"></nav>
+          <div class="flow-acoes">
+            <button class="flow-btn-sub" id="topo-exportar" type="button" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Exportar dados</button>
+            <button class="flow-btn-sub" id="topo-email" type="button" aria-haspopup="dialog">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>Enviar por email à segunda</button>
+          </div>
+          <form class="flow-pesquisa" id="procurar" role="search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <label class="so-leitor" for="procurar-campo">Procurar cliente ou artigo</label>
+            <input id="procurar-campo" maxlength="100" autocomplete="off" placeholder="Procurar cliente ou artigo">
+          </form>
+          <span class="flow-iniciais" id="iniciais" hidden></span>
         </div>
         <div class="chat-painel-dados" id="painel"></div>
       </main>
@@ -907,21 +1147,21 @@
         <div class="chat-conversa-cab">
           <!-- Cabeçalho da janela: avatar, nome e estado do agente -->
           <div class="chat-conversa-topo">
-            <img class="chat-avatar" id="avatar" src="{{AVATAR}}" alt=""
-                 onerror="this.onerror = null; this.src = '../logo/avatar-assistente-vendas.svg';">
+            <span class="flow-chat-icone" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg></span>
             <div class="chat-conversa-nome">
-              <h2 class="chat-conversa-titulo">Assistente de vendas</h2>
+              <h2 class="chat-conversa-titulo">Flow</h2>
               <!-- role="status": o leitor de ecrã anuncia quando muda -->
               <p class="chat-estado" id="estado" role="status">
                 <span class="chat-ponto" aria-hidden="true"></span>
                 <span id="estado-texto">Pronto</span>
               </p>
             </div>
-            <button class="chat-esconder" id="esconder-conversa" type="button" aria-label="Esconder a conversa">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3l10 10M13 3 3 13"/></svg>
+            <button class="chat-esconder" id="esconder-conversa" type="button" aria-label="Minimizar a conversa">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14"/></svg>
             </button>
+            <button class="flow-btn-fechar" id="fechar-conversa" type="button" aria-label="Fechar e voltar ao início da conversa" title="Fechar">×</button>
           </div>
-          <div class="chat-temas" id="temas" role="group" aria-label="Tema"></div>
+          <div class="chat-temas" id="temas" role="group" aria-label="Tema" hidden></div>
         </div>
         <div class="chat-area" id="area"></div>
         <p class="so-leitor" id="anuncio" role="status"></p>
@@ -952,22 +1192,39 @@
         <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg>
       </button>
 
-      <!-- Balão flutuante junto ao botão da conversa: sugere o Resumo enquanto a conversa está escondida -->
-      <div class="res-balao" id="balao-resumo" role="complementary" aria-label="Sugestão" hidden>
-        <button class="res-balao-abrir" id="balao-resumo-abrir" type="button">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 2v12h12M5 10l3-3 2 2 4-5"/></svg>
-          Faça um resumo das vendas
-        </button>
-        <button class="res-balao-fechar" id="balao-resumo-fechar" type="button" aria-label="Fechar sugestão">×</button>
-      </div>
 
-      <!-- Botão redondo no canto: mostra e esconde a conversa -->
-      <button class="chat-lancador" id="mostrar-conversa" type="button" aria-expanded="true" aria-label="Esconder a conversa">
-        <svg class="chat-lancador-fechar" width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m3.5 6 4.5 4.5L12.5 6"/></svg>
-        <svg class="chat-lancador-abrir" width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg>
+      <!-- Avatar Flow no topo: abre e minimiza a conversa -->
+      <button class="chat-lancador a-falar" id="mostrar-conversa" type="button" aria-expanded="true" aria-label="Flow, assistente de vendas: minimizar a conversa" title="Flow, o assistente de vendas">
+        <svg aria-hidden="true" width="54" height="54" viewBox="0 0 54 54">
+          <rect x="10" y="8" width="34" height="30" rx="12" fill="#fff" opacity=".14"/>
+          <ellipse class="olho" cx="20" cy="22" rx="3.6" ry="4.6" fill="#fff"/>
+          <ellipse class="olho" cx="34" cy="22" rx="3.6" ry="4.6" fill="#fff"/>
+          <path class="boca" d="M20 31 Q27 37 34 31" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <path d="M38 44h8l-4 4Z" fill="#5ee0a1"/>
+        </svg>
       </button>
     </div>
   </div>
+
+  <!-- Resumo por email: por agora só recolhe a escolha (o envio precisa da rota POST /agendamentos no servidor) -->
+  <dialog id="dlg-email" aria-labelledby="dlg-email-titulo">
+    <form method="dialog">
+      <div>
+        <h2 id="dlg-email-titulo">Resumo por email</h2>
+        <p class="dlg-nota">Enviado à segunda-feira às 08:00, com os números, o gráfico e os alertas.</p>
+      </div>
+      <fieldset>
+        <legend>Que período?</legend>
+        <label class="dlg-opcao"><input type="radio" name="freq" value="semanal" checked><span><b>Semanal</b><small>Todas as segundas, com a semana anterior</small></span></label>
+        <label class="dlg-opcao"><input type="radio" name="freq" value="mensal"><span><b>Mensal</b><small>Na 1.ª segunda do mês, com o mês anterior</small></span></label>
+      </fieldset>
+      <label class="dlg-campo"><b>Enviar para</b><input type="email" name="email" placeholder="nome@empresa.pt" required></label>
+      <div class="dlg-botoes">
+        <button class="res-btn" value="cancelar" formnovalidate>Fechar</button>
+        <button class="res-btn res-btn--primario" value="agendar">Agendar envio</button>
+      </div>
+    </form>
+  </dialog>
 
   <script>
     /* ---------- Temas e sugestões (editar aqui) ---------- */
@@ -1236,7 +1493,7 @@
     }
 
     function botaoExportar(linhas, titulo) {
-      return botaoEl('chat-acao', 'Exportar CSV', () => {
+      const b = botaoEl('chat-acao', 'Exportar CSV', () => {
         // ";" e BOM: o Excel em pt-PT abre em colunas e com acentos certos
         const campo = v => /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
         const csv = '﻿' + paraFolha(linhas).map(l => l.map(v => campo(String(v ?? ''))).join(';')).join('\r\n');
@@ -1249,6 +1506,8 @@
         anunciar('Ficheiro CSV descarregado.');
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);   // revogar logo pode cancelar o download
       });
+      b.dataset.exportar = '';   // o "Exportar dados" do topo usa o primeiro destes no separador aberto
+      return b;
     }
 
         /* ---------- Gráficos como imagem (PNG) ---------- */
@@ -1498,11 +1757,19 @@
       const cab = el('div', 'chat-grafico-cab');
       const leg = el('div', 'chat-legenda');
       const legenda = (cls, txt) => { const i = el('span'); i.append(el('span', 'chat-legenda-cor ' + cls), txt); leg.append(i); };
-      // REDESIGN 11/2026: barras (com poucos meses, uma linha engana)
-      legenda('chat-legenda-barra', String(s.anoAtual));
-      if (s.anoAnt) legenda('chat-legenda-barra chat-legenda-barra--ant', s.anoAnt);
-      if (s.meses.some(x => x.parcial)) legenda('chat-legenda-barra chat-legenda-barra--parcial', 'Mês incompleto');
-      cab.append(el('h3', '', 'Evolução das vendas'), leg);
+      // Com 4 meses ou mais: área; com menos, barras (com poucos meses, uma linha engana)
+      const comArea = s.meses.length >= 4;
+      const tipo = comArea ? 'flow-legenda-linha' : 'chat-legenda-barra';
+      legenda(tipo, String(s.anoAtual));
+      if (s.anoAnt) legenda(tipo + ' ' + tipo + '--ant', s.anoAnt);
+      if (s.meses.some(x => x.parcial)) legenda(tipo + ' ' + tipo + '--parcial', 'Mês incompleto');
+      // Valores por cima dos pontos em milhares ("256"), como diz o subtítulo; abaixo de 10 000 € ficam em euros
+      const emMil = topo >= 1e4;
+      const rotuloValor = v => Math.round(emMil ? v / 1000 : v).toLocaleString('pt-PT');
+      const cabTexto = el('div');
+      cabTexto.append(el('h3', '', 'Evolução das vendas em ' + s.anoAtual),
+        el('p', 'chat-grafico-sub', `Faturação por mês, em ${emMil ? 'milhares de euros' : 'euros'}${s.anoAnt ? ', comparada com ' + s.anoAnt : ''}.`));
+      cab.append(cabTexto, leg);
 
       const corpo = el('div', 'chat-grafico-corpo');
       const eixo = el('div', 'chat-eixo');
@@ -1522,6 +1789,7 @@
       const marca = el('span', 'chat-linha-marca');
       marca.setAttribute('aria-hidden', 'true');
       barras.append(marca);
+      const etiquetas = [];   // rótulo do valor de cada mês: o do mês escolhido fica destacado
 
       // REDESIGN 11/2026: uma barra por mês (ano anterior ao lado, mais clara), com o valor por cima
       const largura = 100 / n;
@@ -1535,21 +1803,56 @@
           b.style.left = (X(i) + desvio) + '%'; b.style.width = w + '%'; b.style.height = Math.max(3, v / topo * 200) + 'px';
           barras.append(b);
         };
-        barra(x.anterior, 'chat-barra-mes--ant', duas ? -w / 2 - 0.4 : 0);
-        barra(x.atual, x.parcial ? 'chat-barra-mes--parcial' : '', duas ? w / 2 + 0.4 : 0);
+        if (!comArea) {
+          barra(x.anterior, 'chat-barra-mes--ant', duas ? -w / 2 - 0.4 : 0);
+          barra(x.atual, x.parcial ? 'chat-barra-mes--parcial' : '', duas ? w / 2 + 0.4 : 0);
+        }
         if (x.atual != null && x.atual > 0) {
-          const r = el('span', 'chat-barra-valor', milhares(x.atual).replace(' €', ''));
+          const r = el('span', 'chat-barra-valor', rotuloValor(x.atual));
           r.setAttribute('aria-hidden', 'true');
-          r.style.left = (X(i) + (duas ? w / 2 + 0.4 : 0)) + '%'; r.style.top = (Y(x.atual) - 3) + 'px';
+          r.style.left = (X(i) + (!comArea && duas ? w / 2 + 0.4 : 0)) + '%'; r.style.top = (Y(x.atual) - (comArea ? 10 : 3)) + 'px';
           barras.append(r);
+          etiquetas[i] = r;
         }
       });
+
+      // Área + linha do ano atual; ano anterior tracejado
+      if (comArea) {
+        const NS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 100 200');      // 100 = largura em %, 200 = altura em px (igual a X e Y)
+        svg.setAttribute('preserveAspectRatio', 'none');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.classList.add('flow-area');
+        const caminho = (d, cls) => {
+          const p = document.createElementNS(NS, 'path');
+          p.setAttribute('d', d);
+          p.setAttribute('class', cls);
+          p.setAttribute('vector-effect', 'non-scaling-stroke');   // a linha não estica com o gráfico
+          svg.append(p);
+        };
+        const pontos = campo => s.meses.map((x, i) => ({ i, v: x[campo], parcial: x.parcial })).filter(p => p.v > 0);
+        const traco = ps => ps.map((p, k) => (k ? 'L' : 'M') + X(p.i) + ' ' + Y(p.v)).join(' ');
+        const completos = pontos('atual').filter(p => !p.parcial);
+        const parcial = pontos('atual').find(p => p.parcial);
+        if (s.anoAnt) caminho(traco(pontos('anterior')), 'flow-linha-ant');
+        if (completos.length) {
+          const ult = completos[completos.length - 1];
+          caminho(traco(completos) + ` L${X(ult.i)} 200 L${X(completos[0].i)} 200 Z`, 'flow-area-fundo');
+          caminho(traco(completos), 'flow-linha');
+          // mês incompleto: só uma ligação pontilhada, para não parecer uma queda
+          if (parcial) caminho(traco([ult, parcial]), 'flow-linha-parcial');
+        }
+        barras.prepend(svg);   // primeiro filho: fica por baixo dos pontos
+      }
 
       const rotulos = el('div', 'chat-rotulos');
       rotulos.setAttribute('aria-hidden', 'true');
       rotulos.style.gridTemplateColumns = colunasCss;
-      const leitura = el('div', 'chat-leitura');
+      const leitura = el('section', 'chat-leitura');
       leitura.setAttribute('aria-live', 'polite');
+      leitura.setAttribute('aria-label', 'Mês selecionado');
+      if (comArea) { marca.classList.add('flow-marca-mes'); marca.style.width = (100 / n) + '%'; }   // faixa da coluna do mês
 
       const variacao = (x, curto) => x.atual == null ? el('span', 'chat-delta', 'Sem vendas registadas')
         : x.parcial ? el('span', 'chat-delta', curto ? 'Incompleto' : 'Mês incompleto')
@@ -1560,11 +1863,22 @@
         botoes.forEach(b => { b.setAttribute('aria-pressed', String(+b.dataset.i === i)); b.tabIndex = +b.dataset.i === i ? 0 : -1; });
         marca.style.left = X(i) + '%';
         [...rotulos.children].forEach((r, j) => r.classList.toggle('chat-rotulo--ativo', i === j));
-        const bloco = (ano, v) => { const d = el('div'); d.append(el('small', '', String(ano)), el('span', '', v == null ? '—' : euros(v))); return d; };
-        leitura.replaceChildren(el('strong', '', nomeMes(x)), bloco(x.a, x.atual));
-        if (s.anoAnt) leitura.append(bloco(s.anoAnt, x.anterior));
-        if (x.media) { const d = el('div'); d.append(el('small', '', 'Valor médio'), el('span', '', x.media)); leitura.append(d); }
-        leitura.append(variacao(x));
+        etiquetas.forEach((r, j) => r && r.classList.toggle('chat-barra-valor--ativo', i === j));
+        // Cartão azul: mês, estado, valor, ano anterior, variação, diferença em euros e uma pergunta pronta
+        const mes = MESES[x.m - 1];
+        leitura.replaceChildren(el('h4', '', 'Mês selecionado'), el('strong', 'chat-leitura-nome', `${mes} ${x.a}`),
+          el('small', '', x.atual == null ? 'Sem vendas registadas' : x.parcial ? 'Mês incompleto' : 'Mês completo'),
+          el('span', 'chat-leitura-valor', x.atual == null ? '—' : rEur(x.atual)));
+        if (s.anoAnt) leitura.append(el('span', '', `${s.anoAnt}: ${x.anterior == null ? '—' : rEur(x.anterior)}`));
+        if (x.atual != null && !x.parcial && x.delta != null) leitura.append(chipDelta(x.delta, s.anoAnt ? ' face a ' + s.anoAnt : ''));
+        if (x.atual != null && !x.parcial && x.anterior != null) {
+          const dif = x.atual - x.anterior;
+          leitura.append(el('small', '', `${dif >= 0 ? '+' : '−'}${rEur(Math.abs(dif))} de diferença`));
+        }
+        if (x.media) leitura.append(el('small', '', 'Valor médio: ' + x.media));
+        const pergunta = `Vendas de ${mes.toLowerCase()} de ${x.a}` + (s.anoAnt ? ` comparadas com ${mes.toLowerCase()} de ${s.anoAnt}` : '');
+        const perguntarMes = botaoEl('chat-leitura-btn', 'Perguntar sobre ' + mes.toLowerCase(), () => { if (!ocupado) { verConversa(true); perguntar(pergunta); } });
+        leitura.append(perguntarMes);
       };
       s.meses.forEach((x, i) => {
         rotulos.append(el('span', '', MESES[x.m - 1].slice(0, 3).toLowerCase()));
@@ -1590,7 +1904,12 @@
       });
       colunas.append(barras, rotulos);
       corpo.append(eixo, colunas);
-      sec.append(cab, leitura, corpo);
+      // Cartão branco com o gráfico; o cartão azul do mês fica fora, ao lado
+      const linhaGrafico = el('div', 'flow-linha-grafico');
+      const ladoGrafico = el('div', 'flow-grafico-lado');
+      ladoGrafico.append(cab, corpo);
+      linhaGrafico.append(ladoGrafico, leitura);
+      sec.append(linhaGrafico);
       art.append(sec);
 
       // Começa no melhor mês
@@ -1651,6 +1970,26 @@
         cartao.addEventListener('click', ir);
         cartao.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ir(); } });
       }
+    }
+
+    // Três números por baixo do gráfico do Resumo: meses acima do ano anterior, maior subida e média por mês (só meses completos)
+    function cartoesSerie(s) {
+      const caixa = el('div', 'flow-mini');
+      const cartao = (rotulo, valor, nota) => { const c = el('div', 'flow-mini-cartao'); c.append(el('span', '', rotulo), el('strong', '', valor), el('small', '', nota)); caixa.append(c); };
+      const fechados = s.meses.filter(x => x.atual != null && !x.parcial);
+      const mes = x => MESES[x.m - 1];
+      const comp = fechados.filter(x => x.delta != null);
+      if (s.anoAnt && comp.length) {
+        const abaixo = comp.filter(x => x.delta < 0);
+        cartao(`Meses acima de ${s.anoAnt}`, `${comp.length - abaixo.length} de ${comp.length}`,
+          !abaixo.length ? 'Nenhum mês abaixo' : abaixo.length === 1 ? `Só ${mes(abaixo[0]).toLowerCase()} abaixo (${textoDelta(abaixo[0].delta)})` : `${abaixo.length} meses abaixo`);
+        const sobe = comp.reduce((m, x) => x.delta > m.delta ? x : m);
+        if (sobe.delta > 0) cartao('Maior subida', `${mes(sobe)} ${textoDelta(sobe.delta)}`,
+          sobe.anterior != null ? `+${rEur(sobe.atual - sobe.anterior)} face a ${s.anoAnt}` : '');
+      }
+      if (fechados.length) cartao('Média por mês', rEur(fechados.reduce((t, x) => t + x.atual, 0) / fechados.length),
+        fechados.length === 1 ? mes(fechados[0]) : `${mes(fechados[0])} a ${mes(fechados[fechados.length - 1]).toLowerCase()}`);
+      return caixa;
     }
 
     // Perguntas sobre uma linha de um ranking, conforme o que a lista compara ("por localidade", "por marca")
@@ -2478,18 +2817,16 @@
     let abaAtiva = null;
 
     /* =========================================================
-       REDESIGN 11/2026 — separador fixo "Resumo"
+       PROPOSTA D 11/2026 — Resumo: painel inicial + cartão fixo no painel lateral (não é um separador)
        GET /resumo?periodo=AnoAtual[&cliente=1003][&zona=Balcão] devolve os textos da ferramenta consultar_vendas
        (os mesmos do chat): lêem-se com lerLista/lerSerie e montam-se os blocos.
-       Os dados só carregam quando pedidos: botão "Ver resumo", "resumo do cliente X" na conversa,
-       um cliente do Top clientes ou "Ver resumo deste cliente" num ranking de clientes.
+       Carrega ao abrir a página; filtros, "resumo do cliente X" na conversa e as vistas guardadas voltam a carregar.
        ========================================================= */
     const RES_PERIODOS = [['Ultimos7Dias', 'Últimos 7 dias'], ['MesAtual', 'Este mês'], ['TrimestreAtual', 'Trimestre'], ['AnoAtual', 'Este ano'], ['Ultimos12Meses', 'Últimos 12 meses'], ['AnoAnterior', 'Ano passado']];
-    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, pedido: false };
-    let vistaResumo = false;  // o separador Resumo está à frente (só existe depois de ser pedido)
+    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null };
+    let vistaResumo = true;   // o painel inicial (Resumo) está à frente; um separador aberto passa-o para trás
     let pedidosResumo = 0;    // só a resposta do último pedido conta (mudar de filtro a meio)
 
-    // Formatação pt-PT com espaço fino nos milhares (também em números de 4 algarismos: 1 240)
     const rNB = ' ';
     const rGrupos = n => { let s = String(Math.round(Math.abs(n))), o = ''; while (s.length > 3) { o = rNB + s.slice(-3) + o; s = s.slice(0, -3); } return (n < 0 ? '−' : '') + s + o; };
     const rDec = (n, d) => { const [i, f] = Math.abs(n).toFixed(d).split('.'); return (n < 0 ? '−' : '') + rGrupos(+i) + (f ? ',' + f : ''); };
@@ -2520,8 +2857,8 @@
 
     // A única porta para os dados do Resumo: conversa, sugestões, botão "Ver resumo", Top clientes e rankings chamam todos esta.
     // Os dados só carregam aqui, quando alguém os pede. cliente: ID ou início do nome (null = todas as vendas).
-    function pedirResumo(periodo, cliente = null) {
-      Object.assign(resumoEstado, { periodo: periodo || resumoEstado.periodo, cliente: cliente || null, zona: null, pedido: true, menu: null });
+    function pedirResumo(periodo, cliente = null, zona = null) {
+      Object.assign(resumoEstado, { periodo: periodo || resumoEstado.periodo, cliente: cliente || null, zona: zona || null, menu: null });
       vistaResumo = true;
       abaAtiva = null;
       desenharConversa();   // o cartão da resposta aberta deixa de dizer "Aberto no painel"
@@ -2571,20 +2908,29 @@
       return null;
     }
 
+    // Resumos já carregados nesta sessão, por período + zona + cliente: voltar a uma vista ou filtro não chama o servidor,
+    // como os separadores das respostas. O cartão mostra "Guardado às …" com a hora em que os dados vieram.
+    // shortcut: só em memória (recarregar a página volta a pedir); sem prazo de validade, porque a sessão é curta.
+    const resumosGuardados = new Map();
     async function carregarResumo() {
-      if (!resumoEstado.pedido) return;
       const n = ++pedidosResumo;
-      Object.assign(resumoEstado, { aCarregar: true, erro: null, menu: null });
-      if (vistaResumo) desenharPainel();
+      const chave = JSON.stringify([resumoEstado.periodo, resumoEstado.zona, resumoEstado.cliente]);
+      const guardado = resumosGuardados.get(chave);
+      Object.assign(resumoEstado, { aCarregar: !guardado, erro: null, menu: null });
+      if (!guardado) { desenharLateral(); if (vistaResumo) desenharPainel(); }
       try {
-        const q = new URLSearchParams({ periodo: resumoEstado.periodo });
-        if (resumoEstado.cliente) q.set('cliente', resumoEstado.cliente);
-        if (resumoEstado.zona) q.set('zona', resumoEstado.zona);
-        const r = await fetch('/resumo?' + q);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const j = await r.json();
-        if (n !== pedidosResumo) return;
-        resumoEstado.dados = montarResumo(j);
+        if (guardado) resumoEstado.dados = guardado;
+        else {
+          const q = new URLSearchParams({ periodo: resumoEstado.periodo });
+          if (resumoEstado.cliente) q.set('cliente', resumoEstado.cliente);
+          if (resumoEstado.zona) q.set('zona', resumoEstado.zona);
+          const r = await fetch('/resumo?' + q);
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const j = await r.json();
+          if (n !== pedidosResumo) return;
+          resumoEstado.dados = montarResumo(j);
+          resumosGuardados.set(chave, resumoEstado.dados);   // só as respostas que chegaram: uma falha volta a tentar
+        }
         if (!resumoEstado.zona && !resumoEstado.cliente && resumoEstado.dados.locais) resumoEstado.zonas = resumoEstado.dados.locais;
       } catch (erro) {
         if (n !== pedidosResumo) return;
@@ -2593,7 +2939,9 @@
         resumoEstado.erro = 'Não foi possível carregar o resumo. Confirme que o agente está a correr e tente de novo.';
       }
       resumoEstado.aCarregar = false;
+      desenharLateral();
       if (vistaResumo) desenharPainel();
+      if (!historico.length) desenharConversa();   // as boas-vindas passam a mostrar o que o Resumo encontrou
     }
 
     // Textos da ferramenta -> números dos blocos. Sem dados para um bloco, o bloco fica vazio (nunca inventa).
@@ -2625,13 +2973,16 @@
       const subida = itens => itens.filter(i => i.delta > 0).sort((a, b) => b.delta - a.delta)[0];
       const descida = itens => itens.filter(i => i.delta < 0).sort((a, b) => a.delta - b.delta)[0];
 
+      // "Um ano antes: 224 clientes (+4,0%), 33 450 documentos (+4,1%), valor médio por documento 57,50 € (+2,1%)": a variação de cada indicador
+      const umAnoAntes = r => r ? facto(r, /^um ano antes/i)[1] : '';
+      const variacaoDe = (r, antes) => num(umAnoAntes(r), new RegExp(antes + '[^(]*\\(([+\\-−]?[\\d,]+)%\\)'));
       const kpis = [
         { nome: 'Faturação total', valor: total, tipo: 'eur', variacao: delta,
           contexto: delta == null ? 'Sem comparação com o ano anterior.' : `${rDec(Math.abs(delta), 1)}% ${delta >= 0 ? 'acima' : 'abaixo'} do mesmo período de ${anoAnt}.` },
-        { nome: 'N.º de documentos', valor: num(rm.resumo, /,\s*([\d\s]+?)\s+documentos/), tipo: 'int', contexto: 'Faturas e talões emitidos no período.' },
-        { nome: 'Valor médio por documento', valor: num(facto(rm, /^valor m[ée]dio/i)[1], /^(-?[\d\s.,]+)/), tipo: 'eur2', contexto: 'Valor médio de cada venda.' }
+        { nome: 'N.º de documentos', valor: num(rm.resumo, /,\s*([\d\s]+?)\s+documentos/), tipo: 'int', variacao: variacaoDe(rm, 'documentos'), contexto: 'Faturas e talões emitidos no período.' },
+        { nome: 'Valor médio por documento', valor: num(facto(rm, /^valor m[ée]dio/i)[1], /^(-?[\d\s.,]+)/), tipo: 'eur2', variacao: variacaoDe(rm, 'por documento'), contexto: 'Valor médio de cada venda.' }
       ];
-      if (ativos != null) kpis.push({ nome: 'Clientes ativos', valor: ativos, tipo: 'int', contexto: 'Clientes com compras no período.' });
+      if (ativos != null) kpis.push({ nome: 'Clientes ativos', valor: ativos, tipo: 'int', variacao: variacaoDe(rc, 'clientes'), contexto: 'Clientes com compras no período.' });
 
       // Previsão: tendência linear dos últimos 6 meses completos, 3 meses à frente.
       // shortcut: reta simples + intervalo de ±1,28 desvios (≈80%); trocar por um modelo com sazonalidade se houver vários anos de histórico.
@@ -2671,7 +3022,21 @@
                       atual: meses.slice(0, ultimo + 1).map(x => sa += x.atual || 0), anterior: meses.map(x => sb += x.anterior || 0) };
       }
 
+      // Topo e painel lateral: média dos meses completos (contra os mesmos meses do ano anterior), diferença em euros e melhor mês
+      const mediaDe = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+      const mediaAtual = completos.length ? mediaDe(completos.map(x => x.atual)) : null;
+      const mediaMes = completos.length ? {
+        valor: mediaAtual,
+        variacao: completos.every(x => x.anterior > 0) ? (mediaAtual / mediaDe(completos.map(x => x.anterior)) - 1) * 100 : null,
+        de: MESES[completos[0].m - 1], ate: MESES[completos[completos.length - 1].m - 1] } : null;
+      const melhor = meses.filter(x => x.atual > 0).reduce((m, x) => !m || x.atual > m.atual ? x : m, null);
+
       return {
+        serie, mediaMes,
+        melhorMes: melhor ? { nome: MESES[melhor.m - 1], valor: melhor.atual } : null,
+        diferenca: total != null && delta != null ? total - total / (1 + delta / 100) : null,
+        // "dados até": a última venda registada, quando o servidor a indica; senão o fim do período
+        ate: (textoMeses.match(/[uú]ltima venda registada[^\d]*(\d{2}-\d{2}-\d{4})/) || [])[1] || (datas ? datas[2] : ''), guardado: new Date(),
         cliente: (linha1.match(/cliente "([^"]+)"/) || [])[1] || null,
         periodoTexto: nomePeriodo + (datas ? ` · ${datas[1]} a ${datas[2]}` : ''),
         mesIncompleto: incompleto ? MESES[incompleto.m - 1] : '',
@@ -2685,6 +3050,105 @@
       };
     }
 
+    const nomePeriodo = p => (RES_PERIODOS.find(x => x[0] === p) || [])[1] || '';
+    // Nome de quem tem a sessão: o servidor troca {{UTILIZADOR}}; sem troca, a página não mostra nome
+    const nomeUtilizador = (n => n && !n.startsWith('{{') ? n.trim() : '')(document.body.dataset.utilizador);
+    const ola = () => { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite'; };
+    const saudacaoHtml = () => `<p class="flow-ola">${ola()},${nomeUtilizador ? ` <strong>${rEsc(nomeUtilizador.split(/\s+/)[0])}</strong>` : ''}</p>`;
+    if (nomeUtilizador) {
+      const iniciais = document.getElementById('iniciais');
+      const p = nomeUtilizador.split(/\s+/);
+      iniciais.textContent = (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+      iniciais.title = nomeUtilizador;
+      iniciais.hidden = false;
+    }
+    const chipVar = (v, sufixo = '') => v == null ? '' : `<span class="chat-delta ${v >= 0 ? 'chat-delta--sobe' : 'chat-delta--desce'}">${rVar(v)}${sufixo}</span>`;
+    // "02-11-2026" -> "2 nov"
+    const dataCurta = d => { const m = (d || '').match(/^(\d{2})-(\d{2})/); return m ? `${+m[1]} ${MESES[m[2] - 1].slice(0, 3).toLowerCase()}` : ''; };
+
+    // Linha pequena da faturação por mês: verde onde sobe, vermelho onde desce; o ponto marca o melhor mês
+    function sparkHtml(s) {
+      const pts = (s ? s.meses : []).filter(x => x.atual > 0 && !x.parcial);
+      if (pts.length < 2) return '';
+      const max = Math.max(...pts.map(x => x.atual)), min = Math.min(...pts.map(x => x.atual));
+      const X = i => 4 + i * 252 / (pts.length - 1), Y = v => 50 - (max > min ? (v - min) / (max - min) : .5) * 40;
+      const area = `M${X(0)} 58 ` + pts.map((x, i) => `L${X(i)} ${Y(x.atual)}`).join(' ') + ` L${X(pts.length - 1)} 58 Z`;
+      const tracos = pts.slice(1).map((x, i) => `<path d="M${X(i)} ${Y(pts[i].atual)} L${X(i + 1)} ${Y(x.atual)}" stroke="var(--${x.atual >= pts[i].atual ? 'flow-sobe' : 'flow-desce'})"/>`).join('');
+      const im = pts.reduce((m, x, i) => x.atual > pts[m].atual ? i : m, 0);
+      const mes = x => MESES[x.m - 1].slice(0, 3).toLowerCase();
+      return `<svg class="flow-spark" viewBox="0 0 260 72" role="img" aria-label="${rEsc(`Faturação por mês, de ${mes(pts[0])} a ${mes(pts[pts.length - 1])}; melhor mês: ${MESES[pts[im].m - 1].toLowerCase()}.`)}">
+          <path d="${area}" fill="#e6edff" stroke="none"/><g fill="none" stroke-width="2.4" stroke-linecap="round">${tracos}</g>
+          <circle cx="${X(im)}" cy="${Y(pts[im].atual)}" r="4" fill="var(--flow-sobe)" stroke="#fff" stroke-width="2"/>
+          <text x="${X(0)}" y="70">${mes(pts[0])}</text><text x="${X(im)}" y="70" text-anchor="middle">${im && im < pts.length - 1 ? mes(pts[im]) : ''}</text><text x="${X(pts.length - 1)}" y="70" text-anchor="end">${mes(pts[pts.length - 1])}</text>
+        </svg>
+        <p class="flow-spark-legenda" aria-hidden="true"><span><b style="color: var(--flow-sobe)">━</b> sobe</span><span><b style="color: var(--flow-desce)">━</b> desce</span></p>`;
+    }
+
+    // Painel lateral: o Resumo guardado, sempre à vista (a faturação e a média por mês também estão em grande no topo)
+    function desenharLateral() {
+      const D = resumoEstado.dados;
+      const caixa = document.getElementById('lateral-resumo');
+      const tem = !!D && !D.erro;
+      caixa.hidden = !tem;
+      document.getElementById('lateral-carregar').hidden = tem || !resumoEstado.aCarregar;
+      document.getElementById('lateral-pedir').hidden = tem || resumoEstado.aCarregar;   // só quando falhou
+      document.getElementById('ver-inicio').hidden = vistaResumo;
+      document.getElementById('guardar-vista').disabled = !tem;
+      if (tem) {
+        const [fat, ...outros] = D.kpis;
+        const indicadores = [...outros.map(k => `<div><dt>${rEsc(k.nome.replace('N.º de documentos', 'Documentos').replace(' por documento', ''))}</dt><dd class="flow-valor">${rValorKpi(k)}</dd>${k.variacao == null ? '' : `<dd>${chipVar(k.variacao)}</dd>`}</div>`),
+          D.melhorMes ? `<div><dt>Melhor mês</dt><dd class="flow-valor">${rEsc(D.melhorMes.nome)}</dd><dd class="flow-nota">${rEur(D.melhorMes.valor)}</dd></div>` : ''];
+        const pz = D.locaisDesce;
+        caixa.innerHTML = `
+          <div class="flow-resumo-topo"><h2>Resumo das vendas</h2><span class="flow-etiqueta">${rEsc(nomePeriodo(resumoEstado.periodo))}</span></div>
+          <p class="flow-nota">Guardado às ${horaCurta(D.guardado)}${D.ate ? ' · dados até ' + dataCurta(D.ate) : ''}</p>
+          <p class="flow-nota flow-nota--rotulo">Faturação</p>
+          <p class="flow-total">${rValorKpi(fat)}</p>
+          ${chipVar(fat.variacao, D.anoAnt ? ' vs ' + rEsc(D.anoAnt) : '')}
+          ${sparkHtml(D.serie)}
+          <dl class="flow-kpis">${indicadores.join('')}</dl>
+          ${pz ? `<div class="flow-perda"><p class="flow-nota">Maior perda</p><p>${rEsc(nomeProprio(pz.nome))} ${chipVar(pz.delta)}</p></div>` : ''}`;
+      }
+      desenharVistas();
+    }
+    document.getElementById('lateral-pedir').addEventListener('click', () => pedirResumo('AnoAtual'));
+    document.getElementById('ver-inicio').addEventListener('click', () => { verInicio(); painelEl.querySelector('[data-menu]')?.focus(); });
+
+    // Vistas guardadas: período + zona + cliente do Resumo, guardados neste browser
+    // shortcut: localStorage (só neste computador, máximo 6); passar para o servidor se tiverem de seguir o utilizador
+    const VISTAS = 'flow-vistas';
+    const lerVistas = () => { try { return JSON.parse(localStorage.getItem(VISTAS)) || []; } catch { return []; } };
+    const mesmaVista = (v, e) => v.periodo === e.periodo && (v.zona || null) === (e.zona || null) && (v.cliente || null) === (e.cliente || null);
+    function desenharVistas() {
+      const vistas = lerVistas();
+      const D = resumoEstado.dados;
+      document.getElementById('vistas').replaceChildren(...vistas.map(v => {
+        const ativa = vistaResumo && mesmaVista(v, resumoEstado);
+        if (ativa && D && !D.erro && D.total != null) v.total = D.total;   // o valor acompanha a última consulta
+        const b = botaoEl('flow-vista', '', () => pedirResumo(v.periodo, v.cliente, v.zona));
+        b.append(el('span', '', v.nome), el('span', '', v.total == null ? '' : rCurto(v.total)));
+        if (ativa) b.setAttribute('aria-current', 'true');
+        const li = el('li'); li.append(b); return li;
+      }));
+      localStorage.setItem(VISTAS, JSON.stringify(vistas));
+    }
+    document.getElementById('guardar-vista').addEventListener('click', () => {
+      const D = resumoEstado.dados, e = resumoEstado;
+      if (!D || D.erro) return;
+      const nome = nomePeriodo(e.periodo) + ' · ' + (e.cliente ? 'Cliente ' + (D.cliente || e.cliente) : e.zona ? nomeProprio(e.zona) : 'todas as zonas');
+      const vistas = [{ periodo: e.periodo, zona: e.zona, cliente: e.cliente, nome, total: D.total }, ...lerVistas().filter(v => !mesmaVista(v, e))].slice(0, 6);
+      localStorage.setItem(VISTAS, JSON.stringify(vistas));
+      desenharVistas();
+      anunciar('Vista guardada: ' + nome + '.');
+    });
+
+    // Recolher o painel lateral: fica só a marca e o botão
+    document.getElementById('btn-lateral').addEventListener('click', e => {
+      const fechar = document.getElementById('lateral').classList.toggle('flow-lateral--recolhido');
+      e.currentTarget.setAttribute('aria-expanded', String(!fechar));
+      e.currentTarget.setAttribute('aria-label', fechar ? 'Abrir o resumo guardado' : 'Recolher o resumo guardado');
+    });
+
     // "▲ MAIOR SUBIDA" / "▼ MAIOR DESCIDA" por baixo de um bloco
     function resDestaques(sobe, desce, anoAnt, nome = i => i.nome) {
       if (!sobe && !desce) return '';
@@ -2692,15 +3156,8 @@
       return `<div class="res-destaques">${caixa(sobe, 'res-sobe', '▲ MAIOR SUBIDA')}${caixa(desce, 'res-desce', '▼ MAIOR DESCIDA')}</div>`;
     }
 
+    // Os indicadores vivem no topo (barraResumoHtml) e no painel lateral (desenharLateral)
     function resumoHtml(D) {
-      const htmlKpis = `<div class="res-kpis" data-bloco="kpis">${D.kpis.map(k => `
-        <div class="chat-kpi">
-          <div class="chat-kpi-cab"><span>${rEsc(k.nome)}</span></div>
-          <span class="chat-kpi-valor">${rValorKpi(k)}</span>
-          ${k.variacao == null ? '' : `<span class="res-var ${rVarCls(k.variacao)}">${rVar(k.variacao)} vs. ${rEsc(D.anoAnt)}</span>`}
-          <span class="chat-kpi-detalhe">${rEsc(k.contexto)}</span>
-        </div>`).join('')}</div>`;
-
       // Previsão
       const P = D.previsao;
       let htmlPrev;
@@ -2831,8 +3288,7 @@
         </section>`;
       }
 
-      return `${htmlKpis}
-        <div class="res-grelha">${htmlPrev}${htmlAten}</div>
+      return `<div class="res-grelha">${htmlPrev}${htmlAten}</div>
         <div class="res-grelha">${htmlArt}${htmlLoc}</div>
         ${htmlCli || htmlAcum ? `<div class="res-grelha">${htmlCli}${htmlAcum}</div>` : ''}`;
     }
@@ -2845,28 +3301,38 @@
 
     function barraResumoHtml() {
       const D = resumoEstado.dados || {};
-      const periodo = D.periodoTexto || (RES_PERIODOS.find(p => p[0] === resumoEstado.periodo) || [])[1] || '';
+      const ano = new Date().getFullYear();
+      // "Ano 2026" em vez de "Este ano": o período é o título da página
+      const periodo = { AnoAtual: `Ano ${ano}`, AnoAnterior: `Ano ${ano - 1}` }[resumoEstado.periodo] || nomePeriodo(resumoEstado.periodo);
       const aberto = resumoEstado.menu === 'filtros';
-      const nFiltros = (resumoEstado.zona ? 1 : 0) + (resumoEstado.cliente ? 1 : 0);
-      return `<div class="res-barra">
-        <div class="res-linha">
-          <div class="res-titulo">
-            <span class="res-icone" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2v12h12M5 10l3-3 2 2 4-5"/></svg></span>
-            <h2>Resumo das vendas${D.cliente ? ' · ' + rEsc(D.cliente) : ''}</h2>
-            <div class="res-menu-wrap">
-              <button type="button" class="res-btn" data-menu="filtros" aria-expanded="${aberto}" aria-controls="res-menu-filtros">
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
-                Filtros ${nFiltros ? `<span class="res-contador">${nFiltros}</span>` : ''}</button>
-              <div class="res-menu" id="res-menu-filtros" role="dialog" aria-label="Filtros" ${aberto ? '' : 'hidden'}>
-                <div><h3>Período</h3>${resChipsPeriodo()}</div>
-                ${!resumoEstado.cliente && resumoEstado.zonas.length ? `<div><h3>Zona</h3><div class="res-chips" role="group" aria-label="Zona">${[{ id: '', nome: 'Todas' }].concat(resumoEstado.zonas).map(l => `<button type="button" class="res-chip" data-zona="${rEsc(l.id)}" aria-pressed="${(resumoEstado.zona || '') === l.id}">${rEsc(l.nome)}</button>`).join('')}</div></div>` : ''}
-                <div><h3>Cliente</h3>${resFormCliente('Ver')}</div>
-                <div class="res-menu-rodape"><button type="button" class="chat-acao" data-limpar>Limpar filtros</button><button type="button" class="res-btn" data-fechar>Fechar</button></div>
-              </div>
+      const hoje = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      const M = D.mediaMes;
+      const kpi = (rotulo, valor, chips) => `<div class="flow-topo-kpi"><span>${rotulo}</span><div><strong>${valor}</strong><span class="flow-topo-chips">${chips}</span></div></div>`;
+      const neutro = t => t ? `<span class="chat-delta flow-chip-neutro">${t}</span>` : '';
+      const destaque = [
+        D.total != null ? kpi(`Faturação ${D.serie ? D.serie.anoAtual : ''}`, rCurto(D.total),
+          chipVar(D.kpis[0].variacao) + neutro(D.diferenca == null ? '' : (D.diferenca >= 0 ? '+' : '−') + rEur(Math.abs(D.diferenca)))) : '',
+        M ? kpi('Média por mês', rEur(M.valor), chipVar(M.variacao) + neutro(M.de === M.ate ? M.de.toLowerCase() : `${M.de.slice(0, 3)}–${M.ate.slice(0, 3)}`.toLowerCase())) : ''
+      ].filter(Boolean).join('<span class="flow-topo-sep" aria-hidden="true"></span>');
+      return `<div class="flow-topo">
+        <div class="flow-topo-ola">
+          <h2 class="so-leitor">Resumo das vendas${D.cliente ? ' de ' + rEsc(D.cliente) : ''}</h2>
+          ${saudacaoHtml()}
+          <div class="res-menu-wrap">
+            <button type="button" class="flow-periodo-btn" data-menu="filtros" aria-expanded="${aberto}" aria-controls="res-menu-filtros" aria-label="${rEsc(periodo)}: mudar período, zona ou cliente">${rEsc(periodo)}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+            <div class="res-menu" id="res-menu-filtros" role="dialog" aria-label="Filtros" ${aberto ? '' : 'hidden'}>
+              <div><h3>Período</h3>${resChipsPeriodo()}</div>
+              ${!resumoEstado.cliente && resumoEstado.zonas.length ? `<div><h3>Zona</h3><div class="res-chips" role="group" aria-label="Zona">${[{ id: '', nome: 'Todas' }].concat(resumoEstado.zonas).map(l => `<button type="button" class="res-chip" data-zona="${rEsc(l.id)}" aria-pressed="${(resumoEstado.zona || '') === l.id}">${rEsc(l.nome)}</button>`).join('')}</div></div>` : ''}
+              <div><h3>Cliente</h3>${resFormCliente('Ver')}</div>
+              <div class="res-menu-rodape"><button type="button" class="chat-acao" data-limpar>Limpar filtros</button><button type="button" class="res-btn" data-fechar>Fechar</button></div>
             </div>
           </div>
-          <span class="res-data"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1.5v3M11 1.5v3M2 7h12"/></svg>${rEsc(periodo)}</span>
+          <p class="flow-hoje">${hoje}${D.ate ? ' · dados até ' + dataCurta(D.ate) : ''}</p>
         </div>
+        ${destaque ? `<div class="flow-topo-kpis">${destaque}</div>` : ''}
+      </div>
+      <div class="res-barra">
         <div class="res-info">
           ${D.mesIncompleto ? `<span class="res-aviso"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.8V8l2.2 1.6"/></svg>${rEsc(D.mesIncompleto)} incompleto</span>` : ''}
           ${resumoEstado.zona ? `<button type="button" class="res-filtro-ativo" data-zona="" aria-label="Remover filtro de zona">Zona: <strong>${rEsc(nomeProprio(resumoEstado.zona))}</strong> ×</button>` : ''}
@@ -2896,6 +3362,17 @@
         return raiz;
       }
       raiz.innerHTML = barraResumoHtml() + '<div class="res-conteudo">' + resumoHtml(D) + '</div>';
+      // Vendas por mês: o mesmo gráfico das respostas, com o cartão do mês e três números por baixo
+      if (D.serie && D.serie.meses.length > 1) {
+        const bloco = el('section', 'flow-serie');
+        const cabeca = el('div', 'flow-serie-cab');
+        cabeca.append(el('h2', 'flow-serie-titulo', 'Vendas por mês, ' + nomePeriodo(resumoEstado.periodo).toLowerCase()));
+        bloco.append(cabeca);
+        desenharSerie(D.serie, bloco);
+        cabeca.append(bloco.querySelector('.chat-controlos'));   // Gráfico / Tabela ao lado do título
+        bloco.append(cartoesSerie(D.serie));
+        raiz.querySelector('.res-conteudo').before(bloco);
+      }
       // Copiar e Exportar CSV: os mesmos botões das outras respostas (faturação por mês)
       rodapeDados(raiz.querySelector('.res-conteudo'), D.tabela, 'resumo das vendas' + (D.cliente ? ' ' + D.cliente : ''));
       ligarPrevisao(raiz, D.previsao);
@@ -2915,8 +3392,7 @@
         if ('fechar' in d) { resumoEstado.menu = null; redesenhar(); painelEl.querySelector('[data-menu]')?.focus(); return; }
         if (d.periodo) {
           resumoEstado.periodo = d.periodo;
-          if (resumoEstado.pedido) carregarResumo();
-          else { redesenhar(); painelEl.querySelector(`[data-periodo="${d.periodo}"]`)?.focus(); }
+          carregarResumo();
           return;
         }
         if ('zona' in d) { resumoEstado.zona = !d.zona || d.zona === resumoEstado.zona ? null : d.zona; carregarResumo(); return; }
@@ -2994,7 +3470,7 @@
       }
       // Pedido de resumo: frase curta e o cartão, que volta a abrir este resumo
       if (item.resumo) {
-        const pr = item.resumo, aberto = vistaResumo && resumoEstado.pedido && resumoEstado.periodo === pr.periodo && resumoEstado.cliente === pr.cliente;
+        const pr = item.resumo, aberto = vistaResumo && resumoEstado.periodo === pr.periodo && resumoEstado.cliente === pr.cliente;
         const bolha = el('article', 'chat-folha');
         bolha.append(el('p', 'chat-texto', item.texto));
         const cartao = botaoEl('chat-cartao', '', () => pedirResumo(pr.periodo, pr.cliente));
@@ -3018,27 +3494,69 @@
       return bolha;
     }
 
-    // Balão do assistente que sugere o Resumo; o botão passa por perguntar(), por isso fica a pergunta e a resposta na conversa
-    function balaoResumo(periodo) {
-      const art = el('article', 'chat-folha');
-      const pergunta = `Resumo das vendas ${periodo}`;
-      const b = botaoEl('chat-chip', `Ver o resumo das vendas ${periodo}`, () => { if (!ocupado) perguntar(pergunta); });
-      b.disabled = ocupado;
-      art.append(el('p', 'chat-texto', 'Também posso abrir o resumo das vendas no painel: indicadores, previsão e o que precisa de atenção.'), b);
-      return art;
+    // Boas-vindas em três passos: início (como começar), conversa (escrever) ou dados (escolher um tema)
+    let modoInicio = 'inicio';
+    const mudarModo = (modo, foco) => { modoInicio = modo; desenharConversa(); (foco ? foco() : area.querySelector('.flow-modo, .flow-mudar'))?.focus(); };
+    function boasVindas() {
+      const ver = modo => () => mudarModo(modo, modo === 'conversa' ? () => campo : modo === 'dados' ? () => area.querySelector('.flow-tema') : null);
+      const linhaModo = texto => { const p = el('p', 'flow-modo-atual', texto); p.append(botaoEl('flow-mudar', 'Mudar', ver('inicio'))); return p; };
+      if (modoInicio === 'conversa') {
+        return [linhaModo('Modo: conversa'),
+          el('p', 'flow-msg', 'Diga-me o que precisa de saber. Por exemplo: "Como correu a faturação em agosto?" ou "Quais são os 5 melhores clientes este ano?"')];
+      }
+      if (modoInicio === 'dados') {
+        const temas = el('div', 'flow-temas');
+        temas.append(...TEMAS.map(t => {
+          const b = botaoEl('flow-tema', '', () => { temaAtual = t.id; desenharTemas(); desenharConversa(); area.querySelector('.chat-sugestoes button')?.focus(); });
+          b.setAttribute('aria-pressed', String(t.id === temaAtual));
+          b.append(el('b', '', t.nome), el('small', '', t.descricao));
+          return b;
+        }));
+        return [linhaModo('Modo: análise de dados'), el('p', 'flow-pergunta', 'O que quer analisar?'), temas, blocoSugestoes('Perguntas sobre ' + tema().nome.toLowerCase())];
+      }
+      const msg = el('div', 'flow-msg');
+      const lista = el('ul');
+      ['Pergunte por palavras suas, como a um colega.', 'Ou escolha um tema: os gráficos abrem no painel ao lado.', 'Guarde o que lhe interessa no resumo, à esquerda.']
+        .forEach(t => lista.append(el('li', '', t)));
+      msg.append(el('p', 'flow-msg-ola', `Olá${nomeUtilizador ? ' ' + nomeUtilizador.split(/\s+/)[0] : ''}, sou o Flow.`),
+        el('p', '', 'Respondo a perguntas sobre vendas, clientes e artigos com os dados da base de dados.'), lista,
+        el('small', '', 'Só consulto dados — não altero nada na base de dados.'));
+      const filhos = [msg];
+      // Com o Resumo carregado, o Flow aponta logo a maior quebra por zona
+      const D = resumoEstado.dados, pz = D && !D.erro && D.locaisDesce;
+      if (pz) {
+        const nota = el('div', 'flow-msg flow-msg--destaque');
+        const texto = el('p');
+        texto.append('Hoje reparei numa coisa: ', nomeProprio(pz.nome), ' faturou ', el('strong', '', `menos ${rDec(Math.abs(pz.delta), 1)}%`), ` do que em ${D.anoAnt}. Quer ver porquê?`);
+        const alerta = D.alertas.find(a => a.tipo === 'local');
+        nota.append(texto, botaoEl('flow-mudar', 'Ver porquê', () => { if (!ocupado && alerta) perguntar(alerta.pergunta); }));
+        filhos.push(nota);
+      }
+      const modo = (cls, icone, titulo, texto, acao) => {
+        const b = botaoEl('flow-modo', '', acao);
+        const ic = el('span', 'flow-modo-ic' + cls);
+        ic.setAttribute('aria-hidden', 'true');
+        ic.innerHTML = icone;
+        const t = el('span');
+        t.append(el('b', '', titulo), el('small', '', texto));
+        b.append(ic, t);
+        return b;
+      };
+      filhos.push(el('p', 'flow-pergunta', 'Como quer começar?'),
+        modo('', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4Z"/></svg>',
+          'Vamos conversar', 'Pergunte por palavras suas, como faria a um colega.', ver('conversa')),
+        modo(' flow-modo-ic--escuro', '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 20V12M12 20V5M18 20v-8"/></svg>',
+          'Vamos analisar dados', 'Escolha um tema. Os resultados abrem no painel.', ver('dados')));
+      return filhos;
     }
 
     // A conversa inteira, da primeira pergunta à última; feedback e sugestões só na última resposta
     function desenharConversa() {
       const filhos = [];
       if (!historico.length) {
-        // Boas-vindas num balão do assistente: olá, como usar e o tema escolhido
-        const intro = el('article', 'chat-folha chat-intro');
-        intro.append(el('p', 'chat-intro-ola', 'Olá! Sou o assistente de vendas.'),
-                     el('p', 'chat-texto', 'Escolha um tema e carregue numa pergunta, ou escreva a sua em baixo. Os números aparecem no painel de dados.'),
-                     el('p', 'chat-texto', `${tema().nome}: ${tema().descricao.charAt(0).toLowerCase() + tema().descricao.slice(1)}`));
-        filhos.push(comAvatar(intro), blocoSugestoes('Perguntas sugeridas'));
+        filhos.push(...boasVindas());
       }
+      temasEl.hidden = !historico.length;   // antes da 1.ª pergunta, os temas estão no modo "analisar dados"
       const lista = [...historico].reverse();   // o histórico guarda a mais recente primeiro
       lista.forEach((item, k) => {
         filhos.push(mensagemEu(item.pergunta, item.hora, [
@@ -3048,31 +3566,17 @@
         filhos.push(comAvatar(mensagemAgente(item), item.horaResposta));
         if (k === lista.length - 1 && !item.erro) {
           if (!item.resumo) filhos.push(blocoFeedback(item));   // o resumo não vem do agente: não há resposta a avaliar
-          // Depois de a conversa começar, o assistente sugere o Resumo num balão, enquanto ainda não foi aberto
-          if (!item.resumo && !resumoEstado.pedido) filhos.push(comAvatar(balaoResumo((item.art && item.art.periodoResumo) || 'deste ano')));
           const seguintes = (item.art && item.art.sugestoes) || [];
           filhos.push(seguintes.length ? blocoSeguintes(seguintes) : blocoSugestoes('Mais sobre ' + tema().nome.toLowerCase()));
         }
       });
       area.replaceChildren(...filhos);
       area.scrollTop = area.scrollHeight;
-      atualizarBalao();   // a conversa começou: o balão flutuante pode aparecer
     }
 
-    // Separadores e o resultado aberto
+    // Separadores e o resultado aberto. O Resumo não é um separador: é o painel inicial, e volta quando não há separador à frente.
     function desenharPainel() {
-      // Separador "Resumo": só existe depois de o resumo ser pedido, e fecha-se como os outros
-      const sepResumo = [];
-      if (resumoEstado.pedido) {
-        const abaResumo = el('div', 'chat-aba' + (vistaResumo ? ' chat-aba--ativa' : ''));
-        const abrirResumoBtn = botaoEl('chat-aba-abrir', 'Resumo', () => { vistaResumo = true; abaAtiva = null; desenharPainel(); desenharConversa(); });
-        if (vistaResumo) abrirResumoBtn.setAttribute('aria-current', 'true');
-        const fecharResumoBtn = botaoEl('chat-aba-fechar', '×', fecharResumo);
-        fecharResumoBtn.setAttribute('aria-label', 'Fechar Resumo');
-        abaResumo.append(abrirResumoBtn, fecharResumoBtn);
-        sepResumo.push(abaResumo);
-      }
-      separadoresEl.replaceChildren(...sepResumo, ...abas.map(item => {
+      separadoresEl.replaceChildren(...abas.map(item => {
         const sep = el('div', 'chat-aba' + (item === abaAtiva ? ' chat-aba--ativa' : ''));
         const abrir = botaoEl('chat-aba-abrir', tituloDaResposta(item), () => abrirAba(item));
         abrir.title = tituloDaResposta(item);
@@ -3091,26 +3595,19 @@
         formas.forEach(f => f.setAttribute('aria-hidden', 'true'));   // só decoração; o leitor de ecrã ouve o texto escondido
         esq.append(el('span', 'so-leitor', 'A preparar os dados…'), ...formas);
         painelEl.replaceChildren(esq);
-      } else if (resumoEstado.pedido && (vistaResumo || !abaAtiva)) {
+      } else if (vistaResumo || !abaAtiva) {
         vistaResumo = true;
         painelEl.replaceChildren(folhaResumo());
-      } else if (abaAtiva) {
-        painelEl.replaceChildren(abaAtiva.art);
       } else {
-        const vazio = el('div', 'chat-painel-vazio');
-        vazio.append(el('h2', '', 'Os dados aparecem aqui'),
-                     el('p', '', 'Faça uma pergunta na conversa. Cada resposta com números abre num separador, para comparar e voltar atrás.'));
-        painelEl.replaceChildren(vazio);
+        painelEl.replaceChildren(abaAtiva.art);
       }
       painelEl.scrollTop = 0;
-      atualizarBalao();
+      desenharLateral();   // o botão "Abrir o painel inicial" e a vista ativa mudam com o separador
     }
-    // Fechar o Resumo: tira o separador e os dados (voltam a carregar se for pedido outra vez)
-    function fecharResumo() {
-      pedidosResumo++;   // uma resposta ainda a caminho já não conta
-      Object.assign(resumoEstado, { pedido: false, aCarregar: false, dados: null, erro: null, menu: null });
-      vistaResumo = false;
-      abaAtiva = abaAtiva || abas[abas.length - 1] || null;
+    // Volta ao painel inicial (o Resumo) sem fechar os separadores
+    function verInicio() {
+      vistaResumo = true;
+      abaAtiva = null;
       desenharPainel();
       desenharConversa();
     }
@@ -3142,22 +3639,30 @@
     function verConversa(sim) {
       painelRaiz.classList.toggle('chat-painel--sem-conversa', !sim);
       lancador.setAttribute('aria-expanded', String(sim));
-      lancador.setAttribute('aria-label', sim ? 'Esconder a conversa' : 'Mostrar a conversa');
-      atualizarBalao();
+      lancador.setAttribute('aria-label', sim ? 'Flow, assistente de vendas: minimizar a conversa' : 'Flow, assistente de vendas: abrir a conversa');
+      lancador.classList.toggle('a-falar', sim);
       (sim ? campo : lancador).focus();
     }
     document.getElementById('esconder-conversa').addEventListener('click', () => verConversa(false));
     lancador.addEventListener('click', () => verConversa(painelRaiz.classList.contains('chat-painel--sem-conversa')));
+    // ×: fecha e as boas-vindas voltam ao início (a conversa já feita fica)
+    document.getElementById('fechar-conversa').addEventListener('click', () => { modoInicio = 'inicio'; desenharConversa(); verConversa(false); });
 
-    // Balão flutuante "Faça um resumo das vendas": só depois de a conversa começar, com a conversa escondida
-    // (aberta, há o balão dentro da conversa), enquanto o Resumo não está aberto e até a pessoa o fechar no ×.
-    const balaoResumoEl = document.getElementById('balao-resumo');
-    let balaoDispensado = false;
-    function atualizarBalao() {
-      balaoResumoEl.hidden = balaoDispensado || !historico.length || resumoEstado.pedido || !painelRaiz.classList.contains('chat-painel--sem-conversa');
-    }
-    document.getElementById('balao-resumo-abrir').addEventListener('click', () => { if (!ocupado) perguntar('Resumo das vendas deste ano'); });
-    document.getElementById('balao-resumo-fechar').addEventListener('click', () => { balaoDispensado = true; atualizarBalao(); lancador.focus(); });
+    // Barra do topo: exportar o separador aberto, email à segunda e procurar
+    const topoExportar = document.getElementById('topo-exportar');
+    topoExportar.addEventListener('click', () => painelEl.querySelector('[data-exportar]')?.click());
+    // o painel é redesenhado em vários sítios: observar evita esquecer algum
+    new MutationObserver(() => { topoExportar.disabled = !painelEl.querySelector('[data-exportar]'); }).observe(painelEl, { childList: true, subtree: true });
+    document.getElementById('topo-email').addEventListener('click', () => document.getElementById('dlg-email').showModal());
+    document.getElementById('procurar').addEventListener('submit', e => {
+      e.preventDefault();
+      const caixa = document.getElementById('procurar-campo');
+      const texto = caixa.value.replace(/\s+/g, ' ').trim();
+      if (!texto || ocupado) return;
+      caixa.value = '';
+      verConversa(true);
+      perguntar(`Procurar o cliente ou artigo "${texto}"`);
+    });
 
     // REDESIGN 11/2026: voltar ao topo do painel
     const voltarTopo = document.getElementById('voltar-topo');
@@ -3279,6 +3784,7 @@
     desenharTemas();
     desenharHistorico();
     mostrarInicio();
+    carregarResumo();   // o Resumo é o painel inicial: carrega logo ao abrir
     campo.focus();
   </script>
 </body>
