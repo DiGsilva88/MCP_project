@@ -65,19 +65,20 @@
       return svg;
     };
 
-    // Tira o markdown que o modelo às vezes acrescenta: "# Título" e "**negrito**".
-    // O marcador de lista ("- ") fica: lerLista() precisa dele para saber o que é item.
+ 
     const limparMarkdown = l => l
-      .replace(/^(\s*)#{1,6}\s+/, '$1')                         // "# Título"
-      .replace(/(\*{1,3}|_{2,3})(\S(?:.*?\S)?)\1/g, '$2')       // **negrito**, *itálico*, ***os dois***, __negrito__
-      .replace(/\*{2,}|_{2,}/g, '');                              // ** ou __ que ficaram sem par
+      .replace(/^(\s*)#{1,6}\s+/, '$1')                         
+      .replace(/(\*{1,3}|_{2,3})(\S(?:.*?\S)?)\1/g, '$2')       
+      .replace(/\*{2,}|_{2,}/g, '');                             
     const MARCADOR = /^[-*•]\s+/;
     const semAcento = s => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
-    // "ALDEIA DE PAIO PIRES" -> "Aldeia de Paio Pires" (só mexe em texto todo em maiúsculas)
+    
+
     const nomeProprio = s => s !== s.toUpperCase() ? s
       : s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())
          .replace(/ (Da|De|Do|Das|Dos|E) /g, w => w.toLowerCase());
-    // Quantas letras é preciso mudar para passar de a para b ("montija" -> "montijo" = 1)
+
+   
     function distancia(a, b) {
       const d = Array.from({ length: b.length + 1 }, (_, j) => j);
       for (let i = 1; i <= a.length; i++) {
@@ -111,7 +112,8 @@
 
     // A) Bloco CSV: "Zona, clientes, percentagem" + linhas. Vírgula+espaço separa colunas.
     // shortcut: lê a tabela do texto; quando o agente devolver colunas e linhas em JSON, trocar por isso.
-    // sep = ', ' (vírgula e espaço, o formato antigo) ou ',' (CSV sem espaços: "Balcão,103,27.2")
+  
+
     function partir(linha, sep = ', ') {
       const campos = [];
       let atualC = '', aspas = false;
@@ -129,7 +131,9 @@
       const linhas = texto.trim().split('\n').map(l => l.trim());
       for (let i = 0; i < linhas.length; i++) {
         const l = linhas[i];
+
         // Cabeçalho: tem vírgulas e não é item de lista, item numerado nem frase com ":"
+
         if (!l.includes(',') || MARCADOR.test(l) || /^\d+\.\s/.test(l) || /:\s/.test(l)) continue;
         // Com "Zona, clientes" separa em ", "; com "Zona,clientes" separa em ","
         const sep = l.includes(', ') ? ', ' : ',';
@@ -154,25 +158,29 @@
 
     // B) Texto com título, factos, avisos e lista numerada (o formato atual do agente)
     function lerItem(pos, s) {
-      // Travessão separa nome e valor: o último seguido de um número. "· 2025: –" (não vendeu no ano anterior)
-      // também tem travessão; com lastIndexOf partia a linha aí e o valor ficava NaN (lista sem barras).
+     
+
       const seps = [...s.matchAll(/ [–-] (?=[-−]?\d)/g)];
       let i = seps.length ? seps[seps.length - 1].index : s.lastIndexOf(' – ');   // sem número: "– última compra a…", "– nunca comprou"
       if (i < 0) i = s.lastIndexOf(' - ');
       const esq = i < 0 ? s : s.slice(0, i);
       let dir = i < 0 ? '' : s.slice(i + 3).trim(), media = '';
+
       // "… · média 73,40 €" no fim (meses e trimestres): valor médio por documento
+
       const med = dir.match(/^(.*?)\s*·\s*média\s+(.+)$/);
       if (med) { dir = med[1]; media = med[2]; }
       let nome = esq.trim(), codigo = '';
-      const c = esq.match(/^(.*\S)\s*\(([^()]+)\)\s*$/);   // último parêntesis = código
+      const c = esq.match(/^(.*\S)\s*\(([^()]+)\)\s*$/);   
       if (c) { nome = c[1]; codigo = c[2]; }
       let sub = '';
-      const par = nome.match(/^(.+?):\s+(.+)$/);   // "FERNAO FERRO: CARV" (melhor marca em cada localidade)
+      const par = nome.match(/^(.+?):\s+(.+)$/);   
       if (par) { nome = par[1]; sub = par[2]; }
       let valor = dir, pct = '', rotulo = '', anterior = null, delta = null;
+
       // "255 348,78 € · 2025: 265 396,36 € (-3,8%)": valor, ano anterior e variação.
       // Sem "(%)" quando o ano anterior foi 0 ou negativo; "· 2025: –" quando o artigo não vendeu no ano anterior.
+
       const cmp = dir.match(/^(.*?)\s*·\s*(\d{4}|um ano antes):\s*(.*?)(?:\s*\(([+\-−]?[\d.,]+)\s*%\))?$/);
       if (cmp) {
         valor = cmp[1];
@@ -184,8 +192,9 @@
         const d = valor.match(/^(.*?)\s*(\d{2}-\d{2}-\d{4})$/); // "última compra a 23-12-2025"
         if (d && d[1]) { rotulo = d[1].replace(/\s+(a|em)$/i, ''); valor = d[2]; }
       }
-      // "1 234 unidades (255 348,78 €)" (ordenar=Quantidade): as unidades são o valor, os euros vão por baixo.
-      // Sem isto o paraNumero juntava os dois números (1 234 255 348,78).
+      
+      
+
       const un = valor.match(/^(.*\d)\s+unidades\s*\((.+)\)$/);
       if (un) { valor = un[1] + ' unidades'; pct = un[2]; }
       const num = un ? paraNumero(un[1]) : /^-?[\d\s.\u00a0\u202f]+(,\d+)?\s*€?$/.test(valor) ? paraNumero(valor) : NaN;
@@ -215,16 +224,13 @@
       return r;
     }
 
-    /* =========================================================
-       Desenho das respostas
-       ========================================================= */
-    // Colunas que só têm células vazias não vão para o Excel
+  
     function semColunasVazias(linhas) {
       const manter = linhas[0].map((_, c) => linhas.slice(1).some(l => String(l[c] ?? '').trim() !== ''));
       return linhas.map(l => l.filter((_, c) => manter[c]));
     }
 
-    // "15 373,55 €" -> "15373,55" e o cabeçalho ganha "(€)": o Excel em pt-PT lê como número e soma
+   
     const EUROS = /^-?[\d\s  .]+(,\d+)?\s*€$/;
     function paraFolha(linhas) {
       const [cab, ...dados] = linhas;
@@ -237,6 +243,7 @@
 
     async function copiarTexto(texto) {
       try { await navigator.clipboard.writeText(texto); return true; } catch { /* segue para o plano B */ }
+
       // Sem localhost nem HTTPS não há navigator.clipboard: copia por uma caixa de texto escondida
       const antes = document.activeElement;
       const caixa = el('textarea');
@@ -254,7 +261,7 @@
 
     // conteudo: texto simples, ou linhas [[cabeçalho...], [valores...], ...]
     function botaoCopiar(conteudo) {
-      // Tabulações: cola em colunas no Excel
+  
       const texto = typeof conteudo === 'string' ? conteudo : paraFolha(conteudo).map(l => l.join('\t')).join('\n');
       const b = botaoEl('chat-acao', 'Copiar', async () => {
         b.textContent = await copiarTexto(texto) ? 'Copiado' : 'Não foi possível copiar';
@@ -266,10 +273,12 @@
 
     function botaoExportar(linhas, titulo) {
       return botaoEl('chat-acao', 'Exportar CSV', () => {
-        // ";" e BOM: o Excel em pt-PT abre em colunas e com acentos certos
+
+        
         const campo = v => /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
         const csv = '﻿' + paraFolha(linhas).map(l => l.map(v => campo(String(v ?? ''))).join(';')).join('\r\n');
-        // "Clientes por Zona" -> clientes-por-zona-2026-10-28.csv
+
+       
         const nome = semAcento(titulo || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'vendas';
         const a = el('a');
         a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
