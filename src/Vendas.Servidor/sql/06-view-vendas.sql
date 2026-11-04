@@ -167,7 +167,7 @@ SELECT
     CAST(v.DataDoc AS date) AS DataDoc,
     -- Artigo: o código vem da AnaVendArt, o nome vem da Fartigo.
     CAST(RTRIM(v.ArtigoID) AS nvarchar(50)) AS ArtigoID,
-    COALESCE(NULLIF(LTRIM(RTRIM(a.DescrResumida)),''), '(sem descrição)') AS Artigo,
+    COALESCE(NULLIF(LTRIM(RTRIM(a.Artigo)),''), '(sem descrição)') AS Artigo,
     COALESCE(NULLIF(LTRIM(RTRIM(f.Descricao)),''), '(sem familia)') AS Familia,
     -- Marca: usa a DescMarca se existir, senão o próprio MarcaID
     CAST(COALESCE(NULLIF(LTRIM(RTRIM(m.DescMarca)),''),
@@ -199,6 +199,13 @@ OUTER APPLY (
      mm.MarcaID
 ) AS m;
 GO
+
+
+--analisa quantas linhas existem sem descrição
+
+SELECT COUNT(*) AS linhas_sem_descricao
+FROM mcp.ViewMCP_vendas
+WHERE Artigo = '(sem descrição)';   -- esperado: 0
 
 
 --confirmar que não existem vendas duplicadas

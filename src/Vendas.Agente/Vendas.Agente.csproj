@@ -11,6 +11,8 @@
     <PackageReference Include="Microsoft.Extensions.AI" Version="10.10.0" />
     <PackageReference Include="ModelContextProtocol" Version="2.2.0" />
     <PackageReference Include="OllamaSharp" Version="5.4.30" />
+    <!-- smtp.pwd (DPAPI), como o sql.pwd do servidor: a mesma versão -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.13" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,7 +23,6 @@
     <ItemGroup>
   <!-- O ficheiro passa a viajar dentro do .exe -->
   <EmbeddedResource Include="Pagina\pagina-chat.html" />
-  <EmbeddedResource Include="logo\avatar-assistente-vendas.png" />
     </ItemGroup>
 
   <ItemGroup>

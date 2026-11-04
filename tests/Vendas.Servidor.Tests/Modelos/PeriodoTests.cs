@@ -12,6 +12,8 @@ public class PeriodoTests
     [InlineData(null, 2025, "2025-01-01", "2026-01-01")]
     [InlineData(9, null, "2026-09-01", "2026-10-01")] // já passou
     [InlineData(11, null, "2025-11-01", "2025-12-01")] //ainda não chegou ano anterior
+    [InlineData(10, 2026, "2026-10-01", "2026-10-16")] // mês a decorrer: acaba hoje
+    [InlineData(null, 2026, "2026-01-01", "2026-10-16")] // ano a decorrer: acaba hoje
 
     public void IntervaloMes_DevolveDesdeEAte(int? mes, int? ano, string desde, string ate)
     {

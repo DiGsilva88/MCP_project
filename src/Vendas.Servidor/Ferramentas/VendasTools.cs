@@ -244,6 +244,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         var cabecalho = Dimensoes.Cabecalho(agrupar);
         // Com emCada cada linha é um grupo (ex.: um distrito): a contagem e o rodapé falam desses grupos.
         var plural = Dimensoes.Plural(emCada ?? agrupar);
+        string Contagem(int n) => $"{n.ToString("#,##0", Pt)} {(n == 1 ? Dimensoes.Cabecalho(emCada ?? agrupar) : plural)}";
         var comQuantidade = porQuantidade && agrupar != DimensaoVenda.Cliente;
         // Por mês/trimestre a ordem é a do tempo: "em quantidade", senão o título era igual ao da análise em euros.
         var emUnidades = comQuantidade && emCada is null && Dimensoes.Cronologica(agrupar);
@@ -252,7 +253,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         var titulo = emCada is { } grupo ? $"Melhor {cabecalho} em cada {Dimensoes.Cabecalho(grupo)}" : $"Vendas por {cabecalho}";
 
         var texto = new StringBuilder()
-            .AppendLine($"{titulo}{ordem}, {janela.Descricao} ({intervalo}): total {Euros(total)} € em {grupos} {plural}, " +
+            .AppendLine($"{titulo}{ordem}, {janela.Descricao} ({intervalo}): total {Euros(total)} € em {Contagem(grupos)}, " +
                         $"{documentos.ToString("#,##0", Pt)} documentos. Valores em euros, sem IVA.")
             .AppendLine(documentos == 0 ? "Valor médio por documento: -" : $"Valor médio por documento: {Euros(total / documentos)} €.");
         // A evolução vem completa (todos os meses), por isso a soma das linhas é o total do período.
@@ -284,11 +285,12 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
 
             // Os mesmos indicadores do cabeçalho, um ano antes (vêm do OVER() do SQL, como o total): clientes, documentos, valor médio.
             // Por mês/trimestre o n.º de grupos é o n.º de meses, que não diz nada: fica de fora.
-            if (emCada is null && c.Linhas.Count > 0 && c.Linhas[0].TotalDocumentos > 0)
+            // (emCada nunca chega aqui: compararAnoAnterior com emCada é recusado no início.)
+            if (c.Linhas.Count > 0 && c.Linhas[0].TotalDocumentos > 0)
             {
                 var a = c.Linhas[0];
                 var mediaAntes = a.Total / a.TotalDocumentos;
-                var gruposAntes = Dimensoes.Cronologica(agrupar) ? "" : $"{a.Grupos.ToString("#,##0", Pt)} {plural}{Variacao(grupos, a.Grupos)}, ";
+                var gruposAntes = Dimensoes.Cronologica(agrupar) ? "" : $"{Contagem(a.Grupos)}{Variacao(grupos, a.Grupos)}, ";
                 texto.AppendLine($"Um ano antes: {gruposAntes}{a.TotalDocumentos.ToString("#,##0", Pt)} documentos{Variacao(documentos, a.TotalDocumentos)}, " +
                                  $"valor médio por documento {Euros(mediaAntes)} €{(documentos > 0 ? Variacao(total / documentos, mediaAntes) : "")}.");
             }
