@@ -64,4 +64,14 @@ WHERE [ClienteID] IS NOT NULL
   AND [NomeCliente] IS NOT NULL 
   AND [ContribuinteID] IS NOT NULL;
 
+  --ver se é a coluna ou junção no nome do artigo que está a dar problemas 
+
+  SELECT COUNT(*) AS linhas,
+       SUM(CASE WHEN a.ArtigoID IS NULL THEN 1 ELSE 0 END)                         AS sem_artigo_no_catalogo,
+       SUM(CASE WHEN NULLIF(LTRIM(RTRIM(a.Artigo)), '') IS NULL THEN 1 ELSE 0 END)        AS artigo_vazio,
+       SUM(CASE WHEN NULLIF(LTRIM(RTRIM(a.DescrResumida)), '') IS NULL THEN 1 ELSE 0 END) AS descr_resumida_vazia
+FROM dbo.AnaVendArt AS v
+LEFT JOIN dbo.FArtigo AS a ON a.ArtigoID = v.ArtigoID
+                          AND a.TipoArtigo = v.TipoArtigo;
+
 

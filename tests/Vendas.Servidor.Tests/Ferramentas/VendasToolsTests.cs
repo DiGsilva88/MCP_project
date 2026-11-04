@@ -517,6 +517,20 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task Comparar_UmCliente_UsaSingular()
+    {
+        var repo = new FakeVendasRepo
+        {
+            ValoresPor = _ => [new("Ana (1)", 300m, 0, 4, 300m, 1, TotalDocumentos: 4)],
+            Clientes = _ => [],
+        };
+        var r = await CriarSutEm(repo, 2026, 10, 26).ConsultarVendasAsync(DimensaoVenda.Cliente, compararAnoAnterior: true);
+
+        Assert.Contains("em 1 cliente,", r);
+        Assert.Contains("Um ano antes: 1 cliente (0,0%),", r);
+    }
+
+    [Fact]
     public async Task Comparar_Ultimos12Meses_OutubroDeCadaAnoComOSeu()
     {
         // 27-10-2025 a 26-10-2026 tem dois outubros: cada um emparelha com o do seu ano anterior.

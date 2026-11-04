@@ -117,15 +117,20 @@ public static class Periodos
     public static (DateOnly desde, DateOnly ate, string descricao) IntervaloMes(int? mes, int? ano, DateOnly hoje)
 
     {
+        // O mês/ano a decorrer acaba hoje: até ao fim do mês dava aviso de "dados incompletos" e comparava
+        // um mês a meio com o mês inteiro do ano anterior.
+        var amanha = hoje.AddDays(1);
         if (mes is null)
         {
             var inicioAno = new DateOnly(ano!.Value, 1, 1);
-            return (inicioAno, inicioAno.AddYears(1), $"ano {ano}");
+            return (inicioAno, Min(inicioAno.AddYears(1), amanha), $"ano {ano}");
         }
         var a = ano ?? (mes > hoje.Month ? hoje.Year - 1 : hoje.Year);
         var desde = new DateOnly(a, mes.Value, 1);
-        return (desde, desde.AddMonths(1), $"{Meses[mes.Value - 1]} de {a}");
+        return (desde, Min(desde.AddMonths(1), amanha), $"{Meses[mes.Value - 1]} de {a}");
     }
+
+    private static DateOnly Min(DateOnly a, DateOnly b) => a < b ? a : b;
     //o nome do periodo para a frase de resposta
     public static string Descricao(Periodo periodo) => periodo switch
     {

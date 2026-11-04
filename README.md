@@ -183,7 +183,7 @@ Mostra as tools disponíveis e pergunta o modo:
 
 1. **Perguntas livres** — lê perguntas do teclado (Enter vazio termina) e o modelo escolhe a tool. Cada chamada mostra a tool, os argumentos, o tempo e o início do resultado (`[consultar_vendas(agrupar=Cliente, …) 120 ms] …`; em `consultar_sensivel` só o tamanho, para os dados pessoais não ficarem no ecrã). No fim: tempo até ao 1.º token, total e tokens lidos.
 2. **Menu fixo** — sem modelo: escolhas numeradas que chamam a tool `consultar` diretamente.
-3. **Chat no browser** — o mesmo fluxo do modo 1 numa página local em `http://localhost:5080` (abre sozinha). Também arranca direto com `dotnet run --project src/Vendas.Agente -- --web`. A resposta aparece à medida que é gerada; as chamadas às tools e os erros técnicos só aparecem na consola. Só aceita pedidos de `localhost` (POST de outra origem → 403), perguntas de 1 a 500 caracteres e um pedido de cada vez.
+3. **Chat no browser** — o mesmo fluxo do modo 1 numa página local em `http://localhost:5080` (abre sozinha). Também arranca direto com `dotnet run --project src/Vendas.Agente -- --web`. A resposta aparece à medida que é gerada; as chamadas às tools e os erros técnicos só aparecem na consola. Só aceita pedidos de `localhost` (POST de outra origem → 403; `GET /resumo` só da própria página), perguntas de 1 a 500 caracteres e um pedido de cada vez.
 
 - Modelo por omissão `qwen3:4b-instruct` (o 7b é pesado demais para CPU); `OLLAMA_MODELO` muda-o. Fica carregado em memória (`keep_alive = -1m`), `Temperature = 0` e janela fixa `NumCtx = 8192` — um prompt maior faria o Ollama cortar o início, que são as regras de segurança.
 - O modelo é aquecido em paralelo com a escolha do modo.
@@ -193,6 +193,29 @@ Mostra as tools disponíveis e pergunta o modo:
 - Filtros inventados são recusados (`PoliticasSeguranca.ValorInventado`): `valor`, `valorCruzado`, `cliente` e `nomeComecaPor` só passam se uma das suas palavras estiver na pergunta ou num resultado anterior da mesma pergunta. O modelo pequeno copiava os exemplos das descrições (filtrava por Seixal sem ninguém pedir); por isso as descrições e as regras não têm valores reais, e há testes que o garantem.
 - Uma resposta com números sem nenhuma chamada a tool é considerada inventada: é descartada e o modelo tenta uma vez mais. Máx. 5 chamadas a tools e 12 000 caracteres de resultados por pergunta.
 - As regras do prompt (`PoliticasSeguranca.cs`) mandam recusar perguntas fora dos dados de clientes e faturação.
+- "Esta resposta está certa?" acrescenta uma linha (data, sim/não, motivo da lista) a `%LOCALAPPDATA%\Vendas\feedback.log`. A pergunta e a resposta não são guardadas: podem ter nomes de clientes.
+
+### Resumo por email à segunda
+
+Na página, **Enviar por email à segunda** guarda a escolha (semanal ou mensal, um endereço **@inforap.pt**) em `%LOCALAPPDATA%\Vendas\agendamentos.json`; um endereço só tem um agendamento (escolher de novo troca a frequência). Quem envia é uma tarefa do Agendador do Windows, que corre `Vendas.Agente --enviar-resumo` e sai, sem Ollama:
+
+- **semanal** — todas as segundas, com a semana anterior (segunda a domingo);
+- **mensal** — na 1.ª segunda do mês, com o mês anterior;
+- o email tem os mesmos textos do separador Resumo (zonas, clientes, artigos, clientes sem compras em 90 dias), comparados com o ano anterior.
+
+Configuração (uma vez, na conta Windows que vai correr a tarefa — a mesma do `sql.pwd`):
+
+```powershell
+setx VENDAS_SMTP_UTILIZADOR "caixa-de-servico@inforap.pt"   # remetente e login no Office 365
+Read-Host "Password SMTP" -AsSecureString | ConvertFrom-SecureString | Set-Content "$env:LOCALAPPDATA\Vendas\smtp.pwd"
+dotnet build Vendas.slnx -c Release
+schtasks /Create /TN "Vendas - resumo por email" /SC WEEKLY /D MON /ST 08:00 /TR "\"C:\...\projeto_Mcp\src\Vendas.Agente\bin\Release\net10.0\Vendas.Agente.exe\" --enviar-resumo"
+```
+
+- Servidor por omissão `smtp.office365.com:587` com STARTTLS; `VENDAS_SMTP_HOST` e `VENDAS_SMTP_PORTA` mudam-no. O Office 365 tem de ter **SMTP AUTH** ativo para essa caixa (IT).
+- Para experimentar sem enviar: `$env:VENDAS_SMTP_PASTA = "C:\temp\emails"` grava os emails (`.eml`) nessa pasta (não precisa do `smtp.pwd`).
+- Testar já: `schtasks /Run /TN "Vendas - resumo por email"` (fora de uma segunda não há nada devido e sai com 0). Reenviar uma segunda que falhou: `Vendas.Agente.exe --enviar-resumo --dia 02-11-2026`. A tarefa fica como falhada (código 1) se faltar a configuração ou algum envio falhar; o motivo vai para a consola, nunca o endereço.
+- Por omissão a tarefa só corre com a sessão iniciada; para correr sempre, criar com `/RU <utilizador> /RP` (a mesma conta, para o DPAPI ler os `.pwd`).
 
 ## Testar com o MCP Inspector
 
