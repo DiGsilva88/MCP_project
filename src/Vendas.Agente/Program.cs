@@ -495,6 +495,8 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
     if (cliente is null)
     {
         partes["zonas"] = Vendas(new() { ["agrupar"] = "Zona", ["limite"] = 8, ["compararAnoAnterior"] = true });
+        // Mapa de áreas das localidades no painel (o email não o usa)
+        partes["localidades"] = Vendas(new() { ["agrupar"] = "Localidade", ["limite"] = 12, ["compararAnoAnterior"] = true });
         partes["clientes"] = Vendas(new() { ["agrupar"] = "Cliente", ["limite"] = 10, ["compararAnoAnterior"] = true });
         partes["semVendas"] = Vendas(new() { ["semVendas"] = true, ["periodo"] = "Ultimos90Dias", ["limite"] = 1 });
     }

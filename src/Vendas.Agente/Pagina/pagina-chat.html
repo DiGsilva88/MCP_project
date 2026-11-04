@@ -502,7 +502,10 @@
       /* Janela estreita: a barra e o eixo saem; ficam nome, valor e variação */
       .chat-ranking { grid-template-columns: 22px minmax(0, 1fr) max-content max-content; }
       .chat-rank-pista, .chat-rank-eixo { display: none; }
+      .chat-rank-delta .chat-delta-sufixo { display: none; }   /* "+31,5%" sem "vs 2025": o nome precisa do espaço */
     }
+    /* Barra curta: 5 valores no eixo colavam-se ("0 213425638 mil"); ficam 0, meio e máximo */
+    @container (max-width: 900px) { .chat-rank-marcas span:nth-child(even) { visibility: hidden; } }
 
     /* Ranking interativo: controlos, linha que abre o detalhe */
     .chat-controlos { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
@@ -601,7 +604,9 @@
     .chat-aba-fechar:hover { background: var(--linha); }
     .chat-mostrar-conversa { margin-bottom: 4px; }
     .chat-painel:not(.chat-painel--sem-conversa) .chat-mostrar-conversa { display: none; }
-    .chat-painel-dados { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; }
+    /* container: os @container dos gráficos medem o espaço dos dados, não a janela toda
+       (com a lateral e a conversa abertas a janela é larga mas os dados não, e os indicadores saíam do cartão) */
+    .chat-painel-dados { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; container-type: inline-size; }
     .chat-painel-dados > .chat-folha { max-width: 1100px; }
     /* painel vazio: o texto fica ao centro, na horizontal e na vertical */
     .chat-painel-dados:has(> .chat-painel-vazio) { display: grid; place-items: center; }
@@ -800,11 +805,6 @@
     .res-sobe { color: var(--sobe); font-weight: 700; } .res-desce { color: var(--desce); font-weight: 700; }
 
     .res-locais { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }   /* sempre numa linha */
-    .res-local { width: 100%; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 1px solid var(--linha); border-radius: 8px; background: var(--cartao); }
-    .res-local[aria-pressed="true"] { border: 2px solid var(--ligacao); background: var(--selecionado); }
-    .res-local-area { width: 100%; height: 160px; display: flex; align-items: flex-end; justify-content: center; border-bottom: 2px solid var(--borda-forte); }
-    .res-local-barra { width: 70%; max-width: 54px; border-radius: 5px 5px 0 0; background: var(--anterior-linha); }
-    .res-local[aria-pressed="true"] .res-local-barra { background: var(--marca); }
 
     .res-clientes { list-style: none; margin: 0; padding: 0; }
     .res-clientes li { display: grid; grid-template-columns: 22px minmax(0, 1fr) 96px 70px; align-items: center; gap: 8px; min-height: 34px; border-top: 1px solid var(--linha); font-size: 13.5px; }
@@ -977,6 +977,7 @@
     .chat-linha-area:has(.flow-area) .chat-ponto-mes:hover span,
     .chat-linha-area:has(.flow-area) .chat-ponto-mes[aria-pressed="true"] span { width: 18px; height: 18px; background: var(--cartao); border: 4px solid var(--marca); box-shadow: 0 0 0 3px rgb(29 70 192 / .25); }
     .chat-barra-valor { background: transparent; font-weight: 500; }
+    .chat-barra-valor--abaixo { transform: translate(-50%, 0); background: var(--cartao); }
     .chat-barra-valor--ativo { padding: 1px 6px; border-radius: 5px; background: var(--marca); color: #fff; font-weight: 800; }
     .chat-grafico .chat-rotulos { font-size: 13px; }
     .flow-legenda-linha { width: 18px !important; height: 3px !important; border-radius: 2px !important; background: var(--marca); }
@@ -1100,6 +1101,160 @@
     @media (prefers-reduced-motion: reduce) {
       .chat-folha, .chat-esqueleto span, .chat-pontos span, .chat-painel-esqueleto *, .res-esqueleto span, .res-esq, .flow-carregar span { animation: none; }
     }
+
+    /* =========================================================
+       10. Estilo 11/2026: barra branca no topo, breadcrumb por cima da saudação,
+       números em cartões e a conversa encaixada à direita (deixa de flutuar por cima dos dados).
+       Fica no fim da folha: ganha às regras anteriores com a mesma especificidade.
+       ========================================================= */
+    @media (prefers-color-scheme: light) {
+      :root {
+        --fundo: #f8fafc; --lateral: #f8fafc; --cartao: #ffffff; --texto: #1e293b; --suave: #475569; --nota: #64748b;
+        --borda: #e2e8f0; --linha: #e2e8f0; --borda-cartao: #e2e8f0; --borda-campo: #cbd5e1; --balao: #f1f5f9;
+        --marca: #2563eb; --marca-escura: #1d4ed8; --ligacao: #1d4ed8; --selecionado: #eff6ff;
+        --navy: #0d1829; --flow-navy-borda: #1e2a44; --flow-azul-borda: #bfdbfe; --flow-tinta-azul: #1e3a8a;
+      }
+    }
+    @media (prefers-color-scheme: dark) { :root { --borda-campo: var(--borda); --balao: var(--lateral); } }
+
+    /* Barra do topo: separadores das respostas à esquerda, ações à direita */
+    .chat-abas { padding: 12px 24px; background: var(--cartao); border-bottom: 1px solid var(--borda); }
+    .flow-btn-sub { min-height: 34px; padding: 0 12px; border-color: var(--borda-campo); border-radius: 12px; font-weight: 600; box-shadow: 0 1px 2px rgb(15 23 42 / .05); }
+    .flow-btn-sub:hover:not(:disabled) { border-color: var(--borda-campo); background: var(--fundo); }
+    .flow-pesquisa { min-height: 36px; border-color: var(--borda-campo); border-radius: 12px; background: var(--fundo); }
+    .flow-pesquisa:focus-within { outline: 2px solid var(--marca); outline-offset: 1px; background: var(--cartao); }
+    .flow-iniciais { width: 34px; height: 34px; font-size: 12px; border: 1px solid var(--flow-azul-borda); }
+    .chat-aba { max-width: 100%; min-width: 0; border-color: var(--borda); border-radius: 8px; }
+    /* Grelha: lateral à esquerda (altura toda); a barra do topo por cima dos dados e da conversa,
+       por isso a conversa começa à altura da breadcrumb. Com a conversa minimizada a 3.ª coluna fica a 0. */
+    .chat-corpo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); }
+    .flow-lateral { grid-column: 1; grid-row: 1 / span 2; }
+    .chat-corpo > .chat-abas { grid-column: 2 / 4; grid-row: 1; display: flex; }
+    .chat-dados { grid-column: 2; grid-row: 2; }
+    .chat-conversa { grid-column: 3; grid-row: 2; }
+
+    /* Barra numa só linha quando cabe: os separadores fazem scroll em vez de ficarem por baixo das ações,
+       e a pesquisa encolhe. Em menos de 700px as ações passam à linha seguinte. */
+    .chat-abas-lista { flex: 1 1 160px; min-width: 0; }
+    .flow-acoes { flex: none; }
+    .flow-btn-sub { white-space: nowrap; }
+    .flow-pesquisa { flex: 0 1 230px; min-width: 120px; }
+    .flow-pesquisa input { width: 100%; min-width: 0; }
+    @container (min-width: 700px) {
+      .chat-abas { flex-wrap: nowrap; }
+      .chat-abas-lista { flex: 1 1 0; min-width: 100px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+      .chat-aba { flex: none; }
+    }
+
+    /* Breadcrumb: onde se está (Inforap Flow › Vendas › …), por cima da saudação e de cada resposta */
+    .flow-migalhas ol { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12px; font-weight: 500; color: var(--nota); }
+    .flow-migalhas li { display: flex; align-items: center; gap: 8px; }
+    .flow-migalhas li + li::before { content: ''; width: 5px; height: 5px; border-top: 1.5px solid var(--borda-campo); border-right: 1.5px solid var(--borda-campo); transform: rotate(45deg); }
+    .flow-migalhas button { min-height: 24px; padding: 0; border: 0; background: none; color: var(--suave); font: inherit; cursor: pointer; }
+    .flow-migalhas button:hover { color: var(--texto); text-decoration: underline; text-underline-offset: 3px; }
+    .flow-migalhas [aria-current="page"] { padding: 2px 8px; border: 1px solid var(--flow-azul-borda); border-radius: 6px; background: var(--selecionado); color: var(--ligacao); font-weight: 700; }
+
+    /* Saudação compacta à esquerda, período à direita */
+    .flow-topo { flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin: 0 0 18px; }
+    .flow-topo-ola { display: block; }
+    .flow-ola { font-size: 20px; line-height: 1.3; font-weight: 700; color: var(--texto); letter-spacing: -.01em; }
+    .flow-hoje { margin: 2px 0 0; font-size: 12px; font-weight: 500; color: var(--nota); }
+    .flow-periodo-btn { margin: 0; padding: 6px 12px; gap: 6px; border: 1px solid var(--borda-campo); border-radius: 12px; background: var(--cartao); font-size: 13px; font-weight: 600; letter-spacing: 0; box-shadow: 0 1px 2px rgb(15 23 42 / .05); }
+    .flow-periodo-btn svg { width: 14px; height: 14px; color: var(--nota); }
+    .flow-topo .res-menu { left: auto; right: 0; }   /* o botão está à direita: o menu abre para dentro */
+
+    /* Artigos mais vendidos: anel (líder ao centro) e legenda com valor, % do total e variação */
+    .res-anel { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+    .res-anel-grafico { position: relative; width: 168px; height: 168px; flex: none; margin: 0 auto; }
+    .res-anel-grafico svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .res-anel-centro { position: absolute; inset: 24%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    .res-anel-centro span { font-size: 11px; color: var(--nota); }
+    .res-anel-centro strong { max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font-size: 12.5px; line-height: 1.2; font-weight: 800; color: var(--flow-tinta-azul); }
+    .res-anel-centro small { font-size: 11px; font-weight: 700; color: var(--suave); }
+    .res-anel-legenda { flex: 1 1 260px; min-width: 0; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .res-anel-legenda li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 72px; align-items: center; gap: 8px; font-size: 12.5px; }
+    .res-anel-cor { width: 10px; height: 10px; border-radius: 50%; }
+    .res-anel-nome { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 500; }
+    .res-anel-nome small { display: block; overflow: hidden; text-overflow: ellipsis; font-size: 11px; font-weight: 400; color: var(--nota); }
+    .res-anel-valor { display: flex; flex-direction: column; align-items: flex-end; }
+    .res-anel-valor strong { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .res-anel-valor small { font-size: 11px; color: var(--nota); }
+    .res-anel-var { text-align: right; font-size: 12px; font-weight: 700; }
+    .res-anel-var--neutro { justify-self: end; padding: 2px 6px; border-radius: 6px; background: var(--fundo); color: var(--suave); font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+    /* Zonas: cada linha da legenda é um botão que filtra o painel (mesma grelha das linhas dos artigos) */
+    .res-anel-legenda li:has(> .res-anel-linha) { display: block; }
+    .res-anel-legenda:has(.res-anel-linha) > li:not(:has(> .res-anel-linha)) { padding: 0 7px; }   /* "Outras": alinhada com os botões */
+    .res-anel-linha { width: 100%; margin: -4px 0; padding: 4px 6px; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 72px; align-items: center; gap: 8px;
+      border: 1px solid transparent; border-radius: 8px; background: none; color: var(--texto); text-align: left; font: inherit; font-size: 12.5px; cursor: pointer; }
+    .res-anel-linha:hover { border-color: var(--borda); background: var(--fundo); }
+    .res-anel-linha[aria-pressed="true"] { border-color: var(--marca); background: var(--selecionado); }
+    /* Zonas em violeta: o líder ao centro e a zona filtrada acompanham as cores do anel */
+    .res-anel--zonas { --zona-tinta: #5b21b6; --zona-fundo: #f5f3ff; }
+    @media (prefers-color-scheme: dark) { .res-anel--zonas { --zona-tinta: #c4b5fd; --zona-fundo: #2e1065; } }
+    .res-anel--zonas .res-anel-centro strong { color: var(--zona-tinta); }
+    .res-anel--zonas .res-anel-linha[aria-pressed="true"] { border-color: var(--zona-tinta); background: var(--zona-fundo); }
+
+    /* Vendas por localidade: mapa de áreas a toda a largura. Tons do azul pela parte de cada uma;
+       "sem localidade" a cinzento; os blocos pequenos só têm o texto para o leitor de ecrã (e o title). */
+    .res-cartao--inteiro { flex-basis: 100%; }
+    .res-mapa { position: relative; list-style: none; margin: 0; padding: 0; aspect-ratio: 2 / 1; min-height: 220px; }
+    .res-mapa li { position: absolute; padding: 2px; box-sizing: border-box; }
+    .res-mapa :is(button, div) { width: 100%; height: 100%; padding: 8px 10px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; overflow: hidden;
+      border: 0; border-radius: 8px; background: #dbeafe; color: #1e3a8a; text-align: left; font: inherit; }
+    .res-mapa button:hover { outline: 2px solid var(--marca); outline-offset: -2px; }
+    .res-mapa b { flex: none; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font-size: 13px; line-height: 1.25; }
+    .res-mapa span:not(.so-leitor) { font-size: 12px; font-variant-numeric: tabular-nums; }
+    .res-mapa small { font-size: 11.5px; font-weight: 700; }
+    .res-mapa--medio :is(button, div) { background: #93c5fd; color: #0f2a6b; }
+    .res-mapa--forte :is(button, div) { background: #1d4ed8; color: #fff; }
+    .res-mapa--forte small:is(.res-sobe, .res-desce) { color: #fff; }   /* verde/vermelho não se liam no azul escuro: fica a seta */
+    .res-mapa--sem :is(button, div) { background: var(--borda); color: var(--suave); }
+
+    /* Cartões: cantos de 16px e contorno claro, como os números */
+    :is(.res-cartao, .flow-grafico-lado, .flow-mini-cartao, .chat-kpi) { border-color: var(--borda); border-radius: 16px; box-shadow: 0 1px 2px rgb(15 23 42 / .04); }
+    .flow-serie-titulo { font-size: 18px; font-weight: 700; color: var(--flow-tinta-azul); }
+
+    /* Painel lateral */
+    .flow-lateral { width: 288px; border-right: 1px solid var(--flow-navy-borda); }
+    .flow-marca-logo { border-radius: 12px; }
+    .flow-btn-lateral { border-color: transparent; color: #94a3b8; }
+    .flow-btn-lateral:hover { color: #fff; background: rgb(255 255 255 / .08); }
+    .flow-resumo { border-radius: 16px; box-shadow: 0 12px 24px rgb(0 0 0 / .25); }
+    .flow-vista { min-height: 40px; border-radius: 12px; color: #cbd5e1; font-size: 13px; font-weight: 500; }
+    .flow-vista:hover { color: #fff; background: rgb(255 255 255 / .08); }
+    .flow-vista[aria-current="true"] { box-shadow: 0 4px 12px rgb(30 58 138 / .35); }
+    .flow-pedir { border-color: #334155; border-radius: 12px; font-weight: 600; color: #cbd5e1; }
+
+    /* Conversa encaixada à direita, à altura toda; o avatar redondo só aparece com ela minimizada */
+    .chat-conversa { position: relative; inset: auto; z-index: auto; width: 384px; flex: none; max-height: none; border: 0; border-left: 1px solid var(--borda); border-radius: 0; box-shadow: none; animation: none; }
+    .chat-painel:not(.chat-painel--sem-conversa) :is(.chat-abas, .chat-painel-dados) { padding-right: 24px; }
+    .chat-painel:not(.chat-painel--sem-conversa) .chat-lancador { display: none; }
+    .chat-lancador { top: auto; bottom: 20px; right: 24px; }
+    .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 408px; }
+    .chat-conversa-topo { padding: 12px 14px; background: var(--fundo); border-bottom: 1px solid var(--borda); }
+    .flow-chat-icone { width: 32px; height: 32px; border-radius: 10px; background: var(--marca); color: #fff; }
+    .chat-conversa .chat-estado { font-size: 11.5px; font-weight: 600; }
+    .chat-conversa .chat-ponto { background: #10b981; }
+    .chat-conversa .chat-esconder { border-color: var(--borda); background: var(--cartao); color: var(--suave); }
+    .chat-conversa .chat-temas { border-bottom-color: var(--borda); }
+    .chat-conversa .chat-tema { border-color: transparent; border-radius: 999px; background: var(--balao); }
+    .chat-conversa .chat-tema[aria-pressed="true"] { border-color: var(--marca); background: var(--marca); color: #fff; }
+    .chat-conversa .chat-balao-eu { border-radius: 16px 4px 16px 16px; background: var(--marca); }
+    .chat-conversa :is(.flow-msg, .chat-msg--agente .chat-folha) { border: 1px solid var(--borda); border-radius: 4px 16px 16px 16px; background: var(--balao); }
+    .chat-conversa .flow-msg--destaque { border-color: var(--flow-azul-borda); background: var(--selecionado); }
+    .chat-conversa :is(.flow-modo, .flow-tema, .chat-cartao) { border-color: var(--borda); border-radius: 12px; }
+    .chat-conversa .chat-rodape { margin: 0 12px 12px; border: 1px solid var(--borda-campo); border-radius: 16px; }
+    .chat-conversa .chat-rodape:focus-within { border-color: var(--marca); outline: 1px solid var(--marca); outline-offset: 0; }
+    .chat-conversa .chat-enviar { width: 30px; height: 30px; }
+
+    /* Janela estreita: a conversa volta a abrir por cima dos dados, com o avatar para a fechar */
+    @container (max-width: 820px) {
+      /* grid-column/row: em grelha, o absoluto mede-se pela célula; a coluna da conversa tem 0px aqui */
+      .chat-conversa { grid-column: 1 / -1; grid-row: 1 / -1; position: absolute; z-index: 5; inset: 8px 8px 84px 8px; width: auto; border: 1px solid var(--borda); border-radius: 16px; box-shadow: 0 16px 40px rgb(19 32 59 / .2); }
+      .chat-painel:not(.chat-painel--sem-conversa) .chat-lancador { display: grid; }
+      .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 84px; }
+    }
   </style>
 </head>
 <body data-utilizador="{{UTILIZADOR}}">
@@ -1134,7 +1289,7 @@
         </section>
       </aside>
 
-      <main class="chat-dados" aria-label="Dados">
+      <!-- Barra do topo por cima dos dados e da conversa: as ações ficam no canto superior direito -->
         <div class="chat-abas">
           <nav class="chat-abas-lista" id="separadores" aria-label="Resultados abertos"></nav>
           <div class="flow-acoes">
@@ -1150,6 +1305,8 @@
           </form>
           <span class="flow-iniciais" id="iniciais" hidden></span>
         </div>
+
+      <main class="chat-dados" aria-label="Dados">
         <div class="chat-painel-dados" id="painel"></div>
       </main>
 
@@ -1409,13 +1566,14 @@
       let sub = '';
       const par = nome.match(/^(.+?):\s+(.+)$/);   // "FERNAO FERRO: CARV" (melhor marca em cada localidade)
       if (par) { nome = par[1]; sub = par[2]; }
-      let valor = dir, pct = '', rotulo = '', anterior = null, delta = null;
+      let valor = dir, pct = '', rotulo = '', anterior = null, delta = null, novo = null;
       // "255 348,78 € · 2025: 265 396,36 € (-3,8%)": valor, ano anterior e variação.
       // Sem "(%)" quando o ano anterior foi 0 ou negativo; "· 2025: –" quando o artigo não vendeu no ano anterior.
       const cmp = dir.match(/^(.*?)\s*·\s*(\d{4}|um ano antes):\s*(.*?)(?:\s*\(([+\-−]?[\d.,]+)\s*%\))?$/);
       if (cmp) {
         valor = cmp[1];
         if (!/^[–—-]?$/.test(cmp[3])) anterior = { ano: cmp[2], valor: cmp[3] };
+        else novo = cmp[2];   // sem vendas no ano anterior: não há %, mas há que dizê-lo (senão a linha fica sem indicador)
         if (cmp[4]) delta = parseFloat(cmp[4].replace('−', '-').replace(',', '.'));
       } else {
         const p = dir.match(/^(.*\S)\s*\(([\d.,]+\s*%)(?:\s+([^)]+))?\)$/);  // "(1,9%)" ou "(10,6% da localidade)"
@@ -1428,7 +1586,7 @@
       const un = valor.match(/^(.*\d)\s+unidades\s*\((.+)\)$/);
       if (un) { valor = un[1] + ' unidades'; pct = un[2]; }
       const num = un ? paraNumero(un[1]) : /^-?[\d\s.\u00a0\u202f]+(,\d+)?\s*€?$/.test(valor) ? paraNumero(valor) : NaN;
-      return { pos, nome, codigo, sub, valor, pct, rotulo, num, anterior, delta, media, unidades: !!un };
+      return { pos, nome, codigo, sub, valor, pct, rotulo, num, anterior, delta, novo, media, unidades: !!un };
     }
     function lerLista(texto) {
       const r = { titulo: '', periodo: '', resumo: '', factos: [], avisos: [], itens: [], paragrafos: [], nota: '' };
@@ -1658,9 +1816,11 @@
     const textoDelta = d => (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(1).replace('.', ',') + '%';
     function chipDelta(d, sufixo = '') {
       const c = el('span', 'chat-delta ' + (d >= 0 ? 'chat-delta--sobe' : 'chat-delta--desce'));
-      c.append(icone(d >= 0 ? 'M2 12 6.5 7.5l3 3L14 5M10 5h4v4' : 'M2 4l4.5 4.5 3-3L14 11M10 11h4V7', 12), textoDelta(d) + sufixo);
+      c.append(icone(d >= 0 ? 'M2 12 6.5 7.5l3 3L14 5M10 5h4v4' : 'M2 4l4.5 4.5 3-3L14 11M10 11h4V7', 12), textoDelta(d), el('span', 'chat-delta-sufixo', sufixo));
       return c;
     }
+    // Sem variação calculável (não vendeu no ano anterior, ou vendeu 0): cinzento, para a linha não ficar sem indicador
+    const chipNeutro = (texto, sufixo = '') => { const c = el('span', 'chat-delta', texto); c.append(el('span', 'chat-delta-sufixo', sufixo)); return c; };
 
     // Resumo e factos -> cartões (Total, Valor médio, Melhor mês…)
     function desenharKpis(r, cab, art) {
@@ -1822,6 +1982,12 @@
           const r = el('span', 'chat-barra-valor', rotuloValor(x.atual));
           r.setAttribute('aria-hidden', 'true');
           r.style.left = (X(i) + (!comArea && duas ? w / 2 + 0.4 : 0)) + '%'; r.style.top = (Y(x.atual) - (comArea ? 10 : 3)) + 'px';
+          // Mês incompleto abaixo do anterior: a ligação pontilhada desce por cima do ponto e tapava o valor; vai para baixo
+          const anteriorMes = i > 0 ? s.meses[i - 1].atual : null;
+          if (comArea && x.parcial && anteriorMes != null && anteriorMes > x.atual) {
+            r.classList.add('chat-barra-valor--abaixo');
+            r.style.top = Math.min(Y(x.atual) + 10, 186) + 'px';
+          }
           barras.append(r);
           etiquetas[i] = r;
         }
@@ -2196,9 +2362,10 @@
           const nome = el('span', 'chat-rank-nome');
           const vazio = /^\(?sem descri[çc][ãa]o\)?$/i.test(it.nome);
           nome.append(el('span', vazio ? 'chat-item-nome--vazio' : '', vazio ? 'Sem descrição' : it.nome));
-          if (it.codigo) nome.append(el('small', '', it.codigo));
-          if (it.sub) nome.append(el('small', '', it.sub));
-          nome.title = it.nome;   // nome inteiro ao passar o rato; no teclado, no detalhe
+          // "Balcão: Artigo X (código)": o artigo e o código numa só linha por baixo da zona (eram três linhas empilhadas)
+          if (it.sub) nome.append(el('small', '', it.sub + (it.codigo ? ' · ' + it.codigo : '')));
+          else if (it.codigo) nome.append(el('small', '', it.codigo));
+          nome.title = it.sub ? `${it.nome}: ${it.sub}` : it.nome;   // nome inteiro ao passar o rato; no teclado, no detalhe
           const pista = el('span', 'chat-rank-pista'), cheio = el('span');
           pista.setAttribute('aria-hidden', 'true');
           cheio.style.width = Math.max(1, valor(it) / topo * 100) + '%';
@@ -2211,6 +2378,8 @@
           const variacao = el('span', 'chat-rank-delta');   // coluna própria: não empurra o valor para cima da barra
           // Em euros, a variação continua a ser a das unidades (é a que vem na resposta): o texto diz isso
           if (it.delta != null) variacao.append(chipDelta(it.delta, (it.anterior ? ' vs ' + it.anterior.ano : '') + (emEuros ? ' em unidades' : '')));
+          else if (it.novo) variacao.append(chipNeutro('Sem vendas', ' em ' + it.novo));
+          else if (it.anterior) variacao.append(chipNeutro(it.anterior.valor, ' em ' + it.anterior.ano));
           linha.append(el('span', 'chat-rank-pos', String(k + 1)), nome, pista, val, variacao);
 
           const det = el('div', 'chat-rank-detalhe');
@@ -2848,6 +3017,35 @@
     const rCurto = n => Math.abs(n) >= 1e6 ? rDec(n / 1e6, 2) + rNB + 'M€' : Math.abs(n) >= 1000 ? rMil(n) : rEur(n);   // um cliente pode faturar centenas, não milhões
     const rPct = n => rDec(n, 1) + '%';
     const rVar = v => v == null ? '–' : (v >= 0 ? '▲ ' : '▼ ') + rDec(Math.abs(v), 1) + '%';
+    // Anel dos artigos: tons do azul da marca, do líder para o 5.º (a fatia "Outros" fica cinzenta, #94a3b8)
+    const CORES_ARTIGOS = ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'];
+    // Anel das zonas: violeta, para não se confundir com o dos artigos (nem com o verde/vermelho das variações)
+    const CORES_ZONAS = ['#5b21b6', '#7c3aed', '#8b5cf6', '#a78bfa', '#c4b5fd'];
+    // Mapa de áreas ("squarified"): reparte o retângulo L×A pelos itens (v = valor, do maior para o menor),
+    // em filas de blocos o mais quadrados possível. Devolve cada item com x, y, w, h nas mesmas unidades.
+    function mapaAreas(itens, L, A) {
+      const total = itens.reduce((s, i) => s + i.v, 0);
+      const out = [];
+      let x = 0, y = 0, w = L, h = A, fila = [];
+      const pior = (f, lado) => {   // a pior proporção da fila (1 = quadrado)
+        const s = f.reduce((t, n) => t + n.a, 0), max = Math.max(...f.map(n => n.a)), min = Math.min(...f.map(n => n.a));
+        return Math.max(lado * lado * max / (s * s), s * s / (lado * lado * min));
+      };
+      const fixar = () => {
+        const s = fila.reduce((t, n) => t + n.a, 0);
+        if (w >= h) { const cw = s / h; let yy = y; fila.forEach(n => { out.push({ ...n, x, y: yy, w: cw, h: n.a / cw }); yy += n.a / cw; }); x += cw; w -= cw; }
+        else { const ch = s / w; let xx = x; fila.forEach(n => { out.push({ ...n, x: xx, y, w: n.a / ch, h: ch }); xx += n.a / ch; }); y += ch; h -= ch; }
+        fila = [];
+      };
+      for (const n of [...itens].sort((a, b) => b.v - a.v).map(i => ({ ...i, a: i.v / total * L * A }))) {
+        const lado = Math.min(w, h);
+        if (fila.length && pior([...fila, n], lado) > pior(fila, lado)) fixar();
+        fila.push(n);
+      }
+      if (fila.length) fixar();
+      return out;
+    }
+
     const rVarCls = v => v == null ? '' : v >= 0 ? 'res-sobe' : 'res-desce';
     const rEsc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const rValorKpi = k => k.valor == null ? '—' : k.tipo === 'eur' ? rEur(k.valor) : k.tipo === 'eur2' ? rEur2(k.valor) : rGrupos(k.valor);
@@ -3054,7 +3252,10 @@
         mesIncompleto: incompleto ? MESES[incompleto.m - 1] : '',
         anoAnt, total, kpis, previsao, semPrevisao, alertas, acumulado,
         artigos, artigosSobe: subida(artigos), artigosDesce: pa,
-        locais: j.zonas ? zonas.map(i => ({ id: i.nome, nome: nomeProprio(i.nome), fat: i.num, variacao: i.delta, media: i.media })) : null,
+        locais: j.zonas ? zonas.map(i => ({ id: i.nome, nome: nomeProprio(i.nome), fat: i.num, variacao: i.delta, novo: i.novo })) : null,
+        // Mapa de áreas: as localidades com mais vendas; "(sem localidade)" fica, a cinzento (é faturação real sem ficha completa)
+        localidades: j.localidades ? positivos(j.localidades).map(i => ({ nome: i.nome, fat: i.num, variacao: i.delta, novo: i.novo, semDados: /^\(/.test(i.nome) })) : null,
+        localidadesTotal: +((j.localidades || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,
         locaisSobe: subida(zonas), locaisDesce: pz,
         clientes: j.clientes ? positivos(j.clientes) : null,
         tabela: rm.itens.length ? [['Mês', 'Faturação', anoAnt ? 'Em ' + anoAnt : '', 'Variação (%)', 'Valor médio'],
@@ -3066,6 +3267,18 @@
     // Nome de quem tem a sessão: o servidor troca {{UTILIZADOR}}; sem troca, a página não mostra nome
     const nomeUtilizador = (n => n && !n.startsWith('{{') ? n.trim() : '')(document.body.dataset.utilizador);
     const ola = () => { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 20 ? 'Boa tarde' : 'Boa noite'; };
+    // Breadcrumb: Inforap Flow › Vendas › Resumo das vendas (› título da resposta aberta, com o Resumo clicável para voltar)
+    function migalhas(resposta) {
+      const nav = el('nav', 'flow-migalhas'), ol = el('ol');
+      nav.setAttribute('aria-label', 'Onde está');
+      const item = filho => { const li = el('li'); li.append(filho); ol.append(li); return li; };
+      item(el('span', '', 'Inforap Flow'));
+      item(el('span', '', 'Vendas'));
+      if (resposta) item(botaoEl('', 'Resumo das vendas', () => { verInicio(); painelEl.querySelector('[data-menu]')?.focus(); }));
+      item(el('span', '', resposta || 'Resumo das vendas')).setAttribute('aria-current', 'page');
+      nav.append(ol);
+      return nav;
+    }
     const saudacaoHtml = () => `<p class="flow-ola">${ola()},${nomeUtilizador ? ` <strong>${rEsc(nomeUtilizador.split(/\s+/)[0])}</strong>` : ''}</p>`;
     if (nomeUtilizador) {
       const iniciais = document.getElementById('iniciais');
@@ -3271,34 +3484,79 @@
           : '<p class="res-nota">Nada a assinalar neste período.</p>'}
       </section>`;
 
-      // Artigos mais vendidos (por faturação: a ferramenta devolve o valor e a variação)
-      const maxA = D.artigos.length ? Math.max(...D.artigos.map(a => a.num)) : 0;
+      // Gráfico circular (artigos e zonas): anel com os 5 primeiros e uma fatia cinzenta para os restantes; ao centro o líder.
+      // Legenda: nome, valor, % do total e variação. itens: { nome, codigo?, num, delta, novo?, zona? } (zona: a linha filtra o painel).
+      const pctTotal = a => D.total > 0 ? rPct(a.num / D.total * 100) : '–';
+      function anelHtml(itens, { outros, rotulo, cores = CORES_ARTIGOS, classe = '' }) {
+        const soma = itens.reduce((s, a) => s + a.num, 0);
+        const fatias = itens.slice(0, 5).map((a, i) => ({ ...a, cor: cores[i] }));
+        const resto = itens.slice(5);
+        if (resto.length) fatias.push({ nome: outros(resto.length), num: resto.reduce((s, a) => s + a.num, 0), cor: '#94a3b8', outros: true });
+        let acum = 0;
+        const arcos = fatias.map(f => {
+          const p = soma > 0 ? f.num / soma * 100 : 0, traco = Math.max(p - 0.6, 0.1);   // 0,6: espaço entre fatias
+          const arco = `<circle cx="18" cy="18" r="15.915" fill="none" stroke="${f.cor}" stroke-width="4.5" stroke-dasharray="${traco.toFixed(2)} ${(100 - traco).toFixed(2)}" stroke-dashoffset="${(-acum).toFixed(2)}"/>`;
+          acum += p;
+          return arco;
+        }).join('');
+        const lider = itens[0];
+        const linha = f => `<span class="res-anel-cor" style="background:${f.cor}" aria-hidden="true"></span>
+            <span class="res-anel-nome" title="${rEsc(f.nome)}">${rEsc(f.nome)}${f.codigo ? `<small>${rEsc(f.codigo)}</small>` : ''}</span>
+            <span class="res-anel-valor"><strong>${rEur(f.num)}</strong><small>${pctTotal(f)} do total</small></span>
+            ${f.outros ? '<span></span>' : f.delta == null && f.novo ? `<span class="res-anel-var res-anel-var--neutro" title="Sem vendas em ${rEsc(f.novo)}">Sem vendas</span>`
+              : `<span class="res-anel-var ${rVarCls(f.delta)}">${rVar(f.delta)}</span>`}`;
+        return `<div class="res-anel ${classe}">
+          <div class="res-anel-grafico">
+            <svg viewBox="0 0 36 36" role="img" aria-label="${rEsc(`${rotulo}: ${lider.nome}, ${rEur(lider.num)}, ${pctTotal(lider)} do total.`)}">
+              <circle cx="18" cy="18" r="15.915" fill="none" stroke="var(--borda)" stroke-width="4.5"/>${arcos}</svg>
+            <div class="res-anel-centro" aria-hidden="true"><span>Líder</span><strong title="${rEsc(lider.nome)}">${rEsc(lider.nome)}</strong><small>${pctTotal(lider)} do total</small></div>
+          </div>
+          <ul class="res-anel-legenda">${fatias.map(f => f.zona != null
+            ? `<li><button type="button" class="res-anel-linha" data-zona="${rEsc(f.zona)}" aria-pressed="${resumoEstado.zona === f.zona}">${linha(f)}</button></li>`
+            : `<li>${linha(f)}</li>`).join('')}</ul>
+        </div>`;
+      }
+
+      // Artigos mais vendidos: as fatias são a parte de cada artigo no top 10 (cada um vale pouco no total)
       const htmlArt = `<section class="res-cartao" data-bloco="art">
         <div class="res-cab"><h3>Artigos mais vendidos</h3><span class="res-sub">Por faturação</span></div>
-        ${D.artigos.length ? `<div style="overflow-x:auto"><table class="res-tabela res-tabela--maiusculas" style="min-width:380px"><thead><tr><th scope="col">Artigo</th><th scope="col">Faturação</th><th scope="col">% total</th><th scope="col">${D.anoAnt ? 'vs ' + rEsc(D.anoAnt) : 'Variação'}</th></tr></thead>
-          <tbody>${D.artigos.map((a, i) => `<tr><th scope="row">${i + 1}. ${rEsc(a.nome)}${a.codigo ? ` <small style="font-weight:400;color:var(--nota)">${rEsc(a.codigo)}</small>` : ''}<span class="res-pista"><span style="width:${(a.num / maxA * 100).toFixed(1)}%;background:#c2410c"></span></span></th>
-            <td class="forte">${rEur(a.num)}</td><td>${D.total > 0 ? rPct(a.num / D.total * 100) : '–'}</td><td class="${rVarCls(a.delta)}">${rVar(a.delta)}</td></tr>`).join('')}</tbody></table></div>`
+        ${D.artigos.length ? anelHtml(D.artigos, { rotulo: 'Artigo mais vendido', outros: n => `Outros ${n} do top ${D.artigos.length}` })
           : '<p class="res-nota">Sem vendas de artigos neste período.</p>'}
         ${resDestaques(D.artigosSobe, D.artigosDesce, D.anoAnt, nomeECodigo)}
       </section>`;
 
-      // Vendas por zona (barras verticais; clicar filtra o painel). Num cliente não se mostra.
+      // Vendas por zona: o mesmo gráfico; as zonas somam o total, por isso cada fatia é a % do total.
+      // Clicar numa linha da legenda filtra o painel (as zonas da fatia "Outras" filtram-se no menu do período).
+      // Num cliente não se mostra.
       let htmlLoc = '';
       if (D.locais && D.locais.length) {
-        const locais = D.locais, maxL = Math.max(...locais.map(l => l.fat));
         htmlLoc = `<section class="res-cartao" data-bloco="loc">
           <div class="res-cab"><h3>Vendas por zona</h3><span class="res-sub">Clique numa zona para filtrar o painel</span></div>
-          <ul class="res-locais">${locais.map(l => `<li style="display:flex"><button type="button" class="res-local" data-zona="${rEsc(l.id)}" aria-pressed="${resumoEstado.zona === l.id}"
-              aria-label="${rEsc(`${l.nome}: ${rEur(l.fat)}${D.total > 0 ? ', ' + rPct(l.fat / D.total * 100) + ' do total' : ''}${l.variacao == null ? '' : ', ' + rVar(l.variacao) + ' face a ' + D.anoAnt}. Carregar para filtrar.`)}">
-              <span style="font-size:12px;font-weight:700;text-align:center;line-height:1.2">${rCurto(l.fat)}</span>
-              <span class="res-local-area"><span class="res-local-barra" style="height:${Math.max(Math.round(l.fat / maxL * 150), 6)}px"></span></span>
-              <span style="font-size:13px;font-weight:700;text-align:center;line-height:1.2;max-width:100%;overflow-wrap:anywhere">${rEsc(l.nome)}</span>
-              ${D.total > 0 ? `<span style="font-size:11.5px;color:var(--nota);text-align:center">${rPct(l.fat / D.total * 100)}</span>` : ''}
-              <span class="${rVarCls(l.variacao)}" style="font-size:12px">${rVar(l.variacao)}</span></button></li>`).join('')}</ul>
+          ${anelHtml(D.locais.map(l => ({ nome: l.nome, num: l.fat, delta: l.variacao, novo: l.novo, zona: l.id })),
+            { rotulo: 'Zona com mais vendas', outros: n => `Outras ${n} zonas`, cores: CORES_ZONAS, classe: 'res-anel--zonas' })}
           ${resDestaques(D.locaisSobe, D.locaisDesce, D.anoAnt, i => nomeProprio(i.nome))}
-          <div style="overflow-x:auto"><table class="res-tabela"><caption style="text-align:left;padding:0 0 4px;font-weight:600">Valor médio por documento</caption>
-            <thead><tr>${locais.map(l => `<th scope="col" style="text-align:center">${rEsc(l.nome)}</th>`).join('')}</tr></thead>
-            <tbody><tr>${locais.map(l => `<td class="forte" style="text-align:center">${rEsc(l.media || '–')}</td>`).join('')}</tr></tbody></table></div>
+        </section>`;
+      }
+
+      // Vendas por localidade: mapa de áreas (cada bloco com área proporcional às vendas). Não há coordenadas
+      // nos dados, por isso não é um mapa geográfico. Clicar numa localidade prepara uma pergunta ao assistente.
+      let htmlMapa = '';
+      const locs = (D.localidades || []).filter(l => l.fat > 0);
+      if (locs.length > 1) {
+        const maxM = Math.max(...locs.map(l => l.fat));
+        const blocos = mapaAreas(locs.map(l => ({ ...l, v: l.fat })), 200, 100);
+        htmlMapa = `<section class="res-cartao res-cartao--inteiro" data-bloco="mapa">
+          <div class="res-cab"><h3>Vendas por localidade</h3><span class="res-sub">Área de cada bloco proporcional às vendas${D.localidadesTotal > locs.length ? ` · as ${locs.length} com mais vendas, de ${D.localidadesTotal}` : ''}</span></div>
+          <ul class="res-mapa" aria-label="Vendas por localidade">${blocos.map(b => {
+            const pct = D.total > 0 ? rPct(b.fat / D.total * 100) : '';
+            const cabe = b.w > 22 && b.h > 18, nome = b.semDados ? 'Sem localidade na ficha' : nomeProprio(b.nome);
+            const texto = `${nome}: ${rEur(b.fat)}${pct ? ', ' + pct + ' do total' : ''}${b.variacao != null ? ', ' + rVar(b.variacao) + ' face a ' + (D.anoAnt || 'o ano anterior') : ''}`;
+            const tom = b.semDados ? 'res-mapa--sem' : b.fat / maxM > .45 ? 'res-mapa--forte' : b.fat / maxM > .15 ? 'res-mapa--medio' : '';
+            const conteudo = cabe ? `<b>${rEsc(nome)}</b><span>${rCurto(b.fat)}${pct ? ' · ' + pct : ''}</span>${b.variacao != null ? `<small class="${rVarCls(b.variacao)}">${rVar(b.variacao)}</small>` : ''}` : `<span class="so-leitor">${rEsc(texto)}</span>`;
+            const pos = `left:${(b.x / 2).toFixed(2)}%;top:${b.y.toFixed(2)}%;width:${(b.w / 2).toFixed(2)}%;height:${b.h.toFixed(2)}%`;
+            return `<li class="${tom}" style="${pos}" title="${rEsc(texto)}">${b.semDados ? `<div>${conteudo}</div>`
+              : `<button type="button" data-perguntar="${rEsc(`Comparar as vendas da localidade ${nomeProprio(b.nome)} mês a mês com o ano passado`)}">${conteudo}</button>`}</li>`;
+          }).join('')}</ul>
         </section>`;
       }
 
@@ -3322,6 +3580,8 @@
         const BX = i => 20 + i * (960 / Math.max(1, n - 1)), BY = v => 300 - v / topo * 285;
         const linha = arr => arr.map((v, i) => (i ? 'L' : 'M') + BX(i).toFixed(1) + ',' + BY(v).toFixed(1)).join(' ');
         const at = A.atual[na - 1], an = A.anterior[na - 1], dif = at - an;
+        // Último ponto perto do fim do eixo: os rótulos vão para a esquerda (à direita saíam do cartão)
+        const ladoRotulo = BX(na - 1) > 800 ? 'translate(calc(-100% - 6px),-100%)' : 'translate(6px,-100%)';
         htmlAcum = `<section class="res-cartao" data-bloco="acum">
           <div><h3>Faturação acumulada vs. ${A.anoAnterior}</h3><p class="res-sub">Sem objetivo definido: compara com o mesmo período do ano anterior</p></div>
           ${an > 0 ? `<p class="chat-destaque"><strong>Até ${A.nomes[na - 1]}, vai ${rDec(Math.abs(dif / an * 100), 1)}% ${dif >= 0 ? 'à frente de' : 'atrás de'} ${A.anoAnterior}</strong> (${dif >= 0 ? 'mais' : 'menos'} ${rEur(Math.abs(dif))}).</p>` : ''}
@@ -3335,8 +3595,8 @@
               <path d="${linha(A.anterior)}" fill="none" stroke="var(--anterior-linha)" stroke-width="2" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>
               <path d="${linha(A.atual)}" fill="none" stroke="var(--marca)" stroke-width="3" vector-effect="non-scaling-stroke"/>
             </svg>
-            <span class="res-rotulo" style="left:${BX(na - 1) / 10}%;top:calc(${BY(at) / 3}% - 6px);transform:translate(6px,-100%);color:var(--texto);background:var(--cartao);padding:0 3px">${A.anoAtual}: ${rCurto(at)}</span>
-            <span class="res-rotulo" style="left:${BX(na - 1) / 10}%;top:calc(${BY(an) / 3}% + 20px);transform:translate(6px,-100%);color:var(--suave);background:var(--cartao);padding:0 3px">${A.anoAnterior}: ${rCurto(an)}</span>
+            <span class="res-rotulo" style="left:${BX(na - 1) / 10}%;top:calc(${BY(at) / 3}% - 6px);transform:${ladoRotulo};color:var(--texto);background:var(--cartao);padding:0 3px">${A.anoAtual}: ${rCurto(at)}</span>
+            <span class="res-rotulo" style="left:${BX(na - 1) / 10}%;top:calc(${BY(an) / 3}% + 20px);transform:${ladoRotulo};color:var(--suave);background:var(--cartao);padding:0 3px">${A.anoAnterior}: ${rCurto(an)}</span>
           </div>
           <div class="res-x" style="margin-left:50px">${A.rotulos.map((m, i) => `<span style="left:${BX(i) / 10}%;color:var(--nota)">${m}</span>`).join('')}</div>
         </section>`;
@@ -3344,6 +3604,7 @@
 
       return `<div class="res-grelha">${htmlPrev}${htmlAten}</div>
         <div class="res-grelha">${htmlArt}${htmlLoc}</div>
+        ${htmlMapa ? `<div class="res-grelha">${htmlMapa}</div>` : ''}
         ${htmlCli || htmlAcum ? `<div class="res-grelha">${htmlCli}${htmlAcum}</div>` : ''}`;
     }
 
@@ -3360,21 +3621,13 @@
       const periodo = { AnoAtual: `Ano ${ano}`, AnoAnterior: `Ano ${ano - 1}` }[resumoEstado.periodo] || nomePeriodo(resumoEstado.periodo);
       const aberto = resumoEstado.menu === 'filtros';
       const hoje = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-      const M = D.mediaMes;
-      const kpi = (rotulo, valor, chips) => `<div class="flow-topo-kpi"><span>${rotulo}</span><div><strong>${valor}</strong><span class="flow-topo-chips">${chips}</span></div></div>`;
-      const neutro = t => t ? `<span class="chat-delta flow-chip-neutro">${t}</span>` : '';
-      // A carregar: os dados em memória ainda são do filtro anterior, por isso os números ficam em esqueleto
-      const destaque = resumoEstado.aCarregar
-        ? ['Faturação', 'Média por mês'].map(r => kpi(r, '<span class="res-esq" style="width:190px;height:46px"></span>', '')).join('<span class="flow-topo-sep" aria-hidden="true"></span>')
-        : [
-        D.total != null ? kpi(`Faturação ${D.serie ? D.serie.anoAtual : ''}`, rCurto(D.total),
-          chipVar(D.kpis[0].variacao) + neutro(D.diferenca == null ? '' : (D.diferenca >= 0 ? '+' : '−') + rEur(Math.abs(D.diferenca)))) : '',
-        M ? kpi('Média por mês', rEur(M.valor), chipVar(M.variacao) + neutro(M.de === M.ate ? M.de.toLowerCase() : `${M.de.slice(0, 3)}–${M.ate.slice(0, 3)}`.toLowerCase())) : ''
-      ].filter(Boolean).join('<span class="flow-topo-sep" aria-hidden="true"></span>');
-      return `<div class="flow-topo">
+      return `${migalhas().outerHTML}
+      <div class="flow-topo">
         <div class="flow-topo-ola">
           <h2 class="so-leitor">Resumo das vendas${D.cliente ? ' de ' + rEsc(D.cliente) : ''}</h2>
           ${saudacaoHtml()}
+          <p class="flow-hoje">${hoje}${D.ate ? ' · dados até ' + dataCurta(D.ate) : ''}</p>
+        </div>
           <div class="res-menu-wrap">
             <button type="button" class="flow-periodo-btn" data-menu="filtros" aria-expanded="${aberto}" aria-controls="res-menu-filtros" aria-label="${rEsc(periodo)}: mudar período, zona ou cliente">${rEsc(periodo)}
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
@@ -3385,9 +3638,6 @@
               <div class="res-menu-rodape"><button type="button" class="chat-acao" data-limpar>Limpar filtros</button><button type="button" class="res-btn" data-fechar>Fechar</button></div>
             </div>
           </div>
-          <p class="flow-hoje">${hoje}${D.ate ? ' · dados até ' + dataCurta(D.ate) : ''}</p>
-        </div>
-        ${destaque ? `<div class="flow-topo-kpis">${destaque}</div>` : ''}
       </div>
       <div class="res-barra">
         <div class="res-info">
@@ -3668,7 +3918,7 @@
         vistaResumo = true;
         painelEl.replaceChildren(folhaResumo());
       } else {
-        painelEl.replaceChildren(abaAtiva.art);
+        painelEl.replaceChildren(migalhas(tituloDaResposta(abaAtiva)), abaAtiva.art);
       }
       painelEl.scrollTop = 0;
       desenharLateral();   // o botão "Abrir o painel inicial" e a vista ativa mudam com o separador
