@@ -74,7 +74,7 @@ internal static class Respostas
             inexistentes = existe.Where(e => !e.Existe).ToDictionary(e => e.Key, e => e.Value);
 
             if (inexistentes.Count == 0)
-                return $"0 clientes com {DescreverFiltros(filtros)}:" + "os valores existem.mas nenhum cliente tem os dois.";
+                return $"0 clientes com {DescreverFiltros(filtros)}: os valores existem, mas nenhum cliente tem os dois.";
         }
 
         var texto = new StringBuilder(filtros.Count == 1

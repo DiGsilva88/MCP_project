@@ -12,6 +12,8 @@ public static class Agendamentos
 {
     // Os dados de vendas só saem para endereços da empresa.
     public const string Dominio = "inforap.pt";
+    // Freq que remove o agendamento do endereço em vez de o guardar.
+    public const string Cancelar = "nenhum";
 
     // Pedido da página ({"freq":"semanal","email":"..."}): devolve o agendamento ou o erro a mostrar.
     public static (Agendamento? Agendamento, string? Erro) DoPedido(string corpo)
@@ -20,7 +22,7 @@ public static class Agendamentos
         try { a = JsonSerializer.Deserialize<Agendamento>(corpo, JsonSerializerOptions.Web); }
         catch (JsonException) { return (null, "Pedido inválido."); }
 
-        if (a?.Freq is not ("semanal" or "mensal")) return (null, "Escolha semanal ou mensal.");
+        if (a?.Freq is not ("semanal" or "mensal" or Cancelar)) return (null, "Escolha semanal ou mensal.");
         var email = a.Email?.Trim() ?? "";
         // Address == email recusa "Nome <x@inforap.pt>" e listas: um só endereço, escrito tal e qual.
         if (!MailAddress.TryCreate(email, out var endereco) || endereco.Address != email
@@ -46,14 +48,19 @@ public static class Agendamentos
     }
 
     public static List<Agendamento> Ler(string ficheiro)
-        => File.Exists(ficheiro) ? JsonSerializer.Deserialize<List<Agendamento>>(File.ReadAllText(ficheiro)) ?? [] : [];
+    {
+        if (!File.Exists(ficheiro)) return [];
+        try { return JsonSerializer.Deserialize<List<Agendamento>>(File.ReadAllText(ficheiro)) ?? []; }
+        // Editado à mão e partido: diz qual é o ficheiro em vez de um erro de JSON solto.
+        catch (JsonException ex) { throw new InvalidDataException($"{ficheiro} está corrompido: corrija-o ou apague-o. {ex.Message}", ex); }
+    }
 
-    // Um agendamento por endereço: escolher de novo troca a frequência.
+    // Um agendamento por endereço: escolher de novo troca a frequência; "nenhum" deixa de enviar.
     public static void Guardar(string ficheiro, Agendamento novo)
     {
         var lista = Ler(ficheiro);
         lista.RemoveAll(a => a.Email.Equals(novo.Email, StringComparison.OrdinalIgnoreCase));
-        lista.Add(novo);
+        if (novo.Freq != Cancelar) lista.Add(novo);
         Directory.CreateDirectory(Path.GetDirectoryName(ficheiro)!);
         File.WriteAllText(ficheiro, JsonSerializer.Serialize(lista));
     }

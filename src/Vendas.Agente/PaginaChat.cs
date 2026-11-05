@@ -18,7 +18,7 @@ public static class PaginaChat
     {
         var assembly = Assembly.GetExecutingAssembly();
         var recurso = assembly.GetManifestResourceNames().Single(n => n.EndsWith(nomeFicheiro));
-            return assembly.GetManifestResourceStream(recurso)!;
+        return assembly.GetManifestResourceStream(recurso)!;
     }
     private static string Ler(string nomeFicheiro)
     {

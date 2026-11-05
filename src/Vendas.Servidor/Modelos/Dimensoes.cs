@@ -35,7 +35,7 @@ public static class Dimensoes
     {
         DimensaoVenda.Cliente => ("cliente", "clientes"),
         DimensaoVenda.Artigo => ("artigo", "artigos"),
-        DimensaoVenda.Familia => ("familia", "famílias"),
+        DimensaoVenda.Familia => ("família", "famílias"),
         DimensaoVenda.Marca => ("marca", "marcas"),
         DimensaoVenda.Mes => ("mês", "meses"),
         DimensaoVenda.Trimestre => ("trimestre", "trimestres"),

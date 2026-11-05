@@ -1,4 +1,6 @@
-
+-- Correr por blocos, não inteiro: mistura exploração, a view (CREATE OR ALTER VIEW), o GRANT e testes como mcpserver.
+USE [IAVSGIX];
+GO
 
 --schema já existente mcp vai usar a view AnaVendart
 
@@ -86,7 +88,7 @@ GROUP BY ArtigoID, TipoArtigo
 HAVING COUNT(*) > 1;
 
 
-SELECT * FROM dbo.ATG_Marca WHERE ArtigoID = 'AIC_ 51105';
+SELECT * FROM dbo.ATG_Marca WHERE ArtigoID = '<ArtigoID>';   -- um dos ArtigoID da consulta acima
 
 --ver se existem artigos com várias marcas, ou seja, se existem artigos com o mesmo ArtigoID e TipoArtigo na tabela ATG_Marca.
 SELECT COUNT(*) AS ArtigosComVariasMarcas
@@ -99,7 +101,7 @@ FROM (
 
 
 --verifica se as várias marcas são marcas diferentes ou a mesma marca com referências diferentes.
-SELECT * FROM dbo.ATG_Marca WHERE ArtigoID = 'AIC_ 51105';
+SELECT * FROM dbo.ATG_Marca WHERE ArtigoID = '<ArtigoID>';
 
 --verificar se a mesma marca repetida com referências diferentes
 WITH Dup AS (

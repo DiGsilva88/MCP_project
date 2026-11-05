@@ -57,11 +57,27 @@ public class AgendamentosTests
             Agendamentos.Guardar(ficheiro, new("mensal", "A@inforap.pt"));   // troca a frequência do primeiro
 
             Assert.Equal([new("semanal", "b@inforap.pt"), new("mensal", "A@inforap.pt")], Agendamentos.Ler(ficheiro));
+
+            Agendamentos.Guardar(ficheiro, new(Agendamentos.Cancelar, "a@inforap.pt")); // deixa de receber
+            Assert.Equal([new("semanal", "b@inforap.pt")], Agendamentos.Ler(ficheiro));
         }
         finally
         {
             Directory.Delete(Path.GetDirectoryName(ficheiro)!, true);
         }
+    }
+
+    [Fact]
+    public void Ler_FicheiroCorrompido_DizQualE()
+    {
+        var ficheiro = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(ficheiro, "[{\"freq\":");
+            var erro = Assert.Throws<InvalidDataException>(() => Agendamentos.Ler(ficheiro));
+            Assert.Contains(ficheiro, erro.Message);
+        }
+        finally { File.Delete(ficheiro); }
     }
 
     [Fact]
