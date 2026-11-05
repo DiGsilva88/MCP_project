@@ -40,7 +40,7 @@ FROM mcp.ViewMCP_cliente;
 SELECT ClienteID, NomeCliente, DATALENGTH(NomeCliente) AS bytes,
        CAST(NomeCliente AS varbinary(200)) AS hex
 FROM mcp.ViewMCP_cliente
-WHERE NomeCliente LIKE 'ANTONIO MANUEL CASTRO%';
+WHERE NomeCliente LIKE '<início do nome>%';   -- sem nomes reais no repositório
 
 -- ── ViewMCP_cliente_faturacao ───────────────────────────────────────────
 -- Mesmo nº de clientes que a view da ficha?

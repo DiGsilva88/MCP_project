@@ -53,7 +53,7 @@ public class PeriodoTests
 
     [Theory]
     [InlineData(1, 2026, "2026-01-01", "2026-04-01", "1.º trimestre de 2026")]
-    [InlineData(4, null, "2026-10-01", "2027-01-01", "4.º trimestre de 2026")] // o atual (hoje é 15-10)
+    [InlineData(4, null, "2026-10-01", "2026-10-16", "4.º trimestre de 2026")] // o atual (hoje é 15-10): acaba hoje
     [InlineData(2, 2025, "2025-04-01", "2025-07-01", "2.º trimestre de 2025")]
     public void Resolver_Trimestre_DevolveOsTresMeses(int trimestre, int? ano, string desde, string ate, string descricao)
     {
@@ -70,6 +70,13 @@ public class PeriodoTests
 
         Assert.Equal(new DateOnly(2025, 7, 1), intervalo!.Value.Desde);
     }
+
+    [Theory]
+    [InlineData(null, 12, "2026-11-05")]
+    [InlineData(4, null, "2026-02-10")]
+    public void Resolver_PeriodoQueAindaNaoComecou_DevolveErro(int? trimestre, int? mes, string hoje)
+        => Assert.Equal("Esse período ainda não começou.",
+            Periodos.Resolver(Periodo.AnoAtual, mes, 2026, null, null, DateOnly.Parse(hoje), trimestre).Erro);
 
     [Theory]
     [InlineData(5, null, "trimestre tem de ser de 1 a 4.")]

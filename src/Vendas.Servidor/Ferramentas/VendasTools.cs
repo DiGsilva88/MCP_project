@@ -186,7 +186,8 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         var linhas = await Ranking(janela.Desde, janela.Ate, limite);
 
         // O mesmo intervalo um ano antes (01-01 a 26-10 contra 01-01 a 26-10: os mesmos dias, comparação justa).
-        // shortcut: busca até 100 linhas do ano anterior; um artigo fora do top 100 desse ano aparece sem valor ("–").
+        // shortcut: busca até 2000 linhas do ano anterior; um item fora do top 2000 desse ano aparece sem valor ("–").
+        // Com 100, artigos do top 10 de agora ficavam sem comparação (no ano anterior estavam em 101.º ou abaixo).
         (IntervaloVendas Janela, IReadOnlyList<ValorAgrupado> Linhas)? comparacao = null;
         if (compararAnoAnterior && linhas.Count > 0)
         {
@@ -194,7 +195,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             // senão 01-01 a 04-09 contra 01-01 a 26-10 dava uma descida que não existe.
             var fim = DadosAcabamAntes(janela, linhas[0].UltimaData) ? linhas[0].UltimaData!.Value.AddDays(1) : janela.Ate;
             var antes = new IntervaloVendas(janela.Desde.AddYears(-1), fim.AddYears(-1), "um ano antes");
-            comparacao = (antes, await Ranking(antes.Desde, antes.Ate, Respostas.Maxlinhas));
+            comparacao = (antes, await Ranking(antes.Desde, antes.Ate, MaxLinhasComparacao));
         }
 
         // Sem vendas com filtro: se o valor nem existe (ex.: "Seixall"), mostra os que existem.
@@ -214,6 +215,9 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
     // Com filtro da ficha, "sem resultados" pode querer dizer que o valor não existe (ex.: "Seixall").
     private async Task<bool> FiltroSemClientesAsync(Dictionary<Campo, string> filtros, CancellationToken ct)
         => filtros.Count > 0 && (await repo.ContarAsync(filtros.Keys.First(), filtros, 1, ct)).Count == 0;
+
+    // Linhas do ano anterior para emparelhar com as de agora: não se mostram, só se procuram por nome
+    internal const int MaxLinhasComparacao = 2000;
 
     private static string Euros(decimal v) => v.ToString("#,##0.00", Pt);
     private static string Data(DateOnly d) => d.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);

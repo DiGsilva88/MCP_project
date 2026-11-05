@@ -26,6 +26,7 @@ public readonly record struct IntervaloVendas(DateOnly Desde, DateOnly Ate, stri
 public static class Periodos
 {
     private const string FormatoData = "dd-MM-yyyy";
+    private const string AindaNaoComecou = "Esse período ainda não começou.";
     internal static readonly string[] Meses =
   ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
     //mes /ano concretos
@@ -49,12 +50,15 @@ public static class Periodos
             // Sem ano, um trimestre que ainda não começou é o do ano passado (como o mes).
             var a = ano ?? (t > (hoje.Month + 2) / 3 ? hoje.Year - 1 : hoje.Year);
             var desde = new DateOnly(a, (t - 1) * 3 + 1, 1);
-            return (new IntervaloVendas(desde, desde.AddMonths(3), $"{t}.º trimestre de {a}"), null);
+            if (desde > hoje) return (null, AindaNaoComecou);
+            // O trimestre a decorrer acaba hoje, como o mês (senão avisava "dados incompletos").
+            return (new IntervaloVendas(desde, Min(desde.AddMonths(3), hoje.AddDays(1)), $"{t}.º trimestre de {a}"), null);
         }
 
         if (mes is not null || ano is not null)
         {
             var (desde, ate, descricao) = IntervaloMes(mes, ano, hoje);
+            if (desde > hoje) return (null, AindaNaoComecou);
             return (new IntervaloVendas(desde, ate, descricao), null);
         }
 

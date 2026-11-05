@@ -55,7 +55,7 @@ catch (Exception ex)
     }
     return;
 }
-await using var _ = mcp;
+await using var fecharMcp = mcp; // fecha o servidor filho à saída
 
 var http = new HttpClient
 {
@@ -100,7 +100,10 @@ IChatClient modelo = ollama
         c.FunctionInvoker = async (ctx, ct) =>
         {
             var t = Stopwatch.StartNew();
-            var argumentos = string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
+            // Os argumentos da sensível trazem nomes de clientes: ficam fora da consola, como os resultados.
+            var argumentos = ctx.Function.Name == "consultar_sensivel"
+                ? "…"
+                : string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
 
             // Valor fora do esquema: corrige-se aqui, sem ir ao servidor (lá daria um erro genérico).
             if (PoliticasSeguranca.ArgumentoInvalido(ctx.Function.JsonSchema, ctx.Arguments) is { } invalido)
@@ -162,7 +165,8 @@ var opcoes = new ChatOptions
     },
 };
 
-var regras = PoliticasSeguranca.Regras + $"\nHoje é {DateTime.Today:dd-MM-yyyy}.";
+// Calculado a cada pergunta: o modo web fica aberto de um dia para o outro.
+static string Regras() => PoliticasSeguranca.Regras + $"\nHoje é {DateTime.Today:dd-MM-yyyy}.";
 
 // Aquece o Ollama enquanto o utilizador escolhe o modo: carrega o modelo e o prefixo do prompt
 // (regras + esquema das ferramentas). Usa o cliente sem invocação de ferramentas.
@@ -171,7 +175,7 @@ var aquecimento = Task.Run(async () =>
 {
     try
     {
-        await ollama.GetResponseAsync([new(ChatRole.System, regras), new(ChatRole.User, "ola")],
+        await ollama.GetResponseAsync([new(ChatRole.System, Regras()), new(ChatRole.User, "ola")],
             new ChatOptions
             {
                 MaxOutputTokens = 1,
@@ -227,12 +231,12 @@ while (true)
 
 // Responde a uma pergunta; "escrever" recebe o texto à medida que pode ser mostrado (consola ou browser).
 // As estatísticas e os erros técnicos vão sempre para a consola, nunca para o utilizador.
-async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
+async Task ResponderAsync(string pergunta, Func<string, Task> escrever, CancellationToken ct = default)
 {
     // Sem histórico: cada pergunta é só regras + pergunta. Em CPU cada token do prompt custa tempo,
     // e o início (regras + ferramentas) fica igual em todos os pedidos, por isso o Ollama reaproveita-o.
     // shortcut: perde "mostra mais" / "e desses…"; voltar a guardar a última troca se houver GPU.
-    List<ChatMessage> historico = [new(ChatRole.System, regras), new(ChatRole.User, pergunta)];
+    List<ChatMessage> historico = [new(ChatRole.System, Regras()), new(ChatRole.User, pergunta)];
     perguntaAtual = pergunta;
     resultadosPergunta.Clear();
 
@@ -251,7 +255,7 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
             textoDireto = null;
             partes.Clear();
             var aMostrar = false;
-            await foreach (var parte in modelo.GetStreamingResponseAsync(historico, opcoes))
+            await foreach (var parte in modelo.GetStreamingResponseAsync(historico, opcoes, ct))
             {
                 partes.Add(parte);
                 if (parte.Text.Length == 0) continue;
@@ -283,6 +287,11 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
             historico.Add(new(ChatRole.System, "Respondeste sem chamar nenhuma ferramenta. Chama a ferramenta adequada e responde só com o que ela devolver."));
         }
     }
+    catch (OperationCanceledException) when (ct.IsCancellationRequested)
+    {
+        Console.WriteLine("[pergunta cancelada]"); // Parar ou nova pergunta: o browser já não espera resposta
+        return;
+    }
     // O browser fechou a meio (HttpListenerException ao escrever): não é falha do Ollama, sobe para o ModoWebAsync.
     catch (Exception ex) when (ex is not System.Net.HttpListenerException)
     {
@@ -305,7 +314,8 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever)
 }
 
 // ---- Modo web: a mesma ResponderAsync, servida numa página local (só localhost, nunca na rede).
-// shortcut: um pedido de cada vez (o Ollama em CPU também só responde a um); usar Kestrel se houver vários utilizadores.
+// Pedidos em paralelo, mas uma pergunta ao modelo de cada vez (o Ollama em CPU também só responde a uma).
+// shortcut: HttpListener e um só histórico; usar Kestrel se houver vários utilizadores.
 async Task ModoWebAsync()
 {
     const string endereco = "http://localhost:5080/";
@@ -319,9 +329,18 @@ async Task ModoWebAsync()
     Console.WriteLine($"Chat em {endereco} (Ctrl+C termina). As chamadas às ferramentas aparecem aqui.");
     Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true });
 
+    var umaPergunta = new SemaphoreSlim(1); // ResponderAsync usa estado partilhado (chamadas, textoDireto, perguntaAtual…)
+    CancellationTokenSource? perguntaEmCurso = null; // sem Dispose: Cancel() num CTS já descartado lançaria exceção
+
     while (true)
     {
         var ctx = await servidor.GetContextAsync();
+        // Cada pedido à parte: uma resposta do modelo (minutos em CPU) não prende o Resumo, o feedback nem o Parar.
+        _ = Task.Run(() => TratarAsync(ctx));
+    }
+
+    async Task TratarAsync(System.Net.HttpListenerContext ctx)
+    {
         var (pedido, resposta) = (ctx.Request, ctx.Response);
         try
         {
@@ -344,6 +363,12 @@ async Task ModoWebAsync()
             // Outra página aberta no browser pode fazer POST para localhost sem CORS; o browser diz sempre a Origin.
             else if (pedido.HttpMethod == "POST" && pedido.Headers["Origin"] is { } origem && origem != endereco.TrimEnd('/'))
                 resposta.StatusCode = 403;
+            // Botão "Parar": cancelar só o fetch deixava o Ollama a gerar até ao fim.
+            else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/parar")
+            {
+                Volatile.Read(ref perguntaEmCurso)?.Cancel();
+                resposta.StatusCode = 204;
+            }
             else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/feedback")
             {
                 if (await LerCorpoAsync(pedido, 200) is { } corpo && Feedback.Linha(corpo, DateTimeOffset.Now) is { } linha)
@@ -360,13 +385,13 @@ async Task ModoWebAsync()
                 resposta.StatusCode = agendamento is null ? 400 : 200;
                 // Sem isto, um erro do disco caía no catch de baixo e a página via 200: "agendado" sem estar.
                 try { if (agendamento is not null) Agendamentos.Guardar(ficheiroAgendamentos, agendamento); }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
                 {
                     Console.Error.WriteLine($"Não consegui guardar o agendamento: {ex.Message}");
                     (agendamento, erro, resposta.StatusCode) = (null, "Não foi possível guardar o agendamento.", 500);
                 }
                 resposta.ContentType = "text/plain; charset=utf-8";
-                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(erro ?? "Agendado."));
+                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(erro ?? (agendamento!.Freq == Agendamentos.Cancelar ? "Envio cancelado." : "Agendado.")));
                 Console.WriteLine(agendamento is null ? "[agendamento recusado]" : $"[agendamento {agendamento.Freq}]"); // sem o endereço
             }
             else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/perguntar")
@@ -383,11 +408,19 @@ async Task ModoWebAsync()
                 else
                 {
                     Console.WriteLine($"> {pergunta}");
-                    await ResponderAsync(pergunta, async texto =>
+                    // A página só pergunta de novo depois de Parar ou recarregar: a pergunta anterior está abandonada.
+                    var cancelar = new CancellationTokenSource();
+                    Interlocked.Exchange(ref perguntaEmCurso, cancelar)?.Cancel();
+                    await umaPergunta.WaitAsync();
+                    try
                     {
-                        await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(texto));
-                        await resposta.OutputStream.FlushAsync();
-                    });
+                        await ResponderAsync(pergunta, async texto =>
+                        {
+                            await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(texto));
+                            await resposta.OutputStream.FlushAsync();
+                        }, cancelar.Token);
+                    }
+                    finally { umaPergunta.Release(); }
                 }
             }
             // Separador "Resumo": só a própria página (same-origin) ou o endereço escrito à mão (none).
@@ -401,6 +434,10 @@ async Task ModoWebAsync()
         catch (Exception ex) when (ex is System.Net.HttpListenerException or IOException)
         {
             Console.Error.WriteLine("O browser fechou a ligação a meio da resposta."); // ex.: página recarregada
+        }
+        catch (Exception ex) // dentro do Task.Run perdia-se em silêncio
+        {
+            Console.Error.WriteLine($"Erro no pedido {pedido.Url?.AbsolutePath}: {ex.Message}");
         }
         finally
         {
@@ -459,7 +496,7 @@ Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cli
 
     async Task<Dictionary<string, string>> Montar()
     {
-        // Um pedido de cada vez (ver ModoWebAsync): uma consulta presa à BD não pode prender a página toda.
+        // Uma consulta presa à BD não pode deixar o painel à espera para sempre.
         using var limite = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         // "Este mês" por mês: a ferramenta alargaria a AnoAtual (um mês só não é evolução); mes/ano mantêm os totais do mês.
         var meses = periodo == "MesAtual"
@@ -472,7 +509,7 @@ Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cli
 // As consultas do resumo, iguais na página e no email. janela: o período de todas (periodo, ou dataInicio e dataFim).
 // meses: argumentos a mais da evolução por mês; null = sem ela.
 async Task<Dictionary<string, string>> MontarResumoAsync(
-    Dictionary<string, object?> janela, Dictionary<string, object?>? meses, string? cliente, string? zona, CancellationToken ct)
+    Dictionary<string, object?> janela, Dictionary<string, object?>? meses, string? cliente, string? zona, CancellationToken ct, DateOnly? dia = null)
 {
     async Task<string> Vendas(Dictionary<string, object?> argumentos)
     {
@@ -495,8 +532,13 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
     if (cliente is null)
     {
         partes["zonas"] = Vendas(new() { ["agrupar"] = "Zona", ["limite"] = 8, ["compararAnoAnterior"] = true });
+        // Mapa de áreas das localidades no painel (o email não o usa)
+        partes["localidades"] = Vendas(new() { ["agrupar"] = "Localidade", ["limite"] = 12, ["compararAnoAnterior"] = true });
         partes["clientes"] = Vendas(new() { ["agrupar"] = "Cliente", ["limite"] = 10, ["compararAnoAnterior"] = true });
-        partes["semVendas"] = Vendas(new() { ["semVendas"] = true, ["periodo"] = "Ultimos90Dias", ["limite"] = 1 });
+        // Reenvio com --dia: os 90 dias contam desse dia (igual a Ultimos90Dias), não de hoje.
+        partes["semVendas"] = Vendas(dia is { } d
+            ? new() { ["semVendas"] = true, ["dataInicio"] = $"{d.AddDays(-89):dd-MM-yyyy}", ["dataFim"] = $"{d:dd-MM-yyyy}", ["limite"] = 1 }
+            : new() { ["semVendas"] = true, ["periodo"] = "Ultimos90Dias", ["limite"] = 1 });
     }
 
     await Task.WhenAll(partes.Values);
@@ -550,7 +592,7 @@ async Task<int> EnviarResumosAsync()
         {
             using var limite = new CancellationTokenSource(TimeSpan.FromMinutes(2));
             var p = await MontarResumoAsync(
-                new() { ["dataInicio"] = $"{desde:dd-MM-yyyy}", ["dataFim"] = $"{ate.AddDays(-1):dd-MM-yyyy}" }, null, null, null, limite.Token);
+                new() { ["dataInicio"] = $"{desde:dd-MM-yyyy}", ["dataFim"] = $"{ate.AddDays(-1):dd-MM-yyyy}" }, null, null, null, limite.Token, hoje);
             corpo = Agendamentos.CorpoHtml($"Resumo de vendas: {intervalo}",
             [
                 ("Por zona", p["zonas"]), ("Melhores clientes", p["clientes"]), ("Melhores artigos", p["artigos"]),

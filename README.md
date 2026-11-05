@@ -43,7 +43,7 @@ projeto_Mcp/
 │           └── pagina-chat.html     Página do modo web (chat no browser), embebida como recurso no build
 └── tests/
     ├── Vendas.Servidor.Tests/       Testes das tools (repo falso), do SQL gerado, períodos e integração com a BD
-    └── Vendas.Agente.Tests/         Testes das políticas de segurança
+    └── Vendas.Agente.Tests/         Testes das políticas de segurança, agendamentos, feedback e página
 ```
 
 ## Como funciona
@@ -77,8 +77,10 @@ projeto_Mcp/
    - `agrupar`: `Cliente` (melhores clientes, com o ID junto ao nome), `Artigo`, `Familia`, `Marca` (o que mais se vende), `Mes` ou `Trimestre` (evolução no tempo, do mais antigo para o mais recente, sempre completa e com uma linha `Melhor mês: …`) ou, pela ficha do cliente, `Localidade`, `Distrito`, `Zona`, `Vendedor`, `Actividade` (onde/quem vende mais);
    - período, por esta prioridade:
      - `dataInicio`/`dataFim` (`dd-MM-aaaa`, data final incluída) — semana, trimestre, semestre;
+     - `trimestre` (1–4, com `ano` opcional) — sem ano = a ocorrência mais recente; não se combina com `mes`;
      - `mes` (1–12) e/ou `ano` (2000–ano atual) — mês sem ano = a ocorrência mais recente; ano sem mês = ano inteiro;
-     - `periodo`: `Ultimos7Dias`, `Ultimos30Dias`, `Ultimos90Dias`, `Ultimos12Meses`, `AnoAtual` (por omissão), `AnoAnterior`, `MesAtual`, `MesAnterior` — o servidor calcula as datas;
+     - `periodo`: `Ultimos7Dias`, `Ultimos30Dias`, `Ultimos90Dias`, `Ultimos12Meses`, `AnoAtual` (por omissão), `AnoAnterior`, `MesAtual`, `MesAnterior`, `TrimestreAtual`, `TrimestreAnterior` — o servidor calcula as datas;
+     - o mês, trimestre ou ano a decorrer acaba hoje; um que ainda não começou devolve erro;
    - `cliente` (opcional): ID ou início do nome; limita tudo às vendas desse cliente (ex.: `agrupar=Artigo, cliente=1003` = o que esse cliente compra). Se o nome servir a vários, devolve até 5 com o ID;
    - `coluna`/`valor` (opcional): só clientes com esse valor na ficha (ex.: `agrupar=Cliente, coluna=Localidade, valor=Seixal`);
    - `ordenar`: `Valor` (por omissão) ou `Quantidade` (unidades; não se aplica a `agrupar=Cliente`);
@@ -183,7 +185,7 @@ Mostra as tools disponíveis e pergunta o modo:
 
 1. **Perguntas livres** — lê perguntas do teclado (Enter vazio termina) e o modelo escolhe a tool. Cada chamada mostra a tool, os argumentos, o tempo e o início do resultado (`[consultar_vendas(agrupar=Cliente, …) 120 ms] …`; em `consultar_sensivel` só o tamanho, para os dados pessoais não ficarem no ecrã). No fim: tempo até ao 1.º token, total e tokens lidos.
 2. **Menu fixo** — sem modelo: escolhas numeradas que chamam a tool `consultar` diretamente.
-3. **Chat no browser** — o mesmo fluxo do modo 1 numa página local em `http://localhost:5080` (abre sozinha). Também arranca direto com `dotnet run --project src/Vendas.Agente -- --web`. A resposta aparece à medida que é gerada; as chamadas às tools e os erros técnicos só aparecem na consola. Só aceita pedidos de `localhost` (POST de outra origem → 403; `GET /resumo` só da própria página), perguntas de 1 a 500 caracteres e um pedido de cada vez.
+3. **Chat no browser** — o mesmo fluxo do modo 1 numa página local em `http://localhost:5080` (abre sozinha). Também arranca direto com `dotnet run --project src/Vendas.Agente -- --web`. A resposta aparece à medida que é gerada; as chamadas às tools e os erros técnicos só aparecem na consola. Só aceita pedidos de `localhost` (POST de outra origem → 403; `GET /resumo` só da própria página), perguntas de 1 a 500 caracteres e uma pergunta ao modelo de cada vez (o Resumo e o resto da página continuam a responder). **Parar** cancela também a geração no Ollama (`POST /parar`).
 
 - Modelo por omissão `qwen3:4b-instruct` (o 7b é pesado demais para CPU); `OLLAMA_MODELO` muda-o. Fica carregado em memória (`keep_alive = -1m`), `Temperature = 0` e janela fixa `NumCtx = 8192` — um prompt maior faria o Ollama cortar o início, que são as regras de segurança.
 - O modelo é aquecido em paralelo com a escolha do modo.
@@ -197,7 +199,7 @@ Mostra as tools disponíveis e pergunta o modo:
 
 ### Resumo por email à segunda
 
-Na página, **Enviar por email à segunda** guarda a escolha (semanal ou mensal, um endereço **@inforap.pt**) em `%LOCALAPPDATA%\Vendas\agendamentos.json`; um endereço só tem um agendamento (escolher de novo troca a frequência). Quem envia é uma tarefa do Agendador do Windows, que corre `Vendas.Agente --enviar-resumo` e sai, sem Ollama:
+Na página, **Enviar por email à segunda** guarda a escolha (semanal ou mensal, um endereço **@inforap.pt**) em `%LOCALAPPDATA%\Vendas\agendamentos.json`; um endereço só tem um agendamento (escolher de novo troca a frequência; **Deixar de receber** apaga-o). Quem envia é uma tarefa do Agendador do Windows, que corre `Vendas.Agente --enviar-resumo` e sai, sem Ollama:
 
 - **semanal** — todas as segundas, com a semana anterior (segunda a domingo);
 - **mensal** — na 1.ª segunda do mês, com o mês anterior;

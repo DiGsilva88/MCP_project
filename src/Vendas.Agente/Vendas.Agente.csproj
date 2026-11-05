@@ -26,8 +26,6 @@
     </ItemGroup>
 
   <ItemGroup>
-  <!-- Bibliotecas da página do chat: ficam dentro do assembly com o nome "lib/<ficheiro>" -->
-  <EmbeddedResource Include="wwwroot\lib\*.js" LogicalName="lib/%(Filename)%(Extension)" />
   <!-- Fonte 72: servida em /fonts/<ficheiro> pelo ModoWebAsync -->
   <EmbeddedResource Include="fonts\*.woff2" LogicalName="fonts/%(Filename)%(Extension)" />
   </ItemGroup>
