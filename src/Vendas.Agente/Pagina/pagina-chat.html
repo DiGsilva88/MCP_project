@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 11/2026: só tons claros; as regras de modo escuro ficaram em "@media not all" (nunca se aplicam) -->
+  <meta name="color-scheme" content="light">
   <title>Assistente de vendas</title>
   <style>
     /* =========================================================
@@ -44,7 +46,7 @@
       /* Gráfico circular: 6 cores por ordem fixa, validadas para daltonismo */
       --serie-1: #2a78d6; --serie-2: #eb6834; --serie-3: #1baf7a; --serie-4: #eda100; --serie-5: #e87ba4; --serie-6: #6250d6;
     }
-    @media (prefers-color-scheme: dark) {
+    @media not all {
       :root {
         --navy: #0b1222;
         --fundo: #0f1320;
@@ -445,7 +447,7 @@
        7c. Layout compacto (modelo Ember): cartões baixos, gráfico limpo
        ========================================================= */
     :root { --kpi-2: #0e8a85; --kpi-3: #13814f; --kpi-4: #6f5fe0; }
-    @media (prefers-color-scheme: dark) { :root { --kpi-2: #3cc4bd; --kpi-3: #5ccf97; --kpi-4: #a598ff; } }
+    @media not all { :root { --kpi-2: #3cc4bd; --kpi-3: #5ccf97; --kpi-4: #a598ff; } }
 
     .chat-folha-titulo { font-size: 15px; font-weight: 700; color: var(--texto); }
     /* Total de uma lista ("5 clientes"): no cabeçalho, sem cartão */
@@ -835,7 +837,7 @@
        ========================================================= */
     /* Cores da proposta D: sobe/desce das linhas, texto claro no painel escuro */
     :root { --flow-sobe: #0b6e45; --flow-desce: #b3261e; --flow-claro: #b3bdd0; --flow-navy-borda: #2c3a62; --flow-azul-escuro: #1e3a8a; --flow-azul-borda: #c3d1f7; --flow-tinta-azul: #1e3a8a; }
-    @media (prefers-color-scheme: dark) { :root { --flow-tinta-azul: #c3d1f7; --flow-azul-borda: #3d63e6; } }
+    @media not all { :root { --flow-tinta-azul: #c3d1f7; --flow-azul-borda: #3d63e6; } }
 
     /* ---------- Painel lateral ---------- */
     .flow-lateral { width: 300px; flex: none; padding: 18px 16px 24px; display: flex; flex-direction: column; gap: 18px; background: var(--navy); color: #e9edf5; overflow-y: auto; scrollbar-width: thin; }
@@ -1092,7 +1094,7 @@
        números em cartões e a conversa encaixada à direita (deixa de flutuar por cima dos dados).
        Fica no fim da folha: ganha às regras anteriores com a mesma especificidade.
        ========================================================= */
-    @media (prefers-color-scheme: light) {
+    @media all {
       :root {
         --fundo: #f8fafc; --lateral: #f8fafc; --cartao: #ffffff; --texto: #1e293b; --suave: #475569; --nota: #64748b;
         --borda: #e2e8f0; --linha: #e2e8f0; --borda-cartao: #e2e8f0; --borda-campo: #cbd5e1; --balao: #f1f5f9;
@@ -1100,7 +1102,7 @@
         --navy: #0d1829; --flow-navy-borda: #1e2a44; --flow-azul-borda: #bfdbfe; --flow-tinta-azul: #1e3a8a;
       }
     }
-    @media (prefers-color-scheme: dark) { :root { --borda-campo: var(--borda); --balao: var(--lateral); } }
+    @media not all { :root { --borda-campo: var(--borda); --balao: var(--lateral); } }
 
     /* Barra do topo: ações e pesquisa à direita (voltar atrás faz-se pela breadcrumb do painel) */
     .chat-abas { padding: 12px 24px; background: var(--cartao); border-bottom: 1px solid var(--borda); }
@@ -1176,7 +1178,7 @@
     .res-anel-linha[aria-pressed="true"] { border-color: var(--marca); background: var(--selecionado); }
     /* Zonas em violeta: o líder ao centro e a zona filtrada acompanham as cores do anel */
     .res-anel--zonas { --zona-tinta: #5b21b6; --zona-fundo: #f5f3ff; }
-    @media (prefers-color-scheme: dark) { .res-anel--zonas { --zona-tinta: #c4b5fd; --zona-fundo: #2e1065; } }
+    @media not all { .res-anel--zonas { --zona-tinta: #c4b5fd; --zona-fundo: #2e1065; } }
     .res-anel--zonas .res-anel-centro strong { color: var(--zona-tinta); }
     .res-anel--zonas .res-anel-linha[aria-pressed="true"] { border-color: var(--zona-tinta); background: var(--zona-fundo); }
 
@@ -1242,7 +1244,7 @@
       .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 84px; }
     }
     /* 11/2026: sem azul escuro no modo claro: painel lateral e mapa em tons claros; Resumo, "Precisa de atenção" e mês escolhido com fundo azul */
-    @media (prefers-color-scheme: light) {
+    @media all {
       :root { --navy: #eef4ff; --flow-navy-borda: #dbe6fb; --flow-claro: #475569; }
       .flow-lateral, .flow-btn-lateral, .flow-vista, .flow-pedir, .flow-vistas-acoes .chat-acao { color: var(--texto); }
       .flow-lateral :focus-visible { outline-color: var(--marca); }
@@ -1259,6 +1261,64 @@
       .res-mapa--forte :is(button, div) { background: #60a5fa; color: #0f2a6b; }
       .res-mapa--forte small:is(.res-sobe, .res-desce) { color: #0f2a6b; }
     }
+
+    /* =========================================================
+       11. Visual IX (11/2026): vistas no painel lateral, ações no topo da conversa e ecrã de boas-vindas
+       ========================================================= */
+    .flow-nav { display: flex; flex-direction: column; gap: 2px; }
+    .flow-nav button { min-height: 38px; padding: 0 12px; display: flex; align-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--suave); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+    .flow-nav button:hover { background: rgb(37 99 235 / .08); color: var(--texto); }
+    .flow-nav button[aria-current="page"] { background: #dbeafe; color: #1e40af; font-weight: 600; box-shadow: inset -2px 0 0 var(--marca); }
+    .flow-lateral--recolhido .flow-nav { display: none; }
+    .chat-dados > .flow-acoes { justify-content: flex-end; gap: 8px; padding: 12px max(20px, calc((100% - 1520px) / 2)) 0; }
+    .chat-painel--inicio .chat-dados > .flow-acoes { display: none; }
+    .flow-btn-sub--escuro { background: var(--texto); border-color: var(--texto); color: #fff; }
+    .flow-btn-sub--escuro:hover:not(:disabled) { background: #334155; border-color: #334155; }
+    .res-voltar { align-self: flex-start; margin-bottom: 6px; }
+
+    /* Painel lateral do Visual IX: pesquisa no topo, "Painel", vistas guardadas e o utilizador no fundo */
+    .flow-lateral { background: var(--cartao); border-right: 1px solid var(--borda); }
+    .flow-lateral .flow-pesquisa { flex: none; width: 100%; min-height: 36px; border-radius: 8px; }
+    .flow-nav-titulo, .flow-vistas h2 { margin: 0 0 6px; padding: 0 10px; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--nota); }
+    #nav-lista { display: flex; flex-direction: column; gap: 2px; }
+    .flow-utilizador { margin-top: auto; padding: 12px 6px 0; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--borda); font-size: 13px; font-weight: 500; }
+    .flow-utilizador .flow-iniciais { width: 32px; height: 32px; border: 0; background: var(--marca); color: #fff; font-size: 12px; }
+    .flow-utilizador[hidden] { display: none; }
+
+    /* Vista Faturação: os indicadores em cartões, o primeiro a azul */
+    .flow-kpis-grelha { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .flow-kpi { padding: 16px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--borda); border-radius: 12px; background: var(--cartao); font-size: 12.5px; color: var(--suave); }
+    .flow-kpi strong { font-size: 24px; font-weight: 600; letter-spacing: -.01em; color: var(--texto); }
+    .flow-kpi--destaque { border-color: var(--marca); background: var(--marca); color: #dbe6ff; }
+    .flow-kpi--destaque strong { color: #fff; }
+    .flow-kpi--destaque .chat-delta { background: rgb(255 255 255 / .18); color: #fff; }
+
+    /* Copiar / Exportar CSV / Guardar imagem no painel: botões como o "Exportar" da conversa */
+    .chat-painel-dados .chat-folha-rodape > .chat-acao { min-height: 34px; padding: 0 12px; display: inline-flex; align-items: center; border: 1px solid var(--borda-campo); border-radius: 8px; background: var(--cartao); color: var(--texto); font-size: 13px; font-weight: 500; text-decoration: none; }
+    .chat-painel-dados .chat-folha-rodape > .chat-acao:hover { background: var(--fundo); }
+
+    /* Boas-vindas: o painel ocupa tudo; lateral, barra do topo e conversa só depois de escolher */
+    .chat-painel--inicio :is(.flow-lateral, .chat-conversa, .chat-lancador, .res-topo) { display: none !important; }
+    .chat-painel--inicio .chat-dados { grid-column: 1 / -1; grid-row: 1 / -1; }
+    .chat-painel--inicio .chat-painel-dados { padding: 40px 24px !important; }
+    .flow-ini { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; text-align: center; }
+    .flow-ini-avatar { width: 84px; height: 84px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--marca); box-shadow: 0 12px 30px rgb(37 99 235 / .3); }
+    .flow-ini h1 { margin: 12px 0 6px; font-size: 34px; font-weight: 500; letter-spacing: -.02em; }
+    .flow-ini > div > p { margin: 0; font-size: 15px; color: var(--suave); }
+    .flow-ini-opcoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 260px)); justify-content: center; gap: 14px; width: 100%; }
+    .flow-ini-opcao { padding: 22px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid var(--borda); border-radius: 14px; background: var(--cartao); color: var(--texto); font: inherit; cursor: pointer; }
+    .flow-ini-opcao:hover, .flow-ini-opcao--principal { border-color: var(--marca); background: var(--selecionado); }
+    .flow-ini-opcao b { font-size: 15px; }
+    .flow-ini-opcao small { font-size: 13px; line-height: 1.45; color: var(--suave); }
+    .flow-ini-escrever { width: min(808px, 100%); display: flex; flex-direction: column; gap: 10px; }
+    .flow-ini-campo { height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 16px; border: 1px solid var(--borda-campo); border-radius: 14px; background: var(--cartao); box-shadow: 0 4px 16px rgb(11 15 23 / .05); }
+    .flow-ini-campo:focus-within { outline: 2px solid var(--marca); outline-offset: 1px; }
+    .flow-ini-campo input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 14.5px; color: var(--texto); }
+    .flow-ini-campo button { width: 36px; height: 36px; border: 0; border-radius: 10px; background: var(--marca); color: #fff; cursor: pointer; }
+    .flow-ini-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+    .flow-ini-chips button { min-height: 30px; padding: 0 12px; border: 1px solid var(--borda); border-radius: 15px; background: var(--cartao); color: var(--texto); font: inherit; font-size: 12.5px; cursor: pointer; }
+    .flow-ini-chips button:hover { border-color: var(--marca); color: var(--marca); }
+    .flow-ini small.flow-ini-nota { font-size: 11.5px; color: var(--nota); }
   </style>
 </head>
 <body data-utilizador="{{UTILIZADOR}}">
@@ -1272,17 +1332,18 @@
         <div class="flow-marca">
           <span class="flow-marca-logo" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M4 18 9 12l4 3 7-9"/></svg></span>
           <div class="flow-marca-texto flow-so-aberto"><p><strong>Inforap Flow</strong></p><p>Assistente de vendas</p></div>
-          <button class="flow-btn-lateral" id="btn-lateral" type="button" aria-label="Recolher o resumo guardado" aria-expanded="true">
+          <button class="flow-btn-lateral" id="btn-lateral" type="button" aria-label="Recolher o painel lateral" aria-expanded="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
           </button>
         </div>
-        <div class="flow-carregar flow-so-aberto" id="lateral-carregar" role="status">A carregar o resumo das vendas…
-          <span aria-hidden="true" style="width:40%;height:12px"></span><span aria-hidden="true" style="width:65%;height:26px"></span>
-          <span aria-hidden="true" style="height:60px"></span><span aria-hidden="true" style="width:80%;height:40px"></span></div>
-        <button class="flow-pedir flow-so-aberto" id="lateral-pedir" type="button" hidden>Carregar o resumo outra vez</button>
-        <section class="flow-resumo flow-so-aberto" id="lateral-resumo" aria-label="Resumo das vendas" hidden></section>
-        <button class="flow-pedir flow-so-aberto" id="ver-inicio" type="button" hidden>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Voltar ao painel inicial</button>
+        <!-- 11/2026: pesquisa no topo do painel lateral, como no Visual IX -->
+        <form class="flow-pesquisa flow-so-aberto" id="procurar" role="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <label class="so-leitor" for="procurar-campo">Procurar cliente</label>
+          <input id="procurar-campo" maxlength="100" autocomplete="off" placeholder="Procurar cliente…">
+        </form>
+        <!-- O Resumo dividido em vistas (desenharNav); cada uma mostra só os seus cartões -->
+        <nav class="flow-nav flow-so-aberto" id="nav" aria-labelledby="nav-titulo"><h2 class="flow-nav-titulo" id="nav-titulo">Painel</h2><div id="nav-lista"></div></nav>
         <section class="flow-vistas flow-so-aberto" aria-labelledby="vistas-titulo">
           <h2 id="vistas-titulo">Vistas guardadas</h2>
           <ul id="vistas"></ul>
@@ -1290,26 +1351,17 @@
           <button class="flow-pedir" id="guardar-vista" type="button" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="guardar-vista-texto">Guardar vista atual</span></button>
         </section>
+        <div class="flow-utilizador flow-so-aberto" id="utilizador" hidden><span class="flow-iniciais" id="iniciais" aria-hidden="true"></span><span id="utilizador-nome"></span></div>
       </aside>
 
-      <!-- Barra do topo por cima dos dados e da conversa: as ações ficam no canto superior direito -->
-        <div class="chat-abas">
-          <div class="chat-abas-lista" aria-hidden="true"></div><!-- espaço vazio: empurra as ações para a direita -->
-          <div class="flow-acoes">
-            <button class="flow-btn-sub" id="topo-exportar" type="button" aria-haspopup="dialog" disabled>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Exportar dados</button>
-            <button class="flow-btn-sub" id="topo-email" type="button" aria-haspopup="dialog">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>Enviar por email à segunda</button>
-          </div>
-          <form class="flow-pesquisa" id="procurar" role="search">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-            <label class="so-leitor" for="procurar-campo">Procurar cliente</label>
-            <input id="procurar-campo" maxlength="100" autocomplete="off" placeholder="Procurar cliente: ID ou início do nome">
-          </form>
-          <span class="flow-iniciais" id="iniciais" hidden></span>
-        </div>
-
       <main class="chat-dados" aria-label="Dados">
+        <!-- Exportar e Agendar envio no topo da área principal; a conversa fica só com o chat -->
+        <div class="flow-acoes">
+          <button class="flow-btn-sub" id="topo-exportar" type="button" aria-haspopup="dialog" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Exportar</button>
+          <button class="flow-btn-sub flow-btn-sub--escuro" id="topo-email" type="button" aria-haspopup="dialog">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>Agendar envio</button>
+        </div>
         <div class="chat-painel-dados" id="painel"></div>
       </main>
 
@@ -3037,6 +3089,12 @@
        ========================================================= */
     const RES_PERIODOS = [['Ultimos7Dias', 'Últimos 7 dias'], ['MesAtual', 'Este mês'], ['TrimestreAtual', 'Trimestre'], ['AnoAtual', 'Este ano'], ['Ultimos12Meses', 'Últimos 12 meses'], ['AnoAnterior', 'Ano passado']];
     const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null };
+    // Vistas do Resumo (painel lateral): cada uma mostra só os seus cartões, em vez de tudo numa só página
+    const SECOES = [['geral', 'Resumo das vendas'], ['clientes', 'Clientes'], ['faturacao', 'Faturação'],
+                    ['artigos', 'Artigos'], ['zonas', 'Zonas'], ['previsoes', 'Previsões']];
+    let secao = 'geral';
+    const nomeSecao = () => SECOES.find(s => s[0] === secao)[1];
+    let boasVindasAberta = true;   // ecrã de boas-vindas à frente até se escolher uma opção ou fazer uma pergunta
     let vistaResumo = true;   // o painel inicial (Resumo) está à frente; um separador aberto passa-o para trás
     let pedidosResumo = 0;    // só a resposta do último pedido conta (mudar de filtro a meio)
 
@@ -3314,7 +3372,7 @@
       const filtro = resumoEstado.cliente ? 'Cliente ' + (D.cliente || resumoEstado.cliente) : resumoEstado.zona ? 'Zona ' + nomeProprio(resumoEstado.zona) : '';
       passo('Inforap Flow');
       passo('Vendas');
-      const atual = passo('Resumo das vendas', resposta || filtro ? 'geral' : null);
+      const atual = passo(nomeSecao(), resposta || filtro ? 'geral' : null);
       if (filtro) passo(filtro, resposta ? 'resumo' : null);
       if (resposta) passo(resposta);
       (ol.lastChild || atual).setAttribute('aria-current', 'page');
@@ -3334,70 +3392,39 @@
       const p = nomeUtilizador.split(/\s+/);
       iniciais.textContent = (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
       iniciais.title = nomeUtilizador;
-      iniciais.hidden = false;
+      document.getElementById('utilizador-nome').textContent = nomeUtilizador;
+      document.getElementById('utilizador').hidden = false;
     }
     const chipVar = (v, sufixo = '') => v == null ? '' : `<span class="chat-delta ${v >= 0 ? 'chat-delta--sobe' : 'chat-delta--desce'}">${rVar(v)}${sufixo}</span>`;
     // "02-11-2026" -> "2 nov"
     const dataCurta = d => { const m = (d || '').match(/^(\d{2})-(\d{2})/); return m ? `${+m[1]} ${MESES[m[2] - 1].slice(0, 3).toLowerCase()}` : ''; };
 
-    // Linha pequena da faturação por mês: verde onde sobe, vermelho onde desce; o ponto marca o melhor mês
-    function sparkHtml(s) {
-      const pts = (s ? s.meses : []).filter(x => x.atual > 0 && !x.parcial);
-      if (pts.length < 2) return '';
-      const max = Math.max(...pts.map(x => x.atual)), min = Math.min(...pts.map(x => x.atual));
-      const X = i => 4 + i * 252 / (pts.length - 1), Y = v => 50 - (max > min ? (v - min) / (max - min) : .5) * 40;
-      const area = `M${X(0)} 58 ` + pts.map((x, i) => `L${X(i)} ${Y(x.atual)}`).join(' ') + ` L${X(pts.length - 1)} 58 Z`;
-      const tracos = pts.slice(1).map((x, i) => `<path d="M${X(i)} ${Y(pts[i].atual)} L${X(i + 1)} ${Y(x.atual)}" stroke="var(--${x.atual >= pts[i].atual ? 'flow-sobe' : 'flow-desce'})"/>`).join('');
-      const im = pts.reduce((m, x, i) => x.atual > pts[m].atual ? i : m, 0);
-      const mes = x => MESES[x.m - 1].slice(0, 3).toLowerCase();
-      return `<svg class="flow-spark" viewBox="0 0 260 72" role="img" aria-label="${rEsc(`Faturação por mês, de ${mes(pts[0])} a ${mes(pts[pts.length - 1])}; melhor mês: ${MESES[pts[im].m - 1].toLowerCase()}.`)}">
-          <path d="${area}" fill="#e6edff" stroke="none"/><g fill="none" stroke-width="2.4" stroke-linecap="round">${tracos}</g>
-          <circle cx="${X(im)}" cy="${Y(pts[im].atual)}" r="4" fill="var(--flow-sobe)" stroke="#fff" stroke-width="2"/>
-          <text x="${X(0)}" y="70">${mes(pts[0])}</text><text x="${X(im)}" y="70" text-anchor="middle">${X(im) - X(0) > 30 && X(pts.length - 1) - X(im) > 30 ? mes(pts[im]) : ''}</text><text x="${X(pts.length - 1)}" y="70" text-anchor="end">${mes(pts[pts.length - 1])}</text>
-        </svg>
-        <p class="flow-spark-legenda" aria-hidden="true"><span><b style="color: var(--flow-sobe)">━</b> sobe</span><span><b style="color: var(--flow-desce)">━</b> desce</span></p>`;
-    }
-
-    // Painel lateral: o Resumo guardado, sempre à vista (a faturação e a média por mês também estão em grande no topo)
+    // Painel lateral: o botão de guardar acompanha o que está à frente; as vistas e a navegação também
     function desenharLateral() {
-      const D = resumoEstado.dados;
-      const caixa = document.getElementById('lateral-resumo');
-      const tem = !!D && !D.erro;
-      caixa.hidden = !tem;
-      document.getElementById('lateral-carregar').hidden = tem || !resumoEstado.aCarregar;
-      document.getElementById('lateral-pedir').hidden = tem || resumoEstado.aCarregar;   // só quando falhou
-      document.getElementById('ver-inicio').hidden = vistaResumo;
+      const D = resumoEstado.dados, tem = !!D && !D.erro;
       // Com uma resposta à frente guarda-se a pergunta; no Resumo, a carregar os dados ainda são do filtro anterior
       // (guardar juntava os filtros novos ao total antigo)
       document.getElementById('guardar-vista').disabled = respostaAFrente() ? false : !tem || resumoEstado.aCarregar;
       document.getElementById('guardar-vista-texto').textContent = textoGuardar();
-      if (tem) {
-        const [fat, ...outros] = D.kpis;
-        const indicadores = [...outros.map(k => `<div><dt>${rEsc(k.nome.replace('N.º de documentos', 'Documentos').replace(' por documento', ''))}</dt><dd class="flow-valor">${rValorKpi(k)}</dd>${k.variacao == null ? '' : `<dd>${chipVar(k.variacao)}</dd>`}</div>`),
-          D.melhorMes ? `<div><dt>Melhor mês</dt><dd class="flow-valor">${rEsc(D.melhorMes.nome)}</dd><dd class="flow-nota">${rEur(D.melhorMes.valor)}</dd></div>` : ''];
-        const pz = D.locaisDesce;
-        caixa.innerHTML = `
-          <div class="flow-resumo-topo"><h2>Resumo das vendas</h2><span class="flow-etiqueta">${rEsc(nomePeriodo(resumoEstado.periodo))}</span></div>
-          ${D.cliente ? `<div class="flow-nota">Cliente <strong>${rEsc(D.cliente)}</strong></div>` : ''}
-          <p class="flow-nota">Guardado às ${horaCurta(D.guardado)}${D.ate ? ' · dados até ' + dataCurta(D.ate) : ''}</p>
-          <p class="flow-nota flow-nota--rotulo">Faturação</p>
-          <p class="flow-total">${rValorKpi(fat)}</p>
-          ${chipVar(fat.variacao, D.anoAnt ? ' vs ' + rEsc(D.anoAnt) : '')}
-          ${sparkHtml(D.serie)}
-          <dl class="flow-kpis">${indicadores.join('')}</dl>
-          ${pz ? `<div class="flow-perda"><p class="flow-nota">Maior perda</p><p>${rEsc(nomeProprio(pz.nome))} ${chipVar(pz.delta)}</p></div>` : ''}`;
-      }
       desenharVistas();
+      desenharNav();
     }
-    document.getElementById('lateral-pedir').addEventListener('click', () => pedirResumo('AnoAtual'));
-    document.getElementById('ver-inicio').addEventListener('click', () => { verInicio(); painelEl.querySelector('[data-menu]')?.focus(); });
+    // Navegação entre vistas: a vista atual só fica marcada com o Resumo à frente (não com uma resposta aberta)
+    function desenharNav() {
+      document.getElementById('nav-lista').replaceChildren(...SECOES.map(([id, nome]) => {
+        const b = botaoEl('', nome, () => { secao = id; verInicio(); });
+        if (vistaResumo && id === secao) b.setAttribute('aria-current', 'page');
+        return b;
+      }));
+    }
 
     // Vistas guardadas: os filtros do Resumo (período + zona + cliente) ou a pergunta de uma resposta.
     // Só nesta sessão (sessionStorage): recarregar mantém-nas, fechar o separador/browser apaga-as. Máximo 6.
     const VISTAS = 'flow-vistas';
     localStorage.removeItem(VISTAS);   // as versões anteriores guardavam para sempre neste computador
     const lerVistas = () => { try { return JSON.parse(sessionStorage.getItem(VISTAS)) || []; } catch { return []; } };
-    const chaveVista = v => v.pergunta ? 'p:' + v.pergunta : JSON.stringify([v.periodo, v.zona || null, v.cliente || null]);
+    // A secção (Clientes, Faturação…) faz parte da vista: sem ela, as mesmas datas noutra secção eram "a mesma vista"
+    const chaveVista = v => v.pergunta ? 'p:' + v.pergunta : JSON.stringify([v.secao || 'geral', v.periodo, v.zona || null, v.cliente || null]);
     const mesmaVista = (v, e) => chaveVista(v) === chaveVista(e);
     // A resposta aberta no painel (null = o Resumo está à frente)
     const respostaAFrente = () => !vistaResumo && abaAtiva && !abaAtiva.pendente ? abaAtiva : null;
@@ -3412,9 +3439,9 @@
       const vistas = lerVistas();
       const D = resumoEstado.dados, resposta = respostaAFrente();
       document.getElementById('vistas').replaceChildren(...vistas.map(v => {
-        const ativa = v.pergunta ? !!resposta && resposta.pergunta === v.pergunta : vistaResumo && mesmaVista(v, resumoEstado);
+        const ativa = v.pergunta ? !!resposta && resposta.pergunta === v.pergunta : vistaResumo && mesmaVista(v, { ...resumoEstado, secao });
         if (ativa && !v.pergunta && D && !D.erro && D.total != null) v.total = D.total;   // o valor acompanha a última consulta
-        const b = botaoEl('flow-vista', '', () => v.pergunta ? abrirPergunta(v.pergunta) : pedirResumo(v.periodo, v.cliente, v.zona));
+        const b = botaoEl('flow-vista', '', () => v.pergunta ? abrirPergunta(v.pergunta) : (secao = v.secao || 'geral', pedirResumo(v.periodo, v.cliente, v.zona)));
         if (v.pergunta) b.title = v.pergunta;
         b.append(el('span', '', v.nome), el('span', '', v.pergunta ? 'Resposta' : v.total == null ? '' : rCurto(v.total)));
         if (ativa) b.setAttribute('aria-current', 'true');
@@ -3445,8 +3472,8 @@
       } else {
         if (!D || D.erro) return;
         const r = resumoEstado;
-        nome = nomePeriodo(r.periodo) + ' · ' + (r.cliente ? 'Cliente ' + (D.cliente || r.cliente) : r.zona ? nomeProprio(r.zona) : 'todas as zonas');
-        e = { periodo: r.periodo, zona: r.zona, cliente: r.cliente, nome, total: D.total };
+        nome = nomeSecao() + ' · ' + nomePeriodo(r.periodo) + ' · ' + (r.cliente ? 'Cliente ' + (D.cliente || r.cliente) : r.zona ? nomeProprio(r.zona) : 'todas as zonas');
+        e = { secao, periodo: r.periodo, zona: r.zona, cliente: r.cliente, nome, total: D.total };
       }
       const vistas = [e, ...lerVistas().filter(v => !mesmaVista(v, e))].slice(0, 6);
       const jaExistia = lerVistas().some(v => mesmaVista(v, e));
@@ -3463,7 +3490,7 @@
     document.getElementById('btn-lateral').addEventListener('click', e => {
       const fechar = document.getElementById('lateral').classList.toggle('flow-lateral--recolhido');
       e.currentTarget.setAttribute('aria-expanded', String(!fechar));
-      e.currentTarget.setAttribute('aria-label', fechar ? 'Abrir o resumo guardado' : 'Recolher o resumo guardado');
+      e.currentTarget.setAttribute('aria-label', fechar ? 'Abrir o painel lateral' : 'Recolher o painel lateral');
     });
 
     // "▲ MAIOR SUBIDA" / "▼ MAIOR DESCIDA" por baixo de um bloco
@@ -3652,11 +3679,23 @@
         </section>`;
       }
 
-      return `<div class="res-grelha">${htmlPrev}${htmlAten}</div>
-        <div class="res-grelha">${htmlArt}${htmlLoc}</div>
-        ${htmlMapa ? `<div class="res-grelha">${htmlMapa}</div>` : ''}
-        ${htmlCli || htmlAcum ? `<div class="res-grelha">${htmlCli}${htmlAcum}</div>` : ''}`;
+      // Cada vista mostra só os seus cartões (a série por mês junta-se em folhaResumo, nas vistas que a têm)
+      const porSecao = { geral: [htmlCli, htmlAten], clientes: [htmlCli], faturacao: [htmlAcum], artigos: [htmlArt],
+                         zonas: [htmlLoc, htmlMapa], previsoes: [htmlPrev] }[secao].filter(Boolean);
+      return porSecao.length || secaoComSerie() ? porSecao.map(h => `<div class="res-grelha">${h}</div>`).join('')
+        : `<p class="res-nota">Sem dados para a vista ${rEsc(nomeSecao())} com estes filtros.</p>`;
     }
+    // Vista Faturação: os números que estavam no resumo do painel lateral, em cartões (o 1.º em destaque)
+    function kpisHtml(D) {
+      const vs = D.anoAnt ? ' vs ' + rEsc(D.anoAnt) : '';
+      const cartao = (nome, valor, extra, cls = '') => `<div class="flow-kpi ${cls}"><span>${rEsc(nome)}</span><strong>${valor}</strong>${extra ? `<span>${extra}</span>` : ''}</div>`;
+      const pz = D.locaisDesce;
+      return `<div class="flow-kpis-grelha">${D.kpis.map((k, i) => cartao(k.nome.replace('N.º de documentos', 'Documentos').replace(' por documento', ''),
+          rValorKpi(k), k.variacao == null ? '' : chipVar(k.variacao) + vs, i ? '' : 'flow-kpi--destaque')).join('')}
+        ${D.melhorMes ? cartao('Melhor mês', rEsc(D.melhorMes.nome), rEur(D.melhorMes.valor)) : ''}
+        ${pz ? cartao('Maior perda', rEsc(nomeProprio(pz.nome)), chipVar(pz.delta) + vs) : ''}</div>`;
+    }
+    const secaoComSerie = () => secao === 'geral' || secao === 'faturacao';
 
     const resChipsPeriodo = () => `<div class="res-chips" role="group" aria-label="Período">${RES_PERIODOS.map(p => `<button type="button" class="res-chip" data-periodo="${p[0]}" aria-pressed="${resumoEstado.periodo === p[0]}">${p[1]}</button>`).join('')}</div>`;
     // Enter ou "Ver": abre o resumo desse cliente; vazio = resumo geral
@@ -3671,11 +3710,11 @@
       const periodo = { AnoAtual: `Ano ${ano}`, AnoAnterior: `Ano ${ano - 1}` }[resumoEstado.periodo] || nomePeriodo(resumoEstado.periodo);
       const aberto = resumoEstado.menu === 'filtros';
       const hoje = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-      return `${migalhas().outerHTML}
+      return `<button type="button" class="chat-acao res-voltar" data-inicio>← Início</button>${migalhas().outerHTML}
       <div class="flow-topo">
         <div class="flow-topo-ola">
-          <h2 class="so-leitor">Resumo das vendas${D.cliente ? ' de ' + rEsc(D.cliente) : ''}</h2>
-          ${saudacaoHtml()}
+          <h2 class="so-leitor">${rEsc(nomeSecao())}${D.cliente ? ' de ' + rEsc(D.cliente) : ''}</h2>
+          ${secao === 'geral' ? saudacaoHtml() : `<p class="flow-ola"><strong>${rEsc(nomeSecao())}</strong></p>`}
           <p class="flow-hoje">${hoje}${D.ate ? ' · dados até ' + dataCurta(D.ate) : ''}</p>
         </div>
           <div class="res-menu-wrap">
@@ -3732,7 +3771,7 @@
       }
       raiz.innerHTML = barraResumoHtml() + '<div class="res-conteudo">' + resumoHtml(D) + '</div>';
       // Vendas por mês: o mesmo gráfico das respostas, com o cartão do mês e três números por baixo
-      if (D.serie && D.serie.meses.length > 1) {
+      if (secaoComSerie() && D.serie && D.serie.meses.length > 1) {
         const bloco = el('section', 'flow-serie');
         const cabeca = el('div', 'flow-serie-cab');
         cabeca.append(el('h2', 'flow-serie-titulo', 'Vendas por mês, ' + nomePeriodo(resumoEstado.periodo).toLowerCase()));
@@ -3742,12 +3781,24 @@
         bloco.append(cartoesSerie(D.serie));
         raiz.querySelector('.res-conteudo').before(bloco);
       }
+      if (secao === 'faturacao') raiz.querySelector('.flow-serie, .res-conteudo').insertAdjacentHTML('beforebegin', kpisHtml(D));
       // Copiar e Exportar CSV: os mesmos botões das outras respostas (faturação por mês)
-      const tituloImg = 'Vendas por mês' + (D.cliente ? ' · ' + D.cliente : '');
-      rodapeDados(raiz.querySelector('.res-conteudo'), linhasResumo(D), 'resumo das vendas' + (D.cliente ? ' ' + D.cliente : ''), '',
-        D.serie && D.serie.meses.length > 1 ? () => pngSerie(D.serie, tituloImg, D.periodoTexto) : null);
+      rodapeDados(raiz.querySelector('.res-conteudo'), linhasResumo(D), 'resumo das vendas' + (D.cliente ? ' ' + D.cliente : ''), '', imagemSecao(D));
       ligarPrevisao(raiz, D.previsao);
       return raiz;
+    }
+
+    // "Guardar imagem" da vista aberta: antes era sempre o gráfico por mês, mesmo nas vistas que não o mostram.
+    // Previsões não tem desenho em PNG: sem imagem (null) em vez de uma imagem errada.
+    function imagemSecao(D) {
+      const sub = D.periodoTexto, de = D.cliente ? ' · ' + D.cliente : '';
+      const ranking = (lista, titulo) => lista && lista.length ? () => pngRanking(lista.map((i, k) => ({ pos: k + 1, nome: i.nome, codigo: i.codigo, num: i.num,
+        valor: rEur(i.num), pct: D.total > 0 ? rPct(i.num / D.total * 100) : '' })), titulo + de, sub) : null;
+      if (secaoComSerie()) return D.serie && D.serie.meses.length > 1 ? () => pngSerie(D.serie, 'Vendas por mês' + de, sub) : null;
+      if (secao === 'clientes') return ranking(D.clientes, 'Top clientes');
+      if (secao === 'artigos') return ranking(D.artigos, 'Artigos mais vendidos');
+      if (secao === 'zonas') return ranking((D.locais || []).map(l => ({ nome: nomeProprio(l.nome), num: l.fat })), 'Vendas por zona');
+      return null;
     }
 
     // Tudo o que o Resumo mostra numa só folha (Copiar e Exportar CSV): uma linha por número, com a secção de onde vem.
@@ -3784,6 +3835,7 @@
         const b = e.target.closest('button'); if (!b) return;
         const d = b.dataset;
         if (d.menu) { resumoEstado.menu = resumoEstado.menu === d.menu ? null : d.menu; redesenhar(); painelEl.querySelector(`[data-menu="${d.menu}"]`)?.focus(); return; }
+        if ('inicio' in d) { boasVindasAberta = true; desenharPainel(); painelEl.querySelector('input')?.focus(); return; }
         if ('fechar' in d) { resumoEstado.menu = null; redesenhar(); painelEl.querySelector('[data-menu]')?.focus(); return; }
         if (d.periodo) {
           resumoEstado.periodo = d.periodo;
@@ -3970,7 +4022,59 @@
     }
 
     // O resultado aberto, ou o Resumo (painel inicial). Voltar faz-se pela breadcrumb; outras respostas reabrem pelo cartão na conversa.
+    // Ecrã de boas-vindas (ocupa a janela toda): três formas de começar, ou escrever logo a pergunta
+    function folhaBoasVindas() {
+      const sair = acao => () => { boasVindasAberta = false; secao = 'geral'; vistaResumo = true; abaAtiva = null; desenharPainel(); acao?.(); };
+      const D = resumoEstado.dados, pz = D && !D.erro && D.locaisDesce;
+      const alerta = pz && D.alertas.find(a => a.tipo === 'local');
+      const raiz = el('div', 'flow-ini');
+      const topo = el('div'), av = el('div', 'flow-ini-avatar');
+      av.setAttribute('aria-hidden', 'true');
+      av.append(lancador.querySelector('svg').cloneNode(true));
+      topo.append(av, el('h1', '', `Olá${nomeUtilizador ? ', ' + nomeUtilizador.split(/\s+/)[0] : ''}. Vamos analisar dados?`),
+        el('p', '', 'Sou o Flow. Escolha por onde começar' + (D && D.ate ? ` — os dados estão atualizados até ${dataCurta(D.ate)}.` : '.')));
+      const opcao = (titulo, texto, acao, principal) => {
+        const b = botaoEl('flow-ini-opcao' + (principal ? ' flow-ini-opcao--principal' : ''), '', sair(acao));
+        b.append(el('b', '', titulo), el('small', '', texto));
+        return b;
+      };
+      const opcoes = el('div', 'flow-ini-opcoes');
+      opcoes.append(
+        opcao('Vamos analisar dados', 'Abre o painel de vendas com gráficos e indicadores.', () => { modoInicio = 'dados'; desenharConversa(); painelEl.querySelector('[data-menu]')?.focus(); }, true),
+        opcao('Vamos conversar', 'Pergunte por palavras suas, como faria a um colega.', () => { modoInicio = 'conversa'; desenharConversa(); verConversa(true); }),
+        opcao('Ver o que precisa de atenção', pz ? `${nomeProprio(pz.nome)} faturou menos ${rDec(Math.abs(pz.delta), 1)}% do que em ${D.anoAnt}.` : 'Os pontos a acompanhar neste período.',
+          () => { if (alerta) perguntar(alerta.pergunta); else painelEl.querySelector('.res-cartao--atencao')?.scrollIntoView(); }));
+      const escrever = el('form', 'flow-ini-escrever'), caixa = el('div', 'flow-ini-campo');
+      const entrada = el('input');
+      Object.assign(entrada, { maxLength: 500, autocomplete: 'off', placeholder: 'Ou escreva a sua pergunta…' });
+      entrada.setAttribute('aria-label', 'Pergunta');
+      const enviar = el('button', '', '↑');
+      enviar.setAttribute('aria-label', 'Enviar pergunta');
+      caixa.append(entrada, enviar);
+      escrever.addEventListener('submit', e => {
+        e.preventDefault();
+        const texto = entrada.value.replace(/\s+/g, ' ').trim();
+        if (texto) sair(() => perguntar(texto))();
+      });
+      const chips = el('div', 'flow-ini-chips');
+      [TEMAS[1].perguntas[0], TEMAS[0].perguntas[1], TEMAS[1].perguntas[1]].forEach(q => chips.append(botaoEl('', q, sair(() => perguntar(q)))));
+      escrever.append(caixa, chips, el('small', 'flow-ini-nota', 'Só leitura. O assistente não altera a base de dados.'));
+      raiz.append(topo, opcoes, escrever);
+      return raiz;
+    }
+
     function desenharPainel() {
+      painelRaiz.classList.toggle('chat-painel--inicio', boasVindasAberta);
+      if (boasVindasAberta) {
+        // Recarregar o Resumo redesenha o painel: mantém o texto da pergunta que já estava a ser escrita
+        const antes = painelEl.querySelector('.flow-ini input');
+        const focado = !!antes && document.activeElement === antes;
+        painelEl.replaceChildren(folhaBoasVindas());
+        const nova = painelEl.querySelector('.flow-ini input');
+        nova.value = antes ? antes.value : '';
+        if (focado) nova.focus();
+        return;
+      }
       if (historico.some(h => h.pendente)) {
         const esq = el('div', 'chat-painel-esqueleto');
         const cartoes = el('div', 'chat-esq-cartoes'), grafico = el('div', 'chat-esq-grafico');
@@ -4207,8 +4311,8 @@
 
     desenharTemas();
     mostrarInicio();
-    carregarResumo();   // o Resumo é o painel inicial: carrega logo ao abrir
-    campo.focus();
+    carregarResumo();   // o Resumo carrega logo ao abrir (por trás das boas-vindas)
+    painelEl.querySelector('.flow-ini input')?.focus();
   </script>
 </body>
 </html>
