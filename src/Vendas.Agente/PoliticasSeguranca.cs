@@ -196,8 +196,8 @@ public static class PoliticasSeguranca
     // NIF, emails, telefones e moradas não saem da máquina: com um modelo na cloud, esta ferramenta nem lhe é oferecida.
     public static bool PodeIrParaCloud(string ferramenta) => ferramenta != "consultar_sensivel";
 
-    // Devolve JSON para os cartões da Faturação: o modelo não precisa dela e o esquema ocupava lugar no prompt.
-    public static bool SoDoPainel(string ferramenta) => ferramenta == "consultar_documentos";
+    // Devolvem JSON para os cartões do painel: o modelo não precisa delas e o esquema ocupava lugar no prompt.
+    public static bool SoDoPainel(string ferramenta) => ferramenta is "consultar_documentos" or "consultar_carteira";
 
     // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
     public static string TextoDoResultado(object? resultado) =>

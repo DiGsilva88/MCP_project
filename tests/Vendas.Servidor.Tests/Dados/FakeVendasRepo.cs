@@ -149,6 +149,17 @@ internal sealed class FakeVendasRepo : IVendasRepo
         return Task.FromResult(Documentos);
     }
 
+    public ResumoCarteira Carteira { get; set; } = new([], []);
+
+    public Task<ResumoCarteira> ResumoCarteiraAsync(
+        DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
+    {
+        UltimosFiltros = filtros;
+        UltimoPeriodo = (desde, ate);
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult(Carteira);
+    }
+
     public Task<DateOnly?> UltimaVendaAsync(CancellationToken ct = default) => Task.FromResult(UltimaVenda);
 }
 

@@ -13,6 +13,7 @@ namespace Vendas.Servidor.Ferramentas;
 
 // Ferramentas sobre a view mcp.ViewMCP_vendas.
 // Todas agregam no SQL; só a consultar_documentos (do painel) devolve documentos, um por linha e com o total.
+// consultar_documentos e consultar_carteira são só do painel: devolvem JSON e o agente não as oferece ao modelo.
 [McpServerToolType]
 public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, TimeProvider? fonteTempo = null)
 {
@@ -138,6 +139,64 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
                 ultimos = r.Ultimos.Select(d => new { documento = d.DocumentoId, tipo = d.TipoDocId, data = Data(d.DataDoc), cliente = d.Cliente, total = d.Total }),
             });
         });
+    }
+
+    // Só para a vista Clientes do painel (o agente não a oferece ao modelo). Devolve JSON, não texto para ler.
+    [McpServerTool(Name = "consultar_carteira")]
+    [Description("Maiores clientes de um período, em JSON: zona, última compra, estado, documentos e compras por mês.")]
+    public async Task<string> ConsultarCarteiraAsync(
+        [Description("Período, como em consultar_vendas.")] Periodo periodo = Periodo.AnoAtual,
+        [Description("Máximo de clientes, 1 a 100.")] int limite = 100,
+        [Description("Opcional: coluna da ficha.")] Campo? coluna = null,
+        [Description("Valor dessa coluna.")] string? valor = null,
+        CancellationToken ct = default)
+    {
+        var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
+        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, null, null, null, null, hoje, null);
+        if (intervalo is not { } janela) return erroPeriodo!;
+
+        var temValor = !string.IsNullOrWhiteSpace(valor);
+        if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
+        var filtros = new Dictionary<Campo, string>();
+        if (temValor) filtros[coluna!.Value] = valor!.Trim();
+
+        return await Respostas.ExecutarAsync(log, "consultar_carteira", periodo, async () =>
+        {
+            var r = await repo.ResumoCarteiraAsync(janela.Desde, janela.Ate, filtros, ct);
+            var referencia = r.Clientes.Max(c => c.Ultima);
+            var fichas = r.Clientes.ToLookup(c => c.ClienteId);
+            var maiores = r.Meses.GroupBy(m => m.ClienteId)
+                .OrderByDescending(g => g.Sum(m => m.Valor))
+                .Take(Math.Clamp(limite, 1, Respostas.Maxlinhas));
+            return JsonSerializer.Serialize(new
+            {
+                clientes = maiores.Select(g =>
+                {
+                    var ficha = fichas[g.Key].FirstOrDefault();
+                    return new
+                    {
+                        id = g.Key,
+                        zona = ficha?.Zona,
+                        ultima = ficha?.Ultima is { } u ? Data(u) : null,
+                        documentos = g.Sum(m => m.Documentos),
+                        estado = EstadoCliente(ficha?.Ultima, referencia),
+                        meses = g.OrderBy(m => m.Mes, StringComparer.Ordinal).Select(m => new { mes = m.Mes, valor = m.Valor }),
+                    };
+                }),
+            });
+        });
+    }
+
+    // Conta a partir da última compra registada e não de hoje: com os dados por atualizar, todos pareceriam perdidos.
+    private static string? EstadoCliente(DateOnly? ultima, DateOnly? referencia)
+    {
+        if (ultima is not { } u || referencia is not { } r) return null;
+        return (r.DayNumber - u.DayNumber) switch
+        {
+            <= 60 => "Ativo",
+            <= 90 => "Em risco",
+            _ => "Perdido",
+        };
     }
 
     private static readonly Campo[] Geograficas = [Campo.Localidade, Campo.Distrito, Campo.Zona];

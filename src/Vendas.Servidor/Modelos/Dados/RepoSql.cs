@@ -111,6 +111,22 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         return new ResumoDocumentos(tipos.Result, meses.Result, ultimos.Result);
     }
 
+    public async Task<ResumoCarteira> ResumoCarteiraAsync(
+        DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null,
+        CancellationToken cancellationToken = default)
+    {
+        var (sqlMeses, parametrosMeses) = ConsultaVendas.ComprasPorMes(desde, ate, filtros);
+
+        // limite 0: estas consultas não têm TOP
+        var clientes = LerAsync(ConsultaVendas.CarteiraClientes(), _ => { }, 0,
+            leitor => new ClienteCarteira(leitor.GetString(0), leitor.GetString(1), Data(leitor, 2)), cancellationToken);
+        var meses = LerAsync(sqlMeses, parametrosMeses, 0,
+            leitor => new CompraMensal(leitor.GetString(0), leitor.GetString(1), leitor.GetDecimal(2), leitor.GetInt32(3)), cancellationToken);
+        await Task.WhenAll(clientes, meses);
+
+        return new ResumoCarteira(clientes.Result, meses.Result);
+    }
+
     public async Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default)
     {
         var (sql, parametros) = ConsultaVendas.UltimaVenda();

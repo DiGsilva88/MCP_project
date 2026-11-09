@@ -69,6 +69,7 @@ projeto_Mcp/
    | `consultar_sensivel` | + `ViewMCP_cliente_sensivel` | NIF, email, telefone, morada, código postal, volume de vendas declarado e plafond. Máx. 20 linhas e 5 páginas; cada acesso fica registado no log (auditoria, sem os valores). |
    | `consultar_vendas` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Faturação real num período: valor líquido sem IVA, notas de crédito descontadas. |
    | `consultar_documentos` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Só para a vista Faturação do painel (o `Vendas.Agente` não a oferece ao modelo): JSON com totais por `TipoDocID`, documentos por mês (`DataDoc`) e os últimos documentos (`DocumentoID`). |
+   | `consultar_carteira` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para a zona) | Só para a vista Clientes do painel (o `Vendas.Agente` não a oferece ao modelo): JSON com zona, última compra, documentos, compras por mês e estado dos maiores clientes. Estado contado desde a última venda registada: Ativo até 60 dias, Em risco de 61 a 90, Perdido acima de 90. |
 
    **`consultar`** — `coluna` (mostrar/filtrar/contar), `valor` (filtro), `contar=true` (nº de clientes por valor, com percentagens), `cruzarCom`/`valorCruzado` (filtra também por outra coluna, de qualquer das views — ex.: contar por `Zona` só dos clientes com `Pagamento` = "30 dias"), `nomeComecaPor`, `limite` (1–100, por omissão 10) e `pagina`. Os filtros ignoram acentos e maiúsculas; quando um valor não existe, a tool devolve logo os valores existentes (até 30).
 
