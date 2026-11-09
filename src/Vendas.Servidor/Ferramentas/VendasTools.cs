@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Vendas.Servidor.Modelos.Dados;
 using Vendas.Servidor.Modelos;
@@ -11,7 +12,7 @@ namespace Vendas.Servidor.Ferramentas;
 
 
 // Ferramentas sobre a view mcp.ViewMCP_vendas.
-// Todas agregam no SQL: nenhuma devolve linhas de documentos.
+// Todas agregam no SQL; só a consultar_documentos (do painel) devolve documentos, um por linha e com o total.
 [McpServerToolType]
 public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, TimeProvider? fonteTempo = null)
 {
@@ -101,6 +102,41 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             return semVendas
                 ? await ListarSemVendasAsync(janela, limite, filtros, ct)
                 : await ListarRankingAsync(agrupar, ordenar, emCada, compararAnoAnterior, menores, janela, limite, cliente, filtros, ct);
+        });
+    }
+
+    // Só para a vista Faturação do painel (o agente não a oferece ao modelo). Devolve JSON, não texto para ler.
+    [McpServerTool(Name = "consultar_documentos")]
+    [Description("Documentos de venda num período, em JSON: totais por tipo de documento, documentos por mês e os mais recentes.")]
+    public async Task<string> ConsultarDocumentosAsync(
+        [Description("Período, como em consultar_vendas.")] Periodo periodo = Periodo.AnoAtual,
+        [Description("Máximo de documentos recentes, 1 a 100.")] int limite = 10,
+        [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
+        [Description("Opcional: coluna da ficha.")] Campo? coluna = null,
+        [Description("Valor dessa coluna.")] string? valor = null,
+        CancellationToken ct = default)
+    {
+        var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
+        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, null, null, null, null, hoje, null);
+        if (intervalo is not { } janela) return erroPeriodo!;
+
+        var temValor = !string.IsNullOrWhiteSpace(valor);
+        if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
+        var filtros = new Dictionary<Campo, string>();
+        if (temValor) filtros[coluna!.Value] = valor!.Trim();
+
+        return await Respostas.ExecutarAsync(log, "consultar_documentos", periodo, async () =>
+        {
+            var (idCliente, _, erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
+            if (erro is not null) return erro;
+
+            var r = await repo.ResumoDocumentosAsync(janela.Desde, janela.Ate, Math.Clamp(limite, 1, Respostas.Maxlinhas), idCliente, filtros, ct);
+            return JsonSerializer.Serialize(new
+            {
+                tipos = r.Tipos.Select(t => new { tipo = t.TipoDocId, valor = t.Valor, documentos = t.Documentos }),
+                meses = r.Meses.Select(m => new { mes = m.Mes, documentos = m.Documentos }),
+                ultimos = r.Ultimos.Select(d => new { documento = d.DocumentoId, tipo = d.TipoDocId, data = Data(d.DataDoc), cliente = d.Cliente, total = d.Total }),
+            });
         });
     }
 

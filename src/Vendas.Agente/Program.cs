@@ -1,5 +1,6 @@
 ﻿
 using System.Diagnostics;
+using Anthropic;
 using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
@@ -89,9 +90,19 @@ var resultadosPergunta = new System.Text.StringBuilder();
 // Acima disto o Ollama cortaria o início do prompt, que são as regras de segurança.
 const int MaxCaracteresFerramentas = 12_000;
 
+// Sem AGENTE_LLM=claude fica o Ollama: os dados só saem da máquina se alguém o pedir.
+var usarClaude = string.Equals(Environment.GetEnvironmentVariable("AGENTE_LLM"), "claude", StringComparison.OrdinalIgnoreCase);
+
+// As ferramentas que o modelo vê. A mesma lista no aquecimento e nas perguntas: o Ollama reaproveita esse prefixo.
+var paraModelo = ferramentas
+    .Where(f => !PoliticasSeguranca.SoDoPainel(f.Name) && (!usarClaude || PoliticasSeguranca.PodeIrParaCloud(f.Name)))
+    .ToList();
+
 // 4b instruct (sem "thinking"): o 7b é demasiado pesado para o CPU desta máquina
-IChatClient ollama = new OllamaApiClient(http, Environment.GetEnvironmentVariable("OLLAMA_MODELO") ?? "qwen3:4b-instruct");
-IChatClient modelo = ollama
+IChatClient llm = usarClaude
+    ? new AnthropicClient().AsIChatClient(Environment.GetEnvironmentVariable("CLAUDE_MODELO") ?? "claude-opus-5-5")
+    : new OllamaApiClient(http, Environment.GetEnvironmentVariable("OLLAMA_MODELO") ?? "qwen3:4b-instruct");
+IChatClient modelo = llm
     .AsBuilder()
     .UseFunctionInvocation(null, c =>
     {
@@ -155,31 +166,34 @@ IChatClient modelo = ollama
 // Opções comuns: modelo fica carregado em memória para sempre (-1m = sem expirar, sem re-load a frio) e respostas determinísticas.
 // NumCtx fixo: um prompt maior que a janela faz o Ollama cortar o início (as regras) sem avisar.
 // Tem de ser igual no aquecimento, senão o Ollama recarrega o modelo.
-var opcoes = new ChatOptions
-{
-    Temperature = 0,
-    RawRepresentationFactory = o => new OllamaSharp.Models.Chat.ChatRequest
+// A Claude exige MaxOutputTokens e recusa Temperature com erro 400.
+var opcoes = usarClaude
+    ? new ChatOptions { MaxOutputTokens = 16_000 }
+    : new ChatOptions
     {
-        KeepAlive = "-1m",
-        Options = new OllamaSharp.Models.RequestOptions { NumCtx = 8192 },
-    },
-};
+        Temperature = 0,
+        RawRepresentationFactory = o => new OllamaSharp.Models.Chat.ChatRequest
+        {
+            KeepAlive = "-1m",
+            Options = new OllamaSharp.Models.RequestOptions { NumCtx = 8192 },
+        },
+    };
 
 // Calculado a cada pergunta: o modo web fica aberto de um dia para o outro.
 static string Regras() => PoliticasSeguranca.Regras + $"\nHoje é {DateTime.Today:dd-MM-yyyy}.";
 
 // Aquece o Ollama enquanto o utilizador escolhe o modo: carrega o modelo e o prefixo do prompt
 // (regras + esquema das ferramentas). Usa o cliente sem invocação de ferramentas.
-// Falhas ignoram-se: a 1.ª pergunta real mostra o erro.
-var aquecimento = Task.Run(async () =>
+// Falhas ignoram-se: a 1.ª pergunta real mostra o erro. Na Claude não há nada a aquecer e cada pedido custa dinheiro.
+var aquecimento = usarClaude ? Task.CompletedTask : Task.Run(async () =>
 {
     try
     {
-        await ollama.GetResponseAsync([new(ChatRole.System, Regras()), new(ChatRole.User, "ola")],
+        await llm.GetResponseAsync([new(ChatRole.System, Regras()), new(ChatRole.User, "ola")],
             new ChatOptions
             {
                 MaxOutputTokens = 1,
-                Tools = [.. ferramentas],
+                Tools = [.. paraModelo],
                 RawRepresentationFactory = opcoes.RawRepresentationFactory,
             });
     }
@@ -195,9 +209,9 @@ if (!arrancarWeb)
 {
     Console.WriteLine();
     Console.WriteLine("Modo de utilização:");
-    Console.WriteLine("1) Perguntas livres (usa um modelo local via Ollama)");
+    Console.WriteLine($"1) Perguntas livres (usa {(usarClaude ? "a Claude, na cloud" : "um modelo local via Ollama")})");
     Console.WriteLine("2) Menu fixo (sem modelo, chama as ferramentas diretamente)");
-    Console.WriteLine("3) Chat no browser (como o utilizador final, usa o modelo local)");
+    Console.WriteLine($"3) Chat no browser (como o utilizador final, usa {(usarClaude ? "a Claude, na cloud" : "o modelo local")})");
     Console.Write("> ");
 }
 var modo = arrancarWeb ? "3" : Console.ReadLine()?.Trim();
@@ -211,7 +225,7 @@ if (modo == "2")
 
 // Ciclo de resposta: lê no teclado, pergunta ao modelo e imprime a resposta.
 
-opcoes.Tools = [.. ferramentas];
+opcoes.Tools = [.. paraModelo];
 
 if (modo == "3")
 {
@@ -295,8 +309,10 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever, Cancella
     // O browser fechou a meio (HttpListenerException ao escrever): não é falha do Ollama, sobe para o ModoWebAsync.
     catch (Exception ex) when (ex is not System.Net.HttpListenerException)
     {
-        Console.Error.WriteLine("O Ollama não respondeu ou devolveu um erro.");
-        Console.Error.WriteLine("Confirme que o serviço está a funcionar (ollama server) e que o modelo está conectado");
+        Console.Error.WriteLine("O modelo não respondeu ou devolveu um erro.");
+        Console.Error.WriteLine(usarClaude
+            ? "Confirme a variável ANTHROPIC_API_KEY, os créditos da conta e a ligação à internet."
+            : "Confirme que o serviço está a funcionar (ollama server) e que o modelo está conectado");
         Console.Error.WriteLine($"Detalhe: {ex.Message}");
         await escrever("Não foi possível obter uma resposta neste momento. Tente novamente.");
         return;
@@ -425,10 +441,12 @@ async Task ModoWebAsync()
             }
             // Separador "Resumo": só a própria página (same-origin) ou o endereço escrito à mão (none).
             // Outra porta de localhost é "same-site" e também fica de fora.
-            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/resumo" && pedido.Headers["Sec-Fetch-Site"] is not ("same-origin" or "none"))
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath is "/resumo" or "/ficha" && pedido.Headers["Sec-Fetch-Site"] is not ("same-origin" or "none"))
                 resposta.StatusCode = 403;
             else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/resumo")
                 await ResumoAsync(pedido.QueryString, resposta);
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/ficha")
+                await FichaAsync(pedido.QueryString, resposta);
             else resposta.StatusCode = 404;
         }
         catch (Exception ex) when (ex is System.Net.HttpListenerException or IOException)
@@ -453,6 +471,20 @@ static async Task<string?> LerCorpoAsync(System.Net.HttpListenerRequest pedido, 
     var buffer = new char[max + 1];
     var lidos = await leitor.ReadBlockAsync(buffer);
     return lidos > max ? null : new string(buffer, 0, lidos);
+}
+
+// Botão "Ficha do cliente": a ficha e as condições de faturação, tal como a tool consultar as devolve (sem NIF nem contactos), sem modelo.
+async Task FichaAsync(System.Collections.Specialized.NameValueCollection q, System.Net.HttpListenerResponse resposta)
+{
+    if (q["cliente"]?.Trim() is not { Length: > 0 and <= 100 } cliente)
+    {
+        resposta.StatusCode = 400;
+        return;
+    }
+    var r = await mcp.CallToolAsync("consultar", new Dictionary<string, object?> { ["cliente"] = cliente });
+    Console.WriteLine("[ficha]"); // sem o nome: pode ser dado pessoal
+    resposta.ContentType = "text/plain; charset=utf-8";
+    await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(string.Concat(r.Content.OfType<TextContentBlock>().Select(b => b.Text))));
 }
 
 // Resumo das vendas (geral, de uma zona ou de um cliente): chama a ferramenta diretamente, sem modelo, por isso é rápido
@@ -511,16 +543,26 @@ Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cli
 async Task<Dictionary<string, string>> MontarResumoAsync(
     Dictionary<string, object?> janela, Dictionary<string, object?>? meses, string? cliente, string? zona, CancellationToken ct, DateOnly? dia = null)
 {
-    async Task<string> Vendas(Dictionary<string, object?> argumentos)
+    // Só o email passa dia: continua com as zonas da ficha. No painel, "zona" é o distrito escolhido.
+    var painel = dia is null;
+
+    async Task<string> Texto(string ferramenta, Dictionary<string, object?> argumentos)
+    {
+        var r = await mcp.CallToolAsync(ferramenta, argumentos, cancellationToken: ct);
+        return string.Concat(r.Content.OfType<TextContentBlock>().Select(b => b.Text));
+    }
+
+    Task<string> Filtrada(string ferramenta, Dictionary<string, object?> argumentos, bool soDistrito = true)
     {
         // Quem já traz o seu periodo (os clientes parados: 90 dias) fica com ele.
         if (!argumentos.ContainsKey("periodo"))
             foreach (var (chave, valor) in janela) argumentos.TryAdd(chave, valor);
         if (cliente is not null) argumentos["cliente"] = cliente;
-        if (zona is not null) { argumentos["coluna"] = "Zona"; argumentos["valor"] = zona; }
-        var r = await mcp.CallToolAsync("consultar_vendas", argumentos, cancellationToken: ct);
-        return string.Concat(r.Content.OfType<TextContentBlock>().Select(b => b.Text));
+        if (soDistrito && zona is not null) { argumentos["coluna"] = "Distrito"; argumentos["valor"] = zona; }
+        return Texto(ferramenta, argumentos);
     }
+
+    Task<string> Vendas(Dictionary<string, object?> argumentos, bool soDistrito = true) => Filtrada("consultar_vendas", argumentos, soDistrito);
 
     var partes = new Dictionary<string, Task<string>>
     {
@@ -528,11 +570,17 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
     };
     if (meses is not null)
         partes["meses"] = Vendas(new(meses) { ["agrupar"] = "Mes", ["compararAnoAnterior"] = true });
+    // Vista Faturação do painel (o email não a usa)
+    if (painel)
+        partes["documentos"] = Filtrada("consultar_documentos", new() { ["limite"] = 10 });
     // Só cliente: os rankings de zonas e clientes e os clientes parados não dizem nada sobre um cliente.
     if (cliente is null)
     {
-        partes["zonas"] = Vendas(new() { ["agrupar"] = "Zona", ["limite"] = 8, ["compararAnoAnterior"] = true });
-        // Mapa de áreas das localidades no painel (o email não o usa)
+        // Sem o filtro: o mosaico mostra sempre todos os distritos, com o escolhido em destaque.
+        partes["zonas"] = Vendas(new() { ["agrupar"] = painel ? "Distrito" : "Zona", ["limite"] = 8, ["compararAnoAnterior"] = true }, soDistrito: false);
+        if (painel)
+            partes["distritosClientes"] = Texto("consultar", new() { ["coluna"] = "Distrito", ["contar"] = true, ["limite"] = 100 });
+        // Tabela das localidades no painel (o email não a usa)
         partes["localidades"] = Vendas(new() { ["agrupar"] = "Localidade", ["limite"] = 12, ["compararAnoAnterior"] = true });
         partes["clientes"] = Vendas(new() { ["agrupar"] = "Cliente", ["limite"] = 10, ["compararAnoAnterior"] = true });
         // Reenvio com --dia: os 90 dias contam desse dia (igual a Ultimos90Dias), não de hoje.

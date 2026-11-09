@@ -46,6 +46,11 @@ public interface IVendasRepo
         DateOnly desde, DateOnly ate, int limite, IReadOnlyDictionary<Campo, string>? filtros = null,
         CancellationToken cancellationToken = default);
 
+    // Vista Faturação do painel: totais por TipoDocID, documentos por mês e os "limite" documentos mais recentes.
+    Task<ResumoDocumentos> ResumoDocumentosAsync(
+        DateOnly desde, DateOnly ate, int limite, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
+
     // Data da venda mais recente que existe (null = sem vendas nenhumas).
     Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default);
 }

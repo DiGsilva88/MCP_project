@@ -91,6 +91,26 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
             cancellationToken);
     }
 
+    public async Task<ResumoDocumentos> ResumoDocumentosAsync(
+        DateOnly desde, DateOnly ate, int limite, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default)
+    {
+        var (sqlTipos, parametrosTipos) = ConsultaVendas.DocumentosPorTipo(desde, ate, cliente, filtros);
+        var (sqlMeses, parametrosMeses) = ConsultaVendas.DocumentosPorMes(desde, ate, cliente, filtros);
+        var (sqlUltimos, parametrosUltimos) = ConsultaVendas.UltimosDocumentos(desde, ate, cliente, filtros);
+
+        var tipos = LerAsync(sqlTipos, parametrosTipos, limite,
+            leitor => new DocumentosPorTipo(leitor.GetString(0), leitor.GetDecimal(1), leitor.GetInt32(2)), cancellationToken);
+        var meses = LerAsync(sqlMeses, parametrosMeses, limite,
+            leitor => new DocumentosPorMes(leitor.GetString(0), leitor.GetInt32(1)), cancellationToken);
+        var ultimos = LerAsync(sqlUltimos, parametrosUltimos, limite,
+            leitor => new DocumentoEmitido(leitor.GetString(0), leitor.GetString(1), Data(leitor, 2)!.Value, leitor.GetString(3), leitor.GetDecimal(4)),
+            cancellationToken);
+        await Task.WhenAll(tipos, meses, ultimos);
+
+        return new ResumoDocumentos(tipos.Result, meses.Result, ultimos.Result);
+    }
+
     public async Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default)
     {
         var (sql, parametros) = ConsultaVendas.UltimaVenda();

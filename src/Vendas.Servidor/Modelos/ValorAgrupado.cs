@@ -17,3 +17,10 @@ public sealed record ValorAgrupado(
 //um cliente da ficha sem vendas no período. ultima = última compra antes do período (null = nunca comprou)
 //total = quantos clientes estão nesta situação (igual em todas as linhas)
 public sealed record ClienteSemVendas(string Nome, DateOnly? Ultima, int Total);
+
+//vista Faturação do painel. mes = "aaaa-mm"; total = valor líquido do documento (sem IVA)
+public sealed record DocumentosPorTipo(string TipoDocId, decimal Valor, int Documentos);
+public sealed record DocumentosPorMes(string Mes, int Documentos);
+public sealed record DocumentoEmitido(string DocumentoId, string TipoDocId, DateOnly DataDoc, string Cliente, decimal Total);
+public sealed record ResumoDocumentos(
+    IReadOnlyList<DocumentosPorTipo> Tipos, IReadOnlyList<DocumentosPorMes> Meses, IReadOnlyList<DocumentoEmitido> Ultimos);
