@@ -857,8 +857,8 @@
     .flow-nota--rotulo { font-size: 13px; }
     .flow-total { font-size: 22px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
     .flow-resumo .chat-delta { margin-top: 4px; font-weight: 800; }
-    .flow-resumo .chat-delta--sobe { background: #dcf3e7; color: #0b5236; }
-    .flow-resumo .chat-delta--desce { background: #fde7e4; color: #8a1c14; }
+    .flow-resumo .chat-delta--sobe { background: #eef3ff; color: #1d5bff; }
+    .flow-resumo .chat-delta--desce { background: #e9ebef; color: #0b0f17; }
     .flow-spark { display: block; width: 100%; height: auto; margin-top: 14px; overflow: visible; }
     .flow-spark text { font-size: 9px; fill: var(--flow-azul-escuro); }
     .flow-spark-legenda { display: flex; justify-content: center; gap: 12px; font-size: 11px; color: var(--flow-azul-escuro); }
@@ -961,8 +961,8 @@
     .chat-leitura .chat-leitura-comp div { display: flex; flex-direction: column; gap: 2px; }
     .chat-leitura-comp dt { font-size: 12px; color: rgb(255 255 255 / .85); }
     .chat-leitura-comp dd { margin: 0; font-size: 14px; font-weight: 700; }
-    .chat-leitura .chat-delta--sobe { background: #dcf3e7; color: #0b5236; }
-    .chat-leitura .chat-delta--desce { background: #fde7e4; color: #8a1c14; }
+    .chat-leitura .chat-delta--sobe { background: #eef3ff; color: #1d5bff; }
+    .chat-leitura .chat-delta--desce { background: #e9ebef; color: #0b0f17; }
     .chat-leitura-btn { margin-top: 12px; min-height: 36px; border: 0; border-radius: 6px; background: #fff; color: var(--marca); font-size: 13px; font-weight: 700; }
     .chat-leitura-btn:hover { background: #e6edff; }
     .chat-leitura :focus-visible { outline-color: #fff; }
@@ -975,6 +975,7 @@
     :is(#dlg-email, #dlg-exportar, #dlg-ficha) form { display: flex; flex-direction: column; gap: 12px; }
     :is(#dlg-email, #dlg-exportar, #dlg-ficha) h2 { margin: 0; font-size: 15px; }
     .dlg-nota { margin: 2px 0 0; color: var(--suave); }
+    .flow-aviso { position: fixed; left: 50%; bottom: 20px; z-index: 60; transform: translateX(-50%); max-width: calc(100% - 32px); margin: 0; padding: 11px 16px; border-radius: 10px; background: #0b0f17; color: #fff; font-size: 13px; box-shadow: 0 10px 30px rgb(11 15 23 / .3); }
     :is(#dlg-email, #dlg-exportar, #dlg-ficha) fieldset { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 6px; }
     :is(#dlg-email, #dlg-exportar, #dlg-ficha) legend { margin-bottom: 4px; padding: 0; font-weight: 700; }
     .dlg-opcao:has(input:disabled) { opacity: .5; cursor: not-allowed; }
@@ -1073,10 +1074,11 @@
        ========================================================= */
     @media all {
       :root {
-        --fundo: #f8fafc; --lateral: #f8fafc; --cartao: #ffffff; --texto: #1e293b; --suave: #475569; --nota: #64748b;
-        --borda: #e2e8f0; --linha: #e2e8f0; --borda-cartao: #e2e8f0; --borda-campo: #cbd5e1; --balao: #f1f5f9;
-        --marca: #2563eb; --marca-escura: #1d4ed8; --ligacao: #1d4ed8; --selecionado: #eff6ff;
-        --navy: #0d1829; --flow-navy-borda: #1e2a44; --flow-azul-borda: #bfdbfe; --flow-tinta-azul: #1e3a8a;
+        --fundo: #f4f5f7; --lateral: #f4f5f7; --cartao: #ffffff; --texto: #0b0f17; --suave: #5b6472; --nota: #5b6472;
+        --borda: #e4e7ec; --linha: #eef0f3; --borda-cartao: #e4e7ec; --borda-campo: #d7dbe2; --balao: #f4f5f7;
+        --marca: #1d5bff; --marca-escura: #0b3fd1; --ligacao: #1d5bff; --selecionado: #eef3ff;
+        --navy: #0d1829; --flow-navy-borda: #1e2a44; --flow-azul-borda: #dce6ff; --flow-tinta-azul: #1e3a8a;
+        --sobe: #1d5bff; --sobe-fundo: #eef3ff; --desce: #0b0f17; --desce-fundo: #e9ebef;
       }
     }
     @media not all { :root { --borda-campo: var(--borda); --balao: var(--lateral); } }
@@ -1111,11 +1113,11 @@
     /* Breadcrumb: onde se está (Inforap Flow › Vendas › …), por cima da saudação e de cada resposta */
     .flow-migalhas ol { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12px; font-weight: 500; color: var(--nota); }
     .flow-migalhas li { display: flex; align-items: center; gap: 8px; }
-    .flow-migalhas li + li::before { content: ''; width: 5px; height: 5px; border-top: 1.5px solid var(--borda-campo); border-right: 1.5px solid var(--borda-campo); transform: rotate(45deg); }
+    .flow-migalhas li + li::before { content: '/'; color: #9aa3b2; }
     /* Azul e sublinhado: é por aqui que se volta atrás */
-    .flow-migalhas button { min-height: 24px; padding: 0; border: 0; background: none; color: var(--ligacao); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-    .flow-migalhas button:hover { color: var(--marca-escura); text-decoration-thickness: 2px; }
-    .flow-migalhas [aria-current="page"] { padding: 2px 8px; border: 1px solid var(--flow-azul-borda); border-radius: 6px; background: var(--selecionado); color: var(--ligacao); font-weight: 700; }
+    .flow-migalhas button { min-height: 24px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+    .flow-migalhas button:hover { color: var(--texto); text-decoration: underline; text-underline-offset: 3px; }
+    .flow-migalhas [aria-current="page"] { color: var(--texto); }
 
     /* Saudação compacta à esquerda, período à direita */
     .flow-topo { flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin: 0 0 8px; }
@@ -1129,7 +1131,7 @@
     :is(.res-cartao, .flow-grafico-lado, .chat-kpi) { border-color: var(--borda); border-radius: 16px; box-shadow: 0 1px 2px rgb(15 23 42 / .04); }
 
     /* Painel lateral */
-    .flow-lateral { width: 288px; border-right: 1px solid var(--flow-navy-borda); }
+    .flow-lateral { border-right: 1px solid var(--flow-navy-borda); }
     .flow-marca-logo { border-radius: 12px; }
     .flow-btn-lateral { border-color: transparent; color: #94a3b8; }
     .flow-btn-lateral:hover { color: #fff; background: rgb(255 255 255 / .08); }
@@ -1149,7 +1151,7 @@
     .chat-conversa .chat-area { padding-top: 20px; }
     .flow-chat-icone { width: 32px; height: 32px; border-radius: 10px; background: var(--marca); color: #fff; }
     .chat-conversa .chat-estado { font-size: 11.5px; font-weight: 600; }
-    .chat-conversa .chat-ponto { background: #10b981; }
+    .chat-conversa .chat-ponto { background: var(--marca); }
     .chat-conversa .chat-esconder { border-color: var(--borda); background: var(--cartao); color: var(--suave); }
     .chat-conversa .chat-temas { border-bottom-color: var(--borda); }
     .chat-conversa .chat-tema { border-color: transparent; border-radius: 999px; background: var(--balao); }
@@ -1175,9 +1177,9 @@
       .flow-lateral, .flow-btn-lateral, .flow-vista, .flow-pedir, .flow-vistas-acoes .chat-acao { color: var(--texto); }
       .flow-lateral :focus-visible { outline-color: var(--marca); }
       .flow-btn-lateral { color: var(--suave); }
-      :is(.flow-btn-lateral, .flow-vista, .flow-pedir:not(:disabled)):hover { color: var(--texto); background: rgb(37 99 235 / .08); }
-      .flow-vista[aria-current="true"] { background: #dbeafe; color: #1e40af; box-shadow: none; }
-      .flow-vista[aria-current="true"] span + span { color: #1e40af; }
+      :is(.flow-btn-lateral, .flow-vista, .flow-pedir:not(:disabled)):hover { color: var(--texto); background: rgb(29 91 255/ .08); }
+      .flow-vista[aria-current="true"] { background: var(--selecionado); color: var(--marca); box-shadow: none; }
+      .flow-vista[aria-current="true"] span + span { color: var(--marca); }
       .flow-pedir { border-color: #93c5fd; }
       .flow-carregar span { background: var(--esqueleto); }
       :is(.flow-resumo, .res-cartao--atencao) { background: #dbeafe; border: 1px solid #bfdbfe; box-shadow: 0 1px 2px rgb(15 23 42 / .04); }
@@ -1191,13 +1193,16 @@
        ========================================================= */
     .flow-nav { display: flex; flex-direction: column; gap: 2px; }
     .flow-nav button { min-height: 38px; padding: 0 12px; display: flex; align-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--suave); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
-    .flow-nav button:hover { background: rgb(37 99 235 / .08); color: var(--texto); }
-    .flow-nav button[aria-current="page"] { background: #dbeafe; color: #1e40af; font-weight: 600; box-shadow: inset -2px 0 0 var(--marca); }
-    .flow-lateral--recolhido .flow-nav { display: none; }
+    .flow-nav button:hover { background: rgb(29 91 255/ .08); color: var(--texto); }
+    .flow-nav button[aria-current="page"] { background: var(--selecionado); color: var(--marca); font-weight: 500; box-shadow: inset -2px 0 0 var(--marca); }
+    /* Recolhida: só os ícones. font-size: 0 e não display: none, para o leitor de ecrã continuar a ler o nome */
+    .flow-lateral--recolhido .flow-nav-titulo { display: none; }
+    .flow-lateral--recolhido .flow-nav button { position: relative; width: 44px; padding: 0; gap: 0; justify-content: center; font-size: 0; }
+    .flow-lateral--recolhido .flow-nav-n { position: absolute; top: 0; right: 0; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; }
     .chat-dados > .flow-acoes { justify-content: flex-end; gap: 8px; padding: 12px max(20px, calc((100% - 1520px) / 2)) 0; }
     .chat-painel--inicio .chat-dados > .flow-acoes { display: none; }
     .flow-btn-sub--escuro { background: var(--texto); border-color: var(--texto); color: #fff; }
-    .flow-btn-sub--escuro:hover:not(:disabled) { background: #334155; border-color: #334155; }
+    .flow-btn-sub--escuro:hover:not(:disabled) { background: #252c3b; border-color: #252c3b; }
 
     /* Painel lateral do Visual IX: pesquisa no topo, "Painel", vistas guardadas e o utilizador no fundo */
     .flow-lateral { background: var(--cartao); border-right: 1px solid var(--borda); }
@@ -1225,7 +1230,7 @@
     .chat-painel--inicio .chat-dados { grid-column: 1 / -1; grid-row: 1 / -1; }
     .chat-painel--inicio .chat-painel-dados { padding: 40px 24px !important; }
     .flow-ini { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; text-align: center; }
-    .flow-ini-avatar { width: 84px; height: 84px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--marca); box-shadow: 0 12px 30px rgb(37 99 235 / .3); }
+    .flow-ini-avatar { width: 84px; height: 84px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--marca); box-shadow: 0 12px 30px rgb(29 91 255/ .3); }
     .flow-ini h1 { margin: 12px 0 6px; font-size: 34px; font-weight: 500; letter-spacing: -.02em; }
     .flow-ini > div > p { margin: 0; font-size: 15px; color: var(--suave); }
     .flow-ini-opcoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 260px)); justify-content: center; gap: 14px; width: 100%; }
@@ -1286,11 +1291,12 @@
 
     /* Protótipo — cabeçalho do painel: barra de 56px (onde está, dados até), título com períodos e filtros */
     .chat-painel .chat-dados .chat-painel-dados:has(> .chat-folha > .res-cabecalho) { padding: 0 24px 28px; }
-    .res-cabecalho { position: sticky; top: 0; z-index: 4; height: 56px; margin: 0 -24px 20px; padding: 0 24px; display: flex; align-items: center; gap: 10px; background: var(--cartao); border-bottom: 1px solid var(--borda); }
-    .res-caminho { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--suave); }
+    .res-cabecalho { position: sticky; top: 0; z-index: 4; height: 56px; margin: 0 -24px; padding: 0 24px; display: flex; align-items: center; gap: 10px; background: var(--cartao); border-bottom: 1px solid var(--borda); }
+    .res-caminho { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12.5px; font-weight: 500; color: var(--nota); }
+    .res-caminho > span { color: #9aa3b2; }
     .res-caminho .flow-migalhas ol { margin: 0; font-size: 12.5px; }
-    .res-casa { display: flex; align-items: center; gap: 5px; padding: 0; border: 0; background: none; color: var(--marca); font: inherit; font-weight: 500; cursor: pointer; }
-    .res-casa:hover { text-decoration: underline; }
+    .res-casa { min-height: 24px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+    .res-casa:hover { color: var(--texto); text-decoration: underline; text-underline-offset: 3px; }
     .res-dados-ate { margin-left: auto; flex: none; display: flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--borda); border-radius: 20px; font-size: 12px; color: var(--suave); }
     .flow-topo { justify-content: flex-start; align-items: flex-end; gap: 12px; margin: 0 0 14px; }
     .flow-topo-ola { margin-right: auto; }
@@ -1307,22 +1313,40 @@
     /* Protótipo — tabelas (Clientes, Artigos), cartão lateral e barras de peso */
     .res-grelha > .res-tabela { flex: 1 1 440px; gap: 0; }
     .res-grelha > .res-cartao--lado { flex: 0 1 300px; gap: 12px; }
+    .res-grelha > :is([data-bloco="art-lado"], [data-bloco="zona-cli"], [data-bloco="loc-lado"]) { flex-basis: 320px; }
+    .res-grelha:has(> [data-bloco="cli-tab"]) { align-items: flex-start; }
+    .res-pag { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; font-size: 12.5px; color: var(--suave); }
+    .res-pag span { margin-right: auto; }
+    .res-pag button[aria-disabled="true"] { opacity: .45; cursor: default; }
     .res-tabela .res-cab { margin-bottom: 6px; }
     .res-tab-linha { width: 100%; display: grid; align-items: center; gap: 8px; padding: 9px 8px; border: 0; border-bottom: 1px solid var(--linha); border-radius: 0; background: none; color: var(--texto); font: inherit; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
     .res-tab-linha > :first-child { text-align: left; }
     button.res-tab-linha { cursor: pointer; }
     button.res-tab-linha:hover { background: var(--fundo); }
     .res-tab-cab { padding-top: 6px; padding-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--nota); }
-    .res-tab--cli { grid-template-columns: minmax(0, 1fr) 96px 64px 84px; }
+    .res-tab--cli { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) 96px 64px 64px 84px; }
+    .res-tab--cli > :nth-child(2) { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; color: var(--suave); }
+    /* A largura que conta é a da própria tabela: muda com a conversa aberta ou minimizada */
+    .res-grelha > [data-bloco="cli-tab"] { container-type: inline-size; }
+    @container (max-width: 640px) {
+      .res-tab--cli { grid-template-columns: minmax(0, 1fr) 76px 62px 48px 72px; }
+      .res-tab--cli > :nth-child(2) { display: none; }
+    }
+    [data-bloco="cli-tab"] .res-pilulas { margin-bottom: 10px; }
+    [data-bloco="cli-tab"] .res-pilulas .res-sub { margin-left: auto; }
+    .res-compras { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #5b6472; }
+    .res-compras-barras { height: 56px; display: flex; align-items: flex-end; gap: 4px; }
+    .res-compras-barras i { flex: 1; border-radius: 3px 3px 0 0; background: #1d5bff; }
+    .res-compras-barras--parado i { background: #0b0f17; }
     .res-tab--art { grid-template-columns: minmax(0, 1fr) 90px 56px 60px; }
     .res-tab-nome { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 500; }
     .res-tab-nome small { display: block; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; font-weight: 400; color: var(--nota); }
     .res-tab-linha strong { font-weight: 600; }
     .res-tab-nota { font-size: 12px; color: var(--suave); }
     .res-estado { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-    .res-estado--sobe { background: var(--selecionado); color: var(--ligacao); }
-    .res-estado--desce { background: #0b0f17; color: #fff; }
-    .res-estado--novo { border: 1px solid var(--borda); color: var(--suave); }
+    .res-estado--ativo { background: var(--selecionado); color: var(--ligacao); }
+    .res-estado--risco { background: #0b0f17; color: #fff; }
+    .res-estado--perdido { background: #e9ebef; color: #5b6472; }
     .res-peso > div { display: flex; gap: 8px; font-size: 13px; }
     .res-peso > div > span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
     .res-peso strong { font-weight: 600; }
@@ -1405,7 +1429,7 @@
     @media (prefers-reduced-motion: reduce) { .res-regra i, .res-regra i::after { transition: none; } }
 
     /* Demonstração — Clientes: a linha escolhida alimenta a ficha rápida */
-    button.res-tab-linha[aria-pressed="true"] { background: #f5f8ff; box-shadow: inset 2px 0 0 #1d5bff; }
+    button.res-tab-linha[aria-pressed="true"] { background: #eef3ff; border-radius: 8px; box-shadow: inset 3px 0 0 #1d5bff; }
     .res-ficha-rapida h4 { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.3; }
     .res-ficha-rapida > small { font-size: 12.5px; color: #5b6472; }
     .res-ficha-rapida .res-estado { align-self: flex-start; }
@@ -1548,7 +1572,7 @@
           <input id="procurar-campo" maxlength="100" autocomplete="off" placeholder="Procurar cliente…">
         </form>
         <!-- O Resumo dividido em vistas (desenharNav); cada uma mostra só os seus cartões -->
-        <nav class="flow-nav flow-so-aberto" id="nav" aria-labelledby="nav-titulo"><h2 class="flow-nav-titulo" id="nav-titulo">Painel</h2><div id="nav-lista"></div></nav>
+        <nav class="flow-nav" id="nav" aria-labelledby="nav-titulo"><h2 class="flow-nav-titulo" id="nav-titulo">Painel</h2><div id="nav-lista"></div></nav>
         <section class="flow-vistas flow-so-aberto" aria-labelledby="vistas-titulo">
           <h2 id="vistas-titulo">Vistas guardadas</h2>
           <ul id="vistas"></ul>
@@ -1653,11 +1677,13 @@
       <label class="dlg-campo"><b>Enviar para</b><input type="email" name="email" placeholder="nome@inforap.pt" maxlength="200" required></label>
       <p class="dlg-nota" id="dlg-email-estado" role="status" hidden></p>
       <div class="dlg-botoes">
-        <button class="res-btn" value="cancelar" formnovalidate>Fechar</button>
+        <!-- type="button": o Enter usa o 1.º botão de submeter, que tem de ser o Agendar -->
+        <button class="res-btn" type="button" id="dlg-email-fechar">Fechar</button>
         <button class="res-btn res-btn--primario" value="agendar">Agendar envio</button>
       </div>
     </form>
   </dialog>
+  <p class="flow-aviso" id="aviso" role="status" hidden></p>
 
   <!-- Botão "Ficha do cliente": os dados vêm de GET /ficha -->
   <dialog id="dlg-ficha" aria-labelledby="dlg-ficha-titulo">
@@ -3322,7 +3348,7 @@
        Carrega ao abrir a página; filtros, "resumo do cliente X" na conversa e as vistas guardadas voltam a carregar.
        ========================================================= */
     const RES_PERIODOS = [['Ultimos7Dias', 'Últimos 7 dias'], ['MesAtual', 'Este mês'], ['TrimestreAtual', 'Trimestre'], ['AnoAtual', 'Este ano'], ['Ultimos12Meses', 'Últimos 12 meses'], ['AnoAnterior', 'Ano passado']];
-    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, alertaSel: null, alertaFiltro: 'Todos', cliSel: null };
+    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, alertaSel: null, alertaFiltro: 'Todos', cliSel: null, cliSeg: 'Todos', cliPag: 0 };
     // Vistas do Resumo (painel lateral): cada uma mostra só os seus cartões, em vez de tudo numa só página
     const SECOES = [['geral', 'Resumo das vendas'], ['alertas', 'Alertas'], ['clientes', 'Clientes'], ['faturacao', 'Faturação'],
                     ['artigos', 'Artigos'], ['zonas', 'Zonas'], ['previsoes', 'Previsões']];
@@ -3544,7 +3570,7 @@
         titulo: `${nomeProprio(z.nome)} caiu ${rPct(Math.abs(z.delta))}`, texto: `Faturou ${rEur(z.num)}, ${menos(z)}.`, pergunta: `Comparar as vendas do distrito ${nomeProprio(z.nome)} mês a mês com o ano passado` }));
       quebras(artigos, -25).forEach(a => alertas.push({ id: idAlerta('artigo', a.nome), tipo: 'artigo', sev: gravidade(a.delta), cat: 'Artigos', regra: 'artigo', ver: 'artigos', tag: 'Artigo em quebra',
         titulo: `${a.nome} caiu ${rPct(Math.abs(a.delta))}`, texto: `Vendeu ${rEur(a.num)}, ${menos(a)}.`, pergunta: resumoEstado.cliente ? '' : 'Comparar as vendas por artigo com o ano passado' }));
-      quebras(positivos(j.clientes), -25).forEach(c => alertas.push({ id: idAlerta('cliente', c.nome), tipo: 'cliente', sev: gravidade(c.delta), cat: 'Clientes', regra: 'cliente', ver: 'clientes', cliente: c.codigo || c.nome, tag: 'Cliente em queda',
+      quebras(positivos(j.clientes).slice(0, 10), -25).forEach(c => alertas.push({ id: idAlerta('cliente', c.nome), tipo: 'cliente', sev: gravidade(c.delta), cat: 'Clientes', regra: 'cliente', ver: 'clientes', cliente: c.codigo || c.nome, tag: 'Cliente em queda',
         titulo: `${nomeProprio(c.nome)} caiu ${rPct(Math.abs(c.delta))}`, texto: `Comprou ${rEur(c.num)}, ${menos(c)}.`, pergunta: `Que artigos comprou o cliente ${nomeProprio(c.nome)} este ano?` }));
       const parados = num(j.semVendas, /^Clientes sem vendas[^:]*:\s*([\d\s]+?)\s+clientes/);
       if (parados) alertas.push({ id: idAlerta('parados', ''), tipo: 'cliente', sev: 'Aviso', cat: 'Clientes', regra: 'parados', ver: 'clientes', tag: 'Clientes sem compras', titulo: `${rGrupos(parados)} clientes sem compras`, texto: `${rGrupos(parados)} clientes não compram há 90 dias.`, pergunta: 'Clientes que não compram há 90 dias?' });
@@ -3569,6 +3595,10 @@
       // Vista Faturação (JSON da consultar_documentos). Outro texto = cliente por resolver ou erro: os cartões ficam "Ainda sem dados".
       let docs = null;
       try { docs = JSON.parse(j.documentos || 'null'); } catch { }
+      // Vista Clientes (JSON da consultar_carteira): acrescenta zona, última compra, documentos, compras por mês e estado
+      let carteira = null;
+      try { carteira = JSON.parse(j.carteira || 'null'); } catch { }
+      const fichaCarteira = new Map((carteira ? carteira.clientes : []).map(c => [String(c.id).trim(), c]));
 
       return {
         serie, mediaMes,
@@ -3590,7 +3620,9 @@
         localidadesTotal: +((j.localidades || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,
         localidadesSobe: subida(locais), localidadesDesce: descida(locais),
         locaisDesce: pz,
-        clientes: j.clientes ? positivos(j.clientes) : null,
+        clientes: j.clientes ? positivos(j.clientes).slice(0, 10) : null,
+        carteira: j.clientes ? positivos(j.clientes).map(c => ({ ...c, ...fichaCarteira.get(c.codigo) })) : null,
+        clientesTotal: +((j.clientes || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,
         tiposDoc: docs ? docs.tipos.map(t => ({ nome: TIPOS_DOC[t.tipo] || 'Tipo ' + t.tipo, valor: t.valor, docs: t.documentos })) : null,
         docsPorMes: docs ? docs.meses.map(x => {
           const [a, m] = x.mes.split('-').map(Number), s = meses.find(y => y.a === a && y.m === m);
@@ -3662,6 +3694,7 @@
       document.getElementById('nav-lista').replaceChildren(...SECOES.map(([id, nome]) => {
         // Sem perguntas feitas, as sugestões da conversa acompanham a vista escolhida
         const b = botaoEl('', nome, () => { secao = id; verInicio(); });   // verInicio redesenha a conversa: as sugestões seguem a vista
+        b.title = nome;   // com a barra recolhida só se vê o ícone
         b.insertAdjacentHTML('afterbegin', svgIc(id === 'geral' ? 'resumo' : id, 17));
         const porLer = id === 'alertas' ? nAlertasPorLer(resumoEstado.dados) : 0;
         if (porLer) b.insertAdjacentHTML('beforeend', `<span class="flow-nav-n" title="${porLer} por ler">${porLer}</span>`);
@@ -3954,34 +3987,67 @@
         </section>`;
       }
 
-      // Vista Clientes: tabela com estado (a crescer / em queda / novo) e, ao lado, quem mais subiu e desceu no top
+      // Vista Clientes: separadores por estado, tabela e a ficha rápida do cliente escolhido
       let htmlCliTab = '', htmlCliLado = '';
-      if (D.clientes && D.clientes.length) {
-        const estado = c => c.delta == null ? ['Novo', 'res-estado--novo'] : c.delta >= 0 ? ['A crescer', 'res-estado--sobe'] : ['Em queda', 'res-estado--desce'];
-        const cliSel = D.clientes.find(c => (c.codigo || c.nome) === resumoEstado.cliSel) || D.clientes[0];
-        htmlCliTab =`<section class="res-cartao res-tabela" data-bloco="cli-tab">
-          <div class="res-cab"><h3>Clientes com mais faturação</h3><span class="res-sub">Clique num cliente para ver a ficha rápida</span></div>
-          <div class="res-tab-linha res-tab-cab res-tab--cli" aria-hidden="true"><span>Cliente</span><span>Faturação</span><span>${vsAnt}</span><span>Estado</span></div>
-          ${D.clientes.map(c => { const [txt, cls] = estado(c); return `<button type="button" class="res-tab-linha res-tab--cli" data-cli-sel="${rEsc(c.codigo || c.nome)}" aria-pressed="${c === cliSel}" title="${rEsc(c.nome)}: ver ficha rápida">
-            <span class="res-tab-nome">${rEsc(c.nome)}<small>${[c.codigo, c.zona && nomeProprio(c.zona), c.ultima && 'última compra ' + dataCurta(c.ultima), pctTotal(c) + ' do total'].filter(Boolean).map(rEsc).join(' · ')}</small></span><strong>${rEur(c.num)}</strong>
-            <span class="${rVarCls(c.delta)}">${rVar(c.delta)}</span><span><span class="res-estado ${cls}">${txt}</span></span></button>`; }).join('')}
+      const carteira = D.carteira || [];
+      if (carteira.length) {
+        const CLS_ESTADO = { Ativo: 'res-estado--ativo', 'Em risco': 'res-estado--risco', Perdido: 'res-estado--perdido' };
+        const chipEstado = c => c.estado ? `<span class="res-estado ${CLS_ESTADO[c.estado]}">${c.estado}</span>` : '';
+        const zonaDe = c => !c.zona ? '–' : /^\(/.test(c.zona) ? 'Sem zona' : c.zona;
+        // Sem a consulta da carteira (erro) não há estados: a tabela aparece inteira, sem separadores
+        const comEstado = carteira.some(c => c.estado);
+        const seg = comEstado ? resumoEstado.cliSeg : 'Todos';
+        const lista = seg === 'Todos' ? carteira : carteira.filter(c => c.estado === seg);
+        // Limita aqui e guarda: com outro período ou separador a lista pode ter menos páginas
+        const POR_PAGINA = 15, ultimaPag = Math.max(0, Math.ceil(lista.length / POR_PAGINA) - 1);
+        const pag = resumoEstado.cliPag = Math.min(Math.max(0, resumoEstado.cliPag), ultimaPag);
+        const pagina = lista.slice(pag * POR_PAGINA, (pag + 1) * POR_PAGINA);
+        const cliSel = pagina.find(c => (c.codigo || c.nome) === resumoEstado.cliSel) || pagina[0];
+        // aria-disabled e não disabled: o botão fica focável e quem usa teclado não perde o lugar na última página
+        const paginacao = lista.length > POR_PAGINA ? `<nav class="res-pag" aria-label="Páginas de clientes"><span>${pag * POR_PAGINA + 1}–${pag * POR_PAGINA + pagina.length} de ${lista.length}</span>
+          <button type="button" class="res-btn" data-cli-pag="-1" aria-disabled="${pag === 0}">Anterior</button>
+          <button type="button" class="res-btn" data-cli-pag="1" aria-disabled="${pag === ultimaPag}">Seguinte</button></nav>` : '';
+        const separadores = [['Todos', 'Todos'], ['Ativo', 'Ativos'], ['Em risco', 'Em risco'], ['Perdido', 'Perdidos']].map(([id, nome]) =>
+          `<button type="button" class="res-pilula" data-cli-seg="${id}" aria-pressed="${seg === id}">${nome}<span>${id === 'Todos' ? carteira.length : carteira.filter(c => c.estado === id).length}</span></button>`).join('');
+        const nota = D.clientesTotal > carteira.length ? `<span class="res-sub">Os ${carteira.length} maiores, de ${rGrupos(D.clientesTotal)}</span>` : '';
+        htmlCliTab = `<section class="res-cartao res-tabela" data-bloco="cli-tab">
+          ${comEstado ? `<div class="res-pilulas" role="group" aria-label="Filtrar clientes por estado">${separadores}${nota}</div>` : ''}
+          <div class="res-tab-linha res-tab-cab res-tab--cli" aria-hidden="true"><span>Cliente</span><span>Zona</span><span>Faturação</span><span>${vsAnt}</span><span>Última</span><span>Estado</span></div>
+          ${pagina.map(c => `<button type="button" class="res-tab-linha res-tab--cli" data-cli-sel="${rEsc(c.codigo || c.nome)}" aria-pressed="${c === cliSel}" title="${rEsc(c.nome)}${c.codigo ? ` (${rEsc(c.codigo)})` : ''}: ver ficha rápida">
+            <span class="res-tab-nome">${rEsc(c.nome)}</span><span>${rEsc(zonaDe(c))}</span><strong>${rEur(c.num)}</strong>
+            <span class="${rVarCls(c.delta)}">${rVar(c.delta)}</span><span title="${rEsc(c.ultima || '')}">${c.ultima ? dataCurta(c.ultima) : '–'}</span><span>${chipEstado(c)}</span></button>`).join('')
+            || '<p class="res-nota">Nenhum cliente com este estado. Escolha outro separador.</p>'}
+          ${paginacao}
         </section>`;
-        const idCli = cliSel.codigo || cliSel.nome, [txtSel, clsSel] = estado(cliSel), nomeCli = nomeProprio(cliSel.nome);
-        htmlCliLado = `<section class="res-cartao res-cartao--lado res-ficha-rapida" data-bloco="cli-lado">
-          <h3>Ficha rápida</h3>
-          <h4>${rEsc(nomeCli)}</h4>
-          ${cliSel.codigo ? `<small>Cliente ${rEsc(cliSel.codigo)}</small>` : ''}
-          <span class="res-estado ${clsSel}">${txtSel}</span>
-          <div class="res-ficha-num">
-            <div><span>Faturação</span><strong>${rEur(cliSel.num)}</strong></div>
-            <div><span>${vsAnt}</span><strong class="${rVarCls(cliSel.delta)}">${rVar(cliSel.delta)}</strong></div>
-            <div><span>Parte do total</span><strong>${pctTotal(cliSel)}</strong></div>
-            ${cliSel.media ? `<div><span>Valor médio</span><strong>${rEsc(cliSel.media)}</strong></div>` : ''}
-          </div>
-          <button type="button" class="res-btn-flow" data-perguntar="${rEsc(`Que artigos comprou o cliente ${nomeCli} este ano?`)}">${svgIc('brilho', 15)}Perguntar ao Flow</button>
-          <button type="button" class="res-btn-discreto" data-cliente="${rEsc(idCli)}">Ver vendas do cliente</button>
-          <button type="button" class="res-btn-negro" data-ficha="${rEsc(idCli)}" data-ficha-nome="${rEsc(cliSel.nome)}">${svgIc('ficha', 15)}Ficha do cliente</button>
-        </section>`;
+        if (cliSel) {
+          const idCli = cliSel.codigo || cliSel.nome, nomeCli = nomeProprio(cliSel.nome);
+          const anoDoPeriodo = resumoEstado.periodo === 'AnoAtual' ? ' ' + new Date().getFullYear() : '';
+          const subtitulo = [cliSel.zona && zonaDe(cliSel), cliSel.documentos != null && `${rGrupos(cliSel.documentos)} ${cliSel.documentos === 1 ? 'documento' : 'documentos'}`].filter(Boolean).join(' · ')
+            || (cliSel.codigo ? 'Cliente ' + cliSel.codigo : '');
+          // Um valor por mês do período, com zero nos meses sem compras
+          const meses = D.serie ? D.serie.meses : [];
+          const compras = new Map((cliSel.meses || []).map(x => [x.mes, x.valor]));
+          const compraDe = x => compras.get(`${x.a}-${String(x.m).padStart(2, '0')}`) || 0;
+          const maxCompra = Math.max(1, ...meses.map(compraDe));
+          const barras = cliSel.meses && meses.length ? `<div class="res-compras"><span>Compras por mês${anoDoPeriodo}</span>
+            <div class="res-compras-barras ${cliSel.estado === 'Ativo' ? '' : 'res-compras-barras--parado'}" role="img" aria-label="${rEsc(meses.map(x => `${MESES[x.m - 1]}: ${rEur(compraDe(x))}`).join(', '))}">${meses.map(x =>
+              `<i title="${MESES[x.m - 1]}: ${rEur(compraDe(x))}" style="height:${Math.max(4, compraDe(x) / maxCompra * 100).toFixed(0)}%${x.parcial ? ';opacity:.45' : ''}"></i>`).join('')}</div></div>` : '';
+          htmlCliLado = `<section class="res-cartao res-cartao--lado res-ficha-rapida" data-bloco="cli-lado">
+            <h3>Ficha rápida</h3>
+            <h4>${rEsc(nomeCli)}</h4>
+            ${subtitulo ? `<small>${rEsc(subtitulo)}</small>` : ''}
+            ${chipEstado(cliSel)}
+            <div class="res-ficha-num">
+              <div><span>Faturação${anoDoPeriodo}</span><strong>${rEur(cliSel.num)}</strong></div>
+              <div><span>${vsAnt}</span><strong class="${rVarCls(cliSel.delta)}">${rVar(cliSel.delta)}</strong></div>
+              <div><span>Valor médio</span><strong>${cliSel.media ? rEsc(cliSel.media) : '–'}</strong></div>
+              <div><span>Última compra</span><strong>${cliSel.ultima ? dataCurta(cliSel.ultima) : '–'}</strong></div>
+            </div>
+            ${barras}
+            <button type="button" class="res-btn-flow" data-perguntar="${rEsc(`Que artigos comprou o cliente ${nomeCli} este ano?`)}">${svgIc('brilho', 15)}Perguntar ao Flow</button>
+            <button type="button" class="res-btn-negro" data-ficha="${rEsc(idCli)}" data-ficha-nome="${rEsc(cliSel.nome)}">${svgIc('ficha', 15)}Abrir ficha completa</button>
+          </section>`;
+        }
       }
 
       // Cartões do protótipo. Campos de D, todos opcionais; sem eles o cartão mostra "Ainda sem dados":
@@ -3991,7 +4057,7 @@
       // Ainda à espera de colunas que a consulta não devolve:
       //   D.novosClientes { n, dif (diferença face ao ano anterior) }
       //   D.familias      [{ nome, valor }]          D.objetivo  (objetivo anual em €)
-      //   em cada cliente de D.clientes: zona, ultima ('dd-mm-aaaa');  em cada artigo de D.artigos: familia
+      //   em cada artigo de D.artigos: familia
       // Faturação — um cartão por tipo de documento
       const tipos = D.tiposDoc || [];
       const htmlTipos = tipos.length ? `<div class="flow-kpis-grelha">${tipos.map(t => {
@@ -4056,9 +4122,9 @@
       if (D.clientes && D.clientes.length && D.total > 0) {
         const somaTop = D.clientes.reduce((s, c) => s + c.num, 0), nc = D.novosClientes;
         htmlCliKpis = `<div class="flow-kpis-grelha">
-          ${ativos ? `<div class="flow-kpi"><span>${svgIc('clientes', 15)}Clientes ativos</span><strong>${rValorKpi(ativos)}</strong><span>${ativos.variacao == null ? '' : chipVar(ativos.variacao) + ' ' + vsAnt}</span></div>
-          <div class="flow-kpi"><span>${svgIc('euro', 15)}Faturação média por cliente</span><strong>${ativos.valor > 0 ? rEur(D.total / ativos.valor) : '–'}</strong><span>No período escolhido</span></div>` : ''}
+          ${ativos ? `<div class="flow-kpi"><span>${svgIc('clientes', 15)}Clientes ativos</span><strong>${rValorKpi(ativos)}</strong><span>${ativos.variacao == null ? '' : chipVar(ativos.variacao) + ' ' + vsAnt}</span></div>` : ''}
           <div class="flow-kpi"><span>${svgIc('clientes', 15)}Novos clientes</span><strong>${nc ? rGrupos(nc.n) : '—'}</strong><span>${!nc ? 'Ainda sem dados' : nc.dif == null ? 'No período escolhido' : `${nc.dif >= 0 ? '▲' : '▼'} ${rGrupos(Math.abs(nc.dif))} ${vsAnt}`}</span></div>
+          ${ativos ? `<div class="flow-kpi"><span>${svgIc('euro', 15)}Faturação média por cliente</span><strong>${ativos.valor > 0 ? rEur(D.total / ativos.valor) : '–'}</strong><span>No período escolhido</span></div>` : ''}
           <div class="flow-kpi flow-kpi--destaque"><span>${svgIc('clientes', 15)}Concentração</span><strong>${rPct(somaTop / D.total * 100)}</strong><span>da faturação vem dos ${D.clientes.length} maiores clientes</span></div>
         </div>`;
       }
@@ -4095,14 +4161,14 @@
       const hoje = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' });
       const nFiltros = (resumoEstado.zona ? 1 : 0) + (resumoEstado.cliente ? 1 : 0);
       // Os três períodos mais usados à vista (como no protótipo); os outros estão em Filtros
-      const segmentos = RES_PERIODOS.filter(p => ['MesAtual', 'AnoAtual', 'Ultimos12Meses'].includes(p[0]))
+      const segmentos = [['MesAtual', 'Mês'], ['TrimestreAtual', 'Trimestre'], ['AnoAtual', `Ano ${ano}`]]
         .map(p => `<button type="button" data-periodo="${p[0]}" aria-pressed="${resumoEstado.periodo === p[0]}">${p[1]}</button>`).join('');
       // Barra do topo (onde está e até quando há dados), depois o título da vista com o período e os filtros
       return `<div class="res-cabecalho">
-        <div class="res-caminho"><button type="button" class="res-casa" data-inicio>${svgIc('casa', 14)}Início</button>${svgIc('seta', 12)}${migalhas().outerHTML}</div>
         ${D.ate ? `<span class="res-dados-ate">${svgIc('relogio', 14)}Dados até ${dataCurta(D.ate)}${D.mesIncompleto ? ' · ' + rEsc(D.mesIncompleto) + ' incompleto' : ''}</span>` : ''}
         ${D.alertas ? `<button type="button" class="res-sino" data-ver-secao="alertas" title="Alertas" aria-label="Alertas: ${nAlertasPorLer(D)} por ler">${svgIc('alertas', 17)}${nAlertasPorLer(D) ? `<span aria-hidden="true">${nAlertasPorLer(D)}</span>` : ''}</button>` : ''}
       </div>
+      <div class="res-caminho"><button type="button" class="res-casa" data-inicio>Início</button><span aria-hidden="true">/</span>${migalhas().outerHTML}</div>
       <div class="flow-topo">
         <div class="flow-topo-ola">
           <h2 class="res-titulo">${rEsc(nomeSecao())}${D.cliente ? ' · ' + rEsc(D.cliente) : ''}</h2>
@@ -4289,6 +4355,8 @@
         // Redesenha e devolve o foco ao mesmo controlo: quem usa teclado não perde o lugar
         const atualizar = seletor => { redesenhar(); desenharNav(); painelEl.querySelector(seletor)?.focus(); };
         if (d.cliSel) { resumoEstado.cliSel = d.cliSel; atualizar(`[data-cli-sel="${CSS.escape(d.cliSel)}"]`); return; }
+        if (d.cliPag) { resumoEstado.cliPag += +d.cliPag; atualizar(`[data-cli-pag="${d.cliPag}"]`); return; }
+        if (d.cliSeg) { resumoEstado.cliSeg = d.cliSeg; resumoEstado.cliPag = 0; atualizar(`[data-cli-seg="${d.cliSeg}"]`); return; }
         if (d.alertaFiltro) { resumoEstado.alertaFiltro = d.alertaFiltro; resumoEstado.alertaSel = null; atualizar(`[data-alerta-filtro="${d.alertaFiltro}"]`); return; }
         if (d.alerta != null) {
           const a = alertasVisiveis(resumoEstado.dados)[+d.alerta];
@@ -4332,7 +4400,7 @@
       alertasLidos.add(a.id); guardarLidos();
       secao = a.ver;
       if (a.zona) { pedirResumo(null, null, a.zona); return; }
-      if (a.cliente) resumoEstado.cliSel = a.cliente;
+      if (a.cliente) Object.assign(resumoEstado, { cliSel: a.cliente, cliSeg: 'Todos', cliPag: 0 });
       verInicio();
     }
 
@@ -4718,10 +4786,18 @@
       topoExportar.disabled = !painelEl.querySelector('[data-exportar], [data-imagem]');
     }).observe(painelEl, { childList: true, subtree: true });
     document.getElementById('topo-email').addEventListener('click', () => document.getElementById('dlg-email').showModal());
-    // "Agendar envio": guarda no servidor e diz na janela se ficou agendado ou porquê não (ex.: endereço fora da empresa).
+    document.getElementById('dlg-email-fechar').addEventListener('click', () => document.getElementById('dlg-email').close());
+    let avisoTempo;
+    function avisar(texto) {
+      const aviso = document.getElementById('aviso');
+      aviso.textContent = texto;
+      aviso.hidden = false;
+      clearTimeout(avisoTempo);
+      avisoTempo = setTimeout(() => { aviso.hidden = true; }, 5000);
+    }
+    // "Agendar envio": guarda no servidor; com sucesso fecha e avisa, senão diz na janela porquê (ex.: endereço fora da empresa).
     document.querySelector('#dlg-email form').addEventListener('submit', async e => {
       const botao = e.submitter;
-      if (botao?.value !== 'agendar') return;
       e.preventDefault();
       const dados = new FormData(e.target), estado = document.getElementById('dlg-email-estado');
       botao.disabled = true;
@@ -4732,14 +4808,19 @@
           body: JSON.stringify({ freq: dados.get('freq'), email: dados.get('email') })
         });
         const texto = await r.text();
-        estado.textContent = r.ok
-          ? (dados.get('freq') === 'nenhum' ? `Envio cancelado para ${dados.get('email')}.`
-            : `Agendado: ${dados.get('freq') === 'mensal' ? 'na 1.ª segunda de cada mês' : 'todas as segundas'}, para ${dados.get('email')}.`)
-          : texto || 'Não foi possível agendar.';
+        if (r.ok) {
+          estado.hidden = true;
+          document.getElementById('dlg-email').close();
+          avisar(dados.get('freq') === 'nenhum' ? `Envio cancelado para ${dados.get('email')}.`
+            : `Envio agendado: ${dados.get('freq') === 'mensal' ? 'na 1.ª segunda de cada mês' : 'todas as segundas'}, para ${dados.get('email')}.`);
+          return;
+        }
+        estado.textContent = texto || 'Não foi possível agendar.';
+        estado.hidden = false;
       } catch {
         estado.textContent = 'Não foi possível agendar: o servidor não respondeu.';
-      } finally {
         estado.hidden = false;
+      } finally {
         botao.disabled = false;
       }
     });

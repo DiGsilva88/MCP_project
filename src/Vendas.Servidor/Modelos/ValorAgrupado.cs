@@ -24,3 +24,9 @@ public sealed record DocumentosPorMes(string Mes, int Documentos);
 public sealed record DocumentoEmitido(string DocumentoId, string TipoDocId, DateOnly DataDoc, string Cliente, decimal Total);
 public sealed record ResumoDocumentos(
     IReadOnlyList<DocumentosPorTipo> Tipos, IReadOnlyList<DocumentosPorMes> Meses, IReadOnlyList<DocumentoEmitido> Ultimos);
+
+//vista Clientes do painel. ultima = última compra de sempre (só linhas positivas: uma nota de crédito não é uma compra)
+//compras = valor e documentos de cada cliente em cada mês do período; mes = "aaaa-mm"
+public sealed record ClienteCarteira(string ClienteId, string Zona, DateOnly? Ultima);
+public sealed record CompraMensal(string ClienteId, string Mes, decimal Valor, int Documentos);
+public sealed record ResumoCarteira(IReadOnlyList<ClienteCarteira> Clientes, IReadOnlyList<CompraMensal> Meses);

@@ -564,6 +564,13 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
 
     Task<string> Vendas(Dictionary<string, object?> argumentos, bool soDistrito = true) => Filtrada("consultar_vendas", argumentos, soDistrito);
 
+    // Só enriquece a vista Clientes: se falhar ou passar do tempo, o resto do painel carrega na mesma.
+    static async Task<string> Opcional(Task<string> consulta)
+    {
+        try { return await consulta; }
+        catch (Exception ex) { Console.Error.WriteLine($"Consulta opcional do resumo falhou: {ex.Message}"); return ""; }
+    }
+
     var partes = new Dictionary<string, Task<string>>
     {
         ["artigos"] = Vendas(new() { ["agrupar"] = "Artigo", ["limite"] = 10, ["compararAnoAnterior"] = true }),
@@ -582,7 +589,10 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
             partes["distritosClientes"] = Texto("consultar", new() { ["coluna"] = "Distrito", ["contar"] = true, ["limite"] = 100 });
         // Tabela das localidades no painel (o email não a usa)
         partes["localidades"] = Vendas(new() { ["agrupar"] = "Localidade", ["limite"] = 12, ["compararAnoAnterior"] = true });
-        partes["clientes"] = Vendas(new() { ["agrupar"] = "Cliente", ["limite"] = 10, ["compararAnoAnterior"] = true });
+        // No painel, a vista Clientes lista os 100 maiores; os outros cartões usam só os 10 primeiros.
+        partes["clientes"] = Vendas(new() { ["agrupar"] = "Cliente", ["limite"] = painel ? 100 : 10, ["compararAnoAnterior"] = true });
+        if (painel)
+            partes["carteira"] = Opcional(Filtrada("consultar_carteira", new() { ["limite"] = 100 }));
         // Reenvio com --dia: os 90 dias contam desse dia (igual a Ultimos90Dias), não de hoje.
         partes["semVendas"] = Vendas(dia is { } d
             ? new() { ["semVendas"] = true, ["dataInicio"] = $"{d.AddDays(-89):dd-MM-yyyy}", ["dataFim"] = $"{d:dd-MM-yyyy}", ["limite"] = 1 }

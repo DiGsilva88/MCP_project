@@ -62,6 +62,50 @@ public class VendasToolsTests
         Assert.Equal("Setúbal", repo.UltimosFiltros![Campo.Distrito]);
     }
 
+    [Theory]
+    [InlineData(60, "Ativo")]
+    [InlineData(61, "Em risco")]
+    [InlineData(90, "Em risco")]
+    [InlineData(91, "Perdido")]
+    public async Task ConsultarCarteira_EstadoContaDesdeAUltimaCompraRegistada(int dias, string esperado)
+    {
+        var ultimaVenda = new DateOnly(2026, 9, 4);
+        var repo = new FakeVendasRepo
+        {
+            Carteira = new(
+                [new("7", "ALM", ultimaVenda.AddDays(-dias)), new("8", "Balcão", ultimaVenda)],
+                [new("7", "2026-05", 12.5m, 2), new("7", "2026-06", 7.5m, 1)]),
+        };
+
+        using var d = System.Text.Json.JsonDocument.Parse(await CriarSut(repo).ConsultarCarteiraAsync());
+        var cliente = Assert.Single(d.RootElement.GetProperty("clientes").EnumerateArray());
+
+        Assert.Equal(esperado, cliente.GetProperty("estado").GetString());
+        Assert.Equal("ALM", cliente.GetProperty("zona").GetString());
+        Assert.Equal(3, cliente.GetProperty("documentos").GetInt32());
+        Assert.Equal("2026-05", cliente.GetProperty("meses")[0].GetProperty("mes").GetString());
+    }
+
+    [Fact]
+    public async Task ConsultarCarteira_FicaComOsMaioresPeloValorDoPeriodo()
+    {
+        var repo = new FakeVendasRepo { Carteira = new([], [new("7", "2026-05", 10m, 1), new("8", "2026-05", 30m, 1), new("8", "2026-06", -5m, 1)]) };
+
+        using var d = System.Text.Json.JsonDocument.Parse(await CriarSut(repo).ConsultarCarteiraAsync(limite: 1));
+
+        Assert.Equal("8", Assert.Single(d.RootElement.GetProperty("clientes").EnumerateArray()).GetProperty("id").GetString());
+    }
+
+    [Fact]
+    public async Task ConsultarCarteira_ClienteSemCompras_FicaSemEstado()
+    {
+        var repo = new FakeVendasRepo { Carteira = new([new("7", "ALM", null), new("8", "ALM", new DateOnly(2026, 9, 4))], [new("7", "2026-05", -3m, 1)]) };
+
+        using var d = System.Text.Json.JsonDocument.Parse(await CriarSut(repo).ConsultarCarteiraAsync());
+
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, d.RootElement.GetProperty("clientes")[0].GetProperty("estado").ValueKind);
+    }
+
     [Fact]
     public async Task ConsultarDocumentos_ColunaSemValor_ERecusado()
     {

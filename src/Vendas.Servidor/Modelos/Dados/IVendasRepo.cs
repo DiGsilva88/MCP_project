@@ -51,6 +51,11 @@ public interface IVendasRepo
         DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
 
+    // Vista Clientes do painel: zona e última compra de cada cliente, e o que cada um comprou por mês em [desde, ate[.
+    Task<ResumoCarteira> ResumoCarteiraAsync(
+        DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null,
+        CancellationToken cancellationToken = default);
+
     // Data da venda mais recente que existe (null = sem vendas nenhumas).
     Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default);
 }

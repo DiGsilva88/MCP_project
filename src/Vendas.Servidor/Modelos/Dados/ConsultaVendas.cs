@@ -262,6 +262,37 @@ internal static class ConsultaVendas
         return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
     }
 
+    // Vista Clientes do painel: zona e última compra de sempre de cada cliente (a nota de crédito não é uma compra).
+    // Uma só passagem pela view: um OUTER APPLY por cliente passava dos 30 s que o painel espera.
+    public static string CarteiraClientes() => $"""
+        SELECT CAST(u.[ClienteID] AS nvarchar(50)),
+               COALESCE(c.[Zona], '(sem zona)'),
+               u.Ultima
+        FROM (
+            SELECT [ClienteID], MAX(CASE WHEN [ValorLiquido] > 0 THEN [DataDoc] END) AS Ultima
+            FROM   {Vendas}
+            GROUP BY [ClienteID]
+        ) AS u
+        LEFT JOIN {Clientes} AS c ON c.[ClienteID] = u.[ClienteID];
+        """;
+
+    // Valor e documentos de cada cliente em cada mês do período. Um documento tem uma só data: somar os meses não repete nenhum.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) ComprasPorMes(
+        DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            SELECT CAST([ClienteID] AS nvarchar(50)),
+                   CONVERT(char(7), [DataDoc], 120),
+                   COALESCE(SUM([ValorLiquido]), 0),
+                   COUNT(DISTINCT [DocumentoID])
+            FROM   {Vendas}
+            {Onde(null, ficha)}
+            GROUP BY [ClienteID], CONVERT(char(7), [DataDoc], 120);
+            """;
+        return (sql, p => { Preencher(p, desde, ate, null); aplicarFicha(p); });
+    }
+
     // Data da venda mais recente na view (sem período): diz até onde vão os dados quando um período vem vazio.
     public static (string Sql, Action<SqlParameterCollection> Parametros) UltimaVenda() =>
         ($"SELECT MAX([DataDoc]) FROM {Vendas};", _ => { }
