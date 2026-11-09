@@ -20,10 +20,11 @@ public sealed record ClienteSemVendas(string Nome, DateOnly? Ultima, int Total);
 
 //vista Faturação do painel. mes = "aaaa-mm"; total = valor líquido do documento (sem IVA)
 public sealed record DocumentosPorTipo(string TipoDocId, decimal Valor, int Documentos);
-public sealed record DocumentosPorMes(string Mes, int Documentos);
+public sealed record DocumentosPorMes(string Mes, string TipoDocId, decimal Valor, int Documentos);
 public sealed record DocumentoEmitido(string DocumentoId, string TipoDocId, DateOnly DataDoc, string Cliente, decimal Total);
 public sealed record ResumoDocumentos(
-    IReadOnlyList<DocumentosPorTipo> Tipos, IReadOnlyList<DocumentosPorMes> Meses, IReadOnlyList<DocumentoEmitido> Ultimos);
+    IReadOnlyList<DocumentosPorTipo> Tipos, IReadOnlyList<DocumentosPorMes> Meses, IReadOnlyList<DocumentoEmitido> Ultimos,
+    IReadOnlyList<DocumentoEmitido> Creditos);
 
 //vista Clientes do painel. ultima = última compra de sempre (só linhas positivas: uma nota de crédito não é uma compra)
 //compras = valor e documentos de cada cliente em cada mês do período; mes = "aaaa-mm"

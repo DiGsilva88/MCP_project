@@ -108,7 +108,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
 
     // Só para a vista Faturação do painel (o agente não a oferece ao modelo). Devolve JSON, não texto para ler.
     [McpServerTool(Name = "consultar_documentos")]
-    [Description("Documentos de venda num período, em JSON: totais por tipo de documento, documentos por mês e os mais recentes.")]
+    [Description("Documentos de venda num período, em JSON: totais por tipo de documento e por mês, os mais recentes e os créditos.")]
     public async Task<string> ConsultarDocumentosAsync(
         [Description("Período, como em consultar_vendas.")] Periodo periodo = Periodo.AnoAtual,
         [Description("Máximo de documentos recentes, 1 a 100.")] int limite = 10,
@@ -132,11 +132,13 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             if (erro is not null) return erro;
 
             var r = await repo.ResumoDocumentosAsync(janela.Desde, janela.Ate, Math.Clamp(limite, 1, Respostas.Maxlinhas), idCliente, filtros, ct);
+            static object Documento(DocumentoEmitido d) => new { documento = d.DocumentoId, tipo = d.TipoDocId, data = Data(d.DataDoc), cliente = d.Cliente, total = d.Total };
             return JsonSerializer.Serialize(new
             {
                 tipos = r.Tipos.Select(t => new { tipo = t.TipoDocId, valor = t.Valor, documentos = t.Documentos }),
-                meses = r.Meses.Select(m => new { mes = m.Mes, documentos = m.Documentos }),
-                ultimos = r.Ultimos.Select(d => new { documento = d.DocumentoId, tipo = d.TipoDocId, data = Data(d.DataDoc), cliente = d.Cliente, total = d.Total }),
+                meses = r.Meses.Select(m => new { mes = m.Mes, tipo = m.TipoDocId, valor = m.Valor, documentos = m.Documentos }),
+                ultimos = r.Ultimos.Select(Documento),
+                creditos = r.Creditos.Select(Documento),
             });
         });
     }

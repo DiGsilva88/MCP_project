@@ -135,7 +135,7 @@ internal sealed class FakeVendasRepo : IVendasRepo
         return Task.FromResult(SemVendas);
     }
 
-    public ResumoDocumentos Documentos { get; set; } = new([], [], []);
+    public ResumoDocumentos Documentos { get; set; } = new([], [], [], []);
 
     public Task<ResumoDocumentos> ResumoDocumentosAsync(
         DateOnly desde, DateOnly ate, int limite, string? cliente = null,
