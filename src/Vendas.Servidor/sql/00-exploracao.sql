@@ -74,4 +74,33 @@ FROM dbo.AnaVendArt AS v
 LEFT JOIN dbo.FArtigo AS a ON a.ArtigoID = v.ArtigoID
                           AND a.TipoArtigo = v.TipoArtigo;
 
+--ver se a coluna TipoDocID é chave primária em alguma tabela
+SELECT c.TABLE_SCHEMA, c.TABLE_NAME, c.COLUMN_NAME, c.DATA_TYPE
+FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE k
+  ON k.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+ AND k.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+JOIN INFORMATION_SCHEMA.COLUMNS c
+  ON c.TABLE_SCHEMA = tc.TABLE_SCHEMA
+ AND c.TABLE_NAME = tc.TABLE_NAME
+WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+  AND k.COLUMN_NAME = 'TipoDocID'
+ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION;
 
+SELECT OBJECT_SCHEMA_NAME(m.object_id) AS Esquema,
+       OBJECT_NAME(m.object_id) AS Objeto,
+       o.type_desc
+FROM sys.sql_modules m
+JOIN sys.objects o ON o.object_id = m.object_id
+WHERE m.definition LIKE '%tipo%doc%';
+
+SELECT c.TABLE_SCHEMA, c.TABLE_NAME,
+       c.COLUMN_NAME AS ColunaTipo,
+       d.COLUMN_NAME AS ColunaDescricao
+FROM INFORMATION_SCHEMA.COLUMNS c
+JOIN INFORMATION_SCHEMA.COLUMNS d
+  ON d.TABLE_SCHEMA = c.TABLE_SCHEMA
+ AND d.TABLE_NAME = c.TABLE_NAME
+WHERE (c.COLUMN_NAME LIKE '%tipo%doc%' OR c.COLUMN_NAME LIKE '%tpdoc%')
+  AND (d.COLUMN_NAME LIKE '%desc%' OR d.COLUMN_NAME LIKE '%nome%' OR d.COLUMN_NAME LIKE '%design%')
+ORDER BY c.TABLE_NAME;

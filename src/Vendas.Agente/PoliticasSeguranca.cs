@@ -193,6 +193,12 @@ public static class PoliticasSeguranca
         _ => bruto.ToString(),
     };
 
+    // NIF, emails, telefones e moradas não saem da máquina: com um modelo na cloud, esta ferramenta nem lhe é oferecida.
+    public static bool PodeIrParaCloud(string ferramenta) => ferramenta != "consultar_sensivel";
+
+    // Devolve JSON para os cartões da Faturação: o modelo não precisa dela e o esquema ocupava lugar no prompt.
+    public static bool SoDoPainel(string ferramenta) => ferramenta == "consultar_documentos";
+
     // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
     public static string TextoDoResultado(object? resultado) =>
         resultado is JsonElement j && j.ValueKind == JsonValueKind.Object && j.TryGetProperty("content", out var conteudo)

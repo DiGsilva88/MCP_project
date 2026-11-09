@@ -205,6 +205,63 @@ internal static class ConsultaVendas
         return (sql, p => { Preencher(p, desde, ate, null); aplicarFiltros(p); });
     }
 
+    // Vista Faturação do painel: valor e n.º de documentos por tipo de documento (TipoDocID).
+    public static (string Sql, Action<SqlParameterCollection> Parametros) DocumentosPorTipo(
+        DateOnly desde, DateOnly ate, string? cliente, IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            SELECT [TipoDocID],
+                   COALESCE(SUM([ValorLiquido]), 0) AS Valor,
+                   COUNT(DISTINCT [DocumentoID])    AS Documentos
+            FROM   {Vendas}
+            {Onde(cliente, ficha)}
+            GROUP BY [TipoDocID]
+            ORDER BY Valor DESC;
+            """;
+        return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
+    }
+
+    // Documentos emitidos em cada mês (DataDoc), do mais antigo ao mais recente.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) DocumentosPorMes(
+        DateOnly desde, DateOnly ate, string? cliente, IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            SELECT CONVERT(char(7), [DataDoc], 120) AS Mes,
+                   COUNT(DISTINCT [DocumentoID])    AS Documentos
+            FROM   {Vendas}
+            {Onde(cliente, ficha)}
+            GROUP BY CONVERT(char(7), [DataDoc], 120)
+            ORDER BY Mes;
+            """;
+        return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
+    }
+
+    // Os documentos mais recentes: uma linha por documento (a view tem uma por artigo).
+    // Soma por dentro e só depois vai buscar o nome, como no RankingPorCliente: o WHERE usa [ClienteID] sem prefixo.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) UltimosDocumentos(
+        DateOnly desde, DateOnly ate, string? cliente, IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            SELECT TOP (@limite)
+                   d.[DocumentoID], d.[TipoDocID], d.[DataDoc],
+                   COALESCE(c.[NomeCliente], '(cliente sem ficha)') AS Cliente,
+                   d.Total
+            FROM (
+                SELECT [DocumentoID], [TipoDocID], [DataDoc], [ClienteID],
+                       COALESCE(SUM([ValorLiquido]), 0) AS Total
+                FROM   {Vendas}
+                {Onde(cliente, ficha)}
+                GROUP BY [DocumentoID], [TipoDocID], [DataDoc], [ClienteID]
+            ) AS d
+            LEFT JOIN {Clientes} AS c ON c.[ClienteID] = d.[ClienteID]
+            ORDER BY d.[DataDoc] DESC, d.[DocumentoID] DESC;
+            """;
+        return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
+    }
+
     // Data da venda mais recente na view (sem período): diz até onde vão os dados quando um período vem vazio.
     public static (string Sql, Action<SqlParameterCollection> Parametros) UltimaVenda() =>
         ($"SELECT MAX([DataDoc]) FROM {Vendas};", _ => { }

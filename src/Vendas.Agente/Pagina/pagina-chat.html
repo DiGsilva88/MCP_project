@@ -970,13 +970,13 @@
 
 
     /* ---------- Janela do email à segunda ---------- */
-    :is(#dlg-email, #dlg-exportar) { width: min(340px, calc(100% - 32px)); padding: 16px; border: 1px solid var(--linha); border-radius: 12px; background: var(--cartao); color: var(--texto); font-size: 13px; box-shadow: 0 12px 28px rgb(19 32 59 / .16); }
-    :is(#dlg-email, #dlg-exportar)::backdrop { background: rgb(15 27 61 / .45); }
-    :is(#dlg-email, #dlg-exportar) form { display: flex; flex-direction: column; gap: 12px; }
-    :is(#dlg-email, #dlg-exportar) h2 { margin: 0; font-size: 15px; }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) { width: min(340px, calc(100% - 32px)); padding: 16px; border: 1px solid var(--linha); border-radius: 12px; background: var(--cartao); color: var(--texto); font-size: 13px; box-shadow: 0 12px 28px rgb(19 32 59 / .16); }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha)::backdrop { background: rgb(15 27 61 / .45); }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) form { display: flex; flex-direction: column; gap: 12px; }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) h2 { margin: 0; font-size: 15px; }
     .dlg-nota { margin: 2px 0 0; color: var(--suave); }
-    :is(#dlg-email, #dlg-exportar) fieldset { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 6px; }
-    :is(#dlg-email, #dlg-exportar) legend { margin-bottom: 4px; padding: 0; font-weight: 700; }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) fieldset { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 6px; }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) legend { margin-bottom: 4px; padding: 0; font-weight: 700; }
     .dlg-opcao:has(input:disabled) { opacity: .5; cursor: not-allowed; }
     .dlg-opcao { display: flex; gap: 8px; align-items: flex-start; padding: 8px; border: 1px solid var(--linha); border-radius: 8px; cursor: pointer; }
     .dlg-opcao:has(input:checked) { border-color: var(--marca); background: var(--selecionado); }
@@ -1123,21 +1123,7 @@
     .flow-hoje { margin: 2px 0 0; font-size: 12px; font-weight: 500; color: var(--nota); }
     .flow-topo .res-menu { left: auto; right: 0; }   /* o botão está à direita: o menu abre para dentro */
 
-    /* Vendas por localidade: mapa de áreas a toda a largura. Tons do azul pela parte de cada uma;
-       "sem localidade" a cinzento; os blocos pequenos só têm o texto para o leitor de ecrã (e o title). */
     .res-cartao--inteiro { flex-basis: 100%; }
-    .res-mapa { position: relative; list-style: none; margin: 0; padding: 0; aspect-ratio: 2 / 1; min-height: 220px; }
-    .res-mapa li { position: absolute; padding: 2px; box-sizing: border-box; }
-    .res-mapa :is(button, div) { width: 100%; height: 100%; padding: 8px 10px; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; overflow: hidden;
-      border: 0; border-radius: 8px; background: #dbeafe; color: #1e3a8a; text-align: left; font: inherit; }
-    .res-mapa button:hover { outline: 2px solid var(--marca); outline-offset: -2px; }
-    .res-mapa b { flex: none; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; font-size: 13px; line-height: 1.25; }
-    .res-mapa span:not(.so-leitor) { font-size: 12px; font-variant-numeric: tabular-nums; }
-    .res-mapa small { font-size: 11.5px; font-weight: 700; }
-    .res-mapa--medio :is(button, div) { background: #93c5fd; color: #0f2a6b; }
-    .res-mapa--forte :is(button, div) { background: #1d4ed8; color: #fff; }
-    .res-mapa--forte small:is(.res-sobe, .res-desce) { color: #fff; }   /* verde/vermelho não se liam no azul escuro: fica a seta */
-    .res-mapa--sem :is(button, div) { background: var(--borda); color: var(--suave); }
 
     /* Cartões: cantos de 16px e contorno claro, como os números */
     :is(.res-cartao, .flow-grafico-lado, .chat-kpi) { border-color: var(--borda); border-radius: 16px; box-shadow: 0 1px 2px rgb(15 23 42 / .04); }
@@ -1198,8 +1184,6 @@
       .res-cartao--atencao { border-top: 3px solid #b45309; }
       .flow-etiqueta { background: #fff; }
       .flow-perda, .res-cartao--atencao .res-alertas li { border-color: #bfdbfe; }
-      .res-mapa--forte :is(button, div) { background: #60a5fa; color: #0f2a6b; }
-      .res-mapa--forte small:is(.res-sobe, .res-desce) { color: #0f2a6b; }
     }
 
     /* =========================================================
@@ -1276,10 +1260,11 @@
     .chat-conversa .chat-rodape { border: 1.5px solid var(--marca); box-shadow: 0 0 0 4px var(--selecionado); }
     .chat-conversa .chat-rodape:focus-within { outline: none; box-shadow: 0 0 0 4px #bfd3ff; }
 
-    /* Protótipo — Exportar e Agendar envio: barra de 56px no topo da conversa, dois botões da mesma largura */
-    .chat-conversa > .flow-acoes { height: 56px; flex: none; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--borda); }
+    /* Exportar e Agendar envio: no painel, por cima do período e dos filtros */
+    .res-topo-dir { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .res-topo-ctrl { display: flex; align-items: center; gap: 12px; }
+    #acoes-vaga > .flow-acoes { gap: 8px; }
     .flow-acoes .flow-btn-sub { height: 36px; min-height: 36px; padding: 0 14px; justify-content: center; gap: 7px; border: 1px solid #d7dbe2; border-radius: 8px; background: var(--cartao); box-shadow: none; font-size: 13px; font-weight: 500; white-space: nowrap; }
-    .chat-conversa > .flow-acoes .flow-btn-sub { flex: 1; }
     .flow-acoes .flow-btn-sub:hover:not(:disabled) { border-color: #d7dbe2; background: var(--fundo); }
     .flow-acoes .flow-btn-sub--escuro { border-color: #0b0f17; background: #0b0f17; color: #fff; }
     .flow-acoes .flow-btn-sub--escuro:hover:not(:disabled) { border-color: #252c3b; background: #252c3b; }
@@ -1360,6 +1345,90 @@
     .res-zona-tile[aria-pressed="true"] .chat-delta { background: rgb(255 255 255 / .18); color: #fff; }
     .res-zona-tile[aria-pressed="true"] .res-quota { background: rgb(255 255 255 / .25); }
     .res-zona-tile[aria-pressed="true"] .res-quota > span { background: #fff; }
+    .res-grelha > .res-zonas { flex: 1 1 100%; }
+    .res-zona-tile .res-quota--desce > span { background: #0b0f17; }
+
+    /* Demonstração — distrito escolhido: faturação mensal (dois anos) e clientes ao lado */
+    .res-grelha > .res-zona-graf { flex: 1 1 440px; }
+    .res-barras.res-barras--par > div { flex-direction: row; align-items: flex-end; justify-content: center; gap: 3px; }
+    .res-barras.res-barras--par i { flex: 1; width: auto; border-radius: 4px 4px 0 0; }
+    .res-barras i.res-barra-ant { background: #d7dbe2; }
+    .res-barras i.res-barra-desce { background: #0b0f17; }
+    .res-legenda i { width: 9px; height: 9px; border-radius: 2px; background: var(--marca); }
+    .res-legenda i.res-barra-ant { background: #d7dbe2; }
+    .res-zona-cli { width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--linha); border-radius: 8px; background: var(--cartao); color: var(--texto); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+    .res-zona-cli:hover { border-color: var(--marca); }
+    .res-zona-cli > :first-child { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .res-zona-cli > :last-child { font-size: 12px; font-weight: 700; }
+
+    /* Demonstração — Alertas: lista com separadores; ao lado o detalhe e as regras */
+    .res-sino { position: relative; flex: none; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #e4e7ec; border-radius: 8px; background: var(--cartao); color: #0b0f17; cursor: pointer; }
+    .res-sino:hover { border-color: #1d5bff; color: #1d5bff; }
+    .res-sino span { position: absolute; top: -7px; right: -7px; min-width: 19px; height: 19px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border: 2px solid #fff; border-radius: 10px; background: #1d5bff; color: #fff; font-size: 11px; font-weight: 700; }
+    .flow-nav-n { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; display: grid; place-items: center; border-radius: 10px; background: #1d5bff; color: #fff; font-size: 11px; font-weight: 700; }
+    .res-ver-alertas { margin-left: auto; order: 9; padding: 0; border: 0; background: none; color: #1d5bff; font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+    .res-grelha > .res-al-lista { flex: 1 1 440px; }
+    .res-al-lado { flex: 1 1 300px; max-width: 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+    .res-pilulas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .res-pilula { height: 30px; padding: 0 12px; display: flex; align-items: center; gap: 6px; border: 1px solid #e4e7ec; border-radius: 15px; background: var(--cartao); color: #2b3240; font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+    .res-pilula span { opacity: .7; }
+    .res-pilula[aria-pressed="true"] { border-color: #1d5bff; background: #1d5bff; color: #fff; }
+    .res-al-todas { margin-left: auto; padding: 0; border: 0; background: none; color: #1d5bff; font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+    .res-al-linha { width: 100%; display: flex; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid #eef0f3; border-radius: 10px; background: var(--cartao); color: var(--texto); font: inherit; text-align: left; cursor: pointer; }
+    .res-al-linha[aria-pressed="true"] { border-color: #1d5bff; background: #f5f8ff; }
+    .res-al-ic { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 9px; }
+    .res-sev--critico { background: #0b0f17; color: #fff; }
+    .res-sev--aviso { background: #1d5bff; color: #fff; }
+    .res-sev--info { background: #e9ebef; color: #5b6472; }
+    .res-al-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .res-al-txt b { font-size: 13.5px; font-weight: 500; line-height: 1.35; }
+    .res-al-linha--nova .res-al-txt b { font-weight: 700; }
+    .res-al-txt span { font-size: 12.5px; line-height: 1.4; color: #5b6472; }
+    .res-al-txt small { font-size: 11.5px; color: #8a93a3; }
+    .res-al-ponto { width: 8px; height: 8px; flex: none; margin-top: 6px; border-radius: 50%; }
+    .res-al-linha--nova .res-al-ponto { background: #1d5bff; }
+    .res-al-sel { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5b6472; }
+    .res-chip-sev { height: 22px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 11px; font-size: 11.5px; font-weight: 700; }
+    .res-al-titulo { font-size: 17px; font-weight: 700; line-height: 1.3; }
+    .res-al-desc { margin: 0; font-size: 13px; line-height: 1.5; color: #2b3240; }
+    .res-btn-negro { height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 8px; background: #0b0f17; color: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+    .res-btn-negro:hover { background: #252c3b; }
+    .res-btn-discreto { height: 34px; border: 0; border-radius: 8px; background: none; color: #5b6472; font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+    .res-btn-discreto:hover { background: #f4f5f7; }
+    .res-regra { width: 100%; display: flex; align-items: center; gap: 12px; padding: 4px 0; border: 0; background: none; color: var(--texto); font: inherit; text-align: left; cursor: pointer; }
+    .res-regra > span:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 500; }
+    .res-regra small { font-size: 11.5px; font-weight: 400; color: #5b6472; }
+    .res-regra i { position: relative; flex: none; width: 36px; height: 20px; border-radius: 10px; background: #d7dbe2; transition: background .15s; }
+    .res-regra i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; }
+    .res-regra[aria-checked="true"] i { background: #1d5bff; }
+    .res-regra[aria-checked="true"] i::after { left: 18px; }
+    @media (prefers-reduced-motion: reduce) { .res-regra i, .res-regra i::after { transition: none; } }
+
+    /* Demonstração — Clientes: a linha escolhida alimenta a ficha rápida */
+    button.res-tab-linha[aria-pressed="true"] { background: #f5f8ff; box-shadow: inset 2px 0 0 #1d5bff; }
+    .res-ficha-rapida h4 { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.3; }
+    .res-ficha-rapida > small { font-size: 12.5px; color: #5b6472; }
+    .res-ficha-rapida .res-estado { align-self: flex-start; }
+    .res-ficha-num { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .res-ficha-num div { padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border-radius: 10px; background: #f4f5f7; }
+    .res-ficha-num span { font-size: 11.5px; color: #5b6472; }
+    .res-ficha-num strong { font-size: 15px; font-weight: 700; }
+    .res-ficha-btn { height: 34px; padding: 0 12px; display: flex; align-items: center; gap: 7px; border: 0; border-radius: 8px; background: #0b0f17; color: #fff; font: inherit; font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+    .res-ficha-btn:hover { background: #252c3b; }
+
+    /* Janelas: relatório com secções à escolha e ficha do cliente */
+    #dlg-exportar { width: min(460px, calc(100% - 32px)); }
+    #dlg-ficha { width: min(480px, calc(100% - 32px)); }
+    .dlg-filtros { margin: 6px 0 0; padding: 8px 10px; border-radius: 8px; background: #f4f5f7; font-size: 12.5px; }
+    .dlg-legenda { display: flex; gap: 12px; }
+    .dlg-legenda button { padding: 0; border: 0; background: none; color: #1d5bff; font: inherit; font-size: 12.5px; cursor: pointer; }
+    .dlg-seccoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; }
+    .dlg-seccoes .dlg-opcao { align-items: center; padding: 6px 8px; }
+    .dlg-seccoes small { margin-left: auto; white-space: nowrap; }
+    .dlg-seccoes .dlg-opcao > span { flex: 1; display: flex; align-items: baseline; gap: 6px; }
+    #exportar-seccoes[disabled] { opacity: .5; }
+    #dlg-ficha .chat-ficha { margin: 0; max-height: 55vh; overflow: auto; }
+    :is(.res-sino, .res-pilula, .res-al-linha, .res-al-todas, .res-regra, .res-btn-negro, .res-btn-discreto, .res-ficha-btn, .res-ver-alertas, .dlg-legenda button):focus-visible { outline: 2px solid #1d5bff; outline-offset: 2px; }
 
     /* Protótipo — Previsões e Clientes: indicadores e meses previstos a toda a largura */
     .res-grelha > .flow-kpis-grelha { flex: 1 1 100%; margin: 0; }
@@ -1491,17 +1560,16 @@
       </aside>
 
       <main class="chat-dados" aria-label="Dados">
-        <div class="chat-painel-dados" id="painel"></div>
-      </main>
-
-      <aside class="chat-conversa" aria-label="Conversa">
-        <!-- Protótipo: Exportar e Agendar envio no topo da conversa (com a conversa minimizada passam para o painel: verConversa) -->
         <div class="flow-acoes" id="acoes">
           <button class="flow-btn-sub" id="topo-exportar" type="button" aria-haspopup="dialog" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Exportar</button>
           <button class="flow-btn-sub flow-btn-sub--escuro" id="topo-email" type="button" aria-haspopup="dialog">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v16H4ZM4 9h16M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>Agendar envio</button>
         </div>
+        <div class="chat-painel-dados" id="painel"></div>
+      </main>
+
+      <aside class="chat-conversa" aria-label="Conversa">
         <div class="chat-conversa-cab">
           <!-- Cabeçalho da janela: avatar, nome e estado do agente -->
           <div class="chat-conversa-topo">
@@ -1591,13 +1659,37 @@
     </form>
   </dialog>
 
-  <!-- Exportar o separador aberto: escolhe-se o formato; o que o separador não tem fica desativado -->
+  <!-- Botão "Ficha do cliente": os dados vêm de GET /ficha -->
+  <dialog id="dlg-ficha" aria-labelledby="dlg-ficha-titulo">
+    <form method="dialog">
+      <div>
+        <h2 id="dlg-ficha-titulo">Ficha do cliente</h2>
+        <p class="dlg-nota">Dados da ficha e condições de faturação.</p>
+      </div>
+      <div id="dlg-ficha-corpo" role="status"></div>
+      <div class="dlg-botoes">
+        <button class="res-btn" value="cancelar" formnovalidate>Fechar</button>
+        <button class="res-btn res-btn--primario" value="resumo" id="dlg-ficha-resumo">Ver vendas do cliente</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Exportar: no painel escolhem-se as secções do relatório; numa resposta aberta, só o formato -->
   <dialog id="dlg-exportar" aria-labelledby="dlg-exportar-titulo">
     <form method="dialog">
       <div>
         <h2 id="dlg-exportar-titulo">Exportar dados</h2>
-        <p class="dlg-nota">Descarrega os dados do separador aberto.</p>
+        <p class="dlg-nota" id="dlg-exportar-nota">Descarrega os dados do separador aberto.</p>
+        <p class="dlg-filtros" id="dlg-exportar-filtros" hidden></p>
       </div>
+      <fieldset id="exportar-seccoes" hidden>
+        <legend>O que quer incluir?</legend>
+        <div class="dlg-legenda">
+          <button type="button" data-seccoes="todas">Selecionar tudo</button>
+          <button type="button" data-seccoes="nenhuma">Limpar</button>
+        </div>
+        <div class="dlg-seccoes" id="exportar-lista"></div>
+      </fieldset>
       <fieldset>
         <legend>Em que formato?</legend>
         <label class="dlg-opcao"><input type="radio" name="formato" value="exportar"><span><b>CSV (Excel)</b><small>A tabela, para abrir no Excel</small></span></label>
@@ -1605,7 +1697,7 @@
       </fieldset>
       <div class="dlg-botoes">
         <button class="res-btn" value="cancelar" formnovalidate>Fechar</button>
-        <button class="res-btn res-btn--primario" value="exportar">Exportar</button>
+        <button class="res-btn res-btn--primario" value="exportar" id="dlg-exportar-ok">Exportar</button>
       </div>
     </form>
   </dialog>
@@ -1671,6 +1763,7 @@
       resumo: 'M4 20V10M10 20V4M16 20v-7M21 20H3', clientes: 'M16 19a5 5 0 0 0-10 0M11 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM17 4.5a3.5 3.5 0 0 1 0 6.5M21 19a5 5 0 0 0-3-4.6',
       faturacao: 'M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2ZM9 8h6M9 12h6', artigos: 'M12 3 3 7.5v9L12 21l9-4.5v-9ZM3 7.5 12 12l9-4.5M12 12v9',
       zonas: 'M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21ZM12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z', previsoes: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+      alertas: 'M6 9a6 6 0 0 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9ZM10 20a2 2 0 0 0 4 0', ficha: 'M4 5h16v14H4ZM8 10a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0M6.5 16a3 3 0 0 1 6 0M15 9h3M15 13h3',
       casa: 'M4 10.5 12 4l8 6.5V20H4ZM10 20v-6h4v6', euro: 'M17.5 6.5a6.5 6.5 0 1 0 0 11M4 10.5h9M4 13.5h9', documentos: 'M8 3h8l4 4v11H8ZM16 3v4h4M4 7v14h11',
       etiqueta: 'M3 12V3h9l9 9-9 9ZM7.5 7.5h.01', brilho: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z',
       aviso: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7.5v5.5M12 16.5h.01', semCliente: 'M15 19a6 6 0 0 0-12 0M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM16 11h6',
@@ -1701,6 +1794,8 @@
     const nomeProprio = s => s !== s.toUpperCase() ? s
       : s.toLowerCase().replace(/(^|[\s-])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())
          .replace(/ (Da|De|Do|Das|Dos|E) /g, w => w.toLowerCase());
+    // O filtro dos clientes sem distrito é o valor especial "sem dados" do servidor
+    const nomeDistrito = d => d === 'sem dados' ? 'Sem distrito na ficha' : nomeProprio(d);
     // Quantas letras é preciso mudar para passar de a para b ("montija" -> "montijo" = 1)
     function distancia(a, b) {
       const d = Array.from({ length: b.length + 1 }, (_, j) => j);
@@ -1889,22 +1984,24 @@
       return b;
     }
 
+    function descarregarCsv(linhas, titulo) {
+      // ";" e BOM: o Excel em pt-PT abre em colunas e com acentos certos
+      // Texto começado por = + @ (ou - sem número) o Excel lê como fórmula: o ' obriga a ficar texto
+      const seguro = v => /^[=+@\t\r]|^-(?!\d)/.test(v) ? "'" + v : v;
+      const campo = v => (v = seguro(v), /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v);
+      const csv = '﻿' + paraFolha(linhas).map(l => l.map(v => campo(String(v ?? ''))).join(';')).join('\r\n');
+      // "Clientes por Zona" -> clientes-por-zona-2026-10-28.csv
+      const nome = semAcento(titulo || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'vendas';
+      const a = el('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      a.download = `${nome}-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      anunciar('Ficheiro CSV descarregado.');
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);   // revogar logo pode cancelar o download
+    }
+
     function botaoExportar(linhas, titulo) {
-      const b = botaoEl('chat-acao', 'Exportar CSV', () => {
-        // ";" e BOM: o Excel em pt-PT abre em colunas e com acentos certos
-        // Texto começado por = + @ (ou - sem número) o Excel lê como fórmula: o ' obriga a ficar texto
-        const seguro = v => /^[=+@\t\r]|^-(?!\d)/.test(v) ? "'" + v : v;
-        const campo = v => (v = seguro(v), /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v);
-        const csv = '﻿' + paraFolha(linhas).map(l => l.map(v => campo(String(v ?? ''))).join(';')).join('\r\n');
-        // "Clientes por Zona" -> clientes-por-zona-2026-10-28.csv
-        const nome = semAcento(titulo || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'vendas';
-        const a = el('a');
-        a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-        a.download = `${nome}-${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        anunciar('Ficheiro CSV descarregado.');
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);   // revogar logo pode cancelar o download
-      });
+      const b = botaoEl('chat-acao', 'Exportar CSV', () => descarregarCsv(linhas, titulo));
       b.dataset.exportar = '';   // o "Exportar dados" do topo usa o primeiro destes no separador aberto
       return b;
     }
@@ -3100,7 +3197,9 @@
 
     // "NomeCliente" -> "Nome do cliente"; "Contribuinte" -> "NIF"; outros nomes de coluna: separa as palavras
     const CAMPOS = { nomecliente: 'Nome do cliente', contribuinte: 'NIF', nif: 'NIF', codcliente: 'Código do cliente', email: 'Email',
-                     telefone: 'Telefone', telemovel: 'Telemóvel', localidade: 'Localidade', vendedor: 'Vendedor', zona: 'Zona', tipocliente: 'Tipo de cliente' };
+                     telefone: 'Telefone', telemovel: 'Telemóvel', localidade: 'Localidade', vendedor: 'Vendedor', zona: 'Zona', tipocliente: 'Tipo de cliente',
+                     actividade: 'Atividade', cobranca: 'Cobrança', expedicao: 'Expedição', situacaofinanceira: 'Situação financeira',
+                     escalaoplafond: 'Escalão de plafond', escalaovolumevendas: 'Escalão de volume de vendas' };
     const rotuloCampo = k => /\s/.test(k) ? k
       : CAMPOS[semAcento(k).replace(/[^a-z]/g, '')] || maiuscula(k.replace(/(\p{Ll})(\p{Lu})/gu, '$1 $2').toLowerCase());
     // "Melhor marca em cada localidade" -> "Marca": nome da segunda coluna quando cada linha é "Localidade: Marca"
@@ -3223,15 +3322,30 @@
        Carrega ao abrir a página; filtros, "resumo do cliente X" na conversa e as vistas guardadas voltam a carregar.
        ========================================================= */
     const RES_PERIODOS = [['Ultimos7Dias', 'Últimos 7 dias'], ['MesAtual', 'Este mês'], ['TrimestreAtual', 'Trimestre'], ['AnoAtual', 'Este ano'], ['Ultimos12Meses', 'Últimos 12 meses'], ['AnoAnterior', 'Ano passado']];
-    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null };
+    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, alertaSel: null, alertaFiltro: 'Todos', cliSel: null };
     // Vistas do Resumo (painel lateral): cada uma mostra só os seus cartões, em vez de tudo numa só página
-    const SECOES = [['geral', 'Resumo das vendas'], ['clientes', 'Clientes'], ['faturacao', 'Faturação'],
+    const SECOES = [['geral', 'Resumo das vendas'], ['alertas', 'Alertas'], ['clientes', 'Clientes'], ['faturacao', 'Faturação'],
                     ['artigos', 'Artigos'], ['zonas', 'Zonas'], ['previsoes', 'Previsões']];
     let secao = 'geral';
     const nomeSecao = () => SECOES.find(s => s[0] === secao)[1];
     let boasVindasAberta = true;   // ecrã de boas-vindas à frente até se escolher uma opção ou fazer uma pergunta
     let vistaResumo = true;   // o painel inicial (Resumo) está à frente; um separador aberto passa-o para trás
     let pedidosResumo = 0;    // só a resposta do último pedido conta (mudar de filtro a meio)
+
+    // Alertas: as regras (sem dados) ficam neste computador; os lidos têm nomes de clientes, por isso só duram a sessão, como as vistas guardadas.
+    const lerGuardado = (onde, chave, omissao) => { try { return JSON.parse(window[onde].getItem(chave)) ?? omissao; } catch { return omissao; } };
+    const guardarValor = (onde, chave, valor) => { try { window[onde].setItem(chave, JSON.stringify(valor)); } catch { } };
+    const alertasLidos = new Set(lerGuardado('sessionStorage', 'flow-alertas-lidos', []));
+    const guardarLidos = () => guardarValor('sessionStorage', 'flow-alertas-lidos', [...alertasLidos]);
+    const regrasAlerta = lerGuardado('localStorage', 'flow-alertas-regras', {});
+    const REGRAS_ALERTA = [['distrito', 'Distrito cai mais de 20%', 'Comparado com o mesmo período do ano anterior'], ['artigo', 'Artigo cai mais de 25%', 'Entre os artigos mais vendidos'],
+                           ['cliente', 'Cliente cai mais de 25%', 'Entre os maiores clientes'], ['parados', 'Clientes sem compras há 90 dias', 'Em toda a carteira']];
+    const SEV_ORDEM = { 'Crítico': 0, 'Aviso': 1, 'Info': 2 }, SEV_CLASSE = { 'Crítico': 'res-sev--critico', 'Aviso': 'res-sev--aviso', 'Info': 'res-sev--info' };
+    const alertaPorLer = a => !alertasLidos.has(a.id);
+    const FILTROS_ALERTA = [['Todos', () => true], ['Por ler', alertaPorLer], ['Críticos', a => a.sev === 'Crítico'], ['Avisos', a => a.sev === 'Aviso'], ['Info', a => a.sev === 'Info']];
+    const alertasAtivos = D => !D || !D.alertas ? [] : D.alertas.filter(a => !a.regra || regrasAlerta[a.regra] !== false).sort((a, b) => SEV_ORDEM[a.sev] - SEV_ORDEM[b.sev]);
+    const alertasVisiveis = D => alertasAtivos(D).filter((FILTROS_ALERTA.find(f => f[0] === resumoEstado.alertaFiltro) || FILTROS_ALERTA[0])[1]);
+    const nAlertasPorLer = D => alertasAtivos(D).filter(alertaPorLer).length;
 
     const rNB = ' ';
     const rGrupos = n => { let s = String(Math.round(Math.abs(n))), o = ''; while (s.length > 3) { o = rNB + s.slice(-3) + o; s = s.slice(0, -3); } return (n < 0 ? '−' : '') + s + o; };
@@ -3242,31 +3356,6 @@
     const rCurto = n => Math.abs(n) >= 1e6 ? rDec(n / 1e6, 2) + rNB + 'M€' : Math.abs(n) >= 1000 ? rMil(n) : rEur(n);   // um cliente pode faturar centenas, não milhões
     const rPct = n => rDec(n, 1) + '%';
     const rVar = v => v == null ? '–' : (v >= 0 ? '▲ ' : '▼ ') + rDec(Math.abs(v), 1) + '%';
-    // Mapa de áreas ("squarified"): reparte o retângulo L×A pelos itens (v = valor, do maior para o menor),
-    // em filas de blocos o mais quadrados possível. Devolve cada item com x, y, w, h nas mesmas unidades.
-    function mapaAreas(itens, L, A) {
-      const total = itens.reduce((s, i) => s + i.v, 0);
-      const out = [];
-      let x = 0, y = 0, w = L, h = A, fila = [];  
-      const pior = (f, lado) => {   // a pior proporção da fila (1 = quadrado)
-        const s = f.reduce((t, n) => t + n.a, 0), max = Math.max(...f.map(n => n.a)), min = Math.min(...f.map(n => n.a));
-        return Math.max(lado * lado * max / (s * s), s * s / (lado * lado * min));
-      };
-      const fixar = () => {
-        const s = fila.reduce((t, n) => t + n.a, 0);
-        if (w >= h) { const cw = s / h; let yy = y; fila.forEach(n => { out.push({ ...n, x, y: yy, w: cw, h: n.a / cw }); yy += n.a / cw; }); x += cw; w -= cw; }
-        else { const ch = s / w; let xx = x; fila.forEach(n => { out.push({ ...n, x: xx, y, w: n.a / ch, h: ch }); xx += n.a / ch; }); y += ch; h -= ch; }
-        fila = [];
-      };
-      for (const n of [...itens].sort((a, b) => b.v - a.v).map(i => ({ ...i, a: i.v / total * L * A }))) {
-        const lado = Math.min(w, h);
-        if (fila.length && pior([...fila, n], lado) > pior(fila, lado)) fixar();
-        fila.push(n);
-      }
-      if (fila.length) fixar();
-      return out;
-    }
-
     const rVarCls = v => v == null ? '' : v >= 0 ? 'res-sobe' : 'res-desce';
     const rEsc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const rValorKpi = k => k.valor == null ? '—' : k.tipo === 'eur' ? rEur(k.valor) : k.tipo === 'eur2' ? rEur2(k.valor) : rGrupos(k.valor);
@@ -3362,7 +3451,7 @@
           resumoEstado.dados = montarResumo(j);
           resumosGuardados.set(chave, resumoEstado.dados);   // só as respostas que chegaram: uma falha volta a tentar
         }
-        if (!resumoEstado.zona && !resumoEstado.cliente && resumoEstado.dados.locais) resumoEstado.zonas = resumoEstado.dados.locais;
+        if (!resumoEstado.cliente && resumoEstado.dados.locais) resumoEstado.zonas = resumoEstado.dados.locais;
       } catch (erro) {
         if (n !== pedidosResumo) return;
         console.error('Falha a carregar o resumo:', erro);
@@ -3374,6 +3463,9 @@
       if (vistaResumo) desenharPainel();
       if (!historico.length) desenharConversa();   // as boas-vindas passam a mostrar o que o Resumo encontrou
     }
+
+    // shortcut: nomes por preencher (a BD só tem F, V, C e N, sem descrição); até lá o cartão mostra "Tipo F".
+    const TIPOS_DOC = {};
 
     // Textos da ferramenta -> números dos blocos. Sem dados para um bloco, o bloco fica vazio (nunca inventa).
     function montarResumo(j) {
@@ -3435,15 +3527,27 @@
       }
 
       const artigos = positivos(j.artigos);
-      const zonas = positivos(j.zonas).filter(i => !/^\(/.test(i.nome));   // "(sem descrição)" não se filtra
-      const alertas = rm.avisos.map(a => ({ tipo: 'dados', tag: 'Dados incompletos', texto: maiuscula(a), pergunta: '' }));
-      const pa = descida(artigos), pz = descida(zonas);
-      if (pa) alertas.push({ tipo: 'artigo', tag: 'Artigo em quebra', texto: `${nomeECodigo(pa)}: ${rVar(pa.delta)} face a ${anoAnt}.`,
-                             pergunta: resumoEstado.cliente ? '' : 'Comparar as vendas por artigo com o ano passado' });
-      if (pz) alertas.push({ tipo: 'local', tag: 'Zona em quebra', texto: `${nomeProprio(pz.nome)} faturou ${rVar(pz.delta)} face a ${anoAnt}.`,
-                             pergunta: `Comparar as vendas da zona ${nomeProprio(pz.nome)} mês a mês com o ano passado` });
+      // "(sem distrito)" fica no mosaico (é faturação real), mas não dá alertas: não se analisa um distrito que não existe
+      const distritos = positivos(j.zonas), zonas = distritos.filter(i => !/^\(/.test(i.nome));
+      // Clientes da ficha em cada distrito (CSV: distrito,clientes,percentagem; a 1.ª e a 2.ª linha são título e cabeçalho)
+      const nClientes = new Map((j.distritosClientes || '').split(/\r?\n/).slice(2).map(l => partir(l.trim(), ','))
+        .filter(c => c.length === 3).map(c => [c[0].toLowerCase(), +c[1]]));
+      const locais = positivos(j.localidades).filter(i => !/^\(/.test(i.nome));
+      // Alertas: só o que os dados dizem. Queda de 50% ou mais é crítica; abaixo disso, aviso. Os limites são os das REGRAS_ALERTA.
+      const idAlerta = (regra, nome) => [resumoEstado.periodo, resumoEstado.zona, resumoEstado.cliente, regra, nome].join('|');
+      const quebras = (itens, limite) => itens.filter(i => i.delta <= limite).sort((a, b) => a.delta - b.delta);
+      const gravidade = d => d <= -50 ? 'Crítico' : 'Aviso';
+      const menos = i => `menos ${rPct(Math.abs(i.delta))} do que no mesmo período de ${anoAnt}`;
+      const alertas = rm.avisos.map(a => ({ id: idAlerta('dados', a), tipo: 'dados', sev: 'Info', cat: 'Dados', regra: null, ver: 'geral', tag: 'Dados incompletos', titulo: 'Dados incompletos', texto: maiuscula(a), pergunta: '' }));
+      const pa = descida(artigos), zonasEmQuebra = quebras(resumoEstado.zona ? zonas.filter(z => z.nome === resumoEstado.zona) : zonas, -20), pz = zonasEmQuebra[0];
+      zonasEmQuebra.forEach(z => alertas.push({ id: idAlerta('distrito', z.nome), tipo: 'local', sev: gravidade(z.delta), cat: 'Distritos', regra: 'distrito', ver: 'zonas', zona: z.nome, tag: 'Distrito em quebra',
+        titulo: `${nomeProprio(z.nome)} caiu ${rPct(Math.abs(z.delta))}`, texto: `Faturou ${rEur(z.num)}, ${menos(z)}.`, pergunta: `Comparar as vendas do distrito ${nomeProprio(z.nome)} mês a mês com o ano passado` }));
+      quebras(artigos, -25).forEach(a => alertas.push({ id: idAlerta('artigo', a.nome), tipo: 'artigo', sev: gravidade(a.delta), cat: 'Artigos', regra: 'artigo', ver: 'artigos', tag: 'Artigo em quebra',
+        titulo: `${a.nome} caiu ${rPct(Math.abs(a.delta))}`, texto: `Vendeu ${rEur(a.num)}, ${menos(a)}.`, pergunta: resumoEstado.cliente ? '' : 'Comparar as vendas por artigo com o ano passado' }));
+      quebras(positivos(j.clientes), -25).forEach(c => alertas.push({ id: idAlerta('cliente', c.nome), tipo: 'cliente', sev: gravidade(c.delta), cat: 'Clientes', regra: 'cliente', ver: 'clientes', cliente: c.codigo || c.nome, tag: 'Cliente em queda',
+        titulo: `${nomeProprio(c.nome)} caiu ${rPct(Math.abs(c.delta))}`, texto: `Comprou ${rEur(c.num)}, ${menos(c)}.`, pergunta: `Que artigos comprou o cliente ${nomeProprio(c.nome)} este ano?` }));
       const parados = num(j.semVendas, /^Clientes sem vendas[^:]*:\s*([\d\s]+?)\s+clientes/);
-      if (parados) alertas.push({ tipo: 'cliente', tag: 'Clientes sem compras', texto: `${rGrupos(parados)} clientes não compram há 90 dias.`, pergunta: 'Clientes que não compram há 90 dias?' });
+      if (parados) alertas.push({ id: idAlerta('parados', ''), tipo: 'cliente', sev: 'Aviso', cat: 'Clientes', regra: 'parados', ver: 'clientes', tag: 'Clientes sem compras', titulo: `${rGrupos(parados)} clientes sem compras`, texto: `${rGrupos(parados)} clientes não compram há 90 dias.`, pergunta: 'Clientes que não compram há 90 dias?' });
 
       let acumulado = null;
       if (anoAnt && meses.length > 1) {
@@ -3462,6 +3566,10 @@
         de: MESES[completos[0].m - 1], ate: MESES[completos[completos.length - 1].m - 1] } : null;
       const melhor = meses.filter(x => x.atual > 0).reduce((m, x) => !m || x.atual > m.atual ? x : m, null);
 
+      // Vista Faturação (JSON da consultar_documentos). Outro texto = cliente por resolver ou erro: os cartões ficam "Ainda sem dados".
+      let docs = null;
+      try { docs = JSON.parse(j.documentos || 'null'); } catch { }
+
       return {
         serie, mediaMes,
         melhorMes: melhor ? { nome: MESES[melhor.m - 1], valor: melhor.atual } : null,
@@ -3473,12 +3581,22 @@
         mesIncompleto: incompleto ? MESES[incompleto.m - 1] : '',
         anoAnt, total, kpis, previsao, semPrevisao, alertas, acumulado,
         artigos, artigosSobe: subida(artigos), artigosDesce: pa,
-        locais: j.zonas ? zonas.map(i => ({ id: i.nome, nome: nomeProprio(i.nome), fat: i.num, variacao: i.delta, novo: i.novo })) : null,
-        // Mapa de áreas: as localidades com mais vendas; "(sem localidade)" fica, a cinzento (é faturação real sem ficha completa)
-        localidades: j.localidades ? positivos(j.localidades).map(i => ({ nome: i.nome, fat: i.num, variacao: i.delta, novo: i.novo, semDados: /^\(/.test(i.nome) })) : null,
+        locais: j.zonas ? distritos.map(i => {
+          const sem = /^\(/.test(i.nome), id = sem ? 'sem dados' : i.nome;
+          return { id, nome: nomeDistrito(id), sem, fat: i.num, variacao: i.delta, novo: i.novo, clientes: nClientes.get(id.toLowerCase()) };
+        }) : null,
+        // Tabela das localidades; "(sem localidade)" fica (é faturação real sem ficha completa)
+        localidades: j.localidades ? positivos(j.localidades).map(i => ({ nome: i.nome, num: i.num, delta: i.delta, novo: i.novo, semDados: /^\(/.test(i.nome) })) : null,
         localidadesTotal: +((j.localidades || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,
-        locaisSobe: subida(zonas), locaisDesce: pz,
-        clientes: j.clientes ? positivos(j.clientes) : null
+        localidadesSobe: subida(locais), localidadesDesce: descida(locais),
+        locaisDesce: pz,
+        clientes: j.clientes ? positivos(j.clientes) : null,
+        tiposDoc: docs ? docs.tipos.map(t => ({ nome: TIPOS_DOC[t.tipo] || 'Tipo ' + t.tipo, valor: t.valor, docs: t.documentos })) : null,
+        docsPorMes: docs ? docs.meses.map(x => {
+          const [a, m] = x.mes.split('-').map(Number), s = meses.find(y => y.a === a && y.m === m);
+          return { a, m, n: x.documentos, parcial: !!s && (s.parcial || agora(s)) };
+        }) : null,
+        ultimosDocs: docs ? docs.ultimos.map(d => ({ doc: d.documento, cliente: d.cliente, data: d.data, total: d.total })) : null
       };
     }
 
@@ -3500,7 +3618,7 @@
         return li;
       };
       const D = resumoEstado.dados || {};
-      const filtro = resumoEstado.cliente ? 'Cliente ' + (D.cliente || resumoEstado.cliente) : resumoEstado.zona ? 'Zona ' + nomeProprio(resumoEstado.zona) : '';
+      const filtro = resumoEstado.cliente ? 'Cliente ' + (D.cliente || resumoEstado.cliente) : resumoEstado.zona ? 'Distrito: ' + nomeDistrito(resumoEstado.zona) : '';
       passo('Inforap Flow');
       passo('Vendas');
       const atual = passo(nomeSecao(), resposta || filtro ? 'geral' : null);
@@ -3545,6 +3663,8 @@
         // Sem perguntas feitas, as sugestões da conversa acompanham a vista escolhida
         const b = botaoEl('', nome, () => { secao = id; verInicio(); });   // verInicio redesenha a conversa: as sugestões seguem a vista
         b.insertAdjacentHTML('afterbegin', svgIc(id === 'geral' ? 'resumo' : id, 17));
+        const porLer = id === 'alertas' ? nAlertasPorLer(resumoEstado.dados) : 0;
+        if (porLer) b.insertAdjacentHTML('beforeend', `<span class="flow-nav-n" title="${porLer} por ler">${porLer}</span>`);
         if (vistaResumo && id === secao) b.setAttribute('aria-current', 'page');
         return b;
       }));
@@ -3584,8 +3704,8 @@
       // Exportar (CSV para o Excel) e Descartar: só com vistas na lista
       const acoes = document.getElementById('vistas-acoes');
       acoes.hidden = !vistas.length;
-      const linhas = [['Vista', 'Tipo', 'Período', 'Zona', 'Cliente', 'Pergunta', 'Faturação'],
-        ...vistas.map(v => [v.nome, v.pergunta ? 'Resposta' : 'Resumo', v.pergunta ? '' : nomePeriodo(v.periodo), v.zona ? nomeProprio(v.zona) : '',
+      const linhas = [['Vista', 'Tipo', 'Período', 'Distrito', 'Cliente', 'Pergunta', 'Faturação'],
+        ...vistas.map(v => [v.nome, v.pergunta ? 'Resposta' : 'Resumo', v.pergunta ? '' : nomePeriodo(v.periodo), v.zona ? nomeDistrito(v.zona) : '',
                              v.cliente || '', v.pergunta || '', v.pergunta || v.total == null ? '' : rEur2(v.total)])];
       const descartar = botaoEl('chat-acao', 'Descartar', () => {
         if (!confirm('Descartar as vistas guardadas desta sessão?')) return;
@@ -3605,7 +3725,7 @@
       } else {
         if (!D || D.erro) return;
         const r = resumoEstado;
-        nome = nomeSecao() + ' · ' + nomePeriodo(r.periodo) + ' · ' + (r.cliente ? 'Cliente ' + (D.cliente || r.cliente) : r.zona ? nomeProprio(r.zona) : 'todas as zonas');
+        nome = nomeSecao() + ' · ' + nomePeriodo(r.periodo) + ' · ' + (r.cliente ? 'Cliente ' + (D.cliente || r.cliente) : r.zona ? nomeDistrito(r.zona) : 'todos os distritos');
         e = { secao, periodo: r.periodo, zona: r.zona, cliente: r.cliente, nome, total: D.total };
       }
       const vistas = [e, ...lerVistas().filter(v => !mesmaVista(v, e))].slice(0, 6);
@@ -3631,6 +3751,36 @@
       if (!sobe && !desce) return '';
       const caixa = (i, cls, txt) => i ? `<div class="res-destaque"><span class="${cls}">${txt}</span><strong>${rEsc(nome(i))}</strong>${rVar(i.delta)} face a ${rEsc(anoAnt)}</div>` : '';
       return `<div class="res-destaques">${caixa(sobe, 'res-sobe', '▲ MAIOR SUBIDA')}${caixa(desce, 'res-desce', '▼ MAIOR DESCIDA')}</div>`;
+    }
+
+    // Vista Alertas (como na demonstração): lista com separadores e, ao lado, o detalhe do escolhido e as regras
+    function alertasHtml(D) {
+      const todos = alertasAtivos(D), lista = alertasVisiveis(D);
+      const sel = lista.find(a => a.id === resumoEstado.alertaSel) || lista[0];
+      const nomeVista = id => SECOES.find(s => s[0] === id)[1];
+      const separadores = FILTROS_ALERTA.map(([nome, f]) => `<button type="button" class="res-pilula" data-alerta-filtro="${nome}" aria-pressed="${resumoEstado.alertaFiltro === nome}">${nome}<span>${todos.filter(f).length}</span></button>`).join('');
+      const linhas = lista.map((a, i) => `<button type="button" class="res-al-linha ${alertaPorLer(a) ? 'res-al-linha--nova' : ''}" data-alerta="${i}" aria-pressed="${a === sel}">
+          <span class="res-al-ic ${SEV_CLASSE[a.sev]}">${svgIc('aviso', 16)}</span>
+          <span class="res-al-txt"><b>${rEsc(a.titulo)}</b><span>${rEsc(a.texto)}</span><small>${rEsc(a.cat)}${alertaPorLer(a) ? ', por ler' : ''}</small></span>
+          <span class="res-al-ponto" aria-hidden="true"></span></button>`).join('');
+      const detalhe = sel ? `<section class="res-cartao" data-bloco="al-sel">
+          <div class="res-al-sel"><span class="res-chip-sev ${SEV_CLASSE[sel.sev]}">${sel.sev}</span>${rEsc(sel.cat)}</div>
+          <span class="res-al-titulo">${rEsc(sel.titulo)}</span>
+          <p class="res-al-desc">${rEsc(sel.texto)}</p>
+          <button type="button" class="res-btn-negro" data-alerta-abrir>${svgIc('seta', 15)}Ver em ${rEsc(nomeVista(sel.ver))}</button>
+          ${sel.pergunta ? `<button type="button" class="res-btn-flow" data-perguntar="${rEsc(sel.pergunta)}">${svgIc('brilho', 15)}Perguntar ao Flow</button>` : ''}
+          <button type="button" class="res-btn-discreto" data-alerta-ler>${alertaPorLer(sel) ? 'Marcar como lido' : 'Marcar como por ler'}</button>
+        </section>` : '';
+      return `<section class="res-cartao res-al-lista" data-bloco="alertas">
+          <div class="res-pilulas" role="group" aria-label="Filtrar alertas">${separadores}<button type="button" class="res-al-todas" data-alerta-todos>Marcar todos como lidos</button></div>
+          ${linhas || '<p class="res-nota">Não há alertas neste separador. Escolha outro ou ligue mais regras.</p>'}
+        </section>
+        <div class="res-al-lado">${detalhe}
+          <section class="res-cartao" data-bloco="al-regras">
+            <h3>Regras de alerta</h3>
+            ${REGRAS_ALERTA.map(([id, nome, sub]) => `<button type="button" class="res-regra" role="switch" data-regra="${id}" aria-checked="${regrasAlerta[id] !== false}"><span>${nome}<small>${sub}</small></span><i aria-hidden="true"></i></button>`).join('')}
+          </section>
+        </div>`;
     }
 
     // Os indicadores vivem no topo (barraResumoHtml) e no painel lateral (desenharLateral)
@@ -3700,12 +3850,13 @@
       // Protótipo: ícone, o que se passa (tag) e o detalhe; com pergunta, a linha toda prepara-a na conversa
       const alertaHtml = a => {
         const corpo = `<span class="res-alerta-ic" style="${(IC[a.tipo] || IC.dados)[1]}">${svgIc((IC[a.tipo] || IC.dados)[0], 18)}</span>
-          <span class="res-alerta-txt"><b>${rEsc(maiuscula(a.tag.toLowerCase()))}</b><span>${rEsc(a.texto)}</span></span>`;
+          <span class="res-alerta-txt"><b>${rEsc(a.titulo)}</b><span>${rEsc(a.texto)}</span></span>`;
         return a.pergunta ? `<li><button type="button" class="res-alerta" data-perguntar="${rEsc(a.pergunta)}" title="Perguntar ao Flow">${corpo}</button></li>` : `<li><div class="res-alerta">${corpo}</div></li>`;
       };
+      const emAtencao = alertasAtivos(D);
       const htmlAten = `<section class="res-cartao res-cartao--atencao" data-bloco="aten">
-        <div class="res-cab"><h3>Precisa de atenção</h3><span class="res-contagem">${D.alertas.length}</span></div>
-        ${D.alertas.length ? `<ul class="res-alertas">${D.alertas.map(alertaHtml).join('')}</ul>` : '<p class="res-nota">Nada a assinalar neste período.</p>'}
+        <div class="res-cab"><h3>Precisa de atenção</h3><span class="res-contagem">${emAtencao.length}</span>${emAtencao.length ? '<button type="button" class="res-ver-alertas" data-ver-secao="alertas">Ver alertas</button>' : ''}</div>
+        ${emAtencao.length ? `<ul class="res-alertas">${emAtencao.slice(0, 3).map(alertaHtml).join('')}</ul>` : '<p class="res-nota">Nada a assinalar neste período.</p>'}
       </section>`;
 
       const pctTotal = a => D.total > 0 ? rPct(a.num / D.total * 100) : '–';
@@ -3739,42 +3890,57 @@
         </section>`;
       }
 
-      // Vendas por zona: um mosaico por zona (valor, variação e parte do total). Clicar filtra o painel por essa zona.
-      // Num cliente não se mostra.
-      let htmlLoc = '';
+      // Zonas (como na demonstração): um mosaico por distrito e, por baixo, o detalhe do escolhido.
+      // Clicar filtra o painel por esse distrito; o mosaico mostra sempre todos. Num cliente não se mostra.
+      let htmlLoc = '', htmlZonaDet = '';
       if (D.locais && D.locais.length) {
-        htmlLoc = `<section class="res-cartao res-cartao--inteiro" data-bloco="loc">
-          <div class="res-cab"><h3>Vendas por zona</h3><span class="res-sub">Clique numa zona para filtrar o painel</span></div>
-          <div class="res-zonas">${D.locais.map(l => {
-            const pct = D.total > 0 ? l.fat / D.total * 100 : 0;
-            return `<button type="button" class="res-zona-tile" data-zona="${rEsc(l.id)}" aria-pressed="${resumoEstado.zona === l.id}">
-              <b>${rEsc(nomeProprio(l.nome))}</b><strong>${rCurto(l.fat)}</strong>
-              <span>${l.variacao == null ? (l.novo ? `<span class="res-tab-nota">Sem vendas em ${rEsc(l.novo)}</span>` : '') : chipVar(l.variacao)}<small>${rPct(pct)} do total</small></span>
-              <span class="res-quota" aria-hidden="true"><span style="width:${Math.min(100, pct).toFixed(1)}%"></span></span></button>`;
-          }).join('')}</div>
-          ${resDestaques(D.locaisSobe, D.locaisDesce, D.anoAnt, i => nomeProprio(i.nome))}
-        </section>`;
+        const somaLocais = D.locais.reduce((s, l) => s + l.fat, 0), maxLocal = Math.max(...D.locais.map(l => l.fat));
+        htmlLoc = `<div class="res-zonas" role="group" aria-label="Vendas por distrito">${D.locais.map(l => `<button type="button" class="res-zona-tile" data-zona="${rEsc(l.id)}" aria-pressed="${resumoEstado.zona === l.id}">
+            <b>${rEsc(l.nome)}</b><strong>${rEur(l.fat)}</strong>
+            <span>${l.variacao == null ? (l.novo ? `<span class="res-tab-nota">Sem vendas em ${rEsc(l.novo)}</span>` : '') : chipVar(l.variacao)}${l.clientes != null ? `<small>${rGrupos(l.clientes)} ${l.clientes === 1 ? 'cliente' : 'clientes'}</small>` : ''}</span>
+            <span class="res-quota ${l.variacao < 0 ? 'res-quota--desce' : ''}" aria-hidden="true"><span style="width:${(l.fat / maxLocal * 100).toFixed(1)}%"></span></span></button>`).join('')}</div>`;
+
+        const sel = D.locais.find(l => l.id === resumoEstado.zona);
+        const ms = D.serie ? D.serie.meses : [], maxMes = Math.max(1, ...ms.flatMap(x => [x.atual || 0, x.anterior || 0]));
+        const colsZ = `style="grid-template-columns:repeat(${ms.length},minmax(0,1fr))"`;
+        const parcial = x => MESES[x.m - 1] === D.mesIncompleto;
+        const altura = v => ((v || 0) > 0 ? v / maxMes * 100 : 0).toFixed(1);
+        const corAtual = sel && sel.variacao < 0 ? 'res-barra-desce' : '';
+        const htmlBarras = ms.length ? `<div class="res-barras res-barras--par" ${colsZ}>${ms.map(x => `<div title="${MESES[x.m - 1]}: ${rEur(x.atual || 0)}${x.anterior != null ? ` · ${rEsc(D.anoAnt)}: ${rEur(x.anterior)}` : ''}"><i class="res-barra-ant" style="height:${altura(x.anterior)}%"></i><i class="${corAtual} ${parcial(x) ? 'res-barra-parcial' : ''}" style="height:${altura(x.atual)}%"></i></div>`).join('')}</div>
+          <div class="res-barras-rot" aria-hidden="true" ${colsZ}>${ms.map(x => `<span>${MESES[x.m - 1].slice(0, 3).toLowerCase()}${parcial(x) ? '*' : ''}</span>`).join('')}</div>` : '<p class="res-nota">Sem vendas por mês neste período.</p>';
+        const clientesZona = (D.clientes || []).slice(0, 6);
+        htmlZonaDet = `<section class="res-cartao res-zona-graf" data-bloco="zona-det">
+            <div class="res-cab"><h3>${rEsc(sel ? sel.nome : 'Todos os distritos')} · faturação mensal</h3>
+              <span class="res-sub">${sel ? `${rPct(sel.fat / somaLocais * 100)} do total${sel.clientes ? ` · média ${rEur(sel.fat / sel.clientes)} por cliente` : ''}` : 'Clique num distrito para ver o detalhe'}</span></div>
+            <div class="res-legenda"><span><i aria-hidden="true"></i>${rEsc(D.serie ? D.serie.anoAtual : '')}</span>${D.anoAnt ? `<span><i class="res-barra-ant" aria-hidden="true"></i>${rEsc(D.anoAnt)}</span>` : ''}</div>
+            ${htmlBarras}
+          </section>
+          <section class="res-cartao res-cartao--lado" data-bloco="zona-cli">
+            <h3>${sel ? 'Clientes no distrito' : 'Principais clientes'}</h3>
+            ${clientesZona.length ? clientesZona.map(c => `<button type="button" class="res-zona-cli" data-cliente="${rEsc(c.codigo || c.nome)}" title="${rEsc(c.nome)}: ver resumo"><span>${rEsc(nomeProprio(c.nome))}</span><span class="${rVarCls(c.delta)}">${rVar(c.delta)}</span></button>`).join('') : '<p class="res-nota">Sem clientes com vendas neste período.</p>'}
+            ${sel && !sel.sem ? `<button type="button" class="res-btn-flow" data-perguntar="${rEsc(`Comparar as vendas do distrito ${sel.nome} mês a mês com o ano passado`)}">${svgIc('brilho', 15)}Analisar distrito com o Flow</button>` : ''}
+          </section>`;
       }
 
-      // Vendas por localidade: mapa de áreas (cada bloco com área proporcional às vendas). Não há coordenadas
-      // nos dados, por isso não é um mapa geográfico. Clicar numa localidade prepara uma pergunta ao assistente.
-      let htmlMapa = '';
-      const locs = (D.localidades || []).filter(l => l.fat > 0);
-      if (locs.length > 1) {
-        const maxM = Math.max(...locs.map(l => l.fat));
-        const blocos = mapaAreas(locs.map(l => ({ ...l, v: l.fat })), 200, 100);
-        htmlMapa = `<section class="res-cartao res-cartao--inteiro" data-bloco="mapa">
-          <div class="res-cab"><h3>Vendas por localidade</h3><span class="res-sub">Área de cada bloco proporcional às vendas${D.localidadesTotal > locs.length ? ` · as ${locs.length} com mais vendas, de ${D.localidadesTotal}` : ''}</span></div>
-          <ul class="res-mapa" aria-label="Vendas por localidade">${blocos.map(b => {
-            const pct = D.total > 0 ? rPct(b.fat / D.total * 100) : '';
-            const cabe = b.w > 22 && b.h > 18, nome = b.semDados ? 'Sem localidade na ficha' : nomeProprio(b.nome);
-            const texto = `${nome}: ${rEur(b.fat)}${pct ? ', ' + pct + ' do total' : ''}${b.variacao != null ? ', ' + rVar(b.variacao) + ' face a ' + (D.anoAnt || 'o ano anterior') : ''}`;
-            const tom = b.semDados ? 'res-mapa--sem' : b.fat / maxM > .45 ? 'res-mapa--forte' : b.fat / maxM > .15 ? 'res-mapa--medio' : '';
-            const conteudo = cabe ? `<b>${rEsc(nome)}</b><span>${rCurto(b.fat)}${pct ? ' · ' + pct : ''}</span>${b.variacao != null ? `<small class="${rVarCls(b.variacao)}">${rVar(b.variacao)}</small>` : ''}` : `<span class="so-leitor">${rEsc(texto)}</span>`;
-            const pos = `left:${(b.x / 2).toFixed(2)}%;top:${b.y.toFixed(2)}%;width:${(b.w / 2).toFixed(2)}%;height:${b.h.toFixed(2)}%`;
-            return `<li class="${tom}" style="${pos}" title="${rEsc(texto)}">${b.semDados ? `<div>${conteudo}</div>`
-              : `<button type="button" data-perguntar="${rEsc(`Comparar as vendas da localidade ${nomeProprio(b.nome)} mês a mês com o ano passado`)}">${conteudo}</button>`}</li>`;
-          }).join('')}</ul>
+      // Localidades (no estilo dos Artigos): tabela e, ao lado, o peso das maiores. Clicar numa prepara uma pergunta ao Flow.
+      let htmlLocTab = '', htmlLocLado = '';
+      const locs = D.localidades || [];
+      if (locs.length) {
+        const nomeLoc = l => l.semDados ? 'Sem localidade na ficha' : nomeProprio(l.nome);
+        const maxL = Math.max(...locs.map(l => l.num));
+        const celulas = l => `<span class="res-tab-nome" title="${rEsc(l.nome)}">${rEsc(nomeLoc(l))}</span><strong>${rEur(l.num)}</strong><span>${pctTotal(l)}</span>${celVar(l)}`;
+        htmlLocTab = `<section class="res-cartao res-tabela" data-bloco="loc-tab">
+          <div class="res-cab"><h3>Localidades com mais vendas</h3><span class="res-sub">Por faturação${D.localidadesTotal > locs.length ? ` · as ${locs.length} maiores, de ${D.localidadesTotal}` : ''}</span></div>
+          <div class="res-tab-linha res-tab-cab res-tab--art" aria-hidden="true"><span>Localidade</span><span>Faturação</span><span>% total</span><span>${vsAnt}</span></div>
+          ${locs.map(l => l.semDados ? `<div class="res-tab-linha res-tab--art">${celulas(l)}</div>`
+            : `<button type="button" class="res-tab-linha res-tab--art" data-perguntar="${rEsc(`Comparar as vendas da localidade ${nomeProprio(l.nome)} mês a mês com o ano passado`)}">${celulas(l)}</button>`).join('')}
+        </section>`;
+        htmlLocLado = `<section class="res-cartao res-cartao--lado" data-bloco="loc-lado">
+          <h3>Peso das maiores localidades</h3>
+          ${locs.slice(0, 6).map(l => `<div class="res-peso"><div><span title="${rEsc(l.nome)}">${rEsc(nomeLoc(l))}</span><strong>${rCurto(l.num)}</strong></div>
+            <span class="res-quota"><span style="width:${(l.num / maxL * 100).toFixed(1)}%"></span></span></div>`).join('')}
+          ${resDestaques(D.localidadesSobe, D.localidadesDesce, D.anoAnt, i => nomeProprio(i.nome))}
+          <button type="button" class="res-btn-flow" data-perguntar="Que localidades venderam mais este ano?">${svgIc('brilho', 15)}Perguntar ao Flow</button>
         </section>`;
       }
 
@@ -3792,37 +3958,46 @@
       let htmlCliTab = '', htmlCliLado = '';
       if (D.clientes && D.clientes.length) {
         const estado = c => c.delta == null ? ['Novo', 'res-estado--novo'] : c.delta >= 0 ? ['A crescer', 'res-estado--sobe'] : ['Em queda', 'res-estado--desce'];
-        htmlCliTab = `<section class="res-cartao res-tabela" data-bloco="cli-tab">
-          <div class="res-cab"><h3>Clientes com mais faturação</h3><span class="res-sub">Clique num cliente para ver o resumo dele</span></div>
+        const cliSel = D.clientes.find(c => (c.codigo || c.nome) === resumoEstado.cliSel) || D.clientes[0];
+        htmlCliTab =`<section class="res-cartao res-tabela" data-bloco="cli-tab">
+          <div class="res-cab"><h3>Clientes com mais faturação</h3><span class="res-sub">Clique num cliente para ver a ficha rápida</span></div>
           <div class="res-tab-linha res-tab-cab res-tab--cli" aria-hidden="true"><span>Cliente</span><span>Faturação</span><span>${vsAnt}</span><span>Estado</span></div>
-          ${D.clientes.map(c => { const [txt, cls] = estado(c); return `<button type="button" class="res-tab-linha res-tab--cli" data-cliente="${rEsc(c.codigo || c.nome)}" title="${rEsc(c.nome)}: ver resumo">
+          ${D.clientes.map(c => { const [txt, cls] = estado(c); return `<button type="button" class="res-tab-linha res-tab--cli" data-cli-sel="${rEsc(c.codigo || c.nome)}" aria-pressed="${c === cliSel}" title="${rEsc(c.nome)}: ver ficha rápida">
             <span class="res-tab-nome">${rEsc(c.nome)}<small>${[c.codigo, c.zona && nomeProprio(c.zona), c.ultima && 'última compra ' + dataCurta(c.ultima), pctTotal(c) + ' do total'].filter(Boolean).map(rEsc).join(' · ')}</small></span><strong>${rEur(c.num)}</strong>
             <span class="${rVarCls(c.delta)}">${rVar(c.delta)}</span><span><span class="res-estado ${cls}">${txt}</span></span></button>`; }).join('')}
         </section>`;
-        const comVar = D.clientes.filter(c => c.delta != null).sort((a, b) => b.delta - a.delta);
-        const sobe = comVar[0] && comVar[0].delta > 0 ? comVar[0] : null, desce = comVar.at(-1) && comVar.at(-1).delta < 0 ? comVar.at(-1) : null;
-        htmlCliLado = `<section class="res-cartao res-cartao--lado" data-bloco="cli-lado">
-          <h3>Destaques do top ${D.clientes.length}</h3>
-          ${resDestaques(sobe, desce, D.anoAnt, nomeECodigo) || '<p class="res-nota">Sem comparação com o ano anterior.</p>'}
-          <button type="button" class="res-btn-flow" data-perguntar="Clientes que não compram há 90 dias?">${svgIc('brilho', 15)}Perguntar ao Flow</button>
+        const idCli = cliSel.codigo || cliSel.nome, [txtSel, clsSel] = estado(cliSel), nomeCli = nomeProprio(cliSel.nome);
+        htmlCliLado = `<section class="res-cartao res-cartao--lado res-ficha-rapida" data-bloco="cli-lado">
+          <h3>Ficha rápida</h3>
+          <h4>${rEsc(nomeCli)}</h4>
+          ${cliSel.codigo ? `<small>Cliente ${rEsc(cliSel.codigo)}</small>` : ''}
+          <span class="res-estado ${clsSel}">${txtSel}</span>
+          <div class="res-ficha-num">
+            <div><span>Faturação</span><strong>${rEur(cliSel.num)}</strong></div>
+            <div><span>${vsAnt}</span><strong class="${rVarCls(cliSel.delta)}">${rVar(cliSel.delta)}</strong></div>
+            <div><span>Parte do total</span><strong>${pctTotal(cliSel)}</strong></div>
+            ${cliSel.media ? `<div><span>Valor médio</span><strong>${rEsc(cliSel.media)}</strong></div>` : ''}
+          </div>
+          <button type="button" class="res-btn-flow" data-perguntar="${rEsc(`Que artigos comprou o cliente ${nomeCli} este ano?`)}">${svgIc('brilho', 15)}Perguntar ao Flow</button>
+          <button type="button" class="res-btn-discreto" data-cliente="${rEsc(idCli)}">Ver vendas do cliente</button>
+          <button type="button" class="res-btn-negro" data-ficha="${rEsc(idCli)}" data-ficha-nome="${rEsc(cliSel.nome)}">${svgIc('ficha', 15)}Ficha do cliente</button>
         </section>`;
       }
 
-      // Cartões do protótipo que dependem de colunas da faturação que a consulta ainda não devolve.
-      // Contrato (campos de D, todos opcionais; sem eles o cartão mostra "Ainda sem dados"):
-      //   D.tiposDoc      [{ nome: 'Faturas' | 'Faturas-recibo' | 'Notas de crédito', valor, docs }]
+      // Cartões do protótipo. Campos de D, todos opcionais; sem eles o cartão mostra "Ainda sem dados":
+      //   D.tiposDoc      [{ nome, valor, docs }]   (um por TipoDocID)
       //   D.docsPorMes    [{ m (1-12), a, n (n.º de documentos), parcial? }]
-      //   D.ultimosDocs   [{ doc ('FT 2026/1234'), cliente, data ('dd-mm-aaaa'), total }]
+      //   D.ultimosDocs   [{ doc (DocumentoID), cliente, data ('dd-mm-aaaa'), total }]
+      // Ainda à espera de colunas que a consulta não devolve:
       //   D.novosClientes { n, dif (diferença face ao ano anterior) }
       //   D.familias      [{ nome, valor }]          D.objetivo  (objetivo anual em €)
       //   em cada cliente de D.clientes: zona, ultima ('dd-mm-aaaa');  em cada artigo de D.artigos: familia
       // Faturação — um cartão por tipo de documento
       const tipos = D.tiposDoc || [];
-      const htmlTipos = `<div class="flow-kpis-grelha">${[['Faturas', 'faturacao'], ['Faturas-recibo', 'documentos'], ['Notas de crédito', 'descida']].map(([nome, ic]) => {
-        const t = tipos.find(x => x.nome === nome);
-        const nota = !t ? 'Ainda sem dados' : `${rGrupos(t.docs)} documentos` + (nome === 'Notas de crédito' && D.total > 0 ? ` · ${rPct(Math.abs(t.valor) / D.total * 100)} da faturação` : '');
-        return `<div class="flow-kpi"><span>${svgIc(ic, 15)}${nome}</span><strong>${t ? rEur(t.valor) : '—'}</strong><span>${nota}</span></div>`;
-      }).join('')}</div>`;
+      const htmlTipos = tipos.length ? `<div class="flow-kpis-grelha">${tipos.map(t => {
+        const nota = `${rGrupos(t.docs)} documentos` + (t.valor < 0 && D.total > 0 ? ` · ${rPct(Math.abs(t.valor) / D.total * 100)} da faturação` : '');
+        return `<div class="flow-kpi"><span>${svgIc(t.valor < 0 ? 'descida' : 'faturacao', 15)}${rEsc(t.nome)}</span><strong>${rEur(t.valor)}</strong><span>${nota}</span></div>`;
+      }).join('')}</div>` : '';
 
       // Faturação — documentos emitidos por mês (barras)
       const dm = D.docsPorMes || [], maxD = Math.max(1, ...dm.map(x => x.n));
@@ -3889,8 +4064,8 @@
       }
 
       // Cada linha da vista: um ou mais cartões lado a lado
-      const porSecao = { geral: [htmlCli + htmlAten], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlDocsMes, htmlUltimos, htmlAcum], artigos: [htmlArt + htmlArtLado],
-                         zonas: [htmlLoc, htmlMapa], previsoes: [htmlPrevKpis, htmlPrev, htmlPrevMeses] }[secao].filter(Boolean);
+      const porSecao = { geral: [htmlCli + htmlAten], alertas: [alertasHtml(D)], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlDocsMes, htmlUltimos, htmlAcum], artigos: [htmlArt + htmlArtLado],
+                         zonas: [htmlLoc, htmlZonaDet, htmlLocTab + htmlLocLado], previsoes: [htmlPrevKpis, htmlPrev, htmlPrevMeses] }[secao].filter(Boolean);
       return porSecao.length || secaoComSerie() ? porSecao.map(h => `<div class="res-grelha">${h}</div>`).join('')
         : `<p class="res-nota">Sem dados para a vista ${rEsc(nomeSecao())} com estes filtros.</p>`;
     }
@@ -3926,27 +4101,34 @@
       return `<div class="res-cabecalho">
         <div class="res-caminho"><button type="button" class="res-casa" data-inicio>${svgIc('casa', 14)}Início</button>${svgIc('seta', 12)}${migalhas().outerHTML}</div>
         ${D.ate ? `<span class="res-dados-ate">${svgIc('relogio', 14)}Dados até ${dataCurta(D.ate)}${D.mesIncompleto ? ' · ' + rEsc(D.mesIncompleto) + ' incompleto' : ''}</span>` : ''}
+        ${D.alertas ? `<button type="button" class="res-sino" data-ver-secao="alertas" title="Alertas" aria-label="Alertas: ${nAlertasPorLer(D)} por ler">${svgIc('alertas', 17)}${nAlertasPorLer(D) ? `<span aria-hidden="true">${nAlertasPorLer(D)}</span>` : ''}</button>` : ''}
       </div>
       <div class="flow-topo">
         <div class="flow-topo-ola">
           <h2 class="res-titulo">${rEsc(nomeSecao())}${D.cliente ? ' · ' + rEsc(D.cliente) : ''}</h2>
           <p class="flow-hoje">${ola()}${nomeUtilizador ? ', ' + rEsc(nomeUtilizador.split(/\s+/)[0]) : ''} · ${hoje}${segmentos.includes(`"${resumoEstado.periodo}"`) ? '' : ' · ' + rEsc(periodo)} · valores sem IVA</p>
         </div>
-        <div class="res-periodos" role="group" aria-label="Período">${segmentos}</div>
+        <div class="res-topo-dir">
+          <div id="acoes-vaga"></div>
+          <div class="res-topo-ctrl">
+          <div class="res-periodos" role="group" aria-label="Período">${segmentos}</div>
+          ${resumoEstado.cliente ? `<button type="button" class="res-ficha-btn" data-ficha="${rEsc(resumoEstado.cliente)}">${svgIc('ficha', 15)}Ficha do cliente</button>` : ''}
           <div class="res-menu-wrap">
             <button type="button" class="res-filtros-btn" data-menu="filtros" aria-expanded="${aberto}" aria-controls="res-menu-filtros" aria-pressed="${nFiltros > 0}">${svgIc('filtro', 16)}Filtros${nFiltros ? `<span class="res-filtros-n">${nFiltros}</span>` : ''}</button>
             <div class="res-menu" id="res-menu-filtros" role="dialog" aria-label="Filtros" ${aberto ? '' : 'hidden'}>
               <div><h3>Período</h3>${resChipsPeriodo()}</div>
-              ${!resumoEstado.cliente && resumoEstado.zonas.length ? `<div><h3>Zona</h3><div class="res-chips" role="group" aria-label="Zona">${[{ id: '', nome: 'Todas' }].concat(resumoEstado.zonas).map(l => `<button type="button" class="res-chip" data-zona="${rEsc(l.id)}" aria-pressed="${(resumoEstado.zona || '') === l.id}">${rEsc(l.nome)}</button>`).join('')}</div></div>` : ''}
+              ${!resumoEstado.cliente && resumoEstado.zonas.length ? `<div><h3>Distrito</h3><div class="res-chips" role="group" aria-label="Distrito">${[{ id: '', nome: 'Todos' }].concat(resumoEstado.zonas).map(l => `<button type="button" class="res-chip" data-zona="${rEsc(l.id)}" aria-pressed="${(resumoEstado.zona || '') === l.id}">${rEsc(l.nome)}</button>`).join('')}</div></div>` : ''}
               <div><h3>Cliente</h3>${resFormCliente('Ver')}</div>
               <div class="res-menu-rodape"><button type="button" class="chat-acao" data-limpar>Limpar filtros</button><button type="button" class="res-btn" data-fechar>Fechar</button></div>
             </div>
           </div>
+          </div>
+        </div>
       </div>
       <div class="res-barra" ${nFiltros ? '' : 'hidden'}>
         <div class="res-info">
           <span>Filtros ativos:</span>
-          ${resumoEstado.zona ? `<button type="button" class="res-filtro-ativo" data-zona="" aria-label="Remover filtro de zona">Zona: <strong>${rEsc(nomeProprio(resumoEstado.zona))}</strong> ×</button>` : ''}
+          ${resumoEstado.zona ? `<button type="button" class="res-filtro-ativo" data-zona="" aria-label="Remover filtro de distrito">Distrito: <strong>${rEsc(nomeDistrito(resumoEstado.zona))}</strong> ×</button>` : ''}
           ${resumoEstado.cliente ? `<button type="button" class="res-filtro-ativo" data-sem-cliente aria-label="Remover filtro de cliente">Cliente: <strong>${rEsc(D.cliente || resumoEstado.cliente)}</strong> ×</button>` : ''}
         </div>
       </div>`;
@@ -4060,7 +4242,7 @@
       if (secaoComSerie()) return D.serie && D.serie.meses.length > 1 ? () => pngSerie(D.serie, 'Vendas por mês' + de, sub) : null;
       if (secao === 'clientes') return ranking(D.clientes, 'Top clientes');
       if (secao === 'artigos') return ranking(D.artigos, 'Artigos mais vendidos');
-      if (secao === 'zonas') return ranking((D.locais || []).map(l => ({ nome: nomeProprio(l.nome), num: l.fat })), 'Vendas por zona');
+      if (secao === 'zonas') return ranking((D.locais || []).map(l => ({ nome: l.nome, num: l.fat })), 'Vendas por distrito');
       return null;
     }
 
@@ -4076,15 +4258,18 @@
       (D.serie ? D.serie.meses : []).filter(x => x.atual != null || x.anterior != null).forEach(x =>
         juntar('Vendas por mês', `${MESES[x.m - 1]} ${x.a || ''}`.trim(), '', x.atual, '€', x.anterior, x.delta ?? variacao(x.atual, x.anterior), [x.parcial ? 'Mês incompleto' : '', x.media ? 'Valor médio ' + x.media : ''].filter(Boolean).join(' · ')));
       D.artigos.forEach(i => juntar('Artigos mais vendidos', i.nome, i.codigo, i.num, '€', null, i.delta));
-      (D.locais || []).forEach(l => juntar('Vendas por zona', l.nome, '', l.fat, '€', null, l.variacao, l.novo ? 'Sem vendas em ' + l.novo : ''));
-      (D.localidades || []).forEach(l => juntar('Vendas por localidade', l.semDados ? 'Sem localidade na ficha' : nomeProprio(l.nome), '', l.fat, '€', null, l.variacao));
+      (D.locais || []).forEach(l => juntar('Vendas por distrito', l.nome, '', l.fat, '€', null, l.variacao, l.novo ? 'Sem vendas em ' + l.novo : ''));
+      (D.localidades || []).forEach(l => juntar('Vendas por localidade', l.semDados ? 'Sem localidade na ficha' : nomeProprio(l.nome), '', l.num, '€', null, l.delta));
       (D.clientes || []).forEach(c => juntar('Top clientes', c.nome, c.codigo, c.num, '€', null, c.delta));
+      (D.tiposDoc || []).forEach(t => juntar('Documentos por tipo', t.nome, '', t.valor, '€', null, '', `${t.docs} documentos`));
+      (D.docsPorMes || []).forEach(x => juntar('Documentos por mês', `${MESES[x.m - 1]} ${x.a}`, '', x.n, 'n.º', null, '', x.parcial ? 'Mês incompleto' : ''));
+      (D.ultimosDocs || []).forEach(d => juntar('Últimos documentos', d.doc, '', d.total, '€', null, '', `${d.cliente}, ${d.data}`));
       const P = D.previsao;
       if (P) P.previsto.slice(1).forEach((v, j) => juntar('Previsão', P.nomes[P.real.length + j], '', v, '€', null, '',
         `Intervalo provável: ${n(P.inferior[j + 1])} a ${n(P.superior[j + 1])} €`));
       const A = D.acumulado;
       if (A) A.atual.forEach((v, i) => juntar('Faturação acumulada', `Até ${A.nomes[i]}`, '', v, '€', A.anterior[i], variacao(v, A.anterior[i])));
-      D.alertas.forEach(a => juntar('Precisa de atenção', a.tag, '', null, '', null, '', a.texto));
+      alertasAtivos(D).forEach(a => juntar('Alertas', a.titulo, '', null, '', null, '', `${a.sev}: ${a.texto}`));
       return linhas;
     }
 
@@ -4100,6 +4285,32 @@
         if (d.menu) { resumoEstado.menu = resumoEstado.menu === d.menu ? null : d.menu; redesenhar(); painelEl.querySelector(`[data-menu="${d.menu}"]`)?.focus(); return; }
         if ('inicio' in d) { boasVindasAberta = true; desenharPainel(); painelEl.querySelector('input')?.focus(); return; }
         if (d.verSecao) { secao = d.verSecao; verInicio(); return; }
+        if (d.ficha) { abrirFicha(d.ficha, d.fichaNome); return; }
+        // Redesenha e devolve o foco ao mesmo controlo: quem usa teclado não perde o lugar
+        const atualizar = seletor => { redesenhar(); desenharNav(); painelEl.querySelector(seletor)?.focus(); };
+        if (d.cliSel) { resumoEstado.cliSel = d.cliSel; atualizar(`[data-cli-sel="${CSS.escape(d.cliSel)}"]`); return; }
+        if (d.alertaFiltro) { resumoEstado.alertaFiltro = d.alertaFiltro; resumoEstado.alertaSel = null; atualizar(`[data-alerta-filtro="${d.alertaFiltro}"]`); return; }
+        if (d.alerta != null) {
+          const a = alertasVisiveis(resumoEstado.dados)[+d.alerta];
+          resumoEstado.alertaSel = a.id; alertasLidos.add(a.id); guardarLidos();
+          // No separador "Por ler" o alerta sai da lista ao ser lido: o foco vai para a primeira linha
+          atualizar(`.res-al-linha[aria-pressed="true"], .res-al-linha`);
+          return;
+        }
+        if ('alertaTodos' in d) { alertasAtivos(resumoEstado.dados).forEach(a => alertasLidos.add(a.id)); guardarLidos(); atualizar('.res-al-todas'); return; }
+        if ('alertaLer' in d || 'alertaAbrir' in d) {
+          const lista = alertasVisiveis(resumoEstado.dados), a = lista.find(x => x.id === resumoEstado.alertaSel) || lista[0];
+          if ('alertaAbrir' in d) { abrirAlerta(a); return; }
+          if (alertasLidos.has(a.id)) alertasLidos.delete(a.id); else alertasLidos.add(a.id);
+          guardarLidos(); atualizar('[data-alerta-ler]');
+          return;
+        }
+        if (d.regra) {
+          regrasAlerta[d.regra] = regrasAlerta[d.regra] === false;
+          guardarValor('localStorage', 'flow-alertas-regras', regrasAlerta);
+          atualizar(`[data-regra="${d.regra}"]`);
+          return;
+        }
         if (d.mes != null) { resumoEstado.mes = +d.mes; redesenhar(); painelEl.querySelector(`[data-mes="${d.mes}"]`)?.focus(); return; }
         if ('fechar' in d) { resumoEstado.menu = null; redesenhar(); painelEl.querySelector('[data-menu]')?.focus(); return; }
         if (d.periodo) {
@@ -4115,6 +4326,49 @@
         if (d.perguntar) { verConversa(true); prepararPergunta(d.perguntar); }
       });
     }
+
+    // "Ver em…" de um alerta: leva à vista certa, já com o distrito filtrado ou o cliente escolhido
+    function abrirAlerta(a) {
+      alertasLidos.add(a.id); guardarLidos();
+      secao = a.ver;
+      if (a.zona) { pedirResumo(null, null, a.zona); return; }
+      if (a.cliente) resumoEstado.cliSel = a.cliente;
+      verInicio();
+    }
+
+    // Botão "Ficha do cliente": mostra o que a ferramenta consultar devolve para esse cliente (CSV: cabeçalho e linha)
+    const dlgFicha = document.getElementById('dlg-ficha'), dlgFichaCorpo = document.getElementById('dlg-ficha-corpo');
+    let fichaAberta = null, pedidosFicha = 0;
+    async function abrirFicha(id, nome) {
+      const n = ++pedidosFicha;
+      fichaAberta = id;
+      document.getElementById('dlg-ficha-titulo').textContent = nome ? nomeProprio(nome) : 'Ficha do cliente';
+      document.getElementById('dlg-ficha-resumo').hidden = true;
+      dlgFichaCorpo.textContent = 'A carregar a ficha…';
+      dlgFicha.showModal();
+      try {
+        const r = await fetch('/ficha?' + new URLSearchParams({ cliente: id }));
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const ls = (await r.text()).split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
+        if (n !== pedidosFicha) return;
+        if (!/^NomeCliente,/.test(ls[0] || '')) { dlgFichaCorpo.textContent = ls[0] || 'Este cliente não tem ficha.'; return; }
+        const cab = partir(ls[0], ','), linhas = ls.slice(1).map(l => partir(l, ','));
+        // O filtro pelo ID também apanha nomes começados por esses dígitos: fica a linha do cliente pedido
+        const v = linhas.find(l => nome && semAcento(l[0]) === semAcento(nome)) || linhas[0];
+        if (!nome) document.getElementById('dlg-ficha-titulo').textContent = nomeProprio(v[0]);
+        const dl = el('dl', 'chat-ficha');
+        cab.forEach((k, i) => { if (i) dl.append(el('dt', '', rotuloCampo(k)), el('dd', '', v[i] ?? '')); });
+        dlgFichaCorpo.replaceChildren(dl);
+        document.getElementById('dlg-ficha-resumo').hidden = resumoEstado.cliente === id;
+      } catch (erro) {
+        if (n !== pedidosFicha) return;
+        console.error('Falha a abrir a ficha:', erro);
+        dlgFichaCorpo.textContent = 'Não foi possível abrir a ficha. Tente de novo; se continuar, o detalhe está na consola do agente.';
+      }
+    }
+    dlgFicha.querySelector('form').addEventListener('submit', e => {
+      if (e.submitter?.value === 'resumo') pedirResumo(null, fichaAberta);
+    });
 
     // Tooltip da previsão: rato e teclado
     function ligarPrevisao(raiz, P) {
@@ -4382,9 +4636,6 @@
     const lancador = document.getElementById('mostrar-conversa');
     function verConversa(sim) {
       painelRaiz.classList.toggle('chat-painel--sem-conversa', !sim);
-      // Exportar e Agendar envio ficam sempre à vista: no topo da conversa, ou do painel com ela minimizada
-      const acoes = document.getElementById('acoes');
-      if (sim) document.querySelector('.chat-conversa').prepend(acoes); else document.querySelector('.chat-dados').prepend(acoes);
       lancador.setAttribute('aria-expanded', String(sim));
       lancador.setAttribute('aria-label', sim ? 'Flow, assistente de vendas: minimizar a conversa' : 'Flow, assistente de vendas: abrir a conversa');
       lancador.classList.toggle('a-falar', sim);
@@ -4404,15 +4655,66 @@
       opcoes.forEach(o => { o.disabled = !painelEl.querySelector(`[data-${o.value}]`); o.checked = false; });
       const primeira = opcoes.find(o => !o.disabled);
       if (primeira) primeira.checked = true;
+      // No painel escolhe-se o que entra no relatório; numa resposta aberta exporta-se essa resposta
+      const D = dadosDoRelatorio();
+      document.getElementById('dlg-exportar-titulo').textContent = D ? 'Exportar relatório' : 'Exportar dados';
+      document.getElementById('dlg-exportar-nota').textContent = D ? 'Escolha o que entra no ficheiro. Os filtros aplicados ficam assim:' : 'Descarrega os dados do separador aberto.';
+      filtrosExportar.hidden = !D;
+      listaSeccoes.closest('fieldset').hidden = !D;
+      if (D) {
+        filtrosExportar.textContent = descreverFiltros(D).join(', ');
+        const contagem = new Map();
+        linhasResumo(D).slice(1).forEach(l => contagem.set(l[0], (contagem.get(l[0]) || 0) + 1));
+        listaSeccoes.replaceChildren(...[...contagem].map(([nome, n]) => {
+          const rotulo = el('label', 'dlg-opcao'), caixa = el('input');
+          Object.assign(caixa, { type: 'checkbox', name: 'seccao', value: nome, checked: true });
+          const texto = el('span');
+          texto.append(el('b', '', nome), el('small', '', `${n} ${n === 1 ? 'linha' : 'linhas'}`));
+          rotulo.append(caixa, texto);
+          return rotulo;
+        }));
+      }
+      atualizarExportar();
       dlgExportar.showModal();
+    });
+    const filtrosExportar = document.getElementById('dlg-exportar-filtros'), listaSeccoes = document.getElementById('exportar-lista');
+    const dadosDoRelatorio = () => vistaResumo && resumoEstado.dados && !resumoEstado.dados.erro ? resumoEstado.dados : null;
+    const descreverFiltros = D => [`Período: ${nomePeriodo(resumoEstado.periodo).toLowerCase()}`,
+      resumoEstado.zona ? `Distrito: ${nomeDistrito(resumoEstado.zona)}` : 'Todos os distritos',
+      resumoEstado.cliente ? `Cliente: ${D.cliente || resumoEstado.cliente}` : 'Todos os clientes'];
+    // As secções só valem para o CSV; sem nenhuma marcada não há ficheiro para gerar
+    function atualizarExportar() {
+      const f = new FormData(dlgExportar.querySelector('form')).get('formato'), comSeccoes = !!dadosDoRelatorio() && f === 'exportar';
+      listaSeccoes.closest('fieldset').disabled = !comSeccoes;
+      document.getElementById('dlg-exportar-ok').disabled = !f || (comSeccoes && !listaSeccoes.querySelector('input:checked'));
+    }
+    dlgExportar.addEventListener('change', atualizarExportar);
+    dlgExportar.addEventListener('click', e => {
+      const acao = e.target.closest('[data-seccoes]')?.dataset.seccoes;
+      if (!acao) return;
+      listaSeccoes.querySelectorAll('input').forEach(c => { c.checked = acao === 'todas'; });
+      atualizarExportar();
     });
     dlgExportar.querySelector('form').addEventListener('submit', e => {
       if (e.submitter?.value !== 'exportar') return;   // "Fechar": o method="dialog" fecha sozinho
-      const f = new FormData(e.target).get('formato');
+      const dados = new FormData(e.target), f = dados.get('formato'), D = dadosDoRelatorio();
+      if (f === 'exportar' && D) {
+        const marcadas = new Set(dados.getAll('seccao')), [cabecalho, ...resto] = linhasResumo(D);
+        descarregarCsv([cabecalho, ...resto.filter(l => marcadas.has(l[0]))], ['relatorio vendas', nomePeriodo(resumoEstado.periodo), resumoEstado.zona && nomeDistrito(resumoEstado.zona), resumoEstado.cliente && (D.cliente || resumoEstado.cliente)].filter(Boolean).join(' '));
+        return;
+      }
       if (f) painelEl.querySelector(`[data-${f}]`)?.click();
     });
     // o painel é redesenhado em vários sítios: observar evita esquecer algum
+    // Exportar e Agendar envio: por cima do período e dos filtros; sem essa barra (ex.: resposta aberta), no topo do painel
+    const acoesBotoes = topoExportar.parentElement;
+    function colocarAcoes() {
+      const alvo = document.getElementById('acoes-vaga') || painelEl.parentElement;
+      if (acoesBotoes.parentElement !== alvo) alvo.prepend(acoesBotoes);
+    }
+    colocarAcoes();
     new MutationObserver(() => {
+      colocarAcoes();
       topoExportar.disabled = !painelEl.querySelector('[data-exportar], [data-imagem]');
     }).observe(painelEl, { childList: true, subtree: true });
     document.getElementById('topo-email').addEventListener('click', () => document.getElementById('dlg-email').showModal());

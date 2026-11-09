@@ -68,6 +68,7 @@ projeto_Mcp/
    | `consultar` | `ViewMCP_cliente` + `ViewMCP_cliente_faturacao` (juntas por `ClienteID`) | Listar ou contar clientes pela ficha (`Zona`, `Localidade`, `Vendedor`, `TipoCliente`, `Actividade`, `Distrito`) ou condições de faturação (`Pagamento`, `Cobranca`, `Expedicao`, `SituacaoFinanceira`, `EscalaoPlafond`, `EscalaoVolumeVendas`). |
    | `consultar_sensivel` | + `ViewMCP_cliente_sensivel` | NIF, email, telefone, morada, código postal, volume de vendas declarado e plafond. Máx. 20 linhas e 5 páginas; cada acesso fica registado no log (auditoria, sem os valores). |
    | `consultar_vendas` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Faturação real num período: valor líquido sem IVA, notas de crédito descontadas. |
+   | `consultar_documentos` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Só para a vista Faturação do painel (o `Vendas.Agente` não a oferece ao modelo): JSON com totais por `TipoDocID`, documentos por mês (`DataDoc`) e os últimos documentos (`DocumentoID`). |
 
    **`consultar`** — `coluna` (mostrar/filtrar/contar), `valor` (filtro), `contar=true` (nº de clientes por valor, com percentagens), `cruzarCom`/`valorCruzado` (filtra também por outra coluna, de qualquer das views — ex.: contar por `Zona` só dos clientes com `Pagamento` = "30 dias"), `nomeComecaPor`, `limite` (1–100, por omissão 10) e `pagina`. Os filtros ignoram acentos e maiúsculas; quando um valor não existe, a tool devolve logo os valores existentes (até 30).
 
@@ -196,6 +197,26 @@ Mostra as tools disponíveis e pergunta o modo:
 - Uma resposta com números sem nenhuma chamada a tool é considerada inventada: é descartada e o modelo tenta uma vez mais. Máx. 5 chamadas a tools e 12 000 caracteres de resultados por pergunta.
 - As regras do prompt (`PoliticasSeguranca.cs`) mandam recusar perguntas fora dos dados de clientes e faturação.
 - "Esta resposta está certa?" acrescenta uma linha (data, sim/não, motivo da lista) a `%LOCALAPPDATA%\Vendas\feedback.log`. A pergunta e a resposta não são guardadas: podem ter nomes de clientes.
+
+### Painel: alertas, ficha do cliente e relatório
+
+- **Alertas**: calculados a partir do resumo aberto (distrito a cair mais de 20%, artigo ou cliente do top a cair mais de 25%, clientes sem compras há 90 dias, dados incompletos). Queda de 50% ou mais é crítica. As regras ligadas ficam neste computador (`localStorage`); o que já foi lido só dura a sessão, porque os alertas têm nomes de clientes.
+- **Ficha do cliente**: `GET /ficha?cliente=<ID>` chama a tool `consultar`, sem modelo. Mostra a ficha e as condições de faturação, sem NIF nem contactos.
+- **Exportar**: no painel escolhem-se as secções que entram no CSV; o ficheiro respeita o período e os filtros aplicados.
+
+### Testar com a Claude em vez do Ollama
+
+Por omissão nada muda e os dados não saem da máquina. Para usar a Claude (na cloud), na mesma consola:
+
+```powershell
+$env:ANTHROPIC_API_KEY = "<chave>"   # nunca no repositório
+$env:AGENTE_LLM = "claude"
+$env:CLAUDE_MODELO = "claude-sonnet-5-5"   # opcional; por omissão claude-opus-5-5
+dotnet run --project src/Vendas.Agente
+```
+
+- As perguntas e os resultados das ferramentas seguem para a Anthropic. `consultar_sensivel` não é oferecida ao modelo, por isso NIF, contactos e moradas não saem e essas perguntas ficam sem resposta neste modo.
+- Voltar ao Ollama: `Remove-Item Env:AGENTE_LLM` e reiniciar o agente.
 
 ### Resumo por email à segunda
 

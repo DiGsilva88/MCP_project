@@ -24,6 +24,19 @@ public class PoliticasSegurancaTests
         Assert.False(PoliticasSeguranca.RespostaSemFonte("Olá! Em que posso ajudar?", 0));
     }
 
+    [Theory]
+    [InlineData("consultar_documentos", true)]
+    [InlineData("consultar_vendas", false)]
+    public void SoDoPainel_SoADeDocumentos(string ferramenta, bool esperado) =>
+        Assert.Equal(esperado, PoliticasSeguranca.SoDoPainel(ferramenta));
+
+    [Theory]
+    [InlineData("consultar_sensivel", false)]
+    [InlineData("consultar", true)]
+    [InlineData("consultar_vendas", true)]
+    public void PodeIrParaCloud_SoRetiraADeDadosPessoais(string ferramenta, bool esperado) =>
+        Assert.Equal(esperado, PoliticasSeguranca.PodeIrParaCloud(ferramenta));
+
     [Fact]
     public void RespostaSemFonte_ForaDoAmbito_Passa() =>
         Assert.False(PoliticasSeguranca.RespostaSemFonte(PoliticasSeguranca.ForaDoAmbito, 0));

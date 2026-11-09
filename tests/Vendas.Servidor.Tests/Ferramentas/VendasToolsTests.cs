@@ -40,6 +40,36 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task ConsultarDocumentos_DevolveJsonComDocumentoTipoEData_EPassaOFiltro()
+    {
+        var repo = new FakeVendasRepo
+        {
+            Documentos = new(
+                [new("FT", 100.5m, 2)],
+                [new("2026-09", 2)],
+                [new("FT 1/2026/7", "FT", new DateOnly(2026, 9, 4), "Casa Costa", 60.25m)]),
+        };
+
+        var json = await CriarSut(repo).ConsultarDocumentosAsync(coluna: Campo.Distrito, valor: "Setúbal");
+
+        using var d = System.Text.Json.JsonDocument.Parse(json);
+        var ultimo = d.RootElement.GetProperty("ultimos")[0];
+        Assert.Equal("FT 1/2026/7", ultimo.GetProperty("documento").GetString());
+        Assert.Equal("FT", ultimo.GetProperty("tipo").GetString());
+        Assert.Equal("04-09-2026", ultimo.GetProperty("data").GetString());
+        Assert.Equal(100.5m, d.RootElement.GetProperty("tipos")[0].GetProperty("valor").GetDecimal());
+        Assert.Equal("2026-09", d.RootElement.GetProperty("meses")[0].GetProperty("mes").GetString());
+        Assert.Equal("Setúbal", repo.UltimosFiltros![Campo.Distrito]);
+    }
+
+    [Fact]
+    public async Task ConsultarDocumentos_ColunaSemValor_ERecusado()
+    {
+        Assert.Equal("coluna e valor têm de ser usados juntos.",
+            await CriarSut(new FakeVendasRepo()).ConsultarDocumentosAsync(coluna: Campo.Distrito));
+    }
+
+    [Fact]
     public async Task Menores_ChegaAoRepoEDizNoTitulo()
     {
         var repo = new FakeVendasRepo { Valores = [new ValorAgrupado("Seixal", 10m, 1, 1, 10m, 1)] };
