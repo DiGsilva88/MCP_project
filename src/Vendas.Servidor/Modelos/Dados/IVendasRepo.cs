@@ -51,6 +51,18 @@ public interface IVendasRepo
         DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
 
+    // Notas de crédito e créditos em [desde, ate[, uma página de cada vez. tipo: "N", "C" ou null (os dois).
+    // pesquisa: texto no número do documento ou no nome do cliente. Os totais por tipo ignoram o tipo e a página.
+    Task<PaginaCreditos> ListarCreditosAsync(
+        DateOnly desde, DateOnly ate, string? tipo, string? pesquisa, int deslocamento, int limite, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
+
+    // Um documento pelo número completo ("N 10/2026/1034675"); null se não existir ou não cumprir os filtros.
+    // tipo e ano vêm do próprio número e deixam o SQL filtrar antes de comparar o texto.
+    Task<DetalheDocumento?> DetalheDocumentoAsync(
+        string documento, string tipo, int ano, IReadOnlyDictionary<Campo, string>? filtros = null,
+        CancellationToken cancellationToken = default);
+
     // Vista Clientes do painel: zona e última compra de cada cliente, e o que cada um comprou por mês em [desde, ate[.
     Task<ResumoCarteira> ResumoCarteiraAsync(
         DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null,

@@ -149,6 +149,33 @@ internal sealed class FakeVendasRepo : IVendasRepo
         return Task.FromResult(Documentos);
     }
 
+    public PaginaCreditos Creditos { get; set; } = new([], 0, 0);
+    public (string? Tipo, string? Pesquisa, int Deslocamento, int Limite)? UltimaPaginaCreditos { get; private set; }
+
+    public Task<PaginaCreditos> ListarCreditosAsync(
+        DateOnly desde, DateOnly ate, string? tipo, string? pesquisa, int deslocamento, int limite, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
+    {
+        UltimoCliente = cliente;
+        UltimosFiltros = filtros;
+        UltimoPeriodo = (desde, ate);
+        UltimaPaginaCreditos = (tipo, pesquisa, deslocamento, limite);
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult(Creditos);
+    }
+
+    public DetalheDocumento? Detalhe { get; set; }
+    public (string Documento, string Tipo, int Ano)? UltimoDocumento { get; private set; }
+
+    public Task<DetalheDocumento?> DetalheDocumentoAsync(
+        string documento, string tipo, int ano, IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
+    {
+        UltimosFiltros = filtros;
+        UltimoDocumento = (documento, tipo, ano);
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult(Detalhe);
+    }
+
     public ResumoCarteira Carteira { get; set; } = new([], []);
 
     public Task<ResumoCarteira> ResumoCarteiraAsync(

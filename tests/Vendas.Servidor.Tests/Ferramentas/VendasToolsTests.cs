@@ -40,6 +40,86 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task ConsultarCreditos_PassaPaginaTipoPesquisa_EDevolveContadores()
+    {
+        var repo = new FakeVendasRepo
+        {
+            Creditos = new([new("N 1/2026/3", "N", new DateOnly(2026, 9, 2), "1003", "Casa Costa", -10m)], 7, 2),
+        };
+
+        var json = await CriarSut(repo).ConsultarCreditosAsync(tipo: "N", pesquisa: "costa", pagina: 3, limite: 15);
+
+        Assert.Equal(("N", "costa", 30, 15), repo.UltimaPaginaCreditos);
+        using var d = System.Text.Json.JsonDocument.Parse(json);
+        Assert.Equal("1003", d.RootElement.GetProperty("itens")[0].GetProperty("clienteId").GetString());
+        Assert.Equal(7, d.RootElement.GetProperty("contadores").GetProperty("N").GetInt32());
+        Assert.Equal(2, d.RootElement.GetProperty("contadores").GetProperty("C").GetInt32());
+    }
+
+    [Fact]
+    public async Task ConsultarCreditos_TipoForaDaLista_NaoVaiAoRepo()
+    {
+        var repo = new FakeVendasRepo();
+
+        Assert.Equal("tipo tem de ser N ou C.", await CriarSut(repo).ConsultarCreditosAsync(tipo: "F"));
+        Assert.Null(repo.UltimaPaginaCreditos);
+    }
+
+    [Fact]
+    public async Task ConsultarCreditos_Vendedor_GanhaAoFiltroPedidoNaMesmaColuna()
+    {
+        var repo = new FakeVendasRepo();
+
+        await CriarSut(repo).ConsultarCreditosAsync(coluna: Campo.Vendedor, valor: "Outro", vendedor: "Ana");
+
+        Assert.Equal("Ana", repo.UltimosFiltros![Campo.Vendedor]);
+    }
+
+    [Fact]
+    public async Task ConsultarDocumento_SomaTotais_ETipoEAnoVemDoNumero()
+    {
+        var repo = new FakeVendasRepo
+        {
+            Detalhe = new("N 10/2026/5", "N", new DateOnly(2026, 3, 1), "1003", "Casa Costa",
+                [new("A1", "Artigo", -1, -11m, 1m, -10m, -2.3m), new("A2", "Outro", -2, -20m, 0m, -20m, -4.6m)]),
+        };
+
+        var json = await CriarSut(repo).ConsultarDocumentoAsync("N 10/2026/5", "Ana");
+
+        Assert.Equal(("N 10/2026/5", "N", 2026), repo.UltimoDocumento);
+        Assert.Equal("Ana", repo.UltimosFiltros![Campo.Vendedor]);
+        using var d = System.Text.Json.JsonDocument.Parse(json);
+        Assert.Equal(-36.9m, d.RootElement.GetProperty("totais").GetProperty("total").GetDecimal());
+        Assert.Equal(System.Text.Json.JsonValueKind.Null, d.RootElement.GetProperty("origem").ValueKind);
+    }
+
+    [Theory]
+    [InlineData("N 10/2026/5")]      // existe noutro perfil ou não existe: a resposta é a mesma
+    [InlineData("N 10/0000/5")]      // ano impossível: não pode rebentar no DateOnly
+    [InlineData("N'; DROP--")]       // nem chega ao repositório
+    [InlineData("")]
+    public async Task ConsultarDocumento_Inexistente_DevolveNaoEncontrado(string documento)
+    {
+        var json = await CriarSut(new FakeVendasRepo()).ConsultarDocumentoAsync(documento);
+
+        Assert.Equal("""{"erro":"nao_encontrado"}""", json);
+    }
+
+    [Fact]
+    public async Task Fixtures_VendedorSoVeOsSeusDocumentos_ENumDocumentoAlheioRecebeNaoEncontrado()
+    {
+        var sut = new VendasTools(new Vendas.Servidor.Modelos.Dados.RepoDemo(), NullLogger<VendasTools>.Instance);
+
+        using var todos = System.Text.Json.JsonDocument.Parse(await sut.ConsultarCreditosAsync(Periodo.Ultimos12Meses, limite: 100));
+        using var daAna = System.Text.Json.JsonDocument.Parse(await sut.ConsultarCreditosAsync(Periodo.Ultimos12Meses, limite: 100, vendedor: "Ana Demo"));
+        var alheio = todos.RootElement.GetProperty("itens").EnumerateArray()
+            .First(c => !daAna.RootElement.GetProperty("itens").EnumerateArray().Any(a => a.GetProperty("documento").GetString() == c.GetProperty("documento").GetString()));
+
+        Assert.True(daAna.RootElement.GetProperty("itens").GetArrayLength() < todos.RootElement.GetProperty("itens").GetArrayLength());
+        Assert.Equal("""{"erro":"nao_encontrado"}""", await sut.ConsultarDocumentoAsync(alheio.GetProperty("documento").GetString()!, "Ana Demo"));
+    }
+
+    [Fact]
     public async Task ConsultarDocumentos_DevolveJsonComDocumentoTipoEData_EPassaOFiltro()
     {
         var repo = new FakeVendasRepo

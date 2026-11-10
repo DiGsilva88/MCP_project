@@ -982,6 +982,7 @@
     .dlg-opcao { display: flex; gap: 8px; align-items: flex-start; padding: 8px; border: 1px solid var(--linha); border-radius: 8px; cursor: pointer; }
     .dlg-opcao:has(input:checked) { border-color: var(--marca); background: var(--selecionado); }
     .dlg-opcao input { margin: 2px 0 0; accent-color: var(--marca); }
+    .dlg-opcao b { font-weight: 400; }
     .dlg-opcao small { display: block; font-size: 12px; color: var(--suave); }
     .dlg-campo { display: flex; flex-direction: column; gap: 4px; }
     .dlg-campo input { min-height: 36px; padding: 0 10px; border: 1px solid var(--borda-controlo); border-radius: 6px; background: var(--cartao); }
@@ -1228,25 +1229,33 @@
     /* Boas-vindas: o painel ocupa tudo; lateral, barra do topo e conversa só depois de escolher */
     .chat-painel--inicio :is(.flow-lateral, .chat-conversa, .chat-lancador, .res-topo) { display: none !important; }
     .chat-painel--inicio .chat-dados { grid-column: 1 / -1; grid-row: 1 / -1; }
-    .chat-painel--inicio .chat-painel-dados { padding: 40px 24px !important; }
-    .flow-ini { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; text-align: center; }
-    .flow-ini-avatar { width: 84px; height: 84px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--marca); box-shadow: 0 12px 30px rgb(29 91 255/ .3); }
-    .flow-ini h1 { margin: 12px 0 6px; font-size: 34px; font-weight: 500; letter-spacing: -.02em; }
-    .flow-ini > div > p { margin: 0; font-size: 15px; color: var(--suave); }
-    .flow-ini-opcoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 260px)); justify-content: center; gap: 14px; width: 100%; }
-    .flow-ini-opcao { padding: 22px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 1px solid var(--borda); border-radius: 14px; background: var(--cartao); color: var(--texto); font: inherit; cursor: pointer; }
-    .flow-ini-opcao:hover, .flow-ini-opcao--principal { border-color: var(--marca); background: var(--selecionado); }
-    .flow-ini-opcao b { font-size: 15px; }
-    .flow-ini-opcao small { font-size: 13px; line-height: 1.45; color: var(--suave); }
-    .flow-ini-escrever { width: min(808px, 100%); display: flex; flex-direction: column; gap: 10px; }
-    .flow-ini-campo { height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 16px; border: 1px solid var(--borda-campo); border-radius: 14px; background: var(--cartao); box-shadow: 0 4px 16px rgb(11 15 23 / .05); }
+    .chat-painel--inicio .chat-painel-dados { padding: 40px 24px !important; background: var(--cartao); }
+    .flow-ini { min-height: 100%; max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; }
+  
+    .flow-ini-corpo { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-content: center; align-items: baseline; gap: 14px 48px; }
+    .flow-ini-marca { grid-column: 1 / -1; display: flex; }
+    .flow-ini h1 { margin: 0 0 8px; font-size: 40px; font-weight: 700; letter-spacing: -.02em; }
+    .flow-ini-esq > p { margin: 0; font-size: 15px; color: var(--suave); }
+    .flow-ini-escrever { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .flow-ini-campo { height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 18px; border: 1px solid var(--borda-controlo); border-radius: 26px; background: var(--cartao); }
     .flow-ini-campo:focus-within { outline: 2px solid var(--marca); outline-offset: 1px; }
     .flow-ini-campo input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 14.5px; color: var(--texto); }
-    .flow-ini-campo button { width: 36px; height: 36px; border: 0; border-radius: 10px; background: var(--marca); color: #fff; cursor: pointer; }
-    .flow-ini-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
-    .flow-ini-chips button { min-height: 30px; padding: 0 12px; border: 1px solid var(--borda); border-radius: 15px; background: var(--cartao); color: var(--texto); font: inherit; font-size: 12.5px; cursor: pointer; }
+    .flow-ini-campo button { height: 40px; padding: 0 18px; border: 0; border-radius: 20px; background: var(--marca); color: #fff; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+    .flow-ini-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .flow-ini-chips button { min-height: 32px; padding: 0 12px; border: 1px solid var(--borda-controlo); border-radius: 16px; background: var(--cartao); color: var(--texto); font: inherit; font-size: 12.5px; cursor: pointer; }
     .flow-ini-chips button:hover { border-color: var(--marca); color: var(--marca); }
-    .flow-ini small.flow-ini-nota { font-size: 11.5px; color: var(--nota); }
+    .flow-ini-como { padding: 28px; border-radius: 20px; background: var(--selecionado); }
+    .flow-ini-como h2 { margin: 0 0 18px; font-size: 17px; font-weight: 400; }
+    .flow-ini-como ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; }
+    .flow-ini-como li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 2px 12px; }
+    .flow-ini-como li > span { grid-row: span 2; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--marca); color: #fff; }
+    .flow-ini-como b { font-size: 14px; font-weight: 400; }
+    .flow-ini-como small { font-size: 12.5px; line-height: 1.4; color: var(--suave); }
+    .flow-ini-rodape { margin-top: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; font-size: 11.5px; color: var(--nota); }
+    .flow-ini-rodape nav { display: flex; gap: 24px; }
+    .flow-ini-rodape button { padding: 0; border: 0; background: none; color: var(--ligacao); font: inherit; text-decoration: underline; cursor: pointer; }
+    :is(.flow-ini-chips button, .flow-ini-rodape button, .flow-ini-campo button):focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+    @media (max-width: 820px) { .flow-ini-corpo { grid-template-columns: minmax(0, 1fr); gap: 24px; } .flow-ini h1 { font-size: 32px; } }
 
     /* Protótipo 11/2026 — Resumo: indicadores no topo; clientes e "Precisa de atenção" lado a lado (1,35 : 1) */
     .res-grelha > [data-bloco="cli"] { flex: 1.35 1 380px; }
@@ -1283,8 +1292,6 @@
     /* Protótipo — ícones */
     .flow-nav button { gap: 10px; }
     .flow-nav button svg { flex: none; }
-    .flow-ini-ic { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: var(--selecionado); color: var(--marca); }
-    .flow-ini-opcao--principal .flow-ini-ic { background: var(--marca); color: #fff; }
     .flow-kpi > span:first-child { display: flex; align-items: center; gap: 6px; }
     .flow-kpi .flow-kpi-texto { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 17px; line-height: 1.6; }
     .chat-leitura-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
@@ -1488,6 +1495,41 @@
     .dlg-seccoes .dlg-opcao > span { flex: 1; display: flex; align-items: baseline; gap: 6px; }
     #exportar-seccoes[disabled] { opacity: .5; }
     #dlg-ficha .chat-ficha { margin: 0; max-height: 55vh; overflow: auto; }
+
+    /* Painel do documento: lateral no computador, folha inferior em ecrãs estreitos */
+    #dlg-doc { margin: 0 0 0 auto; width: min(640px, 100%); max-width: 100%; height: 100dvh; max-height: 100dvh; padding: 0; border: 0; border-left: 1px solid var(--borda); background: var(--cartao); color: var(--texto); font-size: 13px; box-shadow: -8px 0 24px rgb(19 32 59 / .16); }
+    #dlg-doc[open] { display: flex; flex-direction: column; }
+    #dlg-doc::backdrop { background: rgb(15 27 61 / .45); }
+    .doc-cab { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--linha); }
+    .doc-cab h2 { flex: 1; min-width: 0; margin: 0; font-size: 15px; overflow-wrap: anywhere; }
+    .doc-corpo { flex: 1; min-height: 0; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+    .doc-resumo { margin: 0; display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 6px 12px; }
+    .doc-resumo dt { color: var(--suave); }
+    .doc-resumo dd { margin: 0; font-weight: 600; }
+    .doc-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+    .doc-acoes a { color: inherit; text-decoration: none; }
+    .doc-acoes [aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+    .doc-aviso { margin: 0; padding: 10px 12px; border: 1px solid var(--aviso-borda); border-radius: 8px; background: var(--aviso-fundo); color: var(--aviso-texto); }
+    .doc-pdf { width: 100%; height: 70vh; border: 1px solid var(--borda); border-radius: 8px; }
+    .doc-previa { padding: 14px; border: 1px dashed var(--borda-forte); border-radius: 8px; display: flex; flex-direction: column; gap: 12px; }
+    .doc-previa h3 { margin: 0; font-size: 13.5px; }
+    .doc-tabela { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    .doc-tabela :is(th, td) { padding: 6px 4px; border-bottom: 1px solid var(--linha); text-align: right; }
+    .doc-tabela :is(th, td):first-child { text-align: left; }
+    .doc-tabela tfoot :is(th, td) { font-weight: 700; border-bottom: 0; }
+    .doc-link { padding: 0; border: 0; background: none; color: var(--ligacao); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+    .doc-link:hover { text-decoration: underline; }
+    .res-tab--cred[data-doc-linha] { cursor: pointer; }
+    .res-tab--cred[data-doc-linha]:hover, .res-tab--cred[aria-current="true"] { background: var(--selecionado); }
+    :is(.doc-link, #dlg-doc .res-btn):focus-visible { outline: 2px solid var(--ligacao); outline-offset: 2px; }
+    @media (max-width: 640px) {
+      #dlg-doc { margin: auto 0 0; width: 100%; height: 88dvh; border-left: 0; border-top: 1px solid var(--borda); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgb(19 32 59 / .16); }
+      .doc-resumo { grid-template-columns: 100px minmax(0, 1fr); }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      #dlg-doc[open] { animation: doc-entra .18s ease-out; }
+      @keyframes doc-entra { from { opacity: 0; transform: translateX(16px); } }
+    }
     :is(.res-sino, .res-pilula, .res-al-linha, .res-al-todas, .res-regra, .res-btn-negro, .res-btn-discreto, .res-ficha-btn, .res-ver-alertas, .dlg-legenda button):focus-visible { outline: 2px solid #1d5bff; outline-offset: 2px; }
 
     /* Protótipo — Previsões e Clientes: indicadores e meses previstos a toda a largura */
@@ -1507,6 +1549,17 @@
     .chat-folha--painel .flow-kpi .chat-delta--desce { background: #0b0f17; color: #fff; }
     .chat-folha--painel .flow-kpi--destaque { color: #d6e1ff; }
     .chat-folha--painel .flow-kpi--destaque .chat-delta { background: rgb(255 255 255 / .18); color: #fff; }
+    /* Faturação: quatro cartões numa só fila, mais baixos, cada dado numa linha */
+    .flow-kpis-grelha.flow-kpis-grelha--fat { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .chat-folha--painel .flow-kpis-grelha--fat .flow-kpi { padding: 12px; gap: 4px; font-size: 11.5px; }
+    .chat-folha--painel .flow-kpis-grelha--fat .flow-kpi strong { font-size: 20px; }
+    .chat-folha--painel .flow-kpis-grelha--fat .flow-kpi > span { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .flow-kpis-grelha--fat .res-fluxo { margin: 2px 0 0; gap: 2px; }
+    .flow-kpis-grelha--fat .res-fluxo div { gap: 6px; }
+    .flow-kpis-grelha--fat .res-fluxo dt { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .flow-kpis-grelha--fat .res-fluxo dd { flex: none; white-space: nowrap; }
+    .flow-kpi--destaque .res-fluxo dd { color: #fff; }
+    @media (max-width: 720px) { .flow-kpis-grelha.flow-kpis-grelha--fat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
     /* Protótipo — Resumo: espaços entre linhas, sem rodapé à vista */
     .res-geral > .flow-kpis-grelha { margin: 0 0 14px; }
@@ -1721,7 +1774,17 @@
   </dialog>
   <p class="flow-aviso" id="aviso" role="status" hidden></p>
 
-  <!-- Botão "Ficha do cliente": os dados vêm de GET /ficha -->
+  <!-- Painel do documento: abre sobre a lista, que fica como estava (pesquisa, filtros e página) -->
+  <dialog id="dlg-doc" aria-labelledby="dlg-doc-titulo">
+    <div class="doc-cab">
+      <button type="button" class="res-btn" id="dlg-doc-voltar" hidden>Voltar</button>
+      <h2 id="dlg-doc-titulo">Documento</h2>
+      <button type="button" class="res-btn" id="dlg-doc-fechar" aria-label="Fechar o documento">Fechar</button>
+    </div>
+    <div class="doc-corpo" id="dlg-doc-corpo" aria-live="polite"></div>
+  </dialog>
+
+  <!-- Botão "Ficha do cliente": os dados vêm de GET /api/clientes/<id> -->
   <dialog id="dlg-ficha" aria-labelledby="dlg-ficha-titulo">
     <form method="dialog">
       <div>
@@ -1755,6 +1818,7 @@
       <fieldset>
         <legend>Em que formato?</legend>
         <label class="dlg-opcao"><input type="radio" name="formato" value="exportar"><span><b>CSV (Excel)</b><small>A tabela, para abrir no Excel</small></span></label>
+        <label class="dlg-opcao"><input type="radio" name="formato" value="email"><span><b>Enviar por email</b><small>Descarrega um rascunho com o CSV anexado. Abra-o para rever e enviar.</small></span></label>
         <label class="dlg-opcao"><input type="radio" name="formato" value="imagem"><span><b>Imagem (PNG)</b><small>O gráfico, para Word, PowerPoint ou email</small></span></label>
       </fieldset>
       <div class="dlg-botoes">
@@ -2046,25 +2110,51 @@
       return b;
     }
 
-    function descarregarCsv(linhas, titulo) {
+    function textoCsv(linhas) {
       // ";" e BOM: o Excel em pt-PT abre em colunas e com acentos certos
       // Texto começado por = + @ (ou - sem número) o Excel lê como fórmula: o ' obriga a ficar texto
       const seguro = v => /^[=+@\t\r]|^-(?!\d)/.test(v) ? "'" + v : v;
       const campo = v => (v = seguro(v), /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v);
       const csv = '﻿' + paraFolha(linhas).map(l => l.map(v => campo(String(v ?? ''))).join(';')).join('\r\n');
-      // "Clientes por Zona" -> clientes-por-zona-2026-10-28.csv
-      const nome = semAcento(titulo || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'vendas';
+      return csv;
+    }
+
+    // "Clientes por Zona" -> clientes-por-zona-2026-10-28.csv
+    const nomeFicheiro = (titulo, extensao) =>
+      `${semAcento(titulo || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'vendas'}-${new Date().toISOString().slice(0, 10)}.${extensao}`;
+
+    function descarregarFicheiro(conteudo, tipo, nome) {
       const a = el('a');
-      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-      a.download = `${nome}-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.href = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+      a.download = nome;
       a.click();
-      anunciar('Ficheiro CSV descarregado.');
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);   // revogar logo pode cancelar o download
+    }
+
+    function descarregarCsv(linhas, titulo) {
+      descarregarFicheiro(textoCsv(linhas), 'text/csv;charset=utf-8', nomeFicheiro(titulo, 'csv'));
+      anunciar('Ficheiro CSV descarregado.');
+    }
+
+    const emBase64 = texto => { let s = ''; for (const b of new TextEncoder().encode(texto)) s += String.fromCharCode(b); return btoa(s); };
+
+    // O mailto não aceita anexos: este .eml com X-Unsent abre no Outlook como rascunho, já com o CSV.
+    function enviarCsvPorEmail(linhas, titulo) {
+      const limite = 'flow-' + Date.now(), csv = nomeFicheiro(titulo, 'csv');
+      const quebrar = b64 => b64.replace(/.{76}(?=.)/g, '$&\r\n');
+      const assunto = `Exportação: ${titulo || 'vendas'}`.slice(0, 40);   // uma palavra codificada tem no máximo 75 caracteres
+      const eml = ['X-Unsent: 1', 'To: ', `Subject: =?UTF-8?B?${emBase64(assunto)}?=`, 'MIME-Version: 1.0', `Content-Type: multipart/mixed; boundary="${limite}"`, '',
+        `--${limite}`, 'Content-Type: text/plain; charset="utf-8"', 'Content-Transfer-Encoding: base64', '', quebrar(emBase64('Segue em anexo o ficheiro exportado do Inforap Flow.')),
+        `--${limite}`, `Content-Type: text/csv; charset="utf-8"; name="${csv}"`, `Content-Disposition: attachment; filename="${csv}"`, 'Content-Transfer-Encoding: base64', '', quebrar(emBase64(textoCsv(linhas))),
+        `--${limite}--`, ''].join('\r\n');
+      descarregarFicheiro(eml, 'message/rfc822', nomeFicheiro(titulo, 'eml'));
+      anunciar('Rascunho de email descarregado. Abra o ficheiro para o enviar.');
     }
 
     function botaoExportar(linhas, titulo) {
       const b = botaoEl('chat-acao', 'Exportar CSV', () => descarregarCsv(linhas, titulo));
       b.dataset.exportar = '';   // o "Exportar dados" do topo usa o primeiro destes no separador aberto
+      b.dadosCsv = [linhas, titulo];   // e a opção de email usa os mesmos dados
       return b;
     }
 
@@ -3916,21 +4006,59 @@
       return `<div class="res-casc" role="img" aria-label="${rEsc(descricao)}">${passos.join('')}${coluna('Faturação líquida', f.total.liquido, 'liq', 0, Math.max(0, f.total.liquido))}</div>`;
     }
 
-    // Tabela de créditos: filtra e pagina na página, sem voltar ao servidor
-    function creditosHtml(D) {
-      const busca = semAcento(resumoEstado.credBusca.trim()), tipo = resumoEstado.credTipo;
-      const procurados = busca ? D.creditos.filter(c => semAcento(`${c.doc} ${c.cliente}`).includes(busca)) : D.creditos;
-      const lista = tipo === 'Todos' ? procurados : procurados.filter(c => c.tipo === tipo);
-      const { itens, html } = paginar(lista, 'credPag', 'data-cred-pag', 'Páginas de créditos');
-      const filtros = [['Todos', 'Todos'], ['N', TIPOS_DOC.N], ['C', TIPOS_DOC.C]].map(([id, nome]) =>
-        `<button type="button" class="res-pilula" data-cred-tipo="${id}" aria-pressed="${tipo === id}">${nome}<span>${id === 'Todos' ? procurados.length : procurados.filter(c => c.tipo === id).length}</span></button>`).join('');
-      return `<div class="res-pilulas" role="group" aria-label="Filtrar por tipo de crédito">${filtros}</div>
+    // Lista de créditos: a página, a pesquisa e os contadores vêm do servidor. O que já veio fica em credRes para o painel se poder redesenhar.
+    const CRED_POR_PAGINA = 15, DOC_ID = /^[A-Za-z0-9]{1,10}-[A-Za-z0-9]{1,10}-[0-9]{4}-[0-9]{1,12}$/;
+    const SEM_ORIGEM = 'A base de dados ainda não indica de que fatura vem este crédito.';
+    const credRes = { dados: null, erro: false, chave: null, pedidos: 0 };
+    let credEspera;
+    const docId = doc => doc.replace(' ', '-').replaceAll('/', '-');
+    const credTotal = () => { const c = credRes.dados?.contadores; return !c ? 0 : resumoEstado.credTipo === 'Todos' ? c.N + c.C : c[resumoEstado.credTipo]; };
+
+    function creditosHtml() {
+      // Outro período, distrito ou cliente: é outra lista. Depois do desenho, porque o pedido escreve no corpo da tabela.
+      const chave = [resumoEstado.periodo, resumoEstado.zona, resumoEstado.cliente].join('|');
+      if (credRes.chave !== chave) { credRes.chave = chave; credRes.dados = null; resumoEstado.credPag = 0; queueMicrotask(carregarCreditos); }
+      const aviso = credRes.erro ? `<p class="res-nota" role="alert">Não foi possível carregar os créditos. <button type="button" class="doc-link" data-cred-repetir>Tentar de novo</button>; se continuar, avise a equipa técnica.</p>` : '';
+      if (!credRes.dados) return aviso || '<p class="res-nota" role="status">A carregar os créditos…</p>';
+
+      const tipo = resumoEstado.credTipo, { itens, contadores: c } = credRes.dados, total = credTotal(), pag = resumoEstado.credPag;
+      const filtros = [['Todos', 'Todos', c.N + c.C], ['N', TIPOS_DOC.N, c.N], ['C', TIPOS_DOC.C, c.C]].map(([id, nome, n]) =>
+        `<button type="button" class="res-pilula" data-cred-tipo="${id}" aria-pressed="${tipo === id}">${nome}<span>${n}</span></button>`).join('');
+      const ultima = Math.max(0, Math.ceil(total / CRED_POR_PAGINA) - 1);
+      const navegar = total > CRED_POR_PAGINA ? `<nav class="res-pag" aria-label="Páginas de créditos"><span>${pag * CRED_POR_PAGINA + 1}–${pag * CRED_POR_PAGINA + itens.length} de ${total}</span>
+        <button type="button" class="res-btn" data-cred-pag="-1" aria-disabled="${pag === 0}">Anterior</button>
+        <button type="button" class="res-btn" data-cred-pag="1" aria-disabled="${pag >= ultima}">Seguinte</button></nav>` : '';
+      return `${aviso}<div class="res-pilulas" role="group" aria-label="Filtrar por tipo de crédito">${filtros}</div>
         ${itens.length ? `<div class="res-tab-linha res-tab-cab res-tab--cred" aria-hidden="true"><span>Documento</span><span>Data</span><span>Cliente</span><span>Valor</span><span>Documento de origem</span></div>
-          ${itens.map(c => `<div class="res-tab-linha res-tab--cred"><span class="res-tab-doc">${rEsc(c.doc)}</span><span>${rEsc(c.data)}</span><span class="res-tab-nome" title="${rEsc(c.cliente)}">${rEsc(nomeProprio(c.cliente))}</span>${rNeg(c.total)}<span title="A base de dados ainda não indica o documento de origem">—</span></div>`).join('')}`
-          : '<p class="res-nota">Nenhum crédito com estes filtros.</p>'}
-        ${html}`;
+          ${itens.map(x => { const id = docId(x.doc); return `<div class="res-tab-linha res-tab--cred" data-doc-linha="${rEsc(id)}"><span><button type="button" class="doc-link res-tab-doc" data-doc-abrir="${rEsc(id)}" aria-label="Abrir o documento ${rEsc(x.doc)}">${rEsc(x.doc)}</button></span><span>${rEsc(x.data)}</span><span class="res-tab-nome"><button type="button" class="doc-link" data-doc-cliente="${rEsc(x.clienteId)}" data-doc-nome="${rEsc(x.cliente)}" title="${rEsc(x.cliente)}" aria-label="Abrir a ficha de ${rEsc(nomeProprio(x.cliente))}">${rEsc(nomeProprio(x.cliente))}</button></span>${rNeg(x.total)}<span title="${SEM_ORIGEM}">—</span></div>`; }).join('')}`
+          : `<p class="res-nota">${resumoEstado.credBusca.trim() ? 'Nenhum crédito com esta pesquisa. Experimente só o número ou o início do nome do cliente.' : 'Nenhum crédito com estes filtros. Experimente outro tipo ou um período maior.'}</p>`}
+        ${navegar}`;
     }
-    const desenharCreditos = () => { document.getElementById('res-creditos-corpo').innerHTML = creditosHtml(resumoEstado.dados); };
+    const desenharCreditos = () => { const corpo = document.getElementById('res-creditos-corpo'); if (corpo) corpo.innerHTML = creditosHtml(); };
+
+    // Enquanto espera, a lista anterior fica no ecrã: o foco de quem usa teclado não se perde. foco: o controlo a focar no fim.
+    async function carregarCreditos(foco) {
+      const n = ++credRes.pedidos, e = resumoEstado;
+      const q = new URLSearchParams({ periodo: e.periodo, page: e.credPag + 1 });
+      if (e.credTipo !== 'Todos') q.set('tipo', e.credTipo);
+      if (e.credBusca.trim()) q.set('q', e.credBusca.trim());
+      if (e.zona) q.set('zona', e.zona);
+      if (e.cliente) q.set('cliente', e.cliente);
+      try {
+        const r = await fetch('/api/creditos?' + q);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        if (n !== credRes.pedidos) return;
+        credRes.dados = { itens: j.itens.map(c => ({ doc: c.documento, tipo: c.tipo, data: c.data, clienteId: c.clienteId, cliente: c.cliente, total: c.total })), contadores: j.contadores };
+        credRes.erro = false;
+      } catch (erro) {
+        if (n !== credRes.pedidos) return;
+        console.error('Falha a carregar os créditos:', erro);
+        credRes.erro = true;
+      }
+      desenharCreditos();
+      if (typeof foco === 'string') painelEl.querySelector(foco)?.focus();
+    }
 
     // Os indicadores vivem no topo (barraResumoHtml) e no painel lateral (desenharLateral)
     function resumoHtml(D) {
@@ -4170,14 +4298,18 @@
       //   em cada artigo de D.artigos: familia
       // Faturação — líquido em destaque e um cartão por fluxo (faturas e faturas-recibo)
       const Fat = D.faturacao;
-      const taxaDe = (f, base) => f.taxa == null ? '–' : `${rPct(f.taxa)} ${base}`;
-      const cartaoFluxo = (nome, nomeCredito, f, base) => `<div class="flow-kpi"><span>${svgIc('faturacao', 15)}${nome}</span><strong>${rEur(f.bruto)}</strong><span>Bruto, em ${rGrupos(f.documentos)} ${f.documentos === 1 ? 'documento' : 'documentos'}</span>
-        <dl class="res-fluxo"><div><dt>${nomeCredito}</dt><dd class="res-neg">${svgIc('descida', 13)}${rEur(f.creditos)}</dd></div>
-          <div><dt>Taxa de crédito</dt><dd>${taxaDe(f, base)}</dd></div><div><dt>Líquido</dt><dd>${rEur(f.liquido)}</dd></div></dl></div>`;
-      const htmlTipos = Fat ? `<div class="flow-kpis-grelha">
-        <div class="flow-kpi flow-kpi--destaque"><span>${svgIc('euro', 15)}Faturação líquida</span><strong>${rEur(Fat.total.liquido)}</strong><span>Bruto ${rEur(Fat.total.bruto)} · Créditos ${rEur(Fat.total.creditos)} (${taxaDe(Fat.total, 'do bruto')})</span></div>
-        ${cartaoFluxo(TIPOS_DOC.F, TIPOS_DOC.N, Fat.fat, 'do bruto de faturas')}
-        ${cartaoFluxo(TIPOS_DOC.V, TIPOS_DOC.C, Fat.rec, 'do bruto de faturas-recibo')}
+      const taxaDe = f => f.taxa == null ? '–' : rPct(f.taxa);
+      // Rótulos curtos para caber tudo numa linha; o nome completo fica na dica
+      const fila = (nome, valor, dica, cls = '') => `<div><dt title="${dica}">${nome}</dt><dd class="${cls}">${valor}</dd></div>`;
+      const cartaoFluxo = (nome, nomeCredito, dicaCredito, f, base) => `<div class="flow-kpi"><span>${svgIc('faturacao', 15)}${nome}</span><strong>${rEur(f.bruto)}</strong><span>Bruto · ${rGrupos(f.documentos)} doc.</span>
+        <dl class="res-fluxo">${fila(nomeCredito, rEur(f.creditos), dicaCredito, 'res-neg')}${fila('Taxa de crédito', taxaDe(f), 'Em percentagem ' + base)}${fila('Líquido', rEur(f.liquido), 'Bruto menos créditos')}</dl></div>`;
+      const htmlTipos = Fat ? `<div class="flow-kpis-grelha flow-kpis-grelha--fat">
+        <div class="flow-kpi flow-kpi--destaque"><span>${svgIc('euro', 15)}Faturação líquida</span><strong>${rEur(Fat.total.liquido)}</strong><span>Sem IVA, após créditos</span>
+          <dl class="res-fluxo">${fila('Bruto', rEur(Fat.total.bruto), 'Faturas e faturas-recibo')}${fila('Créditos', rEur(Fat.total.creditos), 'Notas de crédito e créditos')}${fila('Taxa de crédito', taxaDe(Fat.total), 'Em percentagem do bruto')}</dl></div>
+        ${cartaoFluxo(TIPOS_DOC.F, 'Notas de crédito', TIPOS_DOC.N, Fat.fat, 'do bruto de faturas')}
+        ${cartaoFluxo(TIPOS_DOC.V, 'Créditos', TIPOS_DOC.C, Fat.rec, 'do bruto de faturas-recibo')}
+        <div class="flow-kpi"><span>${svgIc('faturacao', 15)}Total de documentos</span><strong>${rGrupos(Fat.total.documentos + Fat.total.docCreditos)}</strong><span>No período escolhido</span>
+          <dl class="res-fluxo">${fila('Vendas (F + V)', rGrupos(Fat.total.documentos), 'Faturas e faturas-recibo')}${fila('Créditos (N + C)', rGrupos(Fat.total.docCreditos), 'Notas de crédito e créditos')}</dl></div>
       </div>` : '';
 
       // Faturação — valor por mês, cascata e tabela de créditos
@@ -4189,20 +4321,10 @@
         <div class="res-cab"><h3>Do bruto ao líquido</h3><span class="res-sub">Valores em euros, sem IVA</span></div>${cascataHtml(Fat)}
       </section>` : '';
       const htmlCreditos = D.creditos ? `<section class="res-cartao res-cartao--inteiro res-tabela" data-bloco="creditos">
-        <div class="res-cab"><h3>Notas de crédito e créditos</h3><span class="res-sub">${D.creditos.length >= 5000 ? 'Só os 5000 mais recentes' : 'Mais recentes primeiro'}</span></div>
+        <div class="res-cab"><h3>Notas de crédito e créditos</h3><span class="res-sub">Mais recentes primeiro</span></div>
         <div class="res-cred-busca"><label class="so-leitor" for="res-cred-busca">Procurar por documento ou cliente</label><input id="res-cred-busca" maxlength="100" autocomplete="off" placeholder="Procurar documento ou cliente…" value="${rEsc(resumoEstado.credBusca)}"></div>
-        <div id="res-creditos-corpo">${creditosHtml(D)}</div>
+        <div id="res-creditos-corpo">${creditosHtml()}</div>
       </section>` : '';
-
-      // Faturação — documentos emitidos por mês (barras)
-      const dm = D.docsPorMes || [], maxD = Math.max(1, ...dm.map(x => x.n));
-      const colsD = `style="grid-template-columns:repeat(${dm.length},minmax(0,1fr))"`;
-      const htmlDocsMes = `<section class="res-cartao res-cartao--inteiro" data-bloco="docs-mes">
-        <div class="res-cab"><h3>Documentos emitidos por mês</h3>${dm.length ? '<span class="res-sub">Passe o rato para ver o valor</span>' : ''}</div>
-        ${dm.length ? `<div class="res-barras" ${colsD}>${dm.map(x => `<div title="${MESES[x.m - 1]} ${x.a || ''}: ${rGrupos(x.n)} documentos"><span>${rGrupos(x.n)}</span><i class="${x.parcial ? 'res-barra-parcial' : ''}" style="height:${(x.n / maxD * 100).toFixed(1)}%"></i></div>`).join('')}</div>
-          <div class="res-barras-rot" aria-hidden="true" ${colsD}>${dm.map(x => `<span>${MESES[x.m - 1].slice(0, 3).toLowerCase()}${x.parcial ? '*' : ''}</span>`).join('')}</div>`
-          : semDados('O número de documentos de cada mês aparece aqui.')}
-      </section>`;
 
       // Faturação — últimos documentos
       const ud = D.ultimosDocs || [];
@@ -4259,7 +4381,7 @@
       }
 
       // Cada linha da vista: um ou mais cartões lado a lado
-      const porSecao = { geral: [htmlCli + htmlAten], alertas: [alertasHtml(D)], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlFatMes, htmlDocsMes, htmlCascata, htmlCreditos, htmlUltimos, htmlAcum], artigos: [htmlArt + htmlArtLado],
+      const porSecao = { geral: [htmlCli + htmlAten], alertas: [alertasHtml(D)], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlFatMes, htmlCascata, htmlCreditos, htmlUltimos, htmlAcum], artigos: [htmlArt + htmlArtLado],
                          zonas: [htmlLoc, htmlZonaDet, htmlLocTab + htmlLocLado], previsoes: [htmlPrevKpis, htmlPrev, htmlPrevMeses] }[secao].filter(Boolean);
       return porSecao.length || secaoComSerie() ? porSecao.map(h => `<div class="res-grelha">${h}</div>`).join('')
         : `<p class="res-nota">Sem dados para a vista ${rEsc(nomeSecao())} com estes filtros.</p>`;
@@ -4479,13 +4601,19 @@
       raiz.addEventListener('input', e => {
         if (e.target.id !== 'res-cred-busca') return;
         Object.assign(resumoEstado, { credBusca: e.target.value, credPag: 0 });
-        desenharCreditos();
+        // Espera que pare de escrever: cada letra seria uma consulta à BD
+        clearTimeout(credEspera);
+        credEspera = setTimeout(carregarCreditos, 250);
       });
       raiz.addEventListener('click', e => {
-        const b = e.target.closest('button'); if (!b) return;
+        const b = e.target.closest('button');
+        if (!b) { const linha = e.target.closest('[data-doc-linha]'); if (linha) abrirDoc(linha.dataset.docLinha); return; }
         const d = b.dataset;
-        if (d.credPag) { resumoEstado.credPag += +d.credPag; desenharCreditos(); painelEl.querySelector(`[data-cred-pag="${d.credPag}"]`)?.focus(); return; }
-        if (d.credTipo) { Object.assign(resumoEstado, { credTipo: d.credTipo, credPag: 0 }); desenharCreditos(); painelEl.querySelector(`[data-cred-tipo="${d.credTipo}"]`)?.focus(); return; }
+        if (d.docAbrir) { abrirDoc(d.docAbrir); return; }
+        if (d.docCliente) { abrirFicha(d.docCliente, d.docNome); return; }
+        if ('credRepetir' in d) { credRes.erro = false; carregarCreditos(); return; }
+        if (d.credPag) { if (b.getAttribute('aria-disabled') === 'true') return; resumoEstado.credPag += +d.credPag; carregarCreditos(`[data-cred-pag="${d.credPag}"]`); return; }
+        if (d.credTipo) { Object.assign(resumoEstado, { credTipo: d.credTipo, credPag: 0 }); carregarCreditos(`[data-cred-tipo="${d.credTipo}"]`); return; }
         if (d.menu) { resumoEstado.menu = resumoEstado.menu === d.menu ? null : d.menu; redesenhar(); painelEl.querySelector(`[data-menu="${d.menu}"]`)?.focus(); return; }
         if ('inicio' in d) { boasVindasAberta = true; desenharPainel(); painelEl.querySelector('input')?.focus(); return; }
         if (d.verSecao) { secao = d.verSecao; verInicio(); return; }
@@ -4553,7 +4681,8 @@
       dlgFichaCorpo.textContent = 'A carregar a ficha…';
       dlgFicha.showModal();
       try {
-        const r = await fetch('/ficha?' + new URLSearchParams({ cliente: id }));
+        const r = await fetch('/api/clientes/' + encodeURIComponent(id));
+        if (r.status === 404) { if (n === pedidosFicha) dlgFichaCorpo.textContent = 'Este cliente não tem ficha ou não pertence à sua carteira.'; return; }
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const ls = (await r.text()).split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
         if (n !== pedidosFicha) return;
@@ -4573,8 +4702,122 @@
       }
     }
     dlgFicha.querySelector('form').addEventListener('submit', e => {
-      if (e.submitter?.value === 'resumo') pedirResumo(null, fichaAberta);
+      if (e.submitter?.value === 'resumo') { if (dlgDoc.open) dlgDoc.close(); pedirResumo(null, fichaAberta); }
     });
+
+    // Painel do documento. A navegação pela origem empilha; as setas passam ao lado e limpam a pilha.
+    const dlgDoc = document.getElementById('dlg-doc'), dlgDocCorpo = document.getElementById('dlg-doc-corpo');
+    const docNav = { atual: null, pilha: [], pedidos: 0 };
+    const docAbreviado = id => id.replace('-', ' ').replaceAll('-', '/');
+
+    function docHtml(d, urlPdf) {
+      const t = d.totais, nome = nomeProprio(d.cliente.nome), url = `mailto:?subject=${encodeURIComponent('Documento ' + d.documento)}`;
+      const origem = d.origem
+        ? `<button type="button" class="doc-link" data-doc-origem="${rEsc(docId(d.origem))}">${rEsc(d.origem)}</button>`
+        : `<span title="${SEM_ORIGEM}">Sem referência</span>`;
+      const previa = urlPdf ? `<iframe class="doc-pdf" src="${rEsc(urlPdf)}" title="PDF do documento ${rEsc(d.documento)}"></iframe>` : `
+        <p class="doc-aviso" role="note"><strong>Pré-visualização, não é o documento fiscal.</strong> Gerada a partir dos dados. O documento oficial é o PDF emitido pela aplicação de faturação.</p>
+        <div class="doc-previa">
+          <h3>${rEsc(d.documento)} · ${rEsc(d.data)}</h3>
+          <p class="res-nota">Cliente: ${rEsc(nome)}</p>
+          <table class="doc-tabela"><caption class="so-leitor">Linhas do documento</caption>
+            <thead><tr><th scope="col">Artigo</th><th scope="col">Qtd.</th><th scope="col">Líquido</th><th scope="col">IVA</th></tr></thead>
+            <tbody>${d.linhas.map(l => `<tr><td>${rEsc(l.artigo)} <span class="res-nota">${rEsc(l.artigoId)}</span></td><td>${rDec(l.quantidade, 2)}</td><td>${rEur2(l.liquido)}</td><td>${rEur2(l.iva)}</td></tr>`).join('')}</tbody>
+            <tfoot>
+              <tr><th scope="row" colspan="3">Ilíquido</th><td>${rEur2(t.iliquido)}</td></tr>
+              <tr><th scope="row" colspan="3">Desconto</th><td>${rEur2(t.desconto)}</td></tr>
+              <tr><th scope="row" colspan="3">Líquido</th><td>${rEur2(t.liquido)}</td></tr>
+              <tr><th scope="row" colspan="3">IVA</th><td>${rEur2(t.iva)}</td></tr>
+              <tr><th scope="row" colspan="3">Total</th><td>${rEur2(t.total)}</td></tr>
+            </tfoot>
+          </table>
+          <p class="res-nota">ATCUD: ${rEsc(d.atcud || 'indisponível nestes dados')} · QR: ${d.qr ? 'disponível' : 'só no documento emitido'}</p>
+        </div>`;
+      return `<dl class="doc-resumo">
+          <dt>Cliente</dt><dd><button type="button" class="doc-link" data-doc-cliente="${rEsc(d.cliente.id)}" data-doc-nome="${rEsc(d.cliente.nome)}">${rEsc(nome)}</button></dd>
+          <dt>Data</dt><dd>${rEsc(d.data)}</dd>
+          <dt>Valor</dt><dd>${rEur2(t.liquido)}</dd>
+          <dt>Origem</dt><dd>${origem}</dd>
+        </dl>
+        ${d.origem ? '' : `<p class="res-nota">${SEM_ORIGEM} <button type="button" class="doc-link" data-doc-associar>Associar fatura</button> <span id="doc-associar-estado" role="status"></span></p>`}
+        <div class="doc-acoes">
+          ${urlPdf ? `<a class="res-btn" href="${rEsc(urlPdf)}" download>Descarregar PDF</a>` : `<button type="button" class="res-btn" aria-disabled="true" title="O PDF emitido ainda não está disponível aqui">Descarregar PDF</button>`}
+          <a class="res-btn" href="${url}">Enviar por email</a>
+          <button type="button" class="res-btn" data-doc-copiar="${rEsc(d.documento)}">Copiar nº</button>
+          <span id="doc-copiar-estado" class="res-nota" role="status"></span>
+        </div>
+        ${previa}`;
+    }
+
+    async function mostrarDoc(id) {
+      const n = ++docNav.pedidos, url = '/api/documentos/' + encodeURIComponent(id);
+      docNav.atual = id;
+      history.replaceState(null, '', '#' + id);
+      document.getElementById('dlg-doc-titulo').textContent = docAbreviado(id);
+      document.getElementById('dlg-doc-voltar').hidden = !docNav.pilha.length;
+      painelEl.querySelectorAll('[data-doc-linha]').forEach(l => l.toggleAttribute('aria-current', false));
+      painelEl.querySelector(`[data-doc-linha="${CSS.escape(id)}"]`)?.setAttribute('aria-current', 'true');
+      dlgDocCorpo.textContent = 'A carregar o documento…';
+      if (!dlgDoc.open) dlgDoc.showModal();
+      try {
+        const [r, pdf] = await Promise.all([fetch(url), fetch(url + '/pdf')]);
+        if (n !== docNav.pedidos) return;
+        if (r.status === 404) { dlgDocCorpo.textContent = 'Este documento não existe ou não pertence à sua carteira. Confirme o número na lista.'; return; }
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        if (n !== docNav.pedidos) return;
+        document.getElementById('dlg-doc-titulo').textContent = d.documento;
+        dlgDocCorpo.innerHTML = docHtml(d, pdf.ok ? url + '/pdf' : null);
+      } catch (erro) {
+        if (n !== docNav.pedidos) return;
+        console.error('Falha a abrir o documento:', erro);
+        dlgDocCorpo.innerHTML = '<p role="alert">Não foi possível abrir o documento. <button type="button" class="doc-link" data-doc-repetir>Tentar de novo</button>; se continuar, avise a equipa técnica.</p>';
+      }
+    }
+    function abrirDoc(id) { docNav.pilha = []; mostrarDoc(id); }
+
+    // Setas: o documento ao lado na lista, a passar de página quando chega à ponta. Aberto por link direto, não há lista onde andar.
+    async function navegarDoc(passo) {
+      const itens = credRes.dados?.itens || [], i = itens.findIndex(c => docId(c.doc) === docNav.atual);
+      if (i < 0) return;
+      if (itens[i + passo]) { abrirDoc(docId(itens[i + passo].doc)); return; }
+      const pag = resumoEstado.credPag + passo;
+      if (pag < 0 || pag * CRED_POR_PAGINA >= credTotal()) return;
+      resumoEstado.credPag = pag;
+      await carregarCreditos();
+      const nova = credRes.dados?.itens || [], alvo = passo > 0 ? nova[0] : nova[nova.length - 1];
+      if (alvo) abrirDoc(docId(alvo.doc));
+    }
+
+    dlgDoc.addEventListener('keydown', e => {
+      if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.target.closest('input, textarea, select')) { e.preventDefault(); navegarDoc(e.key === 'ArrowDown' ? 1 : -1); }
+    });
+    dlgDoc.addEventListener('click', async e => {
+      const b = e.target.closest('button'); if (!b) return;
+      const d = b.dataset;
+      if (b.id === 'dlg-doc-fechar') { dlgDoc.close(); return; }
+      if (b.id === 'dlg-doc-voltar') { mostrarDoc(docNav.pilha.pop()); return; }
+      if ('docRepetir' in d) { mostrarDoc(docNav.atual); return; }
+      if (d.docCliente) { abrirFicha(d.docCliente, d.docNome); return; }
+      if (d.docOrigem) { docNav.pilha.push(docNav.atual); mostrarDoc(d.docOrigem); return; }
+      if ('docAssociar' in d) { document.getElementById('doc-associar-estado').textContent = 'Simulação: nenhuma associação foi gravada.'; return; }
+      if (d.docCopiar) {
+        const estado = document.getElementById('doc-copiar-estado');
+        // A área de transferência só funciona em HTTPS ou localhost
+        try { await navigator.clipboard.writeText(d.docCopiar); estado.textContent = 'Número copiado.'; }
+        catch { estado.textContent = 'Não foi possível copiar. Selecione o número no título.'; }
+      }
+    });
+    dlgDoc.addEventListener('close', () => {
+      const id = docNav.atual;
+      docNav.atual = null; docNav.pedidos++;
+      history.replaceState(null, '', location.pathname + location.search);
+      painelEl.querySelectorAll('[aria-current][data-doc-linha]').forEach(l => l.removeAttribute('aria-current'));
+      painelEl.querySelector(`[data-doc-abrir="${CSS.escape(id || '')}"]`)?.focus();
+    });
+    const abrirDoHash = () => { const id = location.hash.slice(1); if (DOC_ID.test(id) && id !== docNav.atual) abrirDoc(id); };
+    window.addEventListener('hashchange', abrirDoHash);
+    abrirDoHash();
 
     // Tooltip da previsão: rato e teclado
     function ligarPrevisao(raiz, P) {
@@ -4745,46 +4988,49 @@
     }
 
     // O resultado aberto, ou o Resumo (painel inicial). Voltar faz-se pela breadcrumb; outras respostas reabrem pelo cartão na conversa.
-    // Ecrã de boas-vindas (ocupa a janela toda): três formas de começar, ou escrever logo a pergunta
+    // Ecrã de entrada (ocupa a janela toda): à esquerda a pergunta, à direita como o Flow responde
     function folhaBoasVindas() {
       const sair = acao => () => { boasVindasAberta = false; secao = 'geral'; vistaResumo = true; abaAtiva = null; desenharPainel(); acao?.(); };
-      const D = resumoEstado.dados, pz = D && !D.erro && D.locaisDesce;
-      const alerta = pz && D.alertas.find(a => a.tipo === 'local');
-      const raiz = el('div', 'flow-ini');
-      const topo = el('div'), av = el('div', 'flow-ini-avatar');
-      av.setAttribute('aria-hidden', 'true');
-      av.append(lancador.querySelector('svg').cloneNode(true));
-      topo.append(av, el('h1', '', `Olá${nomeUtilizador ? ', ' + nomeUtilizador.split(/\s+/)[0] : ''}. Vamos analisar dados?`),
-        el('p', '', 'Sou o Flow. Escolha por onde começar' + (D && D.ate ? ` — os dados estão atualizados até ${dataCurta(D.ate)}.` : '.')));
-      const opcao = (ic, titulo, texto, acao, principal) => {
-        const b = botaoEl('flow-ini-opcao' + (principal ? ' flow-ini-opcao--principal' : ''), '', sair(acao));
-        const icEl = el('span', 'flow-ini-ic');
-        icEl.innerHTML = svgIc(ic, 19);
-        b.append(icEl, el('b', '', titulo), el('small', '', texto));
-        return b;
-      };
-      const opcoes = el('div', 'flow-ini-opcoes');
-      opcoes.append(
-        opcao('resumo', 'Vamos analisar dados', 'Abre o painel de vendas com gráficos e indicadores.', () => { modoInicio = 'dados'; desenharConversa(); painelEl.querySelector('[data-menu]')?.focus(); }, true),
-        opcao('conversa', 'Vamos conversar', 'Pergunte por palavras suas, como faria a um colega.', () => { modoInicio = 'conversa'; desenharConversa(); verConversa(true); }),
-        opcao('aviso', 'Ver o que precisa de atenção', pz ? `${nomeProprio(pz.nome)} faturou menos ${rDec(Math.abs(pz.delta), 1)}% do que em ${D.anoAnt}.` : 'Os pontos a acompanhar neste período.',
-          () => { if (alerta) perguntar(alerta.pergunta); else painelEl.querySelector('.res-cartao--atencao')?.scrollIntoView(); }));
+      const D = resumoEstado.dados;
+      const raiz = el('div', 'flow-ini'), corpo = el('div', 'flow-ini-corpo'), esq = el('div', 'flow-ini-esq');
+      const marca = el('div', 'flow-ini-marca'), avatar = el('img');
+      Object.assign(avatar, { src: '/imagens/avatar-flow.png', alt: 'Flow', width: 98, height: 72 });   // o logo já traz o nome
+      marca.append(avatar);
       const escrever = el('form', 'flow-ini-escrever'), caixa = el('div', 'flow-ini-campo');
       const entrada = el('input');
-      Object.assign(entrada, { maxLength: 500, autocomplete: 'off', placeholder: 'Ou escreva a sua pergunta…' });
+      Object.assign(entrada, { maxLength: 500, autocomplete: 'off', placeholder: 'Escreva a sua pergunta…' });
       entrada.setAttribute('aria-label', 'Pergunta');
-      const enviar = el('button', '', '↑');
-      enviar.setAttribute('aria-label', 'Enviar pergunta');
-      caixa.append(entrada, enviar);
+      caixa.append(entrada, el('button', '', 'Perguntar'));
       escrever.addEventListener('submit', e => {
         e.preventDefault();
         const texto = entrada.value.replace(/\s+/g, ' ').trim();
         if (texto) sair(() => perguntar(texto))();
       });
       const chips = el('div', 'flow-ini-chips');
-      [TEMAS[1].perguntas[0], TEMAS[0].perguntas[1], TEMAS[1].perguntas[1]].forEach(q => chips.append(botaoEl('', q, sair(() => perguntar(q)))));
-      escrever.append(caixa, chips, el('small', 'flow-ini-nota', 'Só leitura. O assistente não altera a base de dados.'));
-      raiz.append(topo, opcoes, escrever);
+      [['Vendas mês a mês', TEMAS[1].perguntas[0]], ['Os 5 melhores clientes', TEMAS[0].perguntas[1]], ['Faturação por zona', TEMAS[1].perguntas[1]]].forEach(([rotulo, q]) => {
+        const b = botaoEl('', rotulo, sair(() => perguntar(q)));
+        b.title = q;
+        chips.append(b);
+      });
+      escrever.append(caixa, chips);
+      esq.append(el('h1', '', `Olá${nomeUtilizador ? ', ' + nomeUtilizador.split(/\s+/)[0] : ''}.`), el('p', '', 'Pergunte por palavras suas. A resposta abre no painel principal.'), escrever);
+
+      const m = D && D.ate ? D.ate.match(/^(\d{2})-(\d{2})/) : null;
+      const como = el('aside', 'flow-ini-como');
+      como.innerHTML = `<h2>Como o Flow responde</h2><ol>${[
+        ['Escreva a pergunta', 'Como a uma colega, sem termos técnicos. Ou escolha um dos exemplos.'],
+        ['O Flow consulta as vendas', m ? `Os dados estão atualizados até ${+m[1]} de ${MESES[m[2] - 1].toLowerCase()}.` : 'Só usa os dados de vendas da empresa.'],
+        ['A resposta abre no painel principal', 'Gráficos, quadros e indicadores ficam ali, prontos a explorar.'],
+      ].map(([titulo, texto], i) => `<li><span aria-hidden="true">${i + 1}</span><b>${titulo}</b><small>${texto}</small></li>`).join('')}</ol>`;
+      corpo.append(marca, esq, como);
+
+      const rodape = el('div', 'flow-ini-rodape'), ligacoes = el('nav');
+      ligacoes.setAttribute('aria-label', 'Outras opções');
+      ligacoes.append(
+        botaoEl('', 'Ir direto ao painel de vendas', sair(() => { modoInicio = 'dados'; desenharConversa(); painelEl.querySelector('[data-menu]')?.focus(); })),
+        botaoEl('', 'Ver alertas', sair(() => { modoInicio = 'dados'; secao = 'alertas'; verInicio(); })));
+      rodape.append(el('span', '', 'Só leitura. O assistente não altera a base de dados.'), ligacoes);
+      raiz.append(corpo, rodape);
       return raiz;
     }
 
@@ -4858,7 +5104,7 @@
     topoExportar.addEventListener('click', () => {
       // As duas opções sempre à vista; a que o separador aberto não tem fica desativada e escolhe-se a primeira que existe
       const opcoes = [...dlgExportar.querySelectorAll('input[name="formato"]')];
-      opcoes.forEach(o => { o.disabled = !painelEl.querySelector(`[data-${o.value}]`); o.checked = false; });
+      opcoes.forEach(o => { o.disabled = !painelEl.querySelector(`[data-${o.value === 'email' ? 'exportar' : o.value}]`); o.checked = false; });
       const primeira = opcoes.find(o => !o.disabled);
       if (primeira) primeira.checked = true;
       // No painel escolhe-se o que entra no relatório; numa resposta aberta exporta-se essa resposta
@@ -4888,9 +5134,9 @@
     const descreverFiltros = D => [`Período: ${nomePeriodo(resumoEstado.periodo).toLowerCase()}`,
       resumoEstado.zona ? `Distrito: ${nomeDistrito(resumoEstado.zona)}` : 'Todos os distritos',
       resumoEstado.cliente ? `Cliente: ${D.cliente || resumoEstado.cliente}` : 'Todos os clientes'];
-    // As secções só valem para o CSV; sem nenhuma marcada não há ficheiro para gerar
+    // As secções só valem para o CSV, descarregado ou por email; sem nenhuma marcada não há ficheiro para gerar
     function atualizarExportar() {
-      const f = new FormData(dlgExportar.querySelector('form')).get('formato'), comSeccoes = !!dadosDoRelatorio() && f === 'exportar';
+      const f = new FormData(dlgExportar.querySelector('form')).get('formato'), comSeccoes = !!dadosDoRelatorio() && (f === 'exportar' || f === 'email');
       listaSeccoes.closest('fieldset').disabled = !comSeccoes;
       document.getElementById('dlg-exportar-ok').disabled = !f || (comSeccoes && !listaSeccoes.querySelector('input:checked'));
     }
@@ -4904,11 +5150,12 @@
     dlgExportar.querySelector('form').addEventListener('submit', e => {
       if (e.submitter?.value !== 'exportar') return;   // "Fechar": o method="dialog" fecha sozinho
       const dados = new FormData(e.target), f = dados.get('formato'), D = dadosDoRelatorio();
-      if (f === 'exportar' && D) {
+      if ((f === 'exportar' || f === 'email') && D) {
         const marcadas = new Set(dados.getAll('seccao')), [cabecalho, ...resto] = linhasResumo(D);
-        descarregarCsv([cabecalho, ...resto.filter(l => marcadas.has(l[0]))], ['relatorio vendas', nomePeriodo(resumoEstado.periodo), resumoEstado.zona && nomeDistrito(resumoEstado.zona), resumoEstado.cliente && (D.cliente || resumoEstado.cliente)].filter(Boolean).join(' '));
+        (f === 'email' ? enviarCsvPorEmail : descarregarCsv)([cabecalho, ...resto.filter(l => marcadas.has(l[0]))], ['relatório vendas', nomePeriodo(resumoEstado.periodo), resumoEstado.zona && nomeDistrito(resumoEstado.zona), resumoEstado.cliente && (D.cliente || resumoEstado.cliente)].filter(Boolean).join(' '));
         return;
       }
+      if (f === 'email') { const b = painelEl.querySelector('[data-exportar]'); if (b) enviarCsvPorEmail(...b.dadosCsv); return; }
       if (f) painelEl.querySelector(`[data-${f}]`)?.click();
     });
     // o painel é redesenhado em vários sítios: observar evita esquecer algum

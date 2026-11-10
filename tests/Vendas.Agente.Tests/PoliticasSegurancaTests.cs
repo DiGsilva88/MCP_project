@@ -27,6 +27,8 @@ public class PoliticasSegurancaTests
     [Theory]
     [InlineData("consultar_documentos", true)]
     [InlineData("consultar_carteira", true)]
+    [InlineData("consultar_creditos", true)]
+    [InlineData("consultar_documento", true)]
     [InlineData("consultar_vendas", false)]
     public void SoDoPainel_SoAsDeJson(string ferramenta, bool esperado) =>
         Assert.Equal(esperado, PoliticasSeguranca.SoDoPainel(ferramenta));

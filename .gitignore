@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 
 # Claude Code agent skills (not part of the project)
 .agents/
+pacote/
+. c l a u d e / s e t t i n g s . l o c a l . j s o n  
+ 

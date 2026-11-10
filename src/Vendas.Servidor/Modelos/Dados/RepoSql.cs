@@ -8,7 +8,7 @@ namespace Vendas.Servidor.Modelos.Dados;
 // "ligação" é a connection string que vem da variável de ambiente VENDAS_SQL
 public sealed class RepoSql(string ligacao) : IVendasRepo
 {
-    // shortcut: a tabela de créditos do painel traz no máximo 5000 (a página avisa); 2026 tem cerca de 2700. Paginar no SQL se não chegar.
+    // shortcut: a exportação de créditos do painel leva no máximo 5000; a lista já pagina no SQL. Aumentar se a exportação ficar curta.
     private const int MaxCreditos = 5000;
 
     public async Task<IReadOnlyList<ContagemCliente>> ContarAsync(
@@ -114,6 +114,35 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         await Task.WhenAll(tipos, meses, ultimos, creditos);
 
         return new ResumoDocumentos(tipos.Result, meses.Result, ultimos.Result, creditos.Result);
+    }
+
+    public async Task<PaginaCreditos> ListarCreditosAsync(
+        DateOnly desde, DateOnly ate, string? tipo, string? pesquisa, int deslocamento, int limite, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default)
+    {
+        var (sqlPagina, parametrosPagina) = ConsultaVendas.PaginaCreditos(desde, ate, tipo, pesquisa, deslocamento, cliente, filtros);
+        var (sqlContagem, parametrosContagem) = ConsultaVendas.ContagemCreditos(desde, ate, pesquisa, cliente, filtros);
+
+        var itens = LerAsync(sqlPagina, parametrosPagina, limite,
+            leitor => new CreditoListado(leitor.GetString(0), leitor.GetString(1), Data(leitor, 2)!.Value, leitor.GetString(3), leitor.GetString(4), leitor.GetDecimal(5)),
+            cancellationToken);
+        var contagem = LerAsync(sqlContagem, parametrosContagem, 0, leitor => (N: leitor.GetInt32(0), C: leitor.GetInt32(1)), cancellationToken);
+        await Task.WhenAll(itens, contagem);
+
+        return new PaginaCreditos(itens.Result, contagem.Result[0].N, contagem.Result[0].C);
+    }
+
+    public async Task<DetalheDocumento?> DetalheDocumentoAsync(
+        string documento, string tipo, int ano, IReadOnlyDictionary<Campo, string>? filtros = null,
+        CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaVendas.DetalheDocumento(documento, tipo, ano, filtros);
+        var linhas = await LerAsync(sql, parametros, 0, leitor => (
+            Cabecalho: new DetalheDocumento(leitor.GetString(0), leitor.GetString(1), Data(leitor, 2)!.Value, leitor.GetString(3), leitor.GetString(4), []),
+            Linha: new LinhaDocumento(leitor.GetString(5), leitor.GetString(6), leitor.GetDecimal(7), leitor.GetDecimal(8), leitor.GetDecimal(9), leitor.GetDecimal(10), leitor.GetDecimal(11))),
+            cancellationToken);
+
+        return linhas.Count == 0 ? null : linhas[0].Cabecalho with { Linhas = linhas.Select(l => l.Linha).ToList() };
     }
 
     public async Task<ResumoCarteira> ResumoCarteiraAsync(

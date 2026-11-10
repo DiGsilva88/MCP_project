@@ -24,6 +24,8 @@
     <ItemGroup>
   <!-- O ficheiro passa a viajar dentro do .exe -->
   <EmbeddedResource Include="Pagina\pagina-chat.html" />
+  <!-- Avatar do ecrã de entrada: servido em /imagens/<ficheiro> pelo ModoWebAsync -->
+  <EmbeddedResource Include="Pagina\avatar-flow.png" LogicalName="imagens/avatar-flow.png" />
     </ItemGroup>
 
   <ItemGroup>

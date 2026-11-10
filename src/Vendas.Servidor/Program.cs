@@ -14,22 +14,30 @@ builder.Logging.AddConsole(opcoes =>
 {
     opcoes.LogToStandardErrorThreshold = LogLevel.Trace;
 });
-// Repositório de vendas: liga sempre ao SQL Server via RepoSql.
-// Requer a variável de ambiente VENDAS_SQL (connection string) — não há fallback em memória.
-var ligacao = new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("VENDAS_SQL")
-    ?? throw new InvalidOperationException(
-        "VENDAS_SQL não definida. Defina a ligação ao SQL antes de arrancar o servidor"));
+// VENDAS_DEMO=1: dados fictícios, para ver o painel sem aceder à produção. Só com a variável, nunca como recurso de falha.
+if (Environment.GetEnvironmentVariable("VENDAS_DEMO") == "1")
+{
+    builder.Services.AddSingleton<IVendasRepo, RepoDemo>();
+}
+else
+{
+    // Repositório de vendas: liga ao SQL Server via RepoSql.
+    // Requer a variável de ambiente VENDAS_SQL (connection string) — não há fallback em memória.
+    var ligacao = new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("VENDAS_SQL")
+        ?? throw new InvalidOperationException(
+            "VENDAS_SQL não definida. Defina a ligação ao SQL antes de arrancar o servidor"));
 
-// A password pode vir à parte, encriptada com DPAPI (só este utilizador Windows a lê).
-// Ficheiro criado com: Read-Host -AsSecureString | ConvertFrom-SecureString | Set-Content <ficheiro>
-var ficheiroPwd = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Vendas", "sql.pwd");
-if (OperatingSystem.IsWindows() && File.Exists(ficheiroPwd))
-    ligacao.Password = Encoding.Unicode.GetString(ProtectedData.Unprotect(
+    // A password pode vir à parte, encriptada com DPAPI (só este utilizador Windows a lê).
+    // Ficheiro criado com: Read-Host -AsSecureString | ConvertFrom-SecureString | Set-Content <ficheiro>
+    var ficheiroPwd = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Vendas", "sql.pwd");
+    if (OperatingSystem.IsWindows() && File.Exists(ficheiroPwd))
+        ligacao.Password = Encoding.Unicode.GetString(ProtectedData.Unprotect(
 
-        Convert.FromHexString(File.ReadAllText(ficheiroPwd).Trim()), null, DataProtectionScope.CurrentUser));
+            Convert.FromHexString(File.ReadAllText(ficheiroPwd).Trim()), null, DataProtectionScope.CurrentUser));
 
-builder.Services.AddSingleton<IVendasRepo>(_ => new RepoSql(ligacao.ConnectionString));
+    builder.Services.AddSingleton<IVendasRepo>(_ => new RepoSql(ligacao.ConnectionString));
+}
 
 builder.Services
     .AddMcpServer()

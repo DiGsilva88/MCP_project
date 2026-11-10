@@ -197,7 +197,7 @@ public static class PoliticasSeguranca
     public static bool PodeIrParaCloud(string ferramenta) => ferramenta != "consultar_sensivel";
 
     // Devolvem JSON para os cartões do painel: o modelo não precisa delas e o esquema ocupava lugar no prompt.
-    public static bool SoDoPainel(string ferramenta) => ferramenta is "consultar_documentos" or "consultar_carteira";
+    public static bool SoDoPainel(string ferramenta) => ferramenta is "consultar_documentos" or "consultar_carteira" or "consultar_creditos" or "consultar_documento";
 
     // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
     public static string TextoDoResultado(object? resultado) =>

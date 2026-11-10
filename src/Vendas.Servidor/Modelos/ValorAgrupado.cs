@@ -26,6 +26,14 @@ public sealed record ResumoDocumentos(
     IReadOnlyList<DocumentosPorTipo> Tipos, IReadOnlyList<DocumentosPorMes> Meses, IReadOnlyList<DocumentoEmitido> Ultimos,
     IReadOnlyList<DocumentoEmitido> Creditos);
 
+//lista paginada de notas de crédito e créditos. totalN/totalC contam todos os que cumprem a pesquisa, não só a página
+public sealed record CreditoListado(string DocumentoId, string TipoDocId, DateOnly DataDoc, string ClienteId, string Cliente, decimal Total);
+public sealed record PaginaCreditos(IReadOnlyList<CreditoListado> Itens, int TotalN, int TotalC);
+
+//um documento com as suas linhas, sem NIF nem morada
+public sealed record LinhaDocumento(string ArtigoId, string Artigo, decimal Quantidade, decimal Iliquido, decimal Desconto, decimal Liquido, decimal Iva);
+public sealed record DetalheDocumento(string DocumentoId, string TipoDocId, DateOnly DataDoc, string ClienteId, string Cliente, IReadOnlyList<LinhaDocumento> Linhas);
+
 //vista Clientes do painel. ultima = última compra de sempre (só linhas positivas: uma nota de crédito não é uma compra)
 //compras = valor e documentos de cada cliente em cada mês do período; mes = "aaaa-mm"
 public sealed record ClienteCarteira(string ClienteId, string Zona, DateOnly? Ultima);
