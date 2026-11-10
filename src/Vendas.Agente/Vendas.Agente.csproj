@@ -26,6 +26,8 @@
   <EmbeddedResource Include="Pagina\pagina-chat.html" />
   <!-- Avatar do ecrã de entrada: servido em /imagens/<ficheiro> pelo ModoWebAsync -->
   <EmbeddedResource Include="Pagina\avatar-flow.png" LogicalName="imagens/avatar-flow.png" />
+  <!-- Ícone da conversa -->
+  <EmbeddedResource Include="logo\avatar-assistente-vendas.png" LogicalName="imagens/avatar-assistente-vendas.png" />
     </ItemGroup>
 
   <ItemGroup>
