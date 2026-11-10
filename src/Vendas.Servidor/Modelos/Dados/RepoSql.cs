@@ -8,6 +8,9 @@ namespace Vendas.Servidor.Modelos.Dados;
 // "ligação" é a connection string que vem da variável de ambiente VENDAS_SQL
 public sealed class RepoSql(string ligacao) : IVendasRepo
 {
+    // shortcut: a tabela de créditos do painel traz no máximo 5000 (a página avisa); 2026 tem cerca de 2700. Paginar no SQL se não chegar.
+    private const int MaxCreditos = 5000;
+
     public async Task<IReadOnlyList<ContagemCliente>> ContarAsync(
         Campo agrupar, IReadOnlyDictionary<Campo, string> filtros, int limite,
         CancellationToken cancellationToken = default)
@@ -102,13 +105,15 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         var tipos = LerAsync(sqlTipos, parametrosTipos, limite,
             leitor => new DocumentosPorTipo(leitor.GetString(0), leitor.GetDecimal(1), leitor.GetInt32(2)), cancellationToken);
         var meses = LerAsync(sqlMeses, parametrosMeses, limite,
-            leitor => new DocumentosPorMes(leitor.GetString(0), leitor.GetInt32(1)), cancellationToken);
-        var ultimos = LerAsync(sqlUltimos, parametrosUltimos, limite,
-            leitor => new DocumentoEmitido(leitor.GetString(0), leitor.GetString(1), Data(leitor, 2)!.Value, leitor.GetString(3), leitor.GetDecimal(4)),
-            cancellationToken);
-        await Task.WhenAll(tipos, meses, ultimos);
+            leitor => new DocumentosPorMes(leitor.GetString(0), leitor.GetString(1), leitor.GetDecimal(2), leitor.GetInt32(3)), cancellationToken);
+        static DocumentoEmitido Documento(SqlDataReader leitor) =>
+            new(leitor.GetString(0), leitor.GetString(1), Data(leitor, 2)!.Value, leitor.GetString(3), leitor.GetDecimal(4));
+        var ultimos = LerAsync(sqlUltimos, parametrosUltimos, limite, Documento, cancellationToken);
+        var (sqlCreditos, parametrosCreditos) = ConsultaVendas.UltimosDocumentos(desde, ate, cliente, filtros, soCreditos: true);
+        var creditos = LerAsync(sqlCreditos, parametrosCreditos, MaxCreditos, Documento, cancellationToken);
+        await Task.WhenAll(tipos, meses, ultimos, creditos);
 
-        return new ResumoDocumentos(tipos.Result, meses.Result, ultimos.Result);
+        return new ResumoDocumentos(tipos.Result, meses.Result, ultimos.Result, creditos.Result);
     }
 
     public async Task<ResumoCarteira> ResumoCarteiraAsync(

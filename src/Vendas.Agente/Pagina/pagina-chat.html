@@ -1317,6 +1317,42 @@
     .res-grelha:has(> [data-bloco="cli-tab"]) { align-items: flex-start; }
     .res-pag { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 10px; font-size: 12.5px; color: var(--suave); }
     .res-pag span { margin-right: auto; }
+    /* Faturação: bruto, créditos e líquido. Os negativos têm cor própria, sinal de menos e ícone */
+    .res-neg { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--flow-desce); font-weight: 600; white-space: nowrap; }
+    .res-fluxo { margin: 4px 0 0; display: grid; gap: 6px; }
+    .res-fluxo div { display: flex; justify-content: space-between; gap: 10px; }
+    .res-fluxo dd { margin: 0; color: var(--texto); font-weight: 600; text-align: right; }
+    .res-fluxo dd.res-neg { color: var(--flow-desce); }
+    :is(.res-fat-col, .res-casc-barra, .res-legenda) i.f { background: #1d5bff; }
+    :is(.res-fat-col, .res-casc-barra, .res-legenda) i.v { background: #6e97ff; }
+    :is(.res-fat-col, .res-casc-barra, .res-legenda) i.n { background: var(--flow-desce); }
+    :is(.res-fat-col, .res-casc-barra, .res-legenda) i.c { background: #e58a82; }
+    :is(.res-casc-barra, .res-legenda) i.liq { background: #0b0f17; }
+    .res-fat { position: relative; height: 220px; margin-top: 8px; display: grid; }
+    .res-fat-zero { position: absolute; left: 0; right: 0; border-top: 1px solid #9aa3b2; }
+    .res-fat svg { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+    .res-fat-ponto { position: absolute; z-index: 1; width: 8px; height: 8px; margin: 0 0 -4px -4px; box-sizing: border-box; border: 2px solid #0b0f17; border-radius: 50%; background: #fff; pointer-events: none; }
+    .res-fat-col { position: relative; border-radius: 6px; }
+    .res-fat-col:is(:hover, :focus) { z-index: 3; background: rgb(29 91 255 / .06); }
+    .res-fat-col:focus-visible { outline: 2px solid var(--marca); outline-offset: -2px; }
+    .res-fat-col i { position: absolute; left: 20%; right: 20%; }
+    .res-fat-col--parcial i { background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / .6) 0 3px, transparent 3px 6px); }
+    .res-fat-dica { display: none; position: absolute; top: 4px; left: 60%; width: 250px; padding: 8px 10px; border-radius: 8px; background: #0b0f17; color: #fff; font-size: 12px; }
+    .res-fat-col--esq .res-fat-dica { left: auto; right: 60%; }
+    .res-fat-col:is(:hover, :focus) .res-fat-dica { display: grid; gap: 3px; }
+    .res-fat-dica span { display: flex; justify-content: space-between; gap: 10px; }
+    .res-fat-rot { display: grid; margin-top: 8px; text-align: center; font-size: 11.5px; color: #5b6472; }
+    .res-legenda i.liq { width: 14px; height: 2px; border-radius: 1px; }
+    .res-casc { margin-top: 8px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; text-align: center; font-size: 12px; color: var(--suave); }
+    .res-casc > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .res-casc strong { color: var(--texto); font-size: 13px; font-weight: 600; }
+    .res-casc strong.res-neg { justify-content: center; color: var(--flow-desce); }
+    .res-casc-barra { position: relative; height: 150px; border-bottom: 1px solid #d7dbe2; }
+    .res-casc-barra i { position: absolute; left: 12%; right: 12%; border-radius: 3px; }
+    .res-tab--cred { grid-template-columns: 140px 90px minmax(0, 1fr) 110px 130px; }
+    .res-tab--cred > :is(:nth-child(2), :nth-child(3)) { text-align: left; }
+    .res-cred-busca { margin-bottom: 10px; }
+    .res-cred-busca input { width: min(320px, 100%); min-height: 36px; box-sizing: border-box; padding: 0 10px; border: 1px solid var(--borda-campo); border-radius: 8px; background: var(--cartao); color: var(--texto); font: inherit; font-size: 13px; }
     .res-pag button[aria-disabled="true"] { opacity: .45; cursor: default; }
     .res-tabela .res-cab { margin-bottom: 6px; }
     .res-tab-linha { width: 100%; display: grid; align-items: center; gap: 8px; padding: 9px 8px; border: 0; border-bottom: 1px solid var(--linha); border-radius: 0; background: none; color: var(--texto); font: inherit; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
@@ -3348,7 +3384,7 @@
        Carrega ao abrir a página; filtros, "resumo do cliente X" na conversa e as vistas guardadas voltam a carregar.
        ========================================================= */
     const RES_PERIODOS = [['Ultimos7Dias', 'Últimos 7 dias'], ['MesAtual', 'Este mês'], ['TrimestreAtual', 'Trimestre'], ['AnoAtual', 'Este ano'], ['Ultimos12Meses', 'Últimos 12 meses'], ['AnoAnterior', 'Ano passado']];
-    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, alertaSel: null, alertaFiltro: 'Todos', cliSel: null, cliSeg: 'Todos', cliPag: 0 };
+    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, alertaSel: null, alertaFiltro: 'Todos', cliSel: null, cliSeg: 'Todos', cliPag: 0, credTipo: 'Todos', credBusca: '', credPag: 0 };
     // Vistas do Resumo (painel lateral): cada uma mostra só os seus cartões, em vez de tudo numa só página
     const SECOES = [['geral', 'Resumo das vendas'], ['alertas', 'Alertas'], ['clientes', 'Clientes'], ['faturacao', 'Faturação'],
                     ['artigos', 'Artigos'], ['zonas', 'Zonas'], ['previsoes', 'Previsões']];
@@ -3490,8 +3526,17 @@
       if (!historico.length) desenharConversa();   // as boas-vindas passam a mostrar o que o Resumo encontrou
     }
 
-    // shortcut: nomes por preencher (a BD só tem F, V, C e N, sem descrição); até lá o cartão mostra "Tipo F".
-    const TIPOS_DOC = {};
+    const TIPOS_DOC = { F: 'Faturas (F)', V: 'Faturas-recibo (V)', N: 'Notas de crédito s/ faturas (N)', C: 'Créditos s/ faturas-recibo (C)' };
+
+    // Fonte única dos números da Faturação: todos os visuais passam por aqui. N corrige F e C corrige V (já vêm negativos).
+    // A taxa de crédito é sempre sobre o bruto do próprio fluxo, nunca sobre o líquido.
+    function faturacaoDe(linhas) {
+      const soma = id => linhas.filter(x => x.tipo === id).reduce((t, x) => ({ valor: t.valor + x.valor, documentos: t.documentos + x.documentos }), { valor: 0, documentos: 0 });
+      const fluxo = (venda, credito) => ({ bruto: venda.valor, creditos: credito.valor, liquido: venda.valor + credito.valor,
+        taxa: venda.valor > 0 ? Math.abs(credito.valor) / venda.valor * 100 : null, documentos: venda.documentos, docCreditos: credito.documentos });
+      const [F, V, N, C] = ['F', 'V', 'N', 'C'].map(soma), juntar = (a, b) => ({ valor: a.valor + b.valor, documentos: a.documentos + b.documentos });
+      return { fat: fluxo(F, N), rec: fluxo(V, C), total: fluxo(juntar(F, V), juntar(N, C)) };
+    }
 
     // Textos da ferramenta -> números dos blocos. Sem dados para um bloco, o bloco fica vazio (nunca inventa).
     function montarResumo(j) {
@@ -3624,10 +3669,13 @@
         carteira: j.clientes ? positivos(j.clientes).map(c => ({ ...c, ...fichaCarteira.get(c.codigo) })) : null,
         clientesTotal: +((j.clientes || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,
         tiposDoc: docs ? docs.tipos.map(t => ({ nome: TIPOS_DOC[t.tipo] || 'Tipo ' + t.tipo, valor: t.valor, docs: t.documentos })) : null,
-        docsPorMes: docs ? docs.meses.map(x => {
-          const [a, m] = x.mes.split('-').map(Number), s = meses.find(y => y.a === a && y.m === m);
-          return { a, m, n: x.documentos, parcial: !!s && (s.parcial || agora(s)) };
+        faturacao: docs ? faturacaoDe(docs.tipos) : null,
+        // O servidor manda uma linha por mês e tipo: aqui fica uma por mês
+        docsPorMes: docs ? [...new Set(docs.meses.map(x => x.mes))].map(mes => {
+          const doMes = docs.meses.filter(x => x.mes === mes), [a, m] = mes.split('-').map(Number), s = meses.find(y => y.a === a && y.m === m);
+          return { a, m, n: doMes.reduce((t, x) => t + x.documentos, 0), parcial: !!s && (s.parcial || agora(s)), ...faturacaoDe(doMes) };
         }) : null,
+        creditos: docs ? docs.creditos.map(d => ({ doc: d.documento, tipo: d.tipo, cliente: d.cliente, data: d.data, total: d.total })) : null,
         ultimosDocs: docs ? docs.ultimos.map(d => ({ doc: d.documento, cliente: d.cliente, data: d.data, total: d.total })) : null
       };
     }
@@ -3816,6 +3864,74 @@
         </div>`;
     }
 
+    // Uma página de cada vez. Limita e guarda: com outro filtro a lista pode ter menos páginas.
+    // aria-disabled e não disabled: o botão fica focável e quem usa teclado não perde o lugar na última página.
+    function paginar(lista, chave, atributo, rotulo) {
+      const POR_PAGINA = 15, ultima = Math.max(0, Math.ceil(lista.length / POR_PAGINA) - 1);
+      const pag = resumoEstado[chave] = Math.min(Math.max(0, resumoEstado[chave]), ultima);
+      const itens = lista.slice(pag * POR_PAGINA, (pag + 1) * POR_PAGINA);
+      return { itens, html: lista.length > POR_PAGINA ? `<nav class="res-pag" aria-label="${rotulo}"><span>${pag * POR_PAGINA + 1}–${pag * POR_PAGINA + itens.length} de ${lista.length}</span>
+        <button type="button" class="res-btn" ${atributo}="-1" aria-disabled="${pag === 0}">Anterior</button>
+        <button type="button" class="res-btn" ${atributo}="1" aria-disabled="${pag === ultima}">Seguinte</button></nav>` : '' };
+    }
+
+    const rNeg = v => `<span class="res-neg">${svgIc('descida', 13)}${rEur(v)}</span>`;
+
+    // Barras empilhadas em euros: F e V acima do zero, N e C abaixo, e a linha do líquido. Cada mês abre a dica com o rato ou o teclado.
+    function graficoFaturacaoHtml(ms) {
+      const max = Math.max(1, ...ms.map(x => x.total.bruto)), min = Math.min(0, ...ms.map(x => x.total.creditos));
+      const pct = v => v / (max - min) * 100, zero = pct(-min), n = ms.length;
+      const barra = (cls, base, altura) => `<i class="${cls}" style="bottom:${base.toFixed(2)}%;height:${altura.toFixed(2)}%"></i>`;
+      const colunas = ms.map((x, i) => {
+        const [F, V, N, C] = [x.fat.bruto, x.rec.bruto, x.fat.creditos, x.rec.creditos].map(v => pct(Math.abs(v)));
+        const nome = `${MESES[x.m - 1]} ${x.a}`;
+        const linhas = [[TIPOS_DOC.F, x.fat.bruto], [TIPOS_DOC.V, x.rec.bruto], [TIPOS_DOC.N, x.fat.creditos], [TIPOS_DOC.C, x.rec.creditos], ['Faturação líquida', x.total.liquido]];
+        return `<div class="res-fat-col${x.parcial ? ' res-fat-col--parcial' : ''}${i >= n / 2 ? ' res-fat-col--esq' : ''}" tabindex="0" role="img" aria-label="${rEsc(`${nome}${x.parcial ? ', mês incompleto' : ''}: ${linhas.map(([a, b]) => `${a} ${rEur(b)}`).join(', ')}`)}">
+          ${barra('f', zero, F)}${barra('v', zero + F, V)}${barra('n', zero - N, N)}${barra('c', zero - N - C, C)}
+          <span class="res-fat-dica" aria-hidden="true"><b>${nome}${x.parcial ? ' (incompleto)' : ''}</b>${linhas.map(([a, b]) => `<span>${a}<strong>${rEur(b)}</strong></span>`).join('')}</span></div>`;
+      }).join('');
+      const X = i => (i + .5) / n * 100, Y = x => zero + pct(x.total.liquido);
+      const grelha = `grid-template-columns:repeat(${n},minmax(0,1fr))`;
+      return `<div class="res-legenda"><span><i class="f"></i>${TIPOS_DOC.F}</span><span><i class="v"></i>${TIPOS_DOC.V}</span><span><i class="n"></i>${TIPOS_DOC.N}</span><span><i class="c"></i>${TIPOS_DOC.C}</span><span><i class="liq"></i>Faturação líquida</span></div>
+        <div class="res-fat" role="group" aria-label="Faturação por mês, em euros: use a tecla Tab para ouvir cada mês" style="${grelha}">
+          ${colunas}<span class="res-fat-zero" style="bottom:${zero.toFixed(2)}%"></span>
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${ms.map((x, i) => `${i ? 'L' : 'M'}${X(i).toFixed(2)} ${(100 - Y(x)).toFixed(2)}`).join(' ')}" fill="none" stroke="#0b0f17" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>
+          ${ms.map((x, i) => `<b class="res-fat-ponto" style="left:${X(i).toFixed(2)}%;bottom:${Y(x).toFixed(2)}%"></b>`).join('')}
+        </div>
+        <div class="res-fat-rot" aria-hidden="true" style="${grelha}">${ms.map(x => `<span>${MESES[x.m - 1].slice(0, 3).toLowerCase()}${x.parcial ? '*' : ''}</span>`).join('')}</div>`;
+    }
+
+    // Cascata: do bruto ao líquido, com os mesmos números dos cartões
+    function cascataHtml(f) {
+      const topo = Math.max(1, f.total.bruto);
+      const coluna = (nome, v, cls, base, altura) => `<div>${v < 0 ? `<strong class="res-neg">${svgIc('descida', 13)}${rEur(v)}</strong>` : `<strong>${rEur(v)}</strong>`}
+        <div class="res-casc-barra"><i class="${cls}" style="bottom:${(base / topo * 100).toFixed(2)}%;height:${(altura / topo * 100).toFixed(2)}%"></i></div><span>${nome}</span></div>`;
+      let acumulado = 0;
+      const passos = [['Bruto F', f.fat.bruto, 'f'], ['Bruto V', f.rec.bruto, 'v'], ['Menos N', f.fat.creditos, 'n'], ['Menos C', f.rec.creditos, 'c']].map(([nome, v, cls]) => {
+        const base = Math.min(acumulado, acumulado + v);
+        acumulado += v;
+        return coluna(nome, v, cls, base, Math.abs(v));
+      });
+      const descricao = `Bruto de faturas ${rEur(f.fat.bruto)}, bruto de faturas-recibo ${rEur(f.rec.bruto)}, notas de crédito ${rEur(f.fat.creditos)}, créditos ${rEur(f.rec.creditos)}, faturação líquida ${rEur(f.total.liquido)}`;
+      return `<div class="res-casc" role="img" aria-label="${rEsc(descricao)}">${passos.join('')}${coluna('Faturação líquida', f.total.liquido, 'liq', 0, Math.max(0, f.total.liquido))}</div>`;
+    }
+
+    // Tabela de créditos: filtra e pagina na página, sem voltar ao servidor
+    function creditosHtml(D) {
+      const busca = semAcento(resumoEstado.credBusca.trim()), tipo = resumoEstado.credTipo;
+      const procurados = busca ? D.creditos.filter(c => semAcento(`${c.doc} ${c.cliente}`).includes(busca)) : D.creditos;
+      const lista = tipo === 'Todos' ? procurados : procurados.filter(c => c.tipo === tipo);
+      const { itens, html } = paginar(lista, 'credPag', 'data-cred-pag', 'Páginas de créditos');
+      const filtros = [['Todos', 'Todos'], ['N', TIPOS_DOC.N], ['C', TIPOS_DOC.C]].map(([id, nome]) =>
+        `<button type="button" class="res-pilula" data-cred-tipo="${id}" aria-pressed="${tipo === id}">${nome}<span>${id === 'Todos' ? procurados.length : procurados.filter(c => c.tipo === id).length}</span></button>`).join('');
+      return `<div class="res-pilulas" role="group" aria-label="Filtrar por tipo de crédito">${filtros}</div>
+        ${itens.length ? `<div class="res-tab-linha res-tab-cab res-tab--cred" aria-hidden="true"><span>Documento</span><span>Data</span><span>Cliente</span><span>Valor</span><span>Documento de origem</span></div>
+          ${itens.map(c => `<div class="res-tab-linha res-tab--cred"><span class="res-tab-doc">${rEsc(c.doc)}</span><span>${rEsc(c.data)}</span><span class="res-tab-nome" title="${rEsc(c.cliente)}">${rEsc(nomeProprio(c.cliente))}</span>${rNeg(c.total)}<span title="A base de dados ainda não indica o documento de origem">—</span></div>`).join('')}`
+          : '<p class="res-nota">Nenhum crédito com estes filtros.</p>'}
+        ${html}`;
+    }
+    const desenharCreditos = () => { document.getElementById('res-creditos-corpo').innerHTML = creditosHtml(resumoEstado.dados); };
+
     // Os indicadores vivem no topo (barraResumoHtml) e no painel lateral (desenharLateral)
     function resumoHtml(D) {
       // Previsão
@@ -3998,15 +4114,8 @@
         const comEstado = carteira.some(c => c.estado);
         const seg = comEstado ? resumoEstado.cliSeg : 'Todos';
         const lista = seg === 'Todos' ? carteira : carteira.filter(c => c.estado === seg);
-        // Limita aqui e guarda: com outro período ou separador a lista pode ter menos páginas
-        const POR_PAGINA = 15, ultimaPag = Math.max(0, Math.ceil(lista.length / POR_PAGINA) - 1);
-        const pag = resumoEstado.cliPag = Math.min(Math.max(0, resumoEstado.cliPag), ultimaPag);
-        const pagina = lista.slice(pag * POR_PAGINA, (pag + 1) * POR_PAGINA);
+        const { itens: pagina, html: paginacao } = paginar(lista, 'cliPag', 'data-cli-pag', 'Páginas de clientes');
         const cliSel = pagina.find(c => (c.codigo || c.nome) === resumoEstado.cliSel) || pagina[0];
-        // aria-disabled e não disabled: o botão fica focável e quem usa teclado não perde o lugar na última página
-        const paginacao = lista.length > POR_PAGINA ? `<nav class="res-pag" aria-label="Páginas de clientes"><span>${pag * POR_PAGINA + 1}–${pag * POR_PAGINA + pagina.length} de ${lista.length}</span>
-          <button type="button" class="res-btn" data-cli-pag="-1" aria-disabled="${pag === 0}">Anterior</button>
-          <button type="button" class="res-btn" data-cli-pag="1" aria-disabled="${pag === ultimaPag}">Seguinte</button></nav>` : '';
         const separadores = [['Todos', 'Todos'], ['Ativo', 'Ativos'], ['Em risco', 'Em risco'], ['Perdido', 'Perdidos']].map(([id, nome]) =>
           `<button type="button" class="res-pilula" data-cli-seg="${id}" aria-pressed="${seg === id}">${nome}<span>${id === 'Todos' ? carteira.length : carteira.filter(c => c.estado === id).length}</span></button>`).join('');
         const nota = D.clientesTotal > carteira.length ? `<span class="res-sub">Os ${carteira.length} maiores, de ${rGrupos(D.clientesTotal)}</span>` : '';
@@ -4051,19 +4160,39 @@
       }
 
       // Cartões do protótipo. Campos de D, todos opcionais; sem eles o cartão mostra "Ainda sem dados":
-      //   D.tiposDoc      [{ nome, valor, docs }]   (um por TipoDocID)
-      //   D.docsPorMes    [{ m (1-12), a, n (n.º de documentos), parcial? }]
-      //   D.ultimosDocs   [{ doc (DocumentoID), cliente, data ('dd-mm-aaaa'), total }]
+      //   D.faturacao     faturacaoDe(): { fat, rec, total }, cada um com bruto, creditos, liquido, taxa, documentos
+      //   D.tiposDoc      [{ nome, valor, docs }]   (um por TipoDocID, para a exportação)
+      //   D.docsPorMes    [{ m (1-12), a, n (n.º de documentos), parcial?, fat, rec, total }]
+      //   D.creditos, D.ultimosDocs   [{ doc (DocumentoID), cliente, data ('dd-mm-aaaa'), total }] (créditos: também tipo)
       // Ainda à espera de colunas que a consulta não devolve:
       //   D.novosClientes { n, dif (diferença face ao ano anterior) }
       //   D.familias      [{ nome, valor }]          D.objetivo  (objetivo anual em €)
       //   em cada artigo de D.artigos: familia
-      // Faturação — um cartão por tipo de documento
-      const tipos = D.tiposDoc || [];
-      const htmlTipos = tipos.length ? `<div class="flow-kpis-grelha">${tipos.map(t => {
-        const nota = `${rGrupos(t.docs)} documentos` + (t.valor < 0 && D.total > 0 ? ` · ${rPct(Math.abs(t.valor) / D.total * 100)} da faturação` : '');
-        return `<div class="flow-kpi"><span>${svgIc(t.valor < 0 ? 'descida' : 'faturacao', 15)}${rEsc(t.nome)}</span><strong>${rEur(t.valor)}</strong><span>${nota}</span></div>`;
-      }).join('')}</div>` : '';
+      // Faturação — líquido em destaque e um cartão por fluxo (faturas e faturas-recibo)
+      const Fat = D.faturacao;
+      const taxaDe = (f, base) => f.taxa == null ? '–' : `${rPct(f.taxa)} ${base}`;
+      const cartaoFluxo = (nome, nomeCredito, f, base) => `<div class="flow-kpi"><span>${svgIc('faturacao', 15)}${nome}</span><strong>${rEur(f.bruto)}</strong><span>Bruto, em ${rGrupos(f.documentos)} ${f.documentos === 1 ? 'documento' : 'documentos'}</span>
+        <dl class="res-fluxo"><div><dt>${nomeCredito}</dt><dd class="res-neg">${svgIc('descida', 13)}${rEur(f.creditos)}</dd></div>
+          <div><dt>Taxa de crédito</dt><dd>${taxaDe(f, base)}</dd></div><div><dt>Líquido</dt><dd>${rEur(f.liquido)}</dd></div></dl></div>`;
+      const htmlTipos = Fat ? `<div class="flow-kpis-grelha">
+        <div class="flow-kpi flow-kpi--destaque"><span>${svgIc('euro', 15)}Faturação líquida</span><strong>${rEur(Fat.total.liquido)}</strong><span>Bruto ${rEur(Fat.total.bruto)} · Créditos ${rEur(Fat.total.creditos)} (${taxaDe(Fat.total, 'do bruto')})</span></div>
+        ${cartaoFluxo(TIPOS_DOC.F, TIPOS_DOC.N, Fat.fat, 'do bruto de faturas')}
+        ${cartaoFluxo(TIPOS_DOC.V, TIPOS_DOC.C, Fat.rec, 'do bruto de faturas-recibo')}
+      </div>` : '';
+
+      // Faturação — valor por mês, cascata e tabela de créditos
+      const htmlFatMes = `<section class="res-cartao res-cartao--inteiro" data-bloco="fat-mes">
+        <div class="res-cab"><h3>Faturação por mês</h3><span class="res-sub">Valores em euros, sem IVA</span></div>
+        ${D.docsPorMes && D.docsPorMes.length ? graficoFaturacaoHtml(D.docsPorMes) : semDados('O valor de cada mês aparece aqui.')}
+      </section>`;
+      const htmlCascata = Fat ? `<section class="res-cartao res-cartao--inteiro" data-bloco="cascata">
+        <div class="res-cab"><h3>Do bruto ao líquido</h3><span class="res-sub">Valores em euros, sem IVA</span></div>${cascataHtml(Fat)}
+      </section>` : '';
+      const htmlCreditos = D.creditos ? `<section class="res-cartao res-cartao--inteiro res-tabela" data-bloco="creditos">
+        <div class="res-cab"><h3>Notas de crédito e créditos</h3><span class="res-sub">${D.creditos.length >= 5000 ? 'Só os 5000 mais recentes' : 'Mais recentes primeiro'}</span></div>
+        <div class="res-cred-busca"><label class="so-leitor" for="res-cred-busca">Procurar por documento ou cliente</label><input id="res-cred-busca" maxlength="100" autocomplete="off" placeholder="Procurar documento ou cliente…" value="${rEsc(resumoEstado.credBusca)}"></div>
+        <div id="res-creditos-corpo">${creditosHtml(D)}</div>
+      </section>` : '';
 
       // Faturação — documentos emitidos por mês (barras)
       const dm = D.docsPorMes || [], maxD = Math.max(1, ...dm.map(x => x.n));
@@ -4130,7 +4259,7 @@
       }
 
       // Cada linha da vista: um ou mais cartões lado a lado
-      const porSecao = { geral: [htmlCli + htmlAten], alertas: [alertasHtml(D)], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlDocsMes, htmlUltimos, htmlAcum], artigos: [htmlArt + htmlArtLado],
+      const porSecao = { geral: [htmlCli + htmlAten], alertas: [alertasHtml(D)], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlFatMes, htmlDocsMes, htmlCascata, htmlCreditos, htmlUltimos, htmlAcum], artigos: [htmlArt + htmlArtLado],
                          zonas: [htmlLoc, htmlZonaDet, htmlLocTab + htmlLocLado], previsoes: [htmlPrevKpis, htmlPrev, htmlPrevMeses] }[secao].filter(Boolean);
       return porSecao.length || secaoComSerie() ? porSecao.map(h => `<div class="res-grelha">${h}</div>`).join('')
         : `<p class="res-nota">Sem dados para a vista ${rEsc(nomeSecao())} com estes filtros.</p>`;
@@ -4329,6 +4458,7 @@
       (D.clientes || []).forEach(c => juntar('Top clientes', c.nome, c.codigo, c.num, '€', null, c.delta));
       (D.tiposDoc || []).forEach(t => juntar('Documentos por tipo', t.nome, '', t.valor, '€', null, '', `${t.docs} documentos`));
       (D.docsPorMes || []).forEach(x => juntar('Documentos por mês', `${MESES[x.m - 1]} ${x.a}`, '', x.n, 'n.º', null, '', x.parcial ? 'Mês incompleto' : ''));
+      (D.creditos || []).forEach(d => juntar('Notas de crédito e créditos', d.doc, '', d.total, '€', null, '', `${d.cliente}, ${d.data}`));
       (D.ultimosDocs || []).forEach(d => juntar('Últimos documentos', d.doc, '', d.total, '€', null, '', `${d.cliente}, ${d.data}`));
       const P = D.previsao;
       if (P) P.previsto.slice(1).forEach((v, j) => juntar('Previsão', P.nomes[P.real.length + j], '', v, '€', null, '',
@@ -4345,9 +4475,17 @@
         e.preventDefault();
         pedirResumo(null, String(new FormData(e.target).get('cliente') || '').replace(/\s+/g, ' ').trim());
       });
+      // Só redesenha o corpo da tabela: o campo de pesquisa mantém o foco e o cursor
+      raiz.addEventListener('input', e => {
+        if (e.target.id !== 'res-cred-busca') return;
+        Object.assign(resumoEstado, { credBusca: e.target.value, credPag: 0 });
+        desenharCreditos();
+      });
       raiz.addEventListener('click', e => {
         const b = e.target.closest('button'); if (!b) return;
         const d = b.dataset;
+        if (d.credPag) { resumoEstado.credPag += +d.credPag; desenharCreditos(); painelEl.querySelector(`[data-cred-pag="${d.credPag}"]`)?.focus(); return; }
+        if (d.credTipo) { Object.assign(resumoEstado, { credTipo: d.credTipo, credPag: 0 }); desenharCreditos(); painelEl.querySelector(`[data-cred-tipo="${d.credTipo}"]`)?.focus(); return; }
         if (d.menu) { resumoEstado.menu = resumoEstado.menu === d.menu ? null : d.menu; redesenhar(); painelEl.querySelector(`[data-menu="${d.menu}"]`)?.focus(); return; }
         if ('inicio' in d) { boasVindasAberta = true; desenharPainel(); painelEl.querySelector('input')?.focus(); return; }
         if (d.verSecao) { secao = d.verSecao; verInicio(); return; }

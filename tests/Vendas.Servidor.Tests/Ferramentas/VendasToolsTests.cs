@@ -46,8 +46,9 @@ public class VendasToolsTests
         {
             Documentos = new(
                 [new("FT", 100.5m, 2)],
-                [new("2026-09", 2)],
-                [new("FT 1/2026/7", "FT", new DateOnly(2026, 9, 4), "Casa Costa", 60.25m)]),
+                [new("2026-09", "FT", 100.5m, 2)],
+                [new("FT 1/2026/7", "FT", new DateOnly(2026, 9, 4), "Casa Costa", 60.25m)],
+                [new("N 1/2026/3", "N", new DateOnly(2026, 9, 2), "Casa Costa", -10m)]),
         };
 
         var json = await CriarSut(repo).ConsultarDocumentosAsync(coluna: Campo.Distrito, valor: "Setúbal");
@@ -58,7 +59,13 @@ public class VendasToolsTests
         Assert.Equal("FT", ultimo.GetProperty("tipo").GetString());
         Assert.Equal("04-09-2026", ultimo.GetProperty("data").GetString());
         Assert.Equal(100.5m, d.RootElement.GetProperty("tipos")[0].GetProperty("valor").GetDecimal());
-        Assert.Equal("2026-09", d.RootElement.GetProperty("meses")[0].GetProperty("mes").GetString());
+        var mes = d.RootElement.GetProperty("meses")[0];
+        Assert.Equal("2026-09", mes.GetProperty("mes").GetString());
+        Assert.Equal("FT", mes.GetProperty("tipo").GetString());
+        Assert.Equal(100.5m, mes.GetProperty("valor").GetDecimal());
+        var credito = d.RootElement.GetProperty("creditos")[0];
+        Assert.Equal("N", credito.GetProperty("tipo").GetString());
+        Assert.Equal(-10m, credito.GetProperty("total").GetDecimal());
         Assert.Equal("Setúbal", repo.UltimosFiltros![Campo.Distrito]);
     }
 

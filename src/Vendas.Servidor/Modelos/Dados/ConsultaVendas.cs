@@ -222,17 +222,19 @@ internal static class ConsultaVendas
         return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
     }
 
-    // Documentos emitidos em cada mês (DataDoc), do mais antigo ao mais recente.
+    // Valor e documentos de cada tipo em cada mês (DataDoc), do mais antigo ao mais recente.
     public static (string Sql, Action<SqlParameterCollection> Parametros) DocumentosPorMes(
         DateOnly desde, DateOnly ate, string? cliente, IReadOnlyDictionary<Campo, string>? filtros)
     {
         var (ficha, aplicarFicha) = FiltroFicha(filtros);
         var sql = $"""
             SELECT CONVERT(char(7), [DataDoc], 120) AS Mes,
+                   [TipoDocID],
+                   COALESCE(SUM([ValorLiquido]), 0) AS Valor,
                    COUNT(DISTINCT [DocumentoID])    AS Documentos
             FROM   {Vendas}
             {Onde(cliente, ficha)}
-            GROUP BY CONVERT(char(7), [DataDoc], 120)
+            GROUP BY CONVERT(char(7), [DataDoc], 120), [TipoDocID]
             ORDER BY Mes;
             """;
         return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
@@ -240,10 +242,12 @@ internal static class ConsultaVendas
 
     // Os documentos mais recentes: uma linha por documento (a view tem uma por artigo).
     // Soma por dentro e só depois vai buscar o nome, como no RankingPorCliente: o WHERE usa [ClienteID] sem prefixo.
+    // soCreditos: só notas de crédito (N) e créditos sobre faturas-recibo (C).
     public static (string Sql, Action<SqlParameterCollection> Parametros) UltimosDocumentos(
-        DateOnly desde, DateOnly ate, string? cliente, IReadOnlyDictionary<Campo, string>? filtros)
+        DateOnly desde, DateOnly ate, string? cliente, IReadOnlyDictionary<Campo, string>? filtros, bool soCreditos = false)
     {
         var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        if (soCreditos) ficha += " AND [TipoDocID] IN ('N', 'C')";
         var sql = $"""
             SELECT TOP (@limite)
                    d.[DocumentoID], d.[TipoDocID], d.[DataDoc],
