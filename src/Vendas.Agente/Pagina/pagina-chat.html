@@ -310,7 +310,7 @@
     .chat-legenda > span { display: flex; align-items: center; gap: 6px; }
     .chat-legenda-cor { width: 8px; height: 8px; border-radius: 50%; }
     .chat-grafico-corpo { display: flex; gap: 8px; }
-    .chat-eixo { position: relative; width: 56px; height: 280px; flex: none; font-size: 11.5px; color: var(--nota); font-variant-numeric: tabular-nums; }
+    .chat-eixo { position: relative; width: 56px; height: 280px; flex: none; font-size: 12px; color: var(--nota); font-variant-numeric: tabular-nums; }
     .chat-eixo span { position: absolute; right: 0; white-space: nowrap; }
     .chat-colunas { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
     .chat-guia { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--borda); }
@@ -465,7 +465,7 @@
     .chat-kpi-linha { margin-top: 0; gap: 4px 8px; }
     .chat-kpi-valor { font-size: 20px; font-weight: 700; }
     .chat-kpi-detalhe { font-size: 12px; }
-    .chat-kpi .chat-delta { padding: 1px 7px; border-radius: 99px; font-size: 11.5px; }
+    .chat-kpi .chat-delta { padding: 1px 7px; border-radius: 99px; font-size: 12px; }
 
     /* Gráfico: leitura do mês numa linha por cima, tabela por mês fechada */
     .chat-grafico { gap: 8px; }
@@ -551,7 +551,7 @@
     .chat-msg { display: flex; gap: 10px; }
     .chat-msg-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
     .chat-msg-nome { font-size: 12.5px; font-weight: 600; color: var(--suave); }
-    .chat-msg-meta { display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--nota); }
+    .chat-msg-meta { display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--nota); }
     .chat-msg-meta .chat-acao { min-height: 28px; font-size: 12.5px; }
     /* Quem pergunta: à direita, balão escuro, avatar à direita */
     .chat-area > .chat-msg--eu { align-self: flex-end; width: auto; max-width: min(85%, 816px); margin-right: max(0px, calc(100% - 960px)); align-items: flex-end; }
@@ -673,7 +673,7 @@
     .chat-conversa .chat-campo { min-height: 32px; padding: 0; border: 0; background: none; font-size: 13.5px; }
     .chat-conversa .chat-campo:focus-visible { outline: none; }   /* o contorno vai na caixa toda */
     .chat-conversa .chat-enviar { width: 32px; height: 32px; border-radius: 50%; }
-    .chat-conversa .chat-rodape-texto { font-size: 11.5px; }
+    .chat-conversa .chat-rodape-texto { font-size: 12px; }
 
     /* Botão redondo: mostra e esconde a janela */
     .chat-lancador {
@@ -757,11 +757,11 @@
 
     .res-grafico { position: relative; margin-left: 54px; }
     .res-grafico svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-    .res-y { position: absolute; left: -58px; width: 52px; text-align: right; font-size: 11px; color: var(--nota); white-space: nowrap; transform: translateY(-50%); }
+    .res-y { position: absolute; left: -58px; width: 52px; text-align: right; font-size: 12px; color: var(--nota); white-space: nowrap; transform: translateY(-50%); }
     .res-x { position: relative; height: 18px; margin-left: 54px; font-size: 12px; }
     .res-x span { position: absolute; transform: translateX(-50%); font-weight: 600; }
     .res-ponto { position: absolute; transform: translate(-50%, -50%); }
-    .res-rotulo { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; font-size: 11px; font-weight: 700; }
+    .res-rotulo { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; font-size: 12px; font-weight: 700; }
     .res-zona { position: absolute; top: 0; height: 100%; padding: 0; border: 0; background: transparent; cursor: crosshair; }
     .res-tooltip { position: absolute; top: 4px; z-index: 3; transform: translateX(-50%); padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: var(--cartao); border: 1px solid var(--borda-controlo); border-radius: 8px; box-shadow: 0 6px 16px rgb(22 33 58 / .15); font-size: 12.5px; white-space: nowrap; pointer-events: none; }
 
@@ -801,7 +801,7 @@
     .chat-barra-mes { position: absolute; bottom: 0; transform: translateX(-50%); border-radius: 4px 4px 0 0; background: var(--marca); pointer-events: none; }
     .chat-barra-mes--ant { background: var(--anterior); }
     .chat-barra-mes--parcial { background: repeating-linear-gradient(135deg, var(--aviso-borda) 0 5px, var(--cartao) 5px 10px); border: 2px dashed #c2410c; border-bottom: 0; }
-    .chat-barra-valor { position: absolute; transform: translate(-50%, -100%); padding: 0 3px; border-radius: 3px; background: var(--cartao); font-size: 11px; font-weight: 700; white-space: nowrap; pointer-events: none; }
+    .chat-barra-valor { position: absolute; transform: translate(-50%, -100%); padding: 0 3px; border-radius: 3px; background: var(--cartao); font-size: 12px; font-weight: 700; white-space: nowrap; pointer-events: none; }
     .chat-legenda-barra { width: 10px !important; height: 10px !important; border-radius: 2px !important; background: var(--marca); }
     .chat-legenda-barra--ant { background: var(--anterior); }
     .chat-legenda-barra--parcial { background: repeating-linear-gradient(135deg, var(--aviso-borda) 0 3px, var(--cartao) 3px 6px); outline: 1px dashed #c2410c; }
@@ -820,7 +820,7 @@
     .res-var { font-size: 12.5px; }
     .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 84px; bottom: 26px; }   /* conversa aberta: ao lado, não por cima da janela */
     .res-contagem { padding: 2px 10px; border-radius: 99px; background: #fde7cf; color: #9a3412; font-size: 12px; font-weight: 700; }
-    .res-tabela--maiusculas thead th { text-transform: uppercase; letter-spacing: .04em; font-size: 11.5px; }
+    .res-tabela--maiusculas thead th { text-transform: uppercase; letter-spacing: .04em; font-size: 12px; }
 
 
     /* =========================================================
@@ -838,11 +838,9 @@
     .flow-lateral--recolhido .flow-so-aberto { display: none !important; }
     .flow-lateral--recolhido .flow-btn-lateral svg { transform: rotate(180deg); }
     .flow-lateral--recolhido .flow-marca { flex-direction: column; }
-    .flow-marca { display: flex; align-items: center; gap: 10px; }
-    .flow-marca-logo { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--marca); }
-    .flow-marca-texto { margin-right: auto; }
-    .flow-marca-texto p { margin: 0; font-size: 15px; }
-    .flow-marca-texto p + p { font-size: 12px; color: var(--flow-claro); }
+    .flow-marca { display: flex; align-items: center; gap: 6px; }
+    .flow-marca-logo { width: 48px; height: 35px; flex: none; display: block; }
+    .flow-lateral:not(.flow-lateral--recolhido) .flow-btn-lateral { margin-left: auto; }
     .flow-btn-lateral { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 1px solid var(--flow-navy-borda); border-radius: 10px; background: transparent; color: #e9edf5; }
     .flow-btn-lateral:hover { background: rgb(255 255 255 / .06); }
 
@@ -861,7 +859,7 @@
     .flow-resumo .chat-delta--desce { background: #e9ebef; color: #0b0f17; }
     .flow-spark { display: block; width: 100%; height: auto; margin-top: 14px; overflow: visible; }
     .flow-spark text { font-size: 9px; fill: var(--flow-azul-escuro); }
-    .flow-spark-legenda { display: flex; justify-content: center; gap: 12px; font-size: 11px; color: var(--flow-azul-escuro); }
+    .flow-spark-legenda { display: flex; justify-content: center; gap: 12px; font-size: 12px; color: var(--flow-azul-escuro); }
     .flow-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 14px; margin: 18px 0 0; }
     .flow-kpis dt { font-size: 12px; color: var(--flow-azul-escuro); margin-bottom: 2px; }
     .flow-kpis dd { margin: 0; overflow-wrap: anywhere; }   /* valores grandes partem na coluna em vez de passar por cima da vizinha */
@@ -885,7 +883,6 @@
     .flow-carregar span { display: block; margin-top: 10px; border-radius: 6px; background: rgb(255 255 255 / .14); animation: chat-pulsar 1.2s infinite ease-in-out; }
     .flow-pedir:hover:not(:disabled) { background: rgb(255 255 255 / .06); }
     .flow-pedir:disabled { opacity: .55; cursor: not-allowed; }   /* desativado parecia igual e o clique "não fazia nada" */
-    @container (max-width: 820px) { .flow-lateral { display: none; } }
 
     /* ---------- Barra do topo: separadores, ações, procurar ---------- */
     .chat-abas { flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 24px; background: var(--fundo); border-bottom: 0; }
@@ -990,18 +987,13 @@
 
     /* ---------- Conversa por baixo da barra do topo, aberta pelo avatar Flow ---------- */
     @keyframes ava-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
-    @keyframes ava-blink { 0%,92%,100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
-    @keyframes ava-talk { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.35); } }
     @keyframes pop { 0% { opacity: 0; transform: translateX(24px) scale(.4); } 70% { opacity: 1; transform: translateX(-2px) scale(1.03); } 100% { transform: none; } }
-    .chat-lancador { top: 76px; bottom: auto; right: 24px; width: 60px; height: 60px; padding: 0; border: 3px solid #fff; border-radius: 20px; background: var(--marca); box-shadow: 0 8px 20px rgb(29 78 216 / .35); animation: ava-bob 3.2s ease-in-out infinite; transition: transform .2s; }
+    .chat-lancador { top: 76px; bottom: auto; right: 24px; width: 60px; height: 60px; padding: 0; border: 1px solid var(--borda); border-radius: 20px; background: #fff; box-shadow: 0 8px 20px rgb(29 78 216 / .35); animation: ava-bob 3.2s ease-in-out infinite; transition: transform .2s; }
     .chat-lancador:hover { transform: rotate(-6deg) scale(1.06); animation-play-state: paused; }
-    .chat-lancador .olho { transform-box: fill-box; transform-origin: center; animation: ava-blink 4s infinite; }
-    .chat-lancador .boca { transform-box: fill-box; transform-origin: center; }
-    .chat-lancador.a-falar .boca { animation: ava-talk .45s ease-in-out infinite; }
+    .chat-lancador .chat-avatar { width: 36px; height: 36px; }
     .chat-conversa { top: 76px; bottom: auto; right: 98px; width: 290px; max-height: calc(100% - 92px); border-color: var(--linha); border-radius: 16px; box-shadow: 0 16px 40px rgb(19 32 59 / .2); font-size: 13px; animation: pop .35s cubic-bezier(.2, .8, .3, 1.2) both; transform-origin: right 30px; }
     .chat-painel:not(.chat-painel--sem-conversa) .chat-painel-dados { padding-right: 404px; }
     .chat-conversa-topo { padding: 12px 14px; border-bottom-color: #e5e9f0; }
-    .flow-chat-icone { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--selecionado); color: var(--marca); }
     .chat-conversa-titulo { font-size: 14px; }
     .chat-conversa .chat-esconder { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--flow-azul-borda); border-radius: 6px; background: var(--selecionado); color: var(--flow-tinta-azul); }
     .flow-btn-fechar { width: 32px; height: 32px; border: 0; border-radius: 6px; background: transparent; color: var(--texto); font-size: 20px; }
@@ -1033,7 +1025,7 @@
       .chat-conversa { top: 144px; left: 8px; right: 8px; width: auto; max-height: calc(100% - 152px); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .chat-lancador, .chat-lancador .olho, .chat-lancador.a-falar .boca, .chat-conversa { animation: none; }
+      .chat-lancador, .chat-conversa { animation: none; }
     }
 
     /* =========================================================
@@ -1133,7 +1125,6 @@
 
     /* Painel lateral */
     .flow-lateral { border-right: 1px solid var(--flow-navy-borda); }
-    .flow-marca-logo { border-radius: 12px; }
     .flow-btn-lateral { border-color: transparent; color: #94a3b8; }
     .flow-btn-lateral:hover { color: #fff; background: rgb(255 255 255 / .08); }
     .flow-resumo { border-radius: 16px; box-shadow: 0 12px 24px rgb(0 0 0 / .25); }
@@ -1150,8 +1141,7 @@
     .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 408px; }
     .chat-conversa-topo { padding: 20px 14px 14px; background: var(--fundo); border-bottom: 1px solid var(--borda); }   /* afasta o "Flow" da barra do topo */
     .chat-conversa .chat-area { padding-top: 20px; }
-    .flow-chat-icone { width: 32px; height: 32px; border-radius: 10px; background: var(--marca); color: #fff; }
-    .chat-conversa .chat-estado { font-size: 11.5px; font-weight: 600; }
+    .chat-conversa .chat-estado { font-size: 12px; font-weight: 600; }
     .chat-conversa .chat-ponto { background: var(--marca); }
     .chat-conversa .chat-esconder { border-color: var(--borda); background: var(--cartao); color: var(--suave); }
     .chat-conversa .chat-temas { border-bottom-color: var(--borda); }
@@ -1165,13 +1155,15 @@
     .chat-conversa .chat-rodape:focus-within { border-color: var(--marca); outline: 1px solid var(--marca); outline-offset: 0; }
     .chat-conversa .chat-enviar { width: 30px; height: 30px; }
 
-    /* Janela estreita: a conversa volta a abrir por cima dos dados, com o avatar para a fechar */
-    @container (max-width: 820px) {
+    /* Até 1200px (lateral + conversa deixavam menos de 600px para os dados): a conversa abre por cima dos dados, com o avatar para a fechar */
+    @container (max-width: 1200px) {
       /* grid-column/row: em grelha, o absoluto mede-se pela célula; a coluna da conversa tem 0px aqui */
       .chat-conversa { grid-column: 1 / -1; grid-row: 1 / -1; position: absolute; z-index: 5; inset: 8px 8px 84px 8px; width: auto; border: 1px solid var(--borda); border-radius: 16px; box-shadow: 0 16px 40px rgb(19 32 59 / .2); }
       .chat-painel:not(.chat-painel--sem-conversa) .chat-lancador { display: grid; }
       .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 84px; }
     }
+    /* Com a lateral visível, a conversa fica encostada à direita e não tapa a navegação */
+    @container (min-width: 821px) and (max-width: 1200px) { .chat-conversa { left: auto; } }
     /* 11/2026: sem azul escuro no modo claro: painel lateral e mapa em tons claros; Resumo, "Precisa de atenção" e mês escolhido com fundo azul */
     @media all {
       :root { --navy: #eef4ff; --flow-navy-borda: #dbe6fb; --flow-claro: #475569; }
@@ -1208,7 +1200,7 @@
     /* Painel lateral do Visual IX: pesquisa no topo, "Painel", vistas guardadas e o utilizador no fundo */
     .flow-lateral { background: var(--cartao); border-right: 1px solid var(--borda); }
     .flow-lateral .flow-pesquisa { flex: none; width: 100%; min-height: 36px; border-radius: 8px; }
-    .flow-nav-titulo, .flow-vistas h2 { margin: 0 0 6px; padding: 0 10px; font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--nota); }
+    .flow-nav-titulo, .flow-vistas h2 { margin: 0 0 6px; padding: 0 10px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--nota); }
     #nav-lista { display: flex; flex-direction: column; gap: 2px; }
     .flow-utilizador { margin-top: auto; padding: 12px 6px 0; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--borda); font-size: 13px; font-weight: 500; }
     .flow-utilizador .flow-iniciais { width: 32px; height: 32px; border: 0; background: var(--marca); color: #fff; font-size: 12px; }
@@ -1229,33 +1221,52 @@
     /* Boas-vindas: o painel ocupa tudo; lateral, barra do topo e conversa só depois de escolher */
     .chat-painel--inicio :is(.flow-lateral, .chat-conversa, .chat-lancador, .res-topo) { display: none !important; }
     .chat-painel--inicio .chat-dados { grid-column: 1 / -1; grid-row: 1 / -1; }
-    .chat-painel--inicio .chat-painel-dados { padding: 40px 24px !important; background: var(--cartao); }
-    .flow-ini { min-height: 100%; max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; }
-  
-    .flow-ini-corpo { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-content: center; align-items: baseline; gap: 14px 48px; }
-    .flow-ini-marca { grid-column: 1 / -1; display: flex; }
-    .flow-ini h1 { margin: 0 0 8px; font-size: 40px; font-weight: 700; letter-spacing: -.02em; }
-    .flow-ini-esq > p { margin: 0; font-size: 15px; color: var(--suave); }
-    .flow-ini-escrever { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
-    .flow-ini-campo { height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 18px; border: 1px solid var(--borda-controlo); border-radius: 26px; background: var(--cartao); }
-    .flow-ini-campo:focus-within { outline: 2px solid var(--marca); outline-offset: 1px; }
-    .flow-ini-campo input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font: inherit; font-size: 14.5px; color: var(--texto); }
-    .flow-ini-campo button { height: 40px; padding: 0 18px; border: 0; border-radius: 20px; background: var(--marca); color: #fff; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
-    .flow-ini-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .flow-ini-chips button { min-height: 32px; padding: 0 12px; border: 1px solid var(--borda-controlo); border-radius: 16px; background: var(--cartao); color: var(--texto); font: inherit; font-size: 12.5px; cursor: pointer; }
-    .flow-ini-chips button:hover { border-color: var(--marca); color: var(--marca); }
-    .flow-ini-como { padding: 28px; border-radius: 20px; background: var(--selecionado); }
-    .flow-ini-como h2 { margin: 0 0 18px; font-size: 17px; font-weight: 400; }
+    .chat-painel--inicio .chat-painel-dados { padding: 0 !important; background: var(--cartao); }
+    /* Ecrã de entrada: cores do protótipo, só aqui; o azul é o do logótipo */
+    .flow-ini { --ini-azul: #1f5bff; --ini-azul-escuro: #1746cc; --ini-texto: #0f172a; --ini-suave: #475569; --ini-borda: #848d9c; min-height: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; color: var(--ini-texto); font-size: 16px; line-height: 1.5; }
+    .flow-ini svg { display: block; stroke-linecap: round; stroke-linejoin: round; }
+    .flow-ini-corpo { flex: 1; padding: 48px 40px 24px; display: flex; flex-direction: column; justify-content: center; gap: 32px; }
+    .flow-ini-marca img { display: block; }
+    .flow-ini-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 48px 96px; }
+    .flow-ini-esq { flex: 1 1 360px; min-width: 0; }
+    .flow-ini h1 { margin: 0 0 24px; font-size: 56px; line-height: 1.1; font-weight: 700; letter-spacing: -.03em; }
+    .flow-ini h1 span { color: var(--ini-azul); }
+    .flow-ini-esq > p { margin: 0; font-size: 20px; color: var(--ini-suave); }
+    .flow-ini-escrever { margin-top: 24px; display: flex; flex-direction: column; gap: 24px; }
+    .flow-ini-campo { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 24px; border: 1px solid var(--ini-borda); border-radius: 999px; background: #fff; }
+    .flow-ini-campo:focus-within { border-color: var(--ini-azul); box-shadow: 0 0 0 4px rgba(31, 91, 255, .18); outline: 2px solid transparent; }
+    .flow-ini-campo input { flex: 1; min-width: 0; min-height: 44px; border: 0; outline: none; background: transparent; font: inherit; font-size: 17px; color: var(--ini-texto); }
+    .flow-ini-campo button { flex: none; width: 48px; height: 48px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--ini-azul); color: #fff; cursor: pointer; }
+    .flow-ini-campo button:hover { background: var(--ini-azul-escuro); }
+    .flow-ini-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .flow-ini-chips button { flex: none; min-height: 44px; padding: 0 16px; border: 1px solid var(--ini-borda); border-radius: 999px; background: #fff; color: var(--ini-texto); font: inherit; font-size: 14px; white-space: nowrap; cursor: pointer; }
+    .flow-ini-chips button:hover { border-color: var(--ini-azul); }
+    .flow-ini-chips button[aria-pressed="true"] { border: 2px solid var(--ini-azul); background: #eef3ff; font-weight: 700; }
+    .flow-ini-dir { flex: 0 1 400px; min-width: 0; margin-top: 124px; display: flex; flex-direction: column; gap: 8px; }
+    .flow-ini-como { padding: 24px; border-radius: 24px; background: #f8faff; display: flex; flex-direction: column; gap: 16px; }
+    .flow-ini-como h2 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 700; letter-spacing: -.02em; color: var(--ini-suave); }
     .flow-ini-como ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; }
-    .flow-ini-como li { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 2px 12px; }
-    .flow-ini-como li > span { grid-row: span 2; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--marca); color: #fff; }
-    .flow-ini-como b { font-size: 14px; font-weight: 400; }
-    .flow-ini-como small { font-size: 12.5px; line-height: 1.4; color: var(--suave); }
-    .flow-ini-rodape { margin-top: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; font-size: 11.5px; color: var(--nota); }
-    .flow-ini-rodape nav { display: flex; gap: 24px; }
-    .flow-ini-rodape button { padding: 0; border: 0; background: none; color: var(--ligacao); font: inherit; text-decoration: underline; cursor: pointer; }
-    :is(.flow-ini-chips button, .flow-ini-rodape button, .flow-ini-campo button):focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
-    @media (max-width: 820px) { .flow-ini-corpo { grid-template-columns: minmax(0, 1fr); gap: 24px; } .flow-ini h1 { font-size: 32px; } }
+    .flow-ini-como li { display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 16px; }
+    .flow-ini-como li > span { grid-row: span 2; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--ini-azul); color: #fff; font-size: 14px; font-weight: 700; }
+    .flow-ini-como b { font-size: 15px; font-weight: 700; }
+    .flow-ini-como small { font-size: 14px; color: var(--ini-suave); }
+    .flow-ini-ex { margin: 0; padding: 16px; border: 1px solid #e3e9f8; border-radius: 16px; background: #fff; display: flex; flex-direction: column; gap: 16px; }
+    .flow-ini-ex figcaption { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ini-suave); }
+    .flow-ini-ex > p { margin: 0; align-self: flex-end; max-width: 85%; padding: 6px 12px; border-radius: 16px 16px 4px 16px; background: var(--ini-azul); color: #fff; font-size: 14px; font-weight: 600; }
+    .flow-ini-ex > div { display: flex; align-items: center; gap: 16px; }
+    .flow-ini-ex svg { flex: none; }
+    .flow-ini-ex div p { margin: 0; font-size: 14px; color: var(--ini-suave); }
+    .flow-ini-direto { width: 100%; min-height: 56px; padding: 0 24px; display: flex; align-items: center; gap: 16px; border: 1px solid #c9d6ff; border-radius: 24px; background: #fff; color: var(--ini-azul-escuro); font: inherit; font-size: 15px; font-weight: 700; text-align: left; cursor: pointer; }
+    .flow-ini-direto:hover { color: #0f2f8f; }
+    .flow-ini-direto span { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border: 2px solid currentColor; border-radius: 50%; }
+    .flow-ini-rodape { padding: 16px 40px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; font-size: 14px; color: var(--ini-suave); }
+    :is(.flow-ini-chips button, .flow-ini-direto, .flow-ini-campo button):focus-visible { outline: 3px solid var(--ini-azul); outline-offset: 2px; }
+    /* 970px: as duas colunas (360 + 96 + 400, mais 80 de margens e a barra de deslocamento) já não cabem lado a lado */
+    @media (max-width: 970px) { .flow-ini-dir { flex: 1 1 100%; margin-top: 0; } }
+    /* Janelas baixas (portáteis, browser com barras): tudo à vista sem deslocar; o exemplo é o primeiro a sair */
+    @media (min-width: 971px) and (max-height: 950px) { .flow-ini-dir { margin-top: 0; } .flow-ini-corpo { padding: 24px 40px 8px; gap: 16px; } .flow-ini-rodape { padding: 8px 40px 16px; } }
+    @media (min-width: 971px) and (max-height: 760px) { .flow-ini-ex { display: none; } }
+    @media (max-width: 560px) { .flow-ini-corpo { padding: 24px 16px 16px; } .flow-ini-rodape { padding: 16px; } .flow-ini h1 { font-size: 40px; } .flow-ini-esq > p { font-size: 18px; } }
 
     /* Protótipo 11/2026 — Resumo: indicadores no topo; clientes e "Precisa de atenção" lado a lado (1,35 : 1) */
     .res-grelha > [data-bloco="cli"] { flex: 1.35 1 380px; }
@@ -1263,7 +1274,8 @@
     .chat-folha--painel > .flow-kpis-grelha { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin: 0 0 4px; }
 
     /* Protótipo 11/2026 — Conversa: o que o Flow está a ver, sugestões em lista, caixa de escrita em destaque */
-    .chat-contexto { margin-left: auto; min-width: 0; max-width: 150px; display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 99px; background: var(--selecionado); color: var(--ligacao); font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+    .chat-contexto { margin-left: auto; min-width: 0; max-width: 150px; display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 99px; background: var(--selecionado); color: var(--ligacao); font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .chat-conversa-nome { flex: none; }   /* a etiqueta da vista é que encolhe: não passa por cima do "Pronto" */
     .chat-contexto span { overflow: hidden; text-overflow: ellipsis; }
     .chat-contexto svg { flex: none; }
     .chat-conversa .chat-sugestoes h3 { font-size: 12.5px; font-weight: 700; color: var(--texto); }
@@ -1286,7 +1298,6 @@
 
     /* Protótipo — larguras: painel lateral 236px e conversa 360px (sobra mais espaço para os dados) */
     .flow-lateral:not(.flow-lateral--recolhido) { width: 236px; padding-left: 14px; padding-right: 14px; }
-    .flow-marca-texto p { white-space: nowrap; }
     @container (min-width: 821px) { .chat-conversa { width: 360px; } }
 
     /* Protótipo — ícones */
@@ -1315,7 +1326,7 @@
     .res-periodos button[aria-pressed="true"] { background: var(--cartao); color: var(--texto); box-shadow: 0 1px 2px rgb(11 15 23 / .12); }
     .res-filtros-btn { height: 36px; padding: 0 12px; display: flex; align-items: center; gap: 7px; border: 1px solid var(--borda-campo); border-radius: 8px; background: var(--cartao); color: var(--texto); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
     .res-filtros-btn:hover, .res-filtros-btn[aria-expanded="true"], .res-filtros-btn[aria-pressed="true"] { border-color: var(--marca); color: var(--marca); }
-    .res-filtros-n { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border-radius: 9px; background: var(--marca); color: #fff; font-size: 11px; font-weight: 700; }
+    .res-filtros-n { min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border-radius: 9px; background: var(--marca); color: #fff; font-size: 12px; font-weight: 700; }
 
     /* Protótipo — tabelas (Clientes, Artigos), cartão lateral e barras de peso */
     .res-grelha > .res-tabela { flex: 1 1 440px; gap: 0; }
@@ -1348,7 +1359,7 @@
     .res-fat-col--esq .res-fat-dica { left: auto; right: 60%; }
     .res-fat-col:is(:hover, :focus) .res-fat-dica { display: grid; gap: 3px; }
     .res-fat-dica span { display: flex; justify-content: space-between; gap: 10px; }
-    .res-fat-rot { display: grid; margin-top: 8px; text-align: center; font-size: 11.5px; color: #5b6472; }
+    .res-fat-rot { display: grid; margin-top: 8px; text-align: center; font-size: 12px; color: #5b6472; }
     .res-legenda i.liq { width: 14px; height: 2px; border-radius: 1px; }
     .res-casc { margin-top: 8px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; text-align: center; font-size: 12px; color: var(--suave); }
     .res-casc > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
@@ -1383,10 +1394,10 @@
     .res-compras-barras--parado i { background: #0b0f17; }
     .res-tab--art { grid-template-columns: minmax(0, 1fr) 90px 56px 60px; }
     .res-tab-nome { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 500; }
-    .res-tab-nome small { display: block; overflow: hidden; text-overflow: ellipsis; font-size: 11.5px; font-weight: 400; color: var(--nota); }
+    .res-tab-nome small { display: block; overflow: hidden; text-overflow: ellipsis; font-size: 12px; font-weight: 400; color: var(--nota); }
     .res-tab-linha strong { font-weight: 600; }
     .res-tab-nota { font-size: 12px; color: var(--suave); }
-    .res-estado { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+    .res-estado { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap; }
     .res-estado--ativo { background: var(--selecionado); color: var(--ligacao); }
     .res-estado--risco { background: #0b0f17; color: #fff; }
     .res-estado--perdido { background: #e9ebef; color: #5b6472; }
@@ -1431,8 +1442,8 @@
     /* Demonstração — Alertas: lista com separadores; ao lado o detalhe e as regras */
     .res-sino { position: relative; flex: none; width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid #e4e7ec; border-radius: 8px; background: var(--cartao); color: #0b0f17; cursor: pointer; }
     .res-sino:hover { border-color: #1d5bff; color: #1d5bff; }
-    .res-sino span { position: absolute; top: -7px; right: -7px; min-width: 19px; height: 19px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border: 2px solid #fff; border-radius: 10px; background: #1d5bff; color: #fff; font-size: 11px; font-weight: 700; }
-    .flow-nav-n { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; display: grid; place-items: center; border-radius: 10px; background: #1d5bff; color: #fff; font-size: 11px; font-weight: 700; }
+    .res-sino span { position: absolute; top: -7px; right: -7px; min-width: 19px; height: 19px; padding: 0 5px; box-sizing: border-box; display: grid; place-items: center; border: 2px solid #fff; border-radius: 10px; background: #1d5bff; color: #fff; font-size: 12px; font-weight: 700; }
+    .flow-nav-n { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; display: grid; place-items: center; border-radius: 10px; background: #1d5bff; color: #fff; font-size: 12px; font-weight: 700; }
     .res-ver-alertas { margin-left: auto; order: 9; padding: 0; border: 0; background: none; color: #1d5bff; font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
     .res-grelha > .res-al-lista { flex: 1 1 440px; }
     .res-al-lado { flex: 1 1 300px; max-width: 340px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
@@ -1451,11 +1462,11 @@
     .res-al-txt b { font-size: 13.5px; font-weight: 500; line-height: 1.35; }
     .res-al-linha--nova .res-al-txt b { font-weight: 700; }
     .res-al-txt span { font-size: 12.5px; line-height: 1.4; color: #5b6472; }
-    .res-al-txt small { font-size: 11.5px; color: #8a93a3; }
+    .res-al-txt small { font-size: 12px; color: #8a93a3; }
     .res-al-ponto { width: 8px; height: 8px; flex: none; margin-top: 6px; border-radius: 50%; }
     .res-al-linha--nova .res-al-ponto { background: #1d5bff; }
     .res-al-sel { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5b6472; }
-    .res-chip-sev { height: 22px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 11px; font-size: 11.5px; font-weight: 700; }
+    .res-chip-sev { height: 22px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 11px; font-size: 12px; font-weight: 700; }
     .res-al-titulo { font-size: 17px; font-weight: 700; line-height: 1.3; }
     .res-al-desc { margin: 0; font-size: 13px; line-height: 1.5; color: #2b3240; }
     .res-btn-negro { height: 38px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 8px; background: #0b0f17; color: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
@@ -1464,7 +1475,7 @@
     .res-btn-discreto:hover { background: #f4f5f7; }
     .res-regra { width: 100%; display: flex; align-items: center; gap: 12px; padding: 4px 0; border: 0; background: none; color: var(--texto); font: inherit; text-align: left; cursor: pointer; }
     .res-regra > span:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 500; }
-    .res-regra small { font-size: 11.5px; font-weight: 400; color: #5b6472; }
+    .res-regra small { font-size: 12px; font-weight: 400; color: #5b6472; }
     .res-regra i { position: relative; flex: none; width: 36px; height: 20px; border-radius: 10px; background: #d7dbe2; transition: background .15s; }
     .res-regra i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; }
     .res-regra[aria-checked="true"] i { background: #1d5bff; }
@@ -1478,7 +1489,7 @@
     .res-ficha-rapida .res-estado { align-self: flex-start; }
     .res-ficha-num { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .res-ficha-num div { padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border-radius: 10px; background: #f4f5f7; }
-    .res-ficha-num span { font-size: 11.5px; color: #5b6472; }
+    .res-ficha-num span { font-size: 12px; color: #5b6472; }
     .res-ficha-num strong { font-size: 15px; font-weight: 700; }
     .res-ficha-btn { height: 34px; padding: 0 12px; display: flex; align-items: center; gap: 7px; border: 0; border-radius: 8px; background: #0b0f17; color: #fff; font: inherit; font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer; }
     .res-ficha-btn:hover { background: #252c3b; }
@@ -1551,15 +1562,15 @@
     .chat-folha--painel .flow-kpi--destaque .chat-delta { background: rgb(255 255 255 / .18); color: #fff; }
     /* Faturação: quatro cartões numa só fila, mais baixos, cada dado numa linha */
     .flow-kpis-grelha.flow-kpis-grelha--fat { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-    .chat-folha--painel .flow-kpis-grelha--fat .flow-kpi { padding: 12px; gap: 4px; font-size: 11.5px; }
+    .chat-folha--painel .flow-kpis-grelha--fat .flow-kpi { padding: 12px; gap: 4px; font-size: 12px; }
     .chat-folha--painel .flow-kpis-grelha--fat .flow-kpi strong { font-size: 20px; }
-    .chat-folha--painel .flow-kpis-grelha--fat .flow-kpi > span { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .chat-folha--painel .flow-kpis-grelha--fat .flow-kpi > span { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .flow-kpis-grelha--fat .res-fluxo { margin: 2px 0 0; gap: 2px; }
     .flow-kpis-grelha--fat .res-fluxo div { gap: 6px; }
     .flow-kpis-grelha--fat .res-fluxo dt { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .flow-kpis-grelha--fat .res-fluxo dd { flex: none; white-space: nowrap; }
     .flow-kpi--destaque .res-fluxo dd { color: #fff; }
-    @media (max-width: 720px) { .flow-kpis-grelha.flow-kpis-grelha--fat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @container (max-width: 720px) { .flow-kpis-grelha.flow-kpis-grelha--fat { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
     /* Protótipo — Resumo: espaços entre linhas, sem rodapé à vista */
     .res-geral > .flow-kpis-grelha { margin: 0 0 14px; }
@@ -1586,10 +1597,10 @@
     .res-vm-ponto--parcial { border-style: dashed; }
     .res-vm-ponto--sel { width: 13px; height: 13px; border: 3px solid #fff; background: #1d5bff; box-shadow: 0 0 0 1.5px #1d5bff; }
     .res-vm-dica { position: absolute; transform: translate(-50%, calc(-100% - 12px)); padding: 4px 8px; border-radius: 6px; background: #0b0f17; color: #fff; font-size: 12px; font-weight: 600; white-space: nowrap; pointer-events: none; }
-    .res-vm-rotulos { position: absolute; left: 0; right: 0; top: 208px; display: grid; text-align: center; font-size: 11.5px; color: #5b6472; }
+    .res-vm-rotulos { position: absolute; left: 0; right: 0; top: 208px; display: grid; text-align: center; font-size: 12px; color: #5b6472; }
     .res-vm-rotulo--sel { color: #1d5bff; font-weight: 700; }
     .res-mes { padding: 18px; display: flex; flex-direction: column; gap: 6px; border: 1px solid #dce6ff; border-radius: 12px; background: #eef3ff; }
-    .res-mes h3 { margin: 0; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #1d5bff; }
+    .res-mes h3 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #1d5bff; }
     .res-mes-nome { font-size: 20px; font-weight: 700; }
     .res-mes-nota { font-size: 12.5px; color: #5b6472; }
     .res-mes-valor { margin-top: 8px; font-size: 28px; font-weight: 700; letter-spacing: -.01em; color: #1d5bff; font-variant-numeric: tabular-nums; }
@@ -1610,7 +1621,7 @@
     .res-principal .res-mes-var { font-size: 13px; text-align: right; }
     .chat-folha--painel .res-cartao--atencao { gap: 12px; border: 1px solid #e4e7ec; background: var(--cartao); box-shadow: none; }
     .res-cartao--atencao .res-cab { justify-content: flex-start; gap: 8px; }
-    .res-cartao--atencao .res-contagem { margin: 0; padding: 2px 8px; border: 0; border-radius: 20px; background: #0b0f17; color: #fff; font-size: 11.5px; font-weight: 700; }
+    .res-cartao--atencao .res-contagem { margin: 0; padding: 2px 8px; border: 0; border-radius: 20px; background: #0b0f17; color: #fff; font-size: 12px; font-weight: 700; }
     .chat-folha--painel .res-alertas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
     .chat-folha--painel .res-alertas li { display: block; padding: 0; border: 0; }
     .res-alerta { width: 100%; display: flex; align-items: flex-start; gap: 10px; padding: 0; border: 0; background: none; color: var(--texto); font: inherit; text-align: left; }
@@ -1626,10 +1637,10 @@
     /* Protótipo — Faturação: documentos por mês (barras) e últimos documentos; cartões à espera de dados */
     .res-barras { height: 180px; display: grid; gap: 18px; align-items: end; border-bottom: 1px solid #d7dbe2; }
     .res-barras > div { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
-    .res-barras span { font-size: 11px; color: #5b6472; }
+    .res-barras span { font-size: 12px; color: #5b6472; }
     .res-barras i { width: 100%; max-width: 40px; border-radius: 6px 6px 0 0; background: #1d5bff; }
     .res-barras i.res-barra-parcial { background: repeating-linear-gradient(135deg, #1d5bff 0 4px, #8fb0ff 4px 8px); }
-    .res-barras-rot { display: grid; gap: 18px; text-align: center; font-size: 11.5px; color: #5b6472; }
+    .res-barras-rot { display: grid; gap: 18px; text-align: center; font-size: 12px; color: #5b6472; }
     .res-tab--doc { grid-template-columns: 150px minmax(0, 1fr) 100px 120px; }
     .res-tab--doc > :nth-child(-n+3) { text-align: left; }
     .res-tab-doc { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
@@ -1637,6 +1648,59 @@
     .res-vazio svg { flex: none; margin-top: 1px; }
     .res-vazio span { display: flex; flex-direction: column; gap: 2px; }
     .res-vazio b { font-weight: 600; color: var(--texto); }
+
+    /* =========================================================
+       12. Responsividade do painel: os @container medem a área dos dados (.chat-painel-dados), não a janela
+       ========================================================= */
+    @container (max-width: 720px) {
+      .flow-topo { flex-wrap: wrap; }
+      .flow-topo-ola { flex: 1 1 100%; }
+      .res-topo-dir { flex: 1 1 100%; min-width: 0; align-items: flex-start; }
+      .res-topo-ctrl, .res-topo-dir .flow-acoes { flex-wrap: wrap; }
+      .res-grelha.res-vm, .res-geral .res-conteudo > .res-grelha:has(> .res-principais) { grid-template-columns: minmax(0, 1fr); }
+    }
+    /* Colunas de 110 + 80px já não deixavam espaço ao nome: passa a linha própria */
+    @container (max-width: 480px) {
+      .res-principal { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+      .res-principal > span:first-child { grid-column: 1 / -1; }
+      .res-principal strong { text-align: left; }
+    }
+    /* Janela estreita: a barra lateral passa a faixa no topo (pesquisa e menu a deslizar); recolhida ou não, mostra sempre os nomes */
+    @container (max-width: 820px) {
+      .chat-corpo > .flow-lateral { grid-column: 1 / -1; grid-row: 1; width: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 12px; overflow: visible; border-right: 0; border-bottom: 1px solid var(--borda); }
+      .chat-corpo > .chat-dados { grid-column: 1 / -1; grid-row: 2; }
+      .chat-corpo > .chat-conversa { grid-row: 2; }   /* a conversa abre por baixo da faixa: o menu nunca fica tapado */
+      .flow-lateral .flow-btn-lateral, .flow-lateral .flow-vistas, .flow-lateral .flow-utilizador, .flow-lateral .flow-nav-titulo { display: none; }
+      .chat-corpo > .flow-lateral .flow-pesquisa { display: flex !important; flex: 1 1 170px; width: auto; }
+      .chat-corpo > .flow-lateral .flow-nav { flex: 999 1 320px; min-width: 0; }
+      .chat-corpo > .flow-lateral #nav-lista { flex-direction: row; gap: 2px; padding: 2px; overflow-x: auto; scrollbar-width: thin; }
+      .chat-corpo > .flow-lateral .flow-nav button { flex: none; width: auto; padding: 0 12px; gap: 8px; font-size: 13.5px; white-space: nowrap; }
+    }
+    /* Créditos: as colunas fixas somam mais do que a área; cada documento passa a bloco de três linhas, sem perder dados */
+    @container (max-width: 640px) {
+      .res-tab-cab.res-tab--cred { display: none; }
+      .res-tab--cred { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+      .res-tab--cred > :nth-child(1) { grid-area: 1 / 1; }
+      .res-tab--cred > :nth-child(4) { grid-area: 1 / 2; }
+      .res-tab--cred > :nth-child(2) { grid-area: 2 / 1; }
+      .res-tab--cred > :nth-child(5) { grid-area: 2 / 2; }
+      .res-tab--cred > :nth-child(5)::before { content: 'Origem: '; color: var(--nota); font-weight: 400; }
+      .res-tab--cred > :nth-child(3) { grid-area: 3 / 1 / auto / -1; }
+      .res-tab-cab.res-tab--doc { display: none; }
+      .res-tab--doc { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+      .res-tab--doc > :nth-child(1) { grid-area: 1 / 1; }
+      .res-tab--doc > :nth-child(4) { grid-area: 1 / 2; }
+      .res-tab--doc > :nth-child(2) { grid-area: 2 / 1; }
+      .res-tab--doc > :nth-child(3) { grid-area: 2 / 2; }
+    }
+    @container (max-width: 420px) {
+      .res-dados-ate { flex: 0 1 auto; min-width: 0; border-radius: 12px; line-height: 1.2; }
+      [data-bloco="cli-tab"] { overflow-x: auto; }   /* as colunas numéricas não cabem: desliza dentro do cartão, não o painel */
+    }
+    @container (max-width: 380px) { .flow-kpis-grelha.flow-kpis-grelha--fat { grid-template-columns: minmax(0, 1fr); } }
+    /* Alvos de clique com pelo menos 24px de altura (WCAG 2.5.8) */
+    :is(.res-ver-todos, .res-ver-alertas, .doc-link) { min-height: 24px; }
+    .flow-pesquisa input { min-height: 24px; }
   </style>
 </head>
 <body data-utilizador="{{UTILIZADOR}}">
@@ -1648,8 +1712,7 @@
       <!-- Proposta D: painel lateral com o Resumo, dados ao centro em separadores, conversa no topo à direita -->
       <aside class="flow-lateral" id="lateral" aria-label="Resumo guardado">
         <div class="flow-marca">
-          <span class="flow-marca-logo" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M4 18 9 12l4 3 7-9"/></svg></span>
-          <div class="flow-marca-texto flow-so-aberto"><p><strong>Inforap Flow</strong></p><p>Assistente de vendas</p></div>
+          <img class="flow-marca-logo" src="/imagens/avatar-flow.png?v=2" alt="" width="48" height="35">
           <button class="flow-btn-lateral" id="btn-lateral" type="button" aria-label="Recolher o painel lateral" aria-expanded="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
           </button>
@@ -1686,7 +1749,7 @@
         <div class="chat-conversa-cab">
           <!-- Cabeçalho da janela: avatar, nome e estado do agente -->
           <div class="chat-conversa-topo">
-            <span class="flow-chat-icone" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg></span>
+            <img class="chat-avatar" src="/imagens/avatar-assistente-vendas.png" alt="" width="32" height="32">
             <div class="chat-conversa-nome">
               <h2 class="chat-conversa-titulo">Flow</h2>
               <!-- role="status": o leitor de ecrã anuncia quando muda -->
@@ -1738,14 +1801,8 @@
 
 
       <!-- Avatar Flow no topo: abre e minimiza a conversa -->
-      <button class="chat-lancador a-falar" id="mostrar-conversa" type="button" aria-expanded="true" aria-label="Flow, assistente de vendas: minimizar a conversa" title="Flow, o assistente de vendas">
-        <svg aria-hidden="true" width="54" height="54" viewBox="0 0 54 54">
-          <rect x="10" y="8" width="34" height="30" rx="12" fill="#fff" opacity=".14"/>
-          <ellipse class="olho" cx="20" cy="22" rx="3.6" ry="4.6" fill="#fff"/>
-          <ellipse class="olho" cx="34" cy="22" rx="3.6" ry="4.6" fill="#fff"/>
-          <path class="boca" d="M20 31 Q27 37 34 31" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-          <path d="M38 44h8l-4 4Z" fill="#5ee0a1"/>
-        </svg>
+      <button class="chat-lancador" id="mostrar-conversa" type="button" aria-expanded="true" aria-label="Flow, assistente de vendas: minimizar a conversa" title="Flow, o assistente de vendas">
+        <img class="chat-avatar" src="/imagens/avatar-assistente-vendas.png" alt="" width="36" height="36">
       </button>
     </div>
   </div>
@@ -4095,7 +4152,7 @@
               <path d="${rCurva(pt(P.real, 0))}" fill="none" stroke="var(--marca)" stroke-width="3" vector-effect="non-scaling-stroke"/>
               <path d="${rCurva(pt(P.previsto, off))}" fill="none" stroke="var(--marca)" stroke-width="3" stroke-dasharray="8 5" vector-effect="non-scaling-stroke"/>
             </svg>
-            <span class="res-nota" style="position:absolute;top:-4px;left:${X(off) / 10}%;transform:translateX(-50%);background:var(--cartao);padding:0 4px;white-space:nowrap;font-size:11px">Último mês completo</span>
+            <span class="res-nota" style="position:absolute;top:-4px;left:${X(off) / 10}%;transform:translateX(-50%);background:var(--cartao);padding:0 4px;white-space:nowrap;font-size:12px">Último mês completo</span>
             ${P.real.map((v, i) => `<span class="res-ponto" style="left:${X(i) / 10}%;top:${Y(v) / 3}%;width:11px;height:11px;border-radius:50%;background:var(--marca);border:2px solid var(--cartao)"></span>
               <span class="res-rotulo" style="left:${X(i) / 10}%;top:calc(${Y(v) / 3}% - 9px);color:var(--texto)">${rCurto(v)}</span>`).join('')}
             ${P.previsto.slice(1).map((v, j) => { const i = j + 1 + off; return `<span class="res-ponto" style="left:${X(i) / 10}%;top:${Y(v) / 3}%;width:10px;height:10px;background:var(--cartao);border:2px solid var(--marca);transform:translate(-50%,-50%) rotate(45deg)"></span>
@@ -4381,7 +4438,7 @@
       }
 
       // Cada linha da vista: um ou mais cartões lado a lado
-      const porSecao = { geral: [htmlCli + htmlAten], alertas: [alertasHtml(D)], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlFatMes, htmlCascata, htmlCreditos, htmlUltimos, htmlAcum], artigos: [htmlArt + htmlArtLado],
+      const porSecao = { geral: [htmlCli + htmlAten], alertas: [alertasHtml(D)], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlFatMes, htmlCascata, htmlUltimos, htmlCreditos, htmlAcum], artigos: [htmlArt + htmlArtLado],
                          zonas: [htmlLoc, htmlZonaDet, htmlLocTab + htmlLocLado], previsoes: [htmlPrevKpis, htmlPrev, htmlPrevMeses] }[secao].filter(Boolean);
       return porSecao.length || secaoComSerie() ? porSecao.map(h => `<div class="res-grelha">${h}</div>`).join('')
         : `<p class="res-nota">Sem dados para a vista ${rEsc(nomeSecao())} com estes filtros.</p>`;
@@ -4991,45 +5048,70 @@
     // Ecrã de entrada (ocupa a janela toda): à esquerda a pergunta, à direita como o Flow responde
     function folhaBoasVindas() {
       const sair = acao => () => { boasVindasAberta = false; secao = 'geral'; vistaResumo = true; abaAtiva = null; desenharPainel(); acao?.(); };
+      // Até 1200px a conversa tapa parte dos dados: quem vem ver o painel entra com ela minimizada
+      const libertarDados = () => { if (painelRaiz.clientWidth <= 1200) verConversa(false); };
       const D = resumoEstado.dados;
-      const raiz = el('div', 'flow-ini'), corpo = el('div', 'flow-ini-corpo'), esq = el('div', 'flow-ini-esq');
+      const raiz = el('div', 'flow-ini'), corpo = el('div', 'flow-ini-corpo'), linha = el('div', 'flow-ini-linha'), esq = el('div', 'flow-ini-esq');
       const marca = el('div', 'flow-ini-marca'), avatar = el('img');
-      Object.assign(avatar, { src: '/imagens/avatar-flow.png', alt: 'Flow', width: 98, height: 72 });   // o logo já traz o nome
+      // ?v=: a imagem fica 24 h na cache do browser; aumentar o número sempre que o ficheiro mudar. O logo já traz o nome
+      Object.assign(avatar, { src: '/imagens/avatar-flow.png?v=2', alt: 'Flow', width: 120, height: 88 });
       marca.append(avatar);
       const escrever = el('form', 'flow-ini-escrever'), caixa = el('div', 'flow-ini-campo');
       const entrada = el('input');
       Object.assign(entrada, { maxLength: 500, autocomplete: 'off', placeholder: 'Escreva a sua pergunta…' });
-      entrada.setAttribute('aria-label', 'Pergunta');
-      caixa.append(entrada, el('button', '', 'Perguntar'));
+      entrada.setAttribute('aria-label', 'A sua pergunta');
+      const enviar = el('button');
+      enviar.setAttribute('aria-label', 'Perguntar');
+      enviar.append(icone('M3 8h10M9 4l4 4-4 4', 22));
+      caixa.append(entrada, enviar);
       escrever.addEventListener('submit', e => {
         e.preventDefault();
         const texto = entrada.value.replace(/\s+/g, ' ').trim();
         if (texto) sair(() => perguntar(texto))();
+        else entrada.focus();
       });
+      // Um exemplo preenche a caixa e só é enviado com a seta; fica marcado enquanto o texto for esse
       const chips = el('div', 'flow-ini-chips');
-      [['Vendas mês a mês', TEMAS[1].perguntas[0]], ['Os 5 melhores clientes', TEMAS[0].perguntas[1]], ['Faturação por zona', TEMAS[1].perguntas[1]]].forEach(([rotulo, q]) => {
-        const b = botaoEl('', rotulo, sair(() => perguntar(q)));
+      chips.setAttribute('role', 'group');
+      chips.setAttribute('aria-label', 'Exemplos de perguntas');
+      const exemplos = [['Vendas mês a mês', TEMAS[1].perguntas[0]], ['Os 5 melhores clientes', TEMAS[0].perguntas[1]], ['Faturação por zona', TEMAS[1].perguntas[1]]].map(([rotulo, q]) => {
+        const b = botaoEl('', rotulo, () => { entrada.value = q; marcarExemplo(); entrada.focus(); });
         b.title = q;
+        b.setAttribute('aria-pressed', 'false');
         chips.append(b);
+        return [b, q];
       });
+      const marcarExemplo = () => exemplos.forEach(([b, q]) => b.setAttribute('aria-pressed', entrada.value === q));
+      entrada.addEventListener('input', marcarExemplo);
+      chips.append(botaoEl('', 'Ver alertas', sair(() => { modoInicio = 'dados'; secao = 'alertas'; libertarDados(); verInicio(); })));
       escrever.append(caixa, chips);
-      esq.append(el('h1', '', `Olá${nomeUtilizador ? ', ' + nomeUtilizador.split(/\s+/)[0] : ''}.`), el('p', '', 'Pergunte por palavras suas. A resposta abre no painel principal.'), escrever);
+      const ola = el('h1', '', 'Olá');
+      if (nomeUtilizador) ola.append(', ', el('span', '', nomeUtilizador.split(/\s+/)[0]));
+      esq.append(ola, el('p', '', 'Pergunte por palavras suas. A resposta abre no painel principal.'), escrever);
 
       const m = D && D.ate ? D.ate.match(/^(\d{2})-(\d{2})/) : null;
-      const como = el('aside', 'flow-ini-como');
-      como.innerHTML = `<h2>Como o Flow responde</h2><ol>${[
+      const como = el('section', 'flow-ini-como');
+      como.setAttribute('aria-labelledby', 'flow-ini-como-titulo');
+      const barras = [[0, 40, 32], [28, 28, 44], [56, 34, 38], [84, 18, 54], [112, 10, 62], [140, 0, 72]]
+        .map(([x, y, h]) => `<rect x="${x}" y="${y}" width="20" height="${h}" rx="4" fill="${x === 140 ? '#1f5bff' : '#b9ccff'}"></rect>`).join('');
+      como.innerHTML = `<h2 id="flow-ini-como-titulo">Como o Flow responde</h2><ol>${[
         ['Escreva a pergunta', 'Como a uma colega, sem termos técnicos. Ou escolha um dos exemplos.'],
         ['O Flow consulta as vendas', m ? `Os dados estão atualizados até ${+m[1]} de ${MESES[m[2] - 1].toLowerCase()}.` : 'Só usa os dados de vendas da empresa.'],
         ['A resposta abre no painel principal', 'Gráficos, quadros e indicadores ficam ali, prontos a explorar.'],
-      ].map(([titulo, texto], i) => `<li><span aria-hidden="true">${i + 1}</span><b>${titulo}</b><small>${texto}</small></li>`).join('')}</ol>`;
-      corpo.append(marca, esq, como);
+      ].map(([titulo, texto], i) => `<li><span aria-hidden="true">${i + 1}</span><b>${titulo}</b><small>${texto}</small></li>`).join('')}</ol>
+        <figure class="flow-ini-ex"><figcaption>Exemplo</figcaption><p>Como evoluíram as vendas mês a mês?</p>
+          <div><svg role="img" aria-label="Exemplo de gráfico de barras com as vendas por mês" width="120" height="54" viewBox="0 0 160 72">${barras}</svg><p>O gráfico abre no painel principal, pronto a explorar.</p></div></figure>`;
+      const direto = botaoEl('flow-ini-direto', 'Ir direto ao painel de vendas', sair(() => { modoInicio = 'dados'; desenharConversa(); libertarDados(); painelEl.querySelector('[data-menu]')?.focus(); }));
+      const seta = el('span');
+      seta.append(icone('M3 8h10M9 4l4 4-4 4', 16));
+      direto.prepend(seta);
+      const dir = el('div', 'flow-ini-dir');
+      dir.append(como, direto);
+      linha.append(esq, dir);
+      corpo.append(marca, linha);
 
-      const rodape = el('div', 'flow-ini-rodape'), ligacoes = el('nav');
-      ligacoes.setAttribute('aria-label', 'Outras opções');
-      ligacoes.append(
-        botaoEl('', 'Ir direto ao painel de vendas', sair(() => { modoInicio = 'dados'; desenharConversa(); painelEl.querySelector('[data-menu]')?.focus(); })),
-        botaoEl('', 'Ver alertas', sair(() => { modoInicio = 'dados'; secao = 'alertas'; verInicio(); })));
-      rodape.append(el('span', '', 'Só leitura. O assistente não altera a base de dados.'), ligacoes);
+      const rodape = el('footer', 'flow-ini-rodape');
+      rodape.append(el('span', '', 'Só leitura. O assistente não altera a base de dados.'), el('span', '', `© ${new Date().getFullYear()} Inforap. Todos os direitos reservados.`));
       raiz.append(corpo, rodape);
       return raiz;
     }
@@ -5043,7 +5125,8 @@
         painelEl.replaceChildren(folhaBoasVindas());
         const nova = painelEl.querySelector('.flow-ini input');
         nova.value = antes ? antes.value : '';
-        if (focado) nova.focus();
+        nova.dispatchEvent(new Event('input'));   // volta a marcar o exemplo escolhido
+        if (focado) nova.focus({ preventScroll: true });
         return;
       }
       if (historico.some(h => h.pendente)) {
@@ -5090,7 +5173,6 @@
       painelRaiz.classList.toggle('chat-painel--sem-conversa', !sim);
       lancador.setAttribute('aria-expanded', String(sim));
       lancador.setAttribute('aria-label', sim ? 'Flow, assistente de vendas: minimizar a conversa' : 'Flow, assistente de vendas: abrir a conversa');
-      lancador.classList.toggle('a-falar', sim);
       (sim ? campo : lancador).focus();
     }
     document.getElementById('esconder-conversa').addEventListener('click', () => verConversa(false));
@@ -5348,7 +5430,7 @@
     desenharTemas();
     mostrarInicio();
     carregarResumo();   // o Resumo carrega logo ao abrir (por trás das boas-vindas)
-    painelEl.querySelector('.flow-ini input')?.focus();
+    painelEl.querySelector('.flow-ini input')?.focus({ preventScroll: true });   // em janelas baixas, o foco deslocava o ecrã e cortava o logótipo
   </script>
 </body>
 </html>
