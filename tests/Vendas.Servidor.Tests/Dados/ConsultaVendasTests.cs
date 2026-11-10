@@ -16,6 +16,53 @@ public class ConsultaVendasTests
     private static readonly DateOnly Desde = new(2024, 1, 1), Ate = new(2025, 1, 1);
 
     [Fact]
+    public void PaginaCreditos_PaginaNoSqlEParametrizaAPesquisa()
+    {
+        var (sql, aplicar) = ConsultaVendas.PaginaCreditos(Desde, Ate, "N", "50%_[x", 30, null, null);
+        var p = Aplicar(aplicar);
+
+        Assert.Contains("OFFSET @deslocamento ROWS FETCH NEXT @limite ROWS ONLY", sql);
+        Assert.Contains("[TipoDocID] IN ('N', 'C')", sql);
+        Assert.DoesNotContain("50%", sql);                     // o texto só vai como parâmetro
+        Assert.Equal(@"%50\%\_\[x%", p["@pesquisa"].Value);     // %, _ e [ não funcionam como padrões
+        Assert.Equal("N", p["@tipo"].Value);
+        Assert.Equal(30, p["@deslocamento"].Value);
+    }
+
+    [Fact]
+    public void PaginaCreditos_SemPesquisaNemTipo_NaoTemEssesFiltros()
+    {
+        var (sql, aplicar) = ConsultaVendas.PaginaCreditos(Desde, Ate, null, " ", 0, null, null);
+
+        Assert.DoesNotContain("@pesquisa", sql);
+        Assert.DoesNotContain("@tipo", sql);
+        Assert.False(Aplicar(aplicar).Contains("@pesquisa"));
+    }
+
+    [Fact]
+    public void Creditos_FiltroDeVendedor_ChegaAPaginaEAosContadores()
+    {
+        var filtros = new Dictionary<Campo, string> { [Campo.Vendedor] = "Ana" };
+
+        var (sqlPagina, _) = ConsultaVendas.PaginaCreditos(Desde, Ate, null, null, 0, null, filtros);
+        var (sqlContagem, _) = ConsultaVendas.ContagemCreditos(Desde, Ate, null, null, filtros);
+
+        Assert.Contains("[ClienteID] IN (SELECT c.ClienteID", sqlPagina);
+        Assert.Contains("[ClienteID] IN (SELECT c.ClienteID", sqlContagem);
+    }
+
+    [Fact]
+    public void DetalheDocumento_FiltraPeloAnoDoNumero()
+    {
+        var (sql, aplicar) = ConsultaVendas.DetalheDocumento("N 10/2026/5", "N", 2026, null);
+        var p = Aplicar(aplicar);
+
+        Assert.Contains("[DocumentoID] = @documento", sql);
+        Assert.Equal(new DateTime(2026, 1, 1), p["@desde"].Value);
+        Assert.Equal(new DateTime(2027, 1, 1), p["@ate"].Value);
+    }
+
+    [Fact]
     public void RankingPorCliente_SemCliente_NaoFiltraNemTemParametro()
     {
         var (sql, aplicar) = ConsultaVendas.RankingPorCliente(Desde, Ate);

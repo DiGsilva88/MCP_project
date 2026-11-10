@@ -69,7 +69,9 @@ projeto_Mcp/
    | `consultar_sensivel` | + `ViewMCP_cliente_sensivel` | NIF, email, telefone, morada, código postal, volume de vendas declarado e plafond. Máx. 20 linhas e 5 páginas; cada acesso fica registado no log (auditoria, sem os valores). |
    | `consultar_vendas` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Faturação real num período: valor líquido sem IVA, notas de crédito descontadas. |
    | `consultar_documentos` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Só para a vista Faturação do painel (o `Vendas.Agente` não a oferece ao modelo): JSON com totais por `TipoDocID`, valor e documentos por mês e tipo (`DataDoc`), os últimos documentos (`DocumentoID`) e os créditos (`N` e `C`, até 5000). |
-   | `consultar_carteira` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para a zona) | Só para a vista Clientes do painel (o `Vendas.Agente` não a oferece ao modelo): JSON com zona, última compra, documentos, compras por mês e estado dos maiores clientes. Estado contado desde a última venda registada: Ativo até 60 dias, Em risco de 61 a 90, Perdido acima de 90. |
+   | `consultar_creditos` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Só para a lista de créditos do painel: JSON com uma página de documentos `N` e `C` e os totais por tipo, com filtro opcional por vendedor. |
+| `consultar_documento` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Só para o painel do documento: JSON com cliente, linhas, IVA e totais de um documento. |
+| `consultar_carteira` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para a zona) | Só para a vista Clientes do painel (o `Vendas.Agente` não a oferece ao modelo): JSON com zona, última compra, documentos, compras por mês e estado dos maiores clientes. Estado contado desde a última venda registada: Ativo até 60 dias, Em risco de 61 a 90, Perdido acima de 90. |
 
    **`consultar`** — `coluna` (mostrar/filtrar/contar), `valor` (filtro), `contar=true` (nº de clientes por valor, com percentagens), `cruzarCom`/`valorCruzado` (filtra também por outra coluna, de qualquer das views — ex.: contar por `Zona` só dos clientes com `Pagamento` = "30 dias"), `nomeComecaPor`, `limite` (1–100, por omissão 10) e `pagina`. Os filtros ignoram acentos e maiúsculas; quando um valor não existe, a tool devolve logo os valores existentes (até 30).
 
@@ -202,7 +204,46 @@ Mostra as tools disponíveis e pergunta o modo:
 ### Painel: alertas, ficha do cliente e relatório
 
 - **Alertas**: calculados a partir do resumo aberto (distrito a cair mais de 20%, artigo ou cliente do top a cair mais de 25%, clientes sem compras há 90 dias, dados incompletos). Queda de 50% ou mais é crítica. As regras ligadas ficam neste computador (`localStorage`); o que já foi lido só dura a sessão, porque os alertas têm nomes de clientes.
-- **Ficha do cliente**: `GET /ficha?cliente=<ID>` chama a tool `consultar`, sem modelo. Mostra a ficha e as condições de faturação, sem NIF nem contactos.
+- **Ficha do cliente**: `GET /api/clientes/<ID>` chama a tool `consultar`, sem modelo. Mostra a ficha e as condições de faturação, sem NIF nem contactos.
+- **Notas de crédito**: `GET /api/creditos?tipo=N|C&q=&page=&periodo=&zona=&cliente=` pagina no SQL e guarda cada resposta 60 s. Clicar numa linha abre `GET /api/documentos/<N-10-2026-1034675>`. O painel mostra uma pré-visualização, que nunca substitui o PDF emitido, e aceita ligações diretas com `#N-10-2026-1034675`. As setas ↑/↓ mudam de documento e Esc fecha.
+- **Por ligar**: `GET /api/documentos/<id>/pdf` devolve sempre 404 e a origem, o ATCUD e o QR vêm vazios, porque ainda não se sabe em que tabelas estão. "Associar fatura" é só uma simulação e não grava nada.
+- **Auditoria**: cada documento aberto acrescenta uma linha a `%LOCALAPPDATA%\Vendas\auditoria.log` (data, login e documento). Nada é escrito na base de dados.
+
+### Ver o painel sem a base de dados
+
+`VENDAS_DEMO=1` usa dados fictícios (`RepoDemo`), sem `VENDAS_SQL`:
+
+```powershell
+$env:VENDAS_DEMO = "1"
+dotnet run --project src/Vendas.Agente -- --web
+```
+
+### Pacote para a equipa de desenvolvimento testar
+
+Sem login nem perfis, por isso só nos PCs da equipa e nunca num servidor partilhado. Em RDS, qualquer sessão conseguiria ver os dados.
+
+1. `powershell -ExecutionPolicy Bypass -File scripts\publicar.ps1` gera `pacote\Flow`.
+2. Copiar essa pasta para o PC de quem testa, com o .NET 10 Runtime instalado.
+3. Fazer duplo clique em `Configurar.cmd`, uma vez por utilizador. Pede o servidor SQL e a palavra-passe e cria o atalho "Inforap Flow" no ambiente de trabalho.
+
+Clicar de novo no atalho com o painel aberto só abre o browser. Para fechar o painel, fecha-se a janela da consola.
+
+### Instalar em servidores RDS (por validar com IT)
+
+Corre uma só instância central, que os utilizadores abrem no browser. Uma instância por sessão não funciona: a porta é da máquina e não da sessão.
+
+1. Publicar o agente e o servidor numa pasta do servidor e definir `VENDAS_SERVIDOR_DLL` com o caminho de `Vendas.Servidor.dll`.
+2. Criar uma conta de serviço com acesso de leitura às views `mcp`. `VENDAS_SQL` com `Integrated Security=True` dispensa o `sql.pwd`.
+3. Definir `VENDAS_ENDERECO` (ex.: `http://vendas.empresa.local:5080/`, com a barra final) e `VENDAS_AUTH=windows`, e reservar o endereço para a conta: `netsh http add urlacl url=<endereço> user=<conta>`.
+4. Criar no perfil dessa conta o `%LOCALAPPDATA%\Vendas\perfis.json`, que liga cada login ao vendedor da ficha, ou a `*` para ver tudo. Quem não estiver no ficheiro recebe 403. Depois de o alterar é preciso reiniciar.
+
+   ```json
+   { "DOMINIO\\joao": "João Silva", "DOMINIO\\maria": "*" }
+   ```
+
+5. Arrancar `Vendas.Agente.exe --web` com o Agendador do Windows, ao iniciar o sistema e com essa conta. Com vários servidores RDS a aceder a um central, usar HTTPS.
+
+Um perfil de vendedor vê o painel e as listas filtrados, mas não o chat nem o envio de resumos por email, que têm dados de todos os clientes.
 - **Exportar**: no painel escolhem-se as secções que entram no CSV; o ficheiro respeita o período e os filtros aplicados.
 
 ### Testar com a Claude em vez do Ollama
@@ -280,7 +321,7 @@ dotnet test Vendas.slnx --filter "Categoria=Integração"
 | O agente não liga ao Ollama (`Connection refused`) | O Ollama não está a correr: abrir a app Ollama ou `ollama serve`. Confirmar em `http://localhost:11434/api/tags`. |
 | `consultar_sensivel` não aparece na lista de tools | `VENDAS_SENSIVEL=0` está definida no ambiente do servidor. |
 | O agente diz `Não encontrei o servidor compilado` | O servidor ainda não foi compilado na mesma configuração do agente. `dotnet build Vendas.slnx` (ou `dotnet run --project src/Vendas.Agente`, que compila os dois). |
-| O chat web não abre (`HttpListenerException`) | A porta 5080 está ocupada por outra instância do agente: fechá-la e arrancar de novo. |
+| O painel abre, mas não é o esperado, ou uma instalação com `VENDAS_ENDERECO` não arranca (`HttpListenerException`) | A porta já está ocupada por outra instância do agente, à qual o browser se liga: fechá-la e arrancar de novo. |
 | `dotnet build` falha com `MSB3027`/`MSB3021` ("... is locked by") | Há processos `Vendas.Servidor.exe` antigos (Inspector, Claude Desktop). Terminá-los e recompilar (os PIDs vêm na mensagem de erro). |
 
 ```powershell

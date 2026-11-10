@@ -16,7 +16,10 @@ using Vendas.Agente;
 var caminhoServidor = Path.GetFullPath(
     Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Vendas.Servidor"));
 var configuracao = Path.GetFileName(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory)));
-var dllServidor = Path.Combine(caminhoServidor, "bin", configuracao!, "net10.0", "Vendas.Servidor.dll");
+// Num pacote (scripts/publicar.ps1) o servidor vem na subpasta "servidor"; VENDAS_SERVIDOR_DLL serve para o ter noutro sítio.
+var servidorNoPacote = Path.Combine(AppContext.BaseDirectory, "servidor", "Vendas.Servidor.dll");
+var dllServidor = Environment.GetEnvironmentVariable("VENDAS_SERVIDOR_DLL")
+    ?? (File.Exists(servidorNoPacote) ? servidorNoPacote : Path.Combine(caminhoServidor, "bin", configuracao!, "net10.0", "Vendas.Servidor.dll"));
 
 if (!File.Exists(dllServidor))
     throw new FileNotFoundException($"Não encontrei o servidor compilado em {dllServidor}. Compile a solução (dotnet build Vendas.slnx).");
@@ -33,6 +36,7 @@ var transporte = new StdioClientTransport(new StdioClientTransportOptions
     EnvironmentVariables = new Dictionary<string, string?>
     {
         ["VENDAS_SQL"] = Environment.GetEnvironmentVariable("VENDAS_SQL"),
+        ["VENDAS_DEMO"] = Environment.GetEnvironmentVariable("VENDAS_DEMO"),
     },
 });
 
@@ -329,24 +333,57 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever, Cancella
         await escrever("O modelo não chegou a dar uma resposta. Reformule a pergunta.");
 }
 
-// ---- Modo web: a mesma ResponderAsync, servida numa página local (só localhost, nunca na rede).
+// ---- Modo web: a mesma ResponderAsync, servida numa página. Por omissão só em localhost, para uma pessoa.
+// Em RDS corre uma só instância central: VENDAS_ENDERECO diz onde ouve e VENDAS_AUTH=windows identifica cada pedido (ver README).
 // Pedidos em paralelo, mas uma pergunta ao modelo de cada vez (o Ollama em CPU também só responde a uma).
-// shortcut: HttpListener e um só histórico; usar Kestrel se houver vários utilizadores.
 async Task ModoWebAsync()
 {
-    const string endereco = "http://localhost:5080/";
+    var enderecoFixo = Environment.GetEnvironmentVariable("VENDAS_ENDERECO");
+    var endereco = enderecoFixo ?? "http://localhost:5080/";
+    var autenticar = string.Equals(Environment.GetEnvironmentVariable("VENDAS_AUTH"), "windows", StringComparison.OrdinalIgnoreCase);
+    var perfis = autenticar ? Perfis.Ler(Path.Combine(pastaDados, "perfis.json")) : null;
     const int MaxPergunta = 500;
 
     using var servidor = new System.Net.HttpListener();
     servidor.Prefixes.Add(endereco);
-    servidor.Start();
+    if (autenticar) servidor.AuthenticationSchemes = System.Net.AuthenticationSchemes.IntegratedWindowsAuthentication;
+    try { servidor.Start(); }
+    // Já há um painel aberto neste PC (segundo clique no atalho ou no botão do VB6): mostra esse. Numa instalação com endereço, a falha tem de se ver.
+    catch (System.Net.HttpListenerException) when (enderecoFixo is null)
+    {
+        Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true });
+        return;
+    }
     // O painel abre no resumo deste ano: começa já, enquanto o browser abre (a falha aparece no 1.º pedido).
-    var preCarregar = ResumoGuardadoAsync("AnoAtual", null, null);
+    var preCarregar = ResumoGuardadoAsync("AnoAtual", null, null, null);
     Console.WriteLine($"Chat em {endereco} (Ctrl+C termina). As chamadas às ferramentas aparecem aqui.");
-    Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true });
+    // Com endereço definido é uma instalação sem ninguém a olhar para este ecrã.
+    if (enderecoFixo is null) Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true });
 
     var umaPergunta = new SemaphoreSlim(1); // ResponderAsync usa estado partilhado (chamadas, textoDireto, perguntaAtual…)
-    CancellationTokenSource? perguntaEmCurso = null; // sem Dispose: Cancel() num CTS já descartado lançaria exceção
+    // Por pessoa: o Parar e uma pergunta nova de um utilizador não cancelam a de outro. Sem Dispose: Cancel() num CTS já descartado lançaria exceção.
+    var perguntasEmCurso = new System.Collections.Concurrent.ConcurrentDictionary<string, CancellationTokenSource>(StringComparer.OrdinalIgnoreCase);
+    var bloqueioAuditoria = new object();
+    var api = new ApiPainel(
+        async (nome, argumentos, ct) =>
+        {
+            var r = await mcp.CallToolAsync(nome, argumentos, cancellationToken: ct);
+            return string.Concat(r.Content.OfType<TextContentBlock>().Select(b => b.Text));
+        },
+        (perfil, documento) =>
+        {
+            // Uma falha do disco não impede a consulta, mas fica na consola.
+            try
+            {
+                Directory.CreateDirectory(pastaDados);
+                lock (bloqueioAuditoria)
+                    File.AppendAllText(Path.Combine(pastaDados, "auditoria.log"), ApiPainel.LinhaAuditoria(DateTimeOffset.Now, perfil.Login, documento) + Environment.NewLine);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Console.Error.WriteLine($"Não consegui escrever na auditoria: {ex.Message}");
+            }
+        });
 
     while (true)
     {
@@ -360,18 +397,28 @@ async Task ModoWebAsync()
         var (pedido, resposta) = (ctx.Request, ctx.Response);
         try
         {
+            var login = autenticar ? ctx.User?.Identity?.Name : Environment.UserName;
+            var perfil = login is null ? null : perfis is null ? new Perfil(login, null) : Perfis.Resolver(login, perfis);
+            if (perfil is null)
+            {
+                resposta.StatusCode = 403;
+                resposta.ContentType = "text/plain; charset=utf-8";
+                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes("Este utilizador ainda não tem acesso ao painel. Peça à equipa técnica para o acrescentar."));
+                return;
+            }
+
             if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/")
             {
                 resposta.ContentType = "text/html; charset=utf-8";
-                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(PaginaChat.Html));
+                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(PaginaChat.Para(perfil.Login)));
             }
             // Só devolve recursos embutidos com este nome exato: um caminho com ../ simplesmente não existe.
-            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath is { } caminho && caminho.StartsWith("/fonts/")
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath is { } caminho && (caminho.StartsWith("/fonts/") || caminho.StartsWith("/imagens/"))
                      && typeof(PaginaChat).Assembly.GetManifestResourceStream(caminho[1..]) is { } fonte)
             {
                 using (fonte)
                 {
-                    resposta.ContentType = "font/woff2";
+                    resposta.ContentType = caminho.StartsWith("/imagens/") ? "image/png" : "font/woff2";
                     resposta.Headers["Cache-Control"] = "max-age=86400";
                     await fonte.CopyToAsync(resposta.OutputStream);
                 }
@@ -382,8 +429,15 @@ async Task ModoWebAsync()
             // Botão "Parar": cancelar só o fetch deixava o Ollama a gerar até ao fim.
             else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/parar")
             {
-                Volatile.Read(ref perguntaEmCurso)?.Cancel();
+                if (perguntasEmCurso.TryGetValue(perfil.Login, out var emCurso)) emCurso.Cancel();
                 resposta.StatusCode = 204;
+            }
+            // O modelo e o email da empresa veem todos os clientes: um perfil de vendedor fica pelo painel, que filtra.
+            else if (perfil.Vendedor is not null && pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath is "/perguntar" or "/agendamentos")
+            {
+                resposta.StatusCode = 403;
+                resposta.ContentType = "text/plain; charset=utf-8";
+                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes("Esta função não está disponível para o perfil de vendedor."));
             }
             else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/feedback")
             {
@@ -426,7 +480,7 @@ async Task ModoWebAsync()
                     Console.WriteLine($"> {pergunta}");
                     // A página só pergunta de novo depois de Parar ou recarregar: a pergunta anterior está abandonada.
                     var cancelar = new CancellationTokenSource();
-                    Interlocked.Exchange(ref perguntaEmCurso, cancelar)?.Cancel();
+                    perguntasEmCurso.AddOrUpdate(perfil.Login, cancelar, (_, anterior) => { anterior.Cancel(); return cancelar; });
                     await umaPergunta.WaitAsync();
                     try
                     {
@@ -441,12 +495,19 @@ async Task ModoWebAsync()
             }
             // Separador "Resumo": só a própria página (same-origin) ou o endereço escrito à mão (none).
             // Outra porta de localhost é "same-site" e também fica de fora.
-            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath is "/resumo" or "/ficha" && pedido.Headers["Sec-Fetch-Site"] is not ("same-origin" or "none"))
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath is { } rota && (rota == "/resumo" || rota.StartsWith("/api/")) && pedido.Headers["Sec-Fetch-Site"] is not ("same-origin" or "none"))
                 resposta.StatusCode = 403;
             else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/resumo")
-                await ResumoAsync(pedido.QueryString, resposta);
-            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/ficha")
-                await FichaAsync(pedido.QueryString, resposta);
+                await ResumoAsync(pedido.QueryString, resposta, perfil.Vendedor);
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath is { } rotaApi && rotaApi.StartsWith("/api/"))
+            {
+                // Uma consulta presa à BD não pode deixar o painel à espera para sempre.
+                using var limite = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                var r = await api.TratarAsync(rotaApi, pedido.QueryString, perfil, limite.Token);
+                resposta.StatusCode = r.Estado;
+                resposta.ContentType = r.Tipo;
+                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(r.Corpo));
+            }
             else resposta.StatusCode = 404;
         }
         catch (Exception ex) when (ex is System.Net.HttpListenerException or IOException)
@@ -473,23 +534,9 @@ static async Task<string?> LerCorpoAsync(System.Net.HttpListenerRequest pedido, 
     return lidos > max ? null : new string(buffer, 0, lidos);
 }
 
-// Botão "Ficha do cliente": a ficha e as condições de faturação, tal como a tool consultar as devolve (sem NIF nem contactos), sem modelo.
-async Task FichaAsync(System.Collections.Specialized.NameValueCollection q, System.Net.HttpListenerResponse resposta)
-{
-    if (q["cliente"]?.Trim() is not { Length: > 0 and <= 100 } cliente)
-    {
-        resposta.StatusCode = 400;
-        return;
-    }
-    var r = await mcp.CallToolAsync("consultar", new Dictionary<string, object?> { ["cliente"] = cliente });
-    Console.WriteLine("[ficha]"); // sem o nome: pode ser dado pessoal
-    resposta.ContentType = "text/plain; charset=utf-8";
-    await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(string.Concat(r.Content.OfType<TextContentBlock>().Select(b => b.Text))));
-}
-
 // Resumo das vendas (geral, de uma zona ou de um cliente): chama a ferramenta diretamente, sem modelo, por isso é rápido
 // e os números são os da BD. Devolve os textos tal como a ferramenta os escreve; a página lê-os com o mesmo leitor do chat.
-async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, System.Net.HttpListenerResponse resposta)
+async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, System.Net.HttpListenerResponse resposta, string? vendedor)
 {
     string[] periodos = ["Ultimos7Dias", "MesAtual", "TrimestreAtual", "AnoAtual", "Ultimos12Meses", "AnoAnterior"];
     var periodo = periodos.Contains(q["periodo"]) ? q["periodo"]! : "AnoAtual";
@@ -499,7 +546,7 @@ async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, Sys
     Dictionary<string, string> partes;
     try
     {
-        partes = await ResumoGuardadoAsync(periodo, cliente, zona);
+        partes = await ResumoGuardadoAsync(periodo, cliente, zona, vendedor);
     }
     catch (Exception ex)
     {
@@ -513,9 +560,9 @@ async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, Sys
 }
 
 // O resumo da página, da cache (ver "resumos") ou montado agora. Uma falha não fica guardada: o pedido seguinte tenta de novo.
-Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cliente, string? zona)
+Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cliente, string? zona, string? vendedor)
 {
-    var chave = $"{DateTime.Today:yyyyMMdd}|{periodo}|{cliente}|{zona}";
+    var chave = $"{DateTime.Today:yyyyMMdd}|{periodo}|{cliente}|{zona}|{vendedor}";
     var validade = TimeSpan.FromMinutes(10);
     lock (resumos)
     {
@@ -534,14 +581,14 @@ Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cli
         var meses = periodo == "MesAtual"
             ? new Dictionary<string, object?> { ["mes"] = DateTime.Today.Month, ["ano"] = DateTime.Today.Year }
             : [];
-        return await MontarResumoAsync(new() { ["periodo"] = periodo }, meses, cliente, zona, limite.Token);
+        return await MontarResumoAsync(new() { ["periodo"] = periodo }, meses, cliente, zona, limite.Token, vendedor: vendedor);
     }
 }
 
 // As consultas do resumo, iguais na página e no email. janela: o período de todas (periodo, ou dataInicio e dataFim).
 // meses: argumentos a mais da evolução por mês; null = sem ela.
 async Task<Dictionary<string, string>> MontarResumoAsync(
-    Dictionary<string, object?> janela, Dictionary<string, object?>? meses, string? cliente, string? zona, CancellationToken ct, DateOnly? dia = null)
+    Dictionary<string, object?> janela, Dictionary<string, object?>? meses, string? cliente, string? zona, CancellationToken ct, DateOnly? dia = null, string? vendedor = null)
 {
     // Só o email passa dia: continua com as zonas da ficha. No painel, "zona" é o distrito escolhido.
     var painel = dia is null;
@@ -559,6 +606,8 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
             foreach (var (chave, valor) in janela) argumentos.TryAdd(chave, valor);
         if (cliente is not null) argumentos["cliente"] = cliente;
         if (soDistrito && zona is not null) { argumentos["coluna"] = "Distrito"; argumentos["valor"] = zona; }
+        // shortcut: as tools só aceitam uma coluna, por isso o perfil de vendedor ignora o filtro de distrito no resumo; a lista de créditos aplica os dois.
+        if (vendedor is not null) { argumentos["coluna"] = "Vendedor"; argumentos["valor"] = vendedor; }
         return Texto(ferramenta, argumentos);
     }
 
@@ -586,7 +635,9 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
         // Sem o filtro: o mosaico mostra sempre todos os distritos, com o escolhido em destaque.
         partes["zonas"] = Vendas(new() { ["agrupar"] = painel ? "Distrito" : "Zona", ["limite"] = 8, ["compararAnoAnterior"] = true }, soDistrito: false);
         if (painel)
-            partes["distritosClientes"] = Texto("consultar", new() { ["coluna"] = "Distrito", ["contar"] = true, ["limite"] = 100 });
+            partes["distritosClientes"] = Texto("consultar", vendedor is null
+                ? new() { ["coluna"] = "Distrito", ["contar"] = true, ["limite"] = 100 }
+                : new() { ["coluna"] = "Distrito", ["contar"] = true, ["limite"] = 100, ["cruzarCom"] = "Vendedor", ["valorCruzado"] = vendedor });
         // Tabela das localidades no painel (o email não a usa)
         partes["localidades"] = Vendas(new() { ["agrupar"] = "Localidade", ["limite"] = 12, ["compararAnoAnterior"] = true });
         // No painel, a vista Clientes lista os 100 maiores; os outros cartões usam só os 10 primeiros.

@@ -26,6 +26,14 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
 
     private readonly TimeProvider tempo = fonteTempo ?? TimeProvider.System;
 
+    private const int MaxPesquisa = 100;
+    private const int MaxPaginas = 100_000; // evita overflow de (pagina-1)*limite
+    private const string DocumentoInexistente = """{"erro":"nao_encontrado"}""";
+
+    // "N 10/2026/1034675": o que a view monta em DocumentoID. Grupos: tipo e ano.
+    private static readonly System.Text.RegularExpressions.Regex FormatoDocumento =
+        new("^([A-Za-z0-9]{1,10}) [A-Za-z0-9]{1,10}/([0-9]{4})/[0-9]{1,12}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
     [McpServerTool(Name = "consultar_vendas")]
     // Descrição curta de propósito, como nas outras tools: o modelo lê-a em cada pedido.
     // Sem exemplos com valores reais (ex.: mes=3, valor=Seixal): o modelo pequeno copiava-os.
@@ -139,6 +147,89 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
                 meses = r.Meses.Select(m => new { mes = m.Mes, tipo = m.TipoDocId, valor = m.Valor, documentos = m.Documentos }),
                 ultimos = r.Ultimos.Select(Documento),
                 creditos = r.Creditos.Select(Documento),
+            });
+        });
+    }
+
+    // Só para a lista de créditos do painel (o agente não a oferece ao modelo). Paginada no SQL.
+    [McpServerTool(Name = "consultar_creditos")]
+    [Description("Notas de crédito e créditos de um período, uma página em JSON, com os totais por tipo.")]
+    public async Task<string> ConsultarCreditosAsync(
+        [Description("Período, como em consultar_vendas.")] Periodo periodo = Periodo.AnoAtual,
+        [Description("Opcional: N ou C.")] string? tipo = null,
+        [Description("Opcional: texto no número do documento ou no nome do cliente.")] string? pesquisa = null,
+        [Description("Página, 1 é a primeira.")] int pagina = 1,
+        [Description("Documentos por página, 1 a 100.")] int limite = 15,
+        [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
+        [Description("Opcional: coluna da ficha.")] Campo? coluna = null,
+        [Description("Valor dessa coluna.")] string? valor = null,
+        [Description("Opcional: só os clientes deste vendedor.")] string? vendedor = null,
+        CancellationToken ct = default)
+    {
+        if (tipo is not (null or "N" or "C")) return "tipo tem de ser N ou C.";
+        if (pesquisa?.Length > MaxPesquisa) return $"A pesquisa tem no máximo {MaxPesquisa} caracteres.";
+
+        var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
+        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, null, null, null, null, hoje, null);
+        if (intervalo is not { } janela) return erroPeriodo!;
+
+        var temValor = !string.IsNullOrWhiteSpace(valor);
+        if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
+        var filtros = new Dictionary<Campo, string>();
+        if (temValor) filtros[coluna!.Value] = valor!.Trim();
+        // Depois da coluna: o perfil de vendedor nunca é substituído por um filtro pedido.
+        if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
+
+        limite = Math.Clamp(limite, 1, Respostas.Maxlinhas);
+        var deslocamento = (Math.Clamp(pagina, 1, MaxPaginas) - 1) * limite;
+
+        return await Respostas.ExecutarAsync(log, "consultar_creditos", periodo, async () =>
+        {
+            var (idCliente, _, erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
+            if (erro is not null) return erro;
+
+            var r = await repo.ListarCreditosAsync(janela.Desde, janela.Ate, tipo, pesquisa, deslocamento, limite, idCliente, filtros, ct);
+            return JsonSerializer.Serialize(new
+            {
+                itens = r.Itens.Select(c => new { documento = c.DocumentoId, tipo = c.TipoDocId, data = Data(c.DataDoc), clienteId = c.ClienteId, cliente = c.Cliente, total = c.Total }),
+                contadores = new { N = r.TotalN, C = r.TotalC },
+            });
+        });
+    }
+
+    // Só para o painel do documento (o agente não a oferece ao modelo). Quem não pode ver recebe o mesmo que num documento inexistente.
+    [McpServerTool(Name = "consultar_documento")]
+    [Description("Um documento pelo número completo, em JSON: cliente, linhas, IVA e totais.")]
+    public async Task<string> ConsultarDocumentoAsync(
+        [Description("Número completo do documento.")] string documento,
+        [Description("Opcional: só se o cliente for deste vendedor.")] string? vendedor = null,
+        CancellationToken ct = default)
+    {
+        var numero = FormatoDocumento.Match(documento);
+        var ano = numero.Success ? int.Parse(numero.Groups[2].Value, CultureInfo.InvariantCulture) : 0;
+        if (ano is < 2000 or > 2100) return DocumentoInexistente;
+
+        var filtros = new Dictionary<Campo, string>();
+        if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
+
+        return await Respostas.ExecutarAsync(log, "consultar_documento", numero.Groups[1].Value, async () =>
+        {
+            var d = await repo.DetalheDocumentoAsync(documento, numero.Groups[1].Value, ano, filtros, ct);
+            if (d is null) return DocumentoInexistente;
+            var liquido = d.Linhas.Sum(l => l.Liquido);
+            var iva = d.Linhas.Sum(l => l.Iva);
+            return JsonSerializer.Serialize(new
+            {
+                documento = d.DocumentoId,
+                tipo = d.TipoDocId,
+                data = Data(d.DataDoc),
+                cliente = new { id = d.ClienteId, nome = d.Cliente },
+                linhas = d.Linhas.Select(l => new { artigoId = l.ArtigoId, artigo = l.Artigo, quantidade = l.Quantidade, iliquido = l.Iliquido, desconto = l.Desconto, liquido = l.Liquido, iva = l.Iva }),
+                totais = new { iliquido = d.Linhas.Sum(l => l.Iliquido), desconto = d.Linhas.Sum(l => l.Desconto), liquido, iva, total = liquido + iva },
+                // shortcut: as views não têm origem, ATCUD nem QR; preencher quando se conhecer a coluna na BD.
+                origem = (string?)null,
+                atcud = (string?)null,
+                qr = (string?)null,
             });
         });
     }

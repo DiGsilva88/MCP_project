@@ -266,6 +266,96 @@ internal static class ConsultaVendas
         return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
     }
 
+    // Um documento N ou C por linha, com o nome do cliente e a pesquisa. Termina nos CTE: quem chama acrescenta o SELECT.
+    private static string CreditosBase(string? cliente, string ficha, bool comPesquisa) => $"""
+        WITH d AS (
+            SELECT [DocumentoID], [TipoDocID], [DataDoc], [ClienteID],
+                   COALESCE(SUM([ValorLiquido]), 0) AS Total
+            FROM   {Vendas}
+            {Onde(cliente, ficha + " AND [TipoDocID] IN ('N', 'C')")}
+            GROUP BY [DocumentoID], [TipoDocID], [DataDoc], [ClienteID]
+        ), f AS (
+            SELECT d.[DocumentoID], d.[TipoDocID], d.[DataDoc], d.[ClienteID], d.Total,
+                   COALESCE(c.[NomeCliente], '(cliente sem ficha)') AS Cliente
+            FROM   d
+            LEFT JOIN {Clientes} AS c ON c.[ClienteID] = d.[ClienteID]
+            {(comPesquisa ? @"WHERE d.[DocumentoID] COLLATE Latin1_General_CI_AI LIKE @pesquisa ESCAPE '\'
+               OR c.[NomeCliente] COLLATE Latin1_General_CI_AI LIKE @pesquisa ESCAPE '\'" : "")}
+        )
+        """;
+
+    // A pesquisa é texto livre: %, _ e [ valem por si, não como padrões do LIKE.
+    private static string PadraoPesquisa(string pesquisa) =>
+        "%" + pesquisa.Trim().Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_").Replace("[", @"\[") + "%";
+
+    private static void PreencherCreditos(SqlParameterCollection p, DateOnly desde, DateOnly ate, string? cliente, string? pesquisa)
+    {
+        Preencher(p, desde, ate, cliente);
+        if (!string.IsNullOrWhiteSpace(pesquisa))
+            p.Add("@pesquisa", SqlDbType.NVarChar, 210).Value = PadraoPesquisa(pesquisa);
+    }
+
+    public static (string Sql, Action<SqlParameterCollection> Parametros) PaginaCreditos(
+        DateOnly desde, DateOnly ate, string? tipo, string? pesquisa, int deslocamento, string? cliente, IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            {CreditosBase(cliente, ficha, !string.IsNullOrWhiteSpace(pesquisa))}
+            SELECT [DocumentoID], [TipoDocID], [DataDoc], CAST([ClienteID] AS nvarchar(50)), Cliente, Total
+            FROM   f
+            {(tipo is null ? "" : "WHERE [TipoDocID] = @tipo")}
+            ORDER BY [DataDoc] DESC, [DocumentoID] DESC
+            OFFSET @deslocamento ROWS FETCH NEXT @limite ROWS ONLY;
+            """;
+        return (sql, p =>
+        {
+            PreencherCreditos(p, desde, ate, cliente, pesquisa);
+            aplicarFicha(p);
+            p.Add("@deslocamento", SqlDbType.Int).Value = deslocamento;
+            if (tipo is not null) p.Add("@tipo", SqlDbType.NVarChar, 20).Value = tipo;
+        });
+    }
+
+    // À parte da página: com um tipo sem resultados, os contadores do outro continuam certos.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) ContagemCreditos(
+        DateOnly desde, DateOnly ate, string? pesquisa, string? cliente, IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            {CreditosBase(cliente, ficha, !string.IsNullOrWhiteSpace(pesquisa))}
+            SELECT COUNT(CASE WHEN [TipoDocID] = 'N' THEN 1 END), COUNT(CASE WHEN [TipoDocID] = 'C' THEN 1 END)
+            FROM   f;
+            """;
+        return (sql, p => { PreencherCreditos(p, desde, ate, cliente, pesquisa); aplicarFicha(p); });
+    }
+
+    // As linhas de um documento. O DocumentoID é calculado na view: filtrar antes por ano e tipo evita comparar o texto em toda a tabela.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) DetalheDocumento(
+        string documento, string tipo, int ano, IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            SELECT v.[DocumentoID], v.[TipoDocID], v.[DataDoc], CAST(v.[ClienteID] AS nvarchar(50)),
+                   COALESCE(c.[NomeCliente], '(cliente sem ficha)'),
+                   v.[ArtigoID], v.[Artigo],
+                   COALESCE(v.[Quantidade], 0), COALESCE(v.[ValorIliquido], 0), COALESCE(v.[ValorDesconto], 0),
+                   COALESCE(v.[ValorLiquido], 0), COALESCE(v.[ValorIva], 0)
+            FROM (
+                SELECT * FROM {Vendas}
+                {Onde(null, ficha + " AND [TipoDocID] = @tipo AND [DocumentoID] = @documento")}
+            ) AS v
+            LEFT JOIN {Clientes} AS c ON c.[ClienteID] = v.[ClienteID]
+            ORDER BY v.[ArtigoID];
+            """;
+        return (sql, p =>
+        {
+            Preencher(p, new DateOnly(ano, 1, 1), new DateOnly(ano + 1, 1, 1), null);
+            aplicarFicha(p);
+            p.Add("@tipo", SqlDbType.NVarChar, 20).Value = tipo;
+            p.Add("@documento", SqlDbType.NVarChar, 80).Value = documento;
+        });
+    }
+
     // Vista Clientes do painel: zona e última compra de sempre de cada cliente (a nota de crédito não é uma compra).
     // Uma só passagem pela view: um OUTER APPLY por cliente passava dos 30 s que o painel espera.
     public static string CarteiraClientes() => $"""
