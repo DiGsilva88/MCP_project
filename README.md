@@ -38,9 +38,12 @@ projeto_Mcp/
 │   └── Vendas.Agente/               Host local: Ollama (qwen3:4b-instruct) + servidor MCP, em consola ou browser
 │       ├── Program.cs               Lança o servidor, liga o modelo às tools, modos consola, menu e web
 │       ├── PoliticasSeguranca.cs    Regras de segurança (prompt de sistema), validação de argumentos e respostas
-│       ├── PaginaChat.cs            Lê a página do chat embebida no executável
+│       ├── PaginaChat.cs            Lê a página do chat embebida no executável e junta as partes ({{inclui:...}})
 │       └── Pagina/
-│           └── pagina-chat.html     Página do modo web (chat no browser), embebida como recurso no build
+│           ├── pagina-chat.html     Esqueleto da página do modo web: <style>, corpo e <script> com as inclusões, por ordem
+│           ├── css/                 Estilos por componente (01–21); todos os @media em 99-media.css, sempre no fim
+│           ├── html/                Partes do corpo: painel lateral, dados, conversa e diálogos
+│           └── js/                  Código da página por componente (01–21); 21-eventos.js tem de ficar em último
 └── tests/
     ├── Vendas.Servidor.Tests/       Testes das tools (repo falso), do SQL gerado, períodos e integração com a BD
     └── Vendas.Agente.Tests/         Testes das políticas de segurança, agendamentos, feedback e página

@@ -1,0 +1,11 @@
+    /* =========================================================
+       7j. Painel de dados: uma só escala de letra e o mesmo espaçamento
+       15px títulos · 13,5px texto e valores (igual à conversa) · 12px notas · 20px cartões
+       ========================================================= */
+    .chat-painel-dados { font-size: 13.5px; line-height: 1.45; }
+    .chat-painel-dados :is(.chat-item-nome, .chat-item-valor, .chat-destaque, .chat-rank-nome, .chat-rank-valor, .chat-folha-total, .chat-seg button, .chat-texto, .chat-ficha, .chat-acao) { font-size: 13.5px; }
+    .chat-painel-dados :is(.chat-item-pos, .chat-item-codigo, .chat-item-rotulo, .chat-item-pct, .chat-folha-meta, .chat-filtro, .chat-chip, .chat-kpi-cab, .chat-kpi-detalhe, .chat-rank-pos, .chat-rank-nome small, .chat-rank-valor small, .chat-filtrar) { font-size: 12px; }
+    .chat-painel-dados .chat-item { padding: 7px 0; gap: 2px 10px; }
+    .chat-painel-dados .chat-item-nome { line-height: 1.4; }
+    .chat-painel-dados :is(.chat-item-valor strong, .chat-ficha dd) { font-weight: 600; }
+    .chat-painel-dados .chat-barra { width: 100%; min-width: 64px; max-width: 200px; }   /* a barra da tabela usa a coluna toda */

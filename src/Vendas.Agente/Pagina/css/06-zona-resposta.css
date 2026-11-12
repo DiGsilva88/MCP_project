@@ -1,0 +1,42 @@
+    /* =========================================================
+       6. Zona de resposta
+       ========================================================= */
+    .chat-area {
+      flex: 1; min-height: 0;
+      overflow-y: auto; overscroll-behavior: contain;
+      padding: 20px 16px;
+      display: flex; flex-direction: column; gap: 16px;
+      background: var(--fundo);
+      scrollbar-width: thin; scrollbar-color: var(--borda) transparent;
+    }
+    /* Em ecrã largo a resposta não estica: linhas e tabelas ficam legíveis */
+    .chat-area > * { width: 100%; max-width: 960px; }
+    .chat-area > .chat-pergunta {
+      width: auto; max-width: min(85%, 816px);
+      margin-right: max(0px, calc(100% - 960px));   /* alinha com a margem direita da resposta */
+    }
+    .chat-intro { gap: 6px; }
+    .chat-intro p { margin: 0; }
+    .chat-intro-ola { font-size: 16px; font-weight: 700; }
+
+    /* Avatar à esquerda, resposta ao lado */
+    .chat-resposta { display: flex; align-items: flex-start; gap: 10px; }
+    .chat-resposta > .chat-avatar { width: 32px; height: 32px; }
+    .chat-resposta > .chat-folha { flex: 1; min-width: 0; }
+
+    .chat-pergunta {
+      align-self: flex-end; max-width: 85%;
+      margin: 0; padding: 10px 14px;
+      background: var(--selecionado);
+      border-radius: 14px 14px 4px 14px;
+    }
+
+    .chat-sugestoes { display: flex; flex-direction: column; gap: 8px; }
+    .chat-sugestoes h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--suave); }
+    .chat-sugestoes div { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .chat-chip {
+      min-height: 44px; padding: 10px 14px;
+      border: 1px solid var(--borda-controlo); border-radius: 8px;
+      background: var(--cartao); text-align: left; font-size: 14.5px;
+    }
+    .chat-chip:hover { border-color: var(--marca); }

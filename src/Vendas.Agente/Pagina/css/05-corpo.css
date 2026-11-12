@@ -1,0 +1,47 @@
+    /* =========================================================
+       5. Corpo: barra lateral | zona principal
+       ========================================================= */
+    .chat-corpo { flex: 1; min-height: 0; display: flex; }
+
+    .chat-lateral {
+      width: 200px; flex: none;
+      padding: 16px 10px;
+      display: flex; flex-direction: column; gap: 22px;
+      background: var(--lateral);
+      border-right: 1px solid var(--borda);
+      overflow-y: auto;
+    }
+    .chat-grupo { display: flex; flex-direction: column; gap: 2px; }
+    .chat-temas { display: flex; flex-direction: column; gap: 2px; }
+    .chat-rotulo { margin: 0 0 6px 10px; font-size: 12.5px; font-weight: 600; color: var(--suave); }
+    .chat-dica { margin: 0 10px; font-size: 13px; color: var(--nota); }
+
+    .chat-tema {
+      min-height: 40px; padding: 0 10px;
+      border: 0; border-radius: 6px;
+      background: transparent;
+      text-align: left; font-size: 14.5px;
+    }
+    .chat-tema:hover { background: var(--cartao); }
+    .chat-tema[aria-pressed="true"] { background: var(--selecionado); font-weight: 700; }
+
+    .chat-hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+    .chat-hist button {
+      width: 100%; min-height: 36px; padding: 7px 10px;
+      border: 0; border-radius: 6px; background: transparent;
+      text-align: left; font-size: 13px; line-height: 1.35; color: var(--suave);
+    }
+    .chat-hist button span { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .chat-hist button:hover { background: var(--cartao); }
+    .chat-hist button[aria-current="true"] { background: var(--cartao); color: var(--texto); font-weight: 600; box-shadow: inset 3px 0 0 var(--marca); }
+
+    .chat-principal { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+
+    /* Painel estreito: os temas passam para uma linha por cima e o histórico esconde-se */
+    @container (max-width: 560px) {
+      .chat-corpo { flex-direction: column; }
+      .chat-lateral { width: auto; flex-direction: row; padding: 8px 12px; border-right: 0; border-bottom: 1px solid var(--borda); overflow-x: auto; }
+      .chat-lateral .chat-rotulo, .chat-historico { display: none; }
+      .chat-temas { flex-direction: row; }
+      .chat-tema { white-space: nowrap; }
+    }

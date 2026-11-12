@@ -1,0 +1,52 @@
+    /* =========================================================
+       12. Responsividade do painel: os @container medem a área dos dados (.chat-painel-dados), não a janela
+       ========================================================= */
+    @container (max-width: 720px) {
+      .flow-topo { flex-wrap: wrap; }
+      .flow-topo-ola { flex: 1 1 100%; }
+      .res-topo-dir { flex: 1 1 100%; min-width: 0; align-items: flex-start; }
+      .res-topo-ctrl, .res-topo-dir .flow-acoes { flex-wrap: wrap; }
+      .res-grelha.res-vm, .res-geral .res-conteudo > .res-grelha:has(> .res-principais) { grid-template-columns: minmax(0, 1fr); }
+    }
+    /* Colunas de 110 + 80px já não deixavam espaço ao nome: passa a linha própria */
+    @container (max-width: 480px) {
+      .res-principal { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+      .res-principal > span:first-child { grid-column: 1 / -1; }
+      .res-principal strong { text-align: left; }
+    }
+    /* Janela estreita: a barra lateral passa a faixa no topo (pesquisa e menu a deslizar); recolhida ou não, mostra sempre os nomes */
+    @container (max-width: 820px) {
+      .chat-corpo > .flow-lateral { grid-column: 1 / -1; grid-row: 1; width: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 12px; overflow: visible; border-right: 0; border-bottom: 1px solid var(--borda); }
+      .chat-corpo > .chat-dados { grid-column: 1 / -1; grid-row: 2; }
+      .chat-corpo > .chat-conversa { grid-row: 2; }   /* a conversa abre por baixo da faixa: o menu nunca fica tapado */
+      .flow-lateral .flow-btn-lateral, .flow-lateral .flow-vistas, .flow-lateral .flow-utilizador, .flow-lateral .flow-nav-titulo { display: none; }
+      .chat-corpo > .flow-lateral .flow-pesquisa { display: flex !important; flex: 1 1 170px; width: auto; }
+      .chat-corpo > .flow-lateral .flow-nav { flex: 999 1 320px; min-width: 0; }
+      .chat-corpo > .flow-lateral #nav-lista { flex-direction: row; gap: 2px; padding: 2px; overflow-x: auto; scrollbar-width: thin; }
+      .chat-corpo > .flow-lateral .flow-nav button { flex: none; width: auto; padding: 0 12px; gap: 8px; font-size: 13.5px; white-space: nowrap; }
+    }
+    /* Créditos: as colunas fixas somam mais do que a área; cada documento passa a bloco de três linhas, sem perder dados */
+    @container (max-width: 640px) {
+      .res-tab-cab.res-tab--cred { display: none; }
+      .res-tab--cred { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+      .res-tab--cred > :nth-child(1) { grid-area: 1 / 1; }
+      .res-tab--cred > :nth-child(4) { grid-area: 1 / 2; }
+      .res-tab--cred > :nth-child(2) { grid-area: 2 / 1; }
+      .res-tab--cred > :nth-child(5) { grid-area: 2 / 2; }
+      .res-tab--cred > :nth-child(5)::before { content: 'Origem: '; color: var(--nota); font-weight: 400; }
+      .res-tab--cred > :nth-child(3) { grid-area: 3 / 1 / auto / -1; }
+      .res-tab-cab.res-tab--doc { display: none; }
+      .res-tab--doc { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
+      .res-tab--doc > :nth-child(1) { grid-area: 1 / 1; }
+      .res-tab--doc > :nth-child(4) { grid-area: 1 / 2; }
+      .res-tab--doc > :nth-child(2) { grid-area: 2 / 1; }
+      .res-tab--doc > :nth-child(3) { grid-area: 2 / 2; }
+    }
+    @container (max-width: 420px) {
+      .res-dados-ate { flex: 0 1 auto; min-width: 0; border-radius: 12px; line-height: 1.2; }
+      [data-bloco="cli-tab"] { overflow-x: auto; }   /* as colunas numéricas não cabem: desliza dentro do cartão, não o painel */
+    }
+    @container (max-width: 380px) { .flow-kpis-grelha.flow-kpis-grelha--fat { grid-template-columns: minmax(0, 1fr); } }
+    /* Alvos de clique com pelo menos 24px de altura (WCAG 2.5.8) */
+    :is(.res-ver-todos, .res-ver-alertas, .doc-link) { min-height: 24px; }
+    .flow-pesquisa input { min-height: 24px; }

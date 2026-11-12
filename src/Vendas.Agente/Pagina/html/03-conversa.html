@@ -1,0 +1,48 @@
+      <aside class="chat-conversa" aria-label="Conversa">
+        <div class="chat-conversa-cab">
+          <!-- Cabeçalho da janela: avatar, nome e estado do agente -->
+          <div class="chat-conversa-topo">
+            <img class="chat-avatar" src="/imagens/avatar-assistente-vendas.png" alt="" width="32" height="32">
+            <div class="chat-conversa-nome">
+              <h2 class="chat-conversa-titulo">Flow</h2>
+              <!-- role="status": o leitor de ecrã anuncia quando muda -->
+              <p class="chat-estado" id="estado" role="status">
+                <span class="chat-ponto" aria-hidden="true"></span>
+                <span id="estado-texto">Pronto</span>
+              </p>
+            </div>
+            <!-- A vista que o Flow tem à frente (desenharNav) -->
+            <span class="chat-contexto" title="O que o Flow está a ver">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span id="contexto-texto">Resumo das vendas</span>
+            </span>
+            <button class="chat-esconder" id="esconder-conversa" type="button" aria-label="Minimizar a conversa">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14"/></svg>
+            </button>
+            <button class="flow-btn-fechar" id="fechar-conversa" type="button" aria-label="Fechar e voltar ao início da conversa" title="Fechar">×</button>
+          </div>
+          <div class="chat-temas" id="temas" role="group" aria-label="Tema" hidden></div>
+        </div>
+        <div class="chat-area" id="area"></div>
+        <p class="so-leitor" id="anuncio" role="status"></p>
+
+        <footer class="chat-rodape">
+          <form class="chat-escrever" id="form">
+            <label for="pergunta" class="so-leitor">Pergunta</label>
+            <input class="chat-campo" id="pergunta" maxlength="500" autocomplete="off"
+                   placeholder="Escreva a sua pergunta…" required>
+            <button class="chat-enviar" aria-label="Enviar pergunta">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </button>
+          </form>
+          <p class="chat-rodape-texto">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/>
+            </svg>
+            Só leitura. O assistente não altera a base de dados.
+          </p>
+        </footer>
+      </aside>
