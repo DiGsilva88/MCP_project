@@ -410,7 +410,16 @@ async Task ModoWebAsync()
             if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/")
             {
                 resposta.ContentType = "text/html; charset=utf-8";
-                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(PaginaChat.Para(perfil.Login)));
+                resposta.Headers["Cache-Control"] = "no-cache"; // a página leva o nome do utilizador: valida sempre
+                var HTML = System.Text.Encoding.UTF8.GetBytes(PaginaChat.Para(perfil.Login));
+                if ((pedido.Headers["Accept-Encoding"] ?? "").Contains("gzip"))
+                {
+                    resposta.Headers["Content-Encoding"] = "gzip";
+                    using var gzip = new System.IO.Compression.GZipStream(resposta.OutputStream, System.IO.Compression.CompressionLevel.Fastest, leaveOpen: true);
+                    await gzip.WriteAsync(HTML);
+                }
+                else
+                await resposta.OutputStream.WriteAsync(HTML);
             }
             // Só devolve recursos embutidos com este nome exato: um caminho com ../ simplesmente não existe.
             else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath is { } caminho && (caminho.StartsWith("/fonts/") || caminho.StartsWith("/imagens/"))
