@@ -10,7 +10,12 @@ public static class PaginaChat
     // static readonly em vez de const: o valor só se conhece ao arrancar.
     // Quem usa PaginaChat.Html não precisa de mudar nada.
     // O avatar do Flow é um SVG dentro da página: já não há imagem para embutir.
-    private static readonly string Modelo = Ler("pagina-chat.html");
+
+    // A página está dividida em Pagina/css, Pagina/html e Pagina/js; {{inclui:css/01-tokens.css}} é trocado pelo ficheiro.
+
+    private static readonly string Modelo = System.Text.RegularExpressions.Regex.Replace(
+Ler("pagina-chat.html"), @"{{inclui:([\w/.-]+)}}", m => Ler(m.Groups[1].Value));
+
     public static readonly string Html = Para(Environment.UserName);
 
     // Nome na saudação: o login do Windows ("DOMINIO\Diana.Silva" -> "Diana Silva"); vai para um atributo, por isso codificado.
