@@ -4,7 +4,7 @@
        Os @container ficam com o seu componente (medem o painel, não a janela).
        ========================================================= */
 
-    /* ---------- de: 01-tokens.css ---------- */
+    /* ---------- Modo escuro (desligado): tokens de 01, 09, 16 e 19 ---------- */
     @media not all {
       :root {
         --navy: #0b1222;
@@ -36,39 +36,29 @@
         --borda-controlo: #5d6a85;
         --ligacao: #8ea6ff;      /* 7,3:1 no cartão escuro */
         --serie-1: #3987e5; --serie-2: #d95926; --serie-3: #199e70; --serie-4: #c98500; --serie-5: #d55181; --serie-6: #9085e9;
+        --kpi-2: #3cc4bd; --kpi-3: #5ccf97; --kpi-4: #a598ff;
+        --flow-tinta-azul: #c3d1f7; --flow-azul-borda: #3d63e6;
+        --borda-campo: var(--borda); --balao: var(--lateral);
       }
     }
 
-    /* ---------- de: 09-layout-compacto.css ---------- */
-    @media not all { :root { --kpi-2: #3cc4bd; --kpi-3: #5ccf97; --kpi-4: #a598ff; } }
-
-    /* ---------- de: 16-painel-lateral.css ---------- */
-    @media not all { :root { --flow-tinta-azul: #c3d1f7; --flow-azul-borda: #3d63e6; } }
+    /* ---------- Movimento (16, 18 e 20): a entrada do documento fica fora do @media; a regra "reduce" vem depois e desliga-a ---------- */
+    @keyframes doc-entra { from { opacity: 0; transform: translateX(16px); } }
+    #dlg-doc[open] { animation: doc-entra .18s ease-out; }
     @media (prefers-reduced-motion: reduce) {
-      .chat-lancador, .chat-conversa { animation: none; }
+      .chat-lancador, .chat-conversa, .chat-folha, .chat-esqueleto span, .chat-pontos span, .chat-painel-esqueleto *, .res-esqueleto span, .res-esq, .flow-carregar span, #dlg-doc[open] { animation: none; }
+      .res-regra i, .res-regra i::after { transition: none; }
+      .flow-ini *, .flow-ini *::after { animation: none !important; transition: none !important; }
     }
-
-    /* ---------- de: 18-movimento.css ---------- */
-    @media (prefers-reduced-motion: reduce) {
-      .chat-folha, .chat-esqueleto span, .chat-pontos span, .chat-painel-esqueleto *, .res-esqueleto span, .res-esq, .flow-carregar span { animation: none; }
-    }
-
-    /* ---------- de: 19-estilo-11-2026.css ---------- */
-    @media not all { :root { --borda-campo: var(--borda); --balao: var(--lateral); } }
 
     /* ---------- de: 20-visual-ix.css ---------- */
     /* 970px: as duas colunas (360 + 96 + 400, mais 80 de margens e a barra de deslocamento) já não cabem lado a lado */
-    @media (max-width: 970px) { .flow-ini-dir { flex: 1 1 100%; margin-top: 0; } }
+    @media (max-width: 970px) { .flow-ini-dir { flex: 1 1 100%; } }
     /* Janelas baixas (portáteis, browser com barras): tudo à vista sem deslocar; o exemplo é o primeiro a sair */
-    @media (min-width: 971px) and (max-height: 950px) { .flow-ini-dir { margin-top: 0; } .flow-ini-corpo { padding: 24px 40px 8px; gap: 16px; } .flow-ini-rodape { padding: 8px 40px 16px; } }
+    @media (min-width: 971px) and (max-height: 950px) { .flow-ini-marca { padding-top: 20px; } .flow-ini-corpo { padding: 24px 40px 8px; gap: 16px; } .flow-ini-rodape { padding: 8px 48px 16px; } }
     @media (min-width: 971px) and (max-height: 760px) { .flow-ini-ex { display: none; } }
-    @media (max-width: 560px) { .flow-ini-corpo { padding: 24px 16px 16px; } .flow-ini-rodape { padding: 16px; } .flow-ini h1 { font-size: 40px; } .flow-ini-esq > p { font-size: 18px; } }
-    @media (prefers-reduced-motion: reduce) { .res-regra i, .res-regra i::after { transition: none; } }
+    @media (max-width: 560px) { .flow-ini-marca { padding: 16px 16px 0; } .flow-ini-corpo { padding: 24px 16px 16px; } .flow-ini-rodape { padding: 16px; } .flow-ini h1 { font-size: 40px; } .flow-ini-esq > .flow-ini-lema { font-size: 30px; } .flow-ini-esq > p { font-size: 17px; } }
     @media (max-width: 640px) {
       #dlg-doc { margin: auto 0 0; width: 100%; height: 88dvh; border-left: 0; border-top: 1px solid var(--borda); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgb(19 32 59 / .16); }
       .doc-resumo { grid-template-columns: 100px minmax(0, 1fr); }
-    }
-    @media (prefers-reduced-motion: no-preference) {
-      #dlg-doc[open] { animation: doc-entra .18s ease-out; }
-      @keyframes doc-entra { from { opacity: 0; transform: translateX(16px); } }
     }

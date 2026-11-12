@@ -25,7 +25,7 @@ public class PaginaChatTests
     public void EcraDeEntrada_TemOAvatarEmbebido()
     {
         Assert.Contains("Como o Flow responde", PaginaChat.Html);
-        Assert.Contains("'Exemplos de perguntas'", PaginaChat.Html);
+        Assert.Contains("'flow-ini-dica'", PaginaChat.Html);
         Assert.Contains("/imagens/avatar-flow.png", PaginaChat.Html);
         using var imagem = typeof(PaginaChat).Assembly.GetManifestResourceStream("imagens/avatar-flow.png");
         Assert.NotNull(imagem);   // sem o recurso, a rota dava 404 e o ecrã ficava sem avatar

@@ -8,6 +8,9 @@
     /* Recolhida: só os ícones. font-size: 0 e não display: none, para o leitor de ecrã continuar a ler o nome */
     .flow-lateral--recolhido .flow-nav-titulo { display: none; }
     .flow-lateral--recolhido .flow-nav button { position: relative; width: 44px; padding: 0; gap: 0; justify-content: center; font-size: 0; }
+    .flow-procurar-ic { display: none; width: 44px; height: 44px; flex: none; place-items: center; padding: 0; border: 1px solid var(--borda-campo); border-radius: 8px; background: var(--fundo); color: var(--suave); cursor: pointer; }
+    .flow-procurar-ic:hover { border-color: var(--marca); color: var(--marca); }
+    .flow-lateral--recolhido .flow-procurar-ic { display: grid; }
     .flow-lateral--recolhido .flow-nav-n { position: absolute; top: 0; right: 0; min-width: 16px; height: 16px; padding: 0 4px; font-size: 10px; }
     .chat-dados > .flow-acoes { justify-content: flex-end; gap: 8px; padding: 12px max(20px, calc((100% - 1520px) / 2)) 0; }
     .chat-painel--inicio .chat-dados > .flow-acoes { display: none; }
@@ -38,46 +41,65 @@
     /* Boas-vindas: o painel ocupa tudo; lateral, barra do topo e conversa só depois de escolher */
     .chat-painel--inicio :is(.flow-lateral, .chat-conversa, .chat-lancador, .res-topo) { display: none !important; }
     .chat-painel--inicio .chat-dados { grid-column: 1 / -1; grid-row: 1 / -1; }
-    .chat-painel--inicio .chat-painel-dados { padding: 0 !important; background: var(--cartao); }
-    /* Ecrã de entrada: cores do protótipo, só aqui; o azul é o do logótipo */
-    .flow-ini { --ini-azul: #1f5bff; --ini-azul-escuro: #1746cc; --ini-texto: #0f172a; --ini-suave: #475569; --ini-borda: #848d9c; min-height: 100%; max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; color: var(--ini-texto); font-size: 16px; line-height: 1.5; }
+    .chat-painel--inicio .chat-painel-dados { padding: 0 !important; background: #f7f9fc; }
+    /* Ecrã de entrada (protótipo "Demonstração v2"): cores só aqui; o logótipo não muda */
+    .flow-ini { --ini-azul: #1d5bff; --ini-azul-escuro: #0b3fd1; --ini-texto: #0b0f17; --ini-suave: #2b3240; --ini-borda: #848d9c; position: relative; isolation: isolate; overflow: hidden; min-height: 100%; display: flex; flex-direction: column; color: var(--ini-texto); font-size: 16px; line-height: 1.5; }
     .flow-ini svg { display: block; stroke-linecap: round; stroke-linejoin: round; }
+    /* Fundo só da zona da saudação e do exemplo: três manchas azuis que derivam devagar e uma grelha; as bordas esbatem-se */
+    .flow-ini-fundo { position: absolute; inset: -40px -48px; z-index: -1; overflow: hidden; pointer-events: none; -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 60%, transparent 100%); mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 60%, transparent 100%); }
+    .flow-ini-fundo span { position: absolute; border-radius: 50%; will-change: transform; animation: ini-deriva 16s ease-in-out infinite alternate; }
+    .flow-ini-fundo span:nth-child(1) { left: -158px; top: -144px; width: 720px; height: 720px; background: radial-gradient(circle, rgb(29 91 255 / .22), transparent 65%); --dx: 160px; --dy: 80px; }
+    .flow-ini-fundo span:nth-child(2) { right: -180px; top: -40px; width: 640px; height: 640px; background: radial-gradient(circle, rgb(110 151 255 / .22), transparent 65%); --dx: -140px; --dy: -60px; animation-duration: 19s; }
+    .flow-ini-fundo span:nth-child(3) { left: 30%; bottom: -360px; width: 700px; height: 700px; background: radial-gradient(circle, rgb(191 208 255 / .5), transparent 65%); --dx: 90px; --dy: -110px; animation-duration: 22s; }
+    .flow-ini-fundo::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgb(11 15 23 / .045) 1px, transparent 1px), linear-gradient(90deg, rgb(11 15 23 / .045) 1px, transparent 1px); background-size: 56px 56px; -webkit-mask-image: radial-gradient(ellipse 60% 60% at 35% 45%, #000 15%, transparent 75%); mask-image: radial-gradient(ellipse 60% 60% at 35% 45%, #000 15%, transparent 75%); }
+    @keyframes ini-deriva { to { transform: translate(var(--dx), var(--dy)) scale(1.1); } }
+    @keyframes ini-sobe { from { opacity: 0; transform: translateY(14px); } }
+    @keyframes ini-cursor { 50% { opacity: 0; } }
+    .flow-ini--entra .flow-ini-esq > * { animation: ini-sobe .6s ease-out both; }
+    .flow-ini--entra .flow-ini-esq > :nth-child(2) { animation-delay: .05s; }
+    .flow-ini--entra .flow-ini-esq > :nth-child(3) { animation-delay: .08s; }
+    .flow-ini--entra .flow-ini-esq > :nth-child(4) { animation-delay: .16s; }
+    .flow-ini-corpo { width: min(1200px, 100%); margin: 0 auto; box-sizing: border-box; }
     .flow-ini-corpo { flex: 1; padding: 48px 40px 24px; display: flex; flex-direction: column; justify-content: center; gap: 32px; }
+    /* Logótipo no canto superior esquerdo do ecrã, fora da coluna centrada */
+    .flow-ini-marca { flex: none; padding: 32px 48px 0; }
     .flow-ini-marca img { display: block; }
-    .flow-ini-linha { display: flex; flex-wrap: wrap; align-items: center; gap: 48px 96px; }
-    .flow-ini-esq { flex: 1 1 360px; min-width: 0; }
-    .flow-ini h1 { margin: 0 0 24px; font-size: 56px; line-height: 1.1; font-weight: 700; letter-spacing: -.03em; }
-    .flow-ini h1 span { color: var(--ini-azul); }
-    .flow-ini-esq > p { margin: 0; font-size: 20px; color: var(--ini-suave); }
-    .flow-ini-escrever { margin-top: 24px; display: flex; flex-direction: column; gap: 24px; }
-    .flow-ini-campo { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 24px; border: 1px solid var(--ini-borda); border-radius: 999px; background: #fff; }
-    .flow-ini-campo:focus-within { border-color: var(--ini-azul); box-shadow: 0 0 0 4px rgba(31, 91, 255, .18); outline: 2px solid transparent; }
+    .flow-ini-linha { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 48px 96px; }
+    .flow-ini-esq { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+    .flow-ini h1 { margin: 0; font-size: 56px; line-height: 1.1; font-weight: 300; letter-spacing: -.025em; }
+    .flow-ini h1 b { font-weight: 700; }
+    .flow-ini-esq > .flow-ini-lema { margin: 0; font-size: 40px; line-height: 1.15; font-weight: 300; letter-spacing: -.02em; color: var(--ini-texto); }
+    .flow-ini-esq > p { margin: 0; font-size: 18px; color: var(--ini-suave); }
+    .flow-ini-escrever { display: flex; flex-direction: column; gap: 20px; }
+    .flow-ini-campo { position: relative; max-width: 624px; height: 64px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 26px; border: 1px solid var(--ini-borda); border-radius: 32px; background: #fff; box-shadow: 0 18px 44px rgb(29 91 255 / .12), 0 2px 6px rgb(11 15 23 / .04); transition: border-color .2s, box-shadow .2s; }
+    .flow-ini-campo:focus-within { border-color: var(--ini-azul); box-shadow: 0 0 0 4px #eef3ff, 0 18px 44px rgb(29 91 255 / .14); outline: 2px solid transparent; }
     .flow-ini-campo input { flex: 1; min-width: 0; min-height: 44px; border: 0; outline: none; background: transparent; font: inherit; font-size: 17px; color: var(--ini-texto); }
+    /* Exemplo que se escreve sozinho enquanto a caixa está vazia (só decoração; o nome da caixa está no aria-label) */
+    .flow-ini-dica { display: none; position: absolute; left: 26px; right: 66px; top: 50%; transform: translateY(-50%); overflow: hidden; font-size: 17px; color: #6b7381; white-space: nowrap; pointer-events: none; }
+    .flow-ini-campo input:placeholder-shown + .flow-ini-dica { display: flex; align-items: center; }
+    .flow-ini-dica::after { content: ''; flex: none; width: 2px; height: 20px; margin-left: 2px; background: var(--ini-azul); animation: ini-cursor 1s steps(1) infinite; }
     .flow-ini-campo button { flex: none; width: 48px; height: 48px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--ini-azul); color: #fff; cursor: pointer; }
     .flow-ini-campo button:hover { background: var(--ini-azul-escuro); }
-    .flow-ini-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .flow-ini-chips button { flex: none; min-height: 44px; padding: 0 16px; border: 1px solid var(--ini-borda); border-radius: 999px; background: #fff; color: var(--ini-texto); font: inherit; font-size: 14px; white-space: nowrap; cursor: pointer; }
-    .flow-ini-chips button:hover { border-color: var(--ini-azul); }
-    .flow-ini-chips button[aria-pressed="true"] { border: 2px solid var(--ini-azul); background: #eef3ff; font-weight: 700; }
-    .flow-ini-dir { flex: 0 1 400px; min-width: 0; margin-top: 124px; display: flex; flex-direction: column; gap: 8px; }
+    .flow-ini-dir { flex: 0 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
     .flow-ini-como { padding: 24px; border-radius: 24px; background: #f8faff; display: flex; flex-direction: column; gap: 16px; }
-    .flow-ini-como h2 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 700; letter-spacing: -.02em; color: var(--ini-suave); }
+    .flow-ini-como h2 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 700; letter-spacing: -.02em; color: #475569; }
     .flow-ini-como ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; }
     .flow-ini-como li { display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 16px; }
-    .flow-ini-como li > span { grid-row: span 2; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--ini-azul); color: #fff; font-size: 14px; font-weight: 700; }
+    .flow-ini-como li > span { grid-row: span 2; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #1f5bff; color: #fff; font-size: 14px; font-weight: 700; }
     .flow-ini-como b { font-size: 15px; font-weight: 700; }
-    .flow-ini-como small { font-size: 14px; color: var(--ini-suave); }
+    .flow-ini-como small { font-size: 14px; color: #475569; }
     .flow-ini-ex { margin: 0; padding: 16px; border: 1px solid #e3e9f8; border-radius: 16px; background: #fff; display: flex; flex-direction: column; gap: 16px; }
-    .flow-ini-ex figcaption { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ini-suave); }
-    .flow-ini-ex > p { margin: 0; align-self: flex-end; max-width: 85%; padding: 6px 12px; border-radius: 16px 16px 4px 16px; background: var(--ini-azul); color: #fff; font-size: 14px; font-weight: 600; }
+    .flow-ini-ex figcaption { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #475569; }
+    .flow-ini-ex > p { margin: 0; align-self: flex-end; max-width: 85%; padding: 6px 12px; border-radius: 16px 16px 4px 16px; background: #1f5bff; color: #fff; font-size: 14px; font-weight: 600; }
     .flow-ini-ex > div { display: flex; align-items: center; gap: 16px; }
     .flow-ini-ex svg { flex: none; }
-    .flow-ini-ex div p { margin: 0; font-size: 14px; color: var(--ini-suave); }
-    .flow-ini-direto { width: 100%; min-height: 56px; padding: 0 24px; display: flex; align-items: center; gap: 16px; border: 1px solid #c9d6ff; border-radius: 24px; background: #fff; color: var(--ini-azul-escuro); font: inherit; font-size: 15px; font-weight: 700; text-align: left; cursor: pointer; }
-    .flow-ini-direto:hover { color: #0f2f8f; }
-    .flow-ini-direto span { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border: 2px solid currentColor; border-radius: 50%; }
-    .flow-ini-rodape { padding: 16px 40px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; font-size: 14px; color: var(--ini-suave); }
-    :is(.flow-ini-chips button, .flow-ini-direto, .flow-ini-campo button):focus-visible { outline: 3px solid var(--ini-azul); outline-offset: 2px; }
+    .flow-ini-ex div p { margin: 0; font-size: 14px; color: #475569; }
+    .flow-ini-direto { width: 100%; min-height: 56px; padding: 0 24px; display: flex; align-items: center; gap: 14px; border: 1px solid #bfd0ff; border-radius: 18px; background: #fff; color: var(--ini-azul-escuro); font: inherit; font-size: 14.5px; font-weight: 700; text-align: left; cursor: pointer; transition: border-color .2s, background .2s; }
+    .flow-ini-direto:hover { border-color: var(--ini-azul); background: #f5f8ff; }
+    .flow-ini-direto span { flex: none; width: 28px; height: 28px; box-sizing: border-box; display: grid; place-items: center; border: 2px solid currentColor; border-radius: 50%; }
+    /* Rodapé a toda a largura, com a margem do logótipo: aviso à esquerda, direitos à direita */
+    .flow-ini-rodape { padding: 16px 48px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; font-size: 14px; color: var(--ini-suave); }
+    :is(.flow-ini-direto, .flow-ini-campo button):focus-visible { outline: 3px solid var(--ini-azul); outline-offset: 2px; }
 
     /* Protótipo 11/2026 — Resumo: indicadores no topo; clientes e "Precisa de atenção" lado a lado (1,35 : 1) */
     .res-grelha > [data-bloco="cli"] { flex: 1.35 1 380px; }
