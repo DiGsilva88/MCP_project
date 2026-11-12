@@ -1,7 +1,7 @@
       <!-- Proposta D: painel lateral com o Resumo, dados ao centro em separadores, conversa no topo à direita -->
       <aside class="flow-lateral" id="lateral" aria-label="Resumo guardado">
         <div class="flow-marca">
-          <img class="flow-marca-logo" src="/imagens/avatar-flow.png?v=2" alt="" width="48" height="35">
+          <img class="flow-marca-logo" src="/imagens/avatar-flow.png?v=3" alt="" width="48" height="35">
           <button class="flow-btn-lateral" id="btn-lateral" type="button" aria-label="Recolher o painel lateral" aria-expanded="true">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>
           </button>
@@ -12,6 +12,10 @@
           <label class="so-leitor" for="procurar-campo">Procurar cliente</label>
           <input id="procurar-campo" maxlength="100" autocomplete="off" placeholder="Procurar cliente…">
         </form>
+        <!-- Recolhido: a pesquisa fica só a lupa; abre o painel e põe o cursor no campo -->
+        <button class="flow-procurar-ic" id="procurar-ic" type="button" aria-label="Procurar cliente" title="Procurar cliente">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        </button>
         <!-- O Resumo dividido em vistas (desenharNav); cada uma mostra só os seus cartões -->
         <nav class="flow-nav" id="nav" aria-labelledby="nav-titulo"><h2 class="flow-nav-titulo" id="nav-titulo">Painel</h2><div id="nav-lista"></div></nav>
         <section class="flow-vistas flow-so-aberto" aria-labelledby="vistas-titulo">

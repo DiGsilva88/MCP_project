@@ -144,5 +144,9 @@
       e.currentTarget.setAttribute('aria-expanded', String(!fechar));
       e.currentTarget.setAttribute('aria-label', fechar ? 'Abrir o painel lateral' : 'Recolher o painel lateral');
     });
+    document.getElementById('procurar-ic').addEventListener('click', () => {
+      document.getElementById('btn-lateral').click();   // só se vê com o painel recolhido: este clique abre-o
+      document.getElementById('procurar-campo').focus();
+    });
 
     // "▲ MAIOR SUBIDA" / "▼ MAIOR DESCIDA" por baixo de um bloco

@@ -1,4 +1,24 @@
     // O resultado aberto, ou o Resumo (painel inicial). Voltar faz-se pela breadcrumb; outras respostas reabrem pelo cartão na conversa.
+    // Ecrã de entrada: perguntas de exemplo a escreverem-se na caixa vazia.
+    // O tique fica fora da função para não recomeçar quando o Resumo redesenha o ecrã.
+    let iniTique = 0;
+    function animarBoasVindas(raiz, dica) {
+      // Perguntas que o Flow sabe responder, de temas diferentes (como no protótipo)
+      const frases = [TEMAS[1].perguntas[4], TEMAS[0].perguntas[2], TEMAS[1].perguntas[1], TEMAS[2].perguntas[2]];
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) { dica.textContent = 'Escreva a sua pergunta…'; return; }
+      const pintar = () => {
+        // Cada frase escreve-se letra a letra e fica 22 tiques à vista antes da seguinte
+        let n = iniTique % frases.reduce((s, f) => s + f.length + 23, 0), f = 0;
+        while (n > frases[f].length + 22) n -= frases[f++].length + 23;
+        dica.textContent = frases[f].slice(0, n);
+      };
+      pintar();
+      const relogio = setInterval(() => {
+        if (!raiz.isConnected) return clearInterval(relogio);
+        if (!document.hidden) { iniTique++; pintar(); }
+      }, 90);
+    }
+
     // Ecrã de entrada (ocupa a janela toda): à esquerda a pergunta, à direita como o Flow responde
     function folhaBoasVindas() {
       const sair = acao => () => { boasVindasAberta = false; secao = 'geral'; vistaResumo = true; abaAtiva = null; desenharPainel(); acao?.(); };
@@ -8,40 +28,31 @@
       const raiz = el('div', 'flow-ini'), corpo = el('div', 'flow-ini-corpo'), linha = el('div', 'flow-ini-linha'), esq = el('div', 'flow-ini-esq');
       const marca = el('div', 'flow-ini-marca'), avatar = el('img');
       // ?v=: a imagem fica 24 h na cache do browser; aumentar o número sempre que o ficheiro mudar. O logo já traz o nome
-      Object.assign(avatar, { src: '/imagens/avatar-flow.png?v=2', alt: 'Flow', width: 120, height: 88 });
+      Object.assign(avatar, { src: '/imagens/avatar-flow.png?v=3', alt: 'Flow', width: 120, height: 88 });
       marca.append(avatar);
       const escrever = el('form', 'flow-ini-escrever'), caixa = el('div', 'flow-ini-campo');
       const entrada = el('input');
-      Object.assign(entrada, { maxLength: 500, autocomplete: 'off', placeholder: 'Escreva a sua pergunta…' });
+      // placeholder com um espaço: só para o CSS saber (:placeholder-shown) quando a caixa está vazia e mostrar a dica
+      Object.assign(entrada, { maxLength: 500, autocomplete: 'off', placeholder: ' ' });
       entrada.setAttribute('aria-label', 'A sua pergunta');
+      const dica = el('span', 'flow-ini-dica');
+      dica.setAttribute('aria-hidden', 'true');
       const enviar = el('button');
       enviar.setAttribute('aria-label', 'Perguntar');
       enviar.append(icone('M3 8h10M9 4l4 4-4 4', 22));
-      caixa.append(entrada, enviar);
+      caixa.append(entrada, dica, enviar);
       escrever.addEventListener('submit', e => {
         e.preventDefault();
         const texto = entrada.value.replace(/\s+/g, ' ').trim();
         if (texto) sair(() => perguntar(texto))();
         else entrada.focus();
       });
-      // Um exemplo preenche a caixa e só é enviado com a seta; fica marcado enquanto o texto for esse
-      const chips = el('div', 'flow-ini-chips');
-      chips.setAttribute('role', 'group');
-      chips.setAttribute('aria-label', 'Exemplos de perguntas');
-      const exemplos = [['Vendas mês a mês', TEMAS[1].perguntas[0]], ['Os 5 melhores clientes', TEMAS[0].perguntas[1]], ['Faturação por zona', TEMAS[1].perguntas[1]]].map(([rotulo, q]) => {
-        const b = botaoEl('', rotulo, () => { entrada.value = q; marcarExemplo(); entrada.focus(); });
-        b.title = q;
-        b.setAttribute('aria-pressed', 'false');
-        chips.append(b);
-        return [b, q];
-      });
-      const marcarExemplo = () => exemplos.forEach(([b, q]) => b.setAttribute('aria-pressed', entrada.value === q));
-      entrada.addEventListener('input', marcarExemplo);
-      chips.append(botaoEl('', 'Ver alertas', sair(() => { modoInicio = 'dados'; secao = 'alertas'; libertarDados(); verInicio(); })));
-      escrever.append(caixa, chips);
+      escrever.append(caixa);
       const ola = el('h1', '', 'Olá');
-      if (nomeUtilizador) ola.append(', ', el('span', '', nomeUtilizador.split(/\s+/)[0]));
-      esq.append(ola, el('p', '', 'Pergunte por palavras suas. A resposta abre no painel principal.'), escrever);
+      if (nomeUtilizador) ola.append(', ', el('b', '', nomeUtilizador.split(/\s+/)[0]));
+      ola.append('.');
+      const lema = el('p', 'flow-ini-lema', 'Os dados das suas vendas, a fluir.');
+      esq.append(ola, lema, el('p', '', 'Pergunte por palavras suas. A resposta abre no painel principal.'), escrever);
 
       const m = D && D.ate ? D.ate.match(/^(\d{2})-(\d{2})/) : null;
       const como = el('section', 'flow-ini-como');
@@ -49,7 +60,7 @@
       const barras = [[0, 40, 32], [28, 28, 44], [56, 34, 38], [84, 18, 54], [112, 10, 62], [140, 0, 72]]
         .map(([x, y, h]) => `<rect x="${x}" y="${y}" width="20" height="${h}" rx="4" fill="${x === 140 ? '#1f5bff' : '#b9ccff'}"></rect>`).join('');
       como.innerHTML = `<h2 id="flow-ini-como-titulo">Como o Flow responde</h2><ol>${[
-        ['Escreva a pergunta', 'Como a uma colega, sem termos técnicos. Ou escolha um dos exemplos.'],
+        ['Escreva a pergunta', 'Como a uma colega, sem termos técnicos.'],
         ['O Flow consulta as vendas', m ? `Os dados estão atualizados até ${+m[1]} de ${MESES[m[2] - 1].toLowerCase()}.` : 'Só usa os dados de vendas da empresa.'],
         ['A resposta abre no painel principal', 'Gráficos, quadros e indicadores ficam ali, prontos a explorar.'],
       ].map(([titulo, texto], i) => `<li><span aria-hidden="true">${i + 1}</span><b>${titulo}</b><small>${texto}</small></li>`).join('')}</ol>
@@ -62,11 +73,17 @@
       const dir = el('div', 'flow-ini-dir');
       dir.append(como, direto);
       linha.append(esq, dir);
-      corpo.append(marca, linha);
+      corpo.append(linha);
 
       const rodape = el('footer', 'flow-ini-rodape');
       rodape.append(el('span', '', 'Só leitura. O assistente não altera a base de dados.'), el('span', '', `© ${new Date().getFullYear()} Inforap. Todos os direitos reservados.`));
-      raiz.append(corpo, rodape);
+      // Fundo animado só atrás da saudação e do exemplo: não passa por cima do logótipo
+      const fundo = el('div', 'flow-ini-fundo');
+      fundo.setAttribute('aria-hidden', 'true');
+      fundo.append(el('span'), el('span'), el('span'));
+      linha.prepend(fundo);
+      raiz.append(marca, corpo, rodape);
+      animarBoasVindas(raiz, dica);
       return raiz;
     }
 
@@ -77,9 +94,9 @@
         const antes = painelEl.querySelector('.flow-ini input');
         const focado = !!antes && document.activeElement === antes;
         painelEl.replaceChildren(folhaBoasVindas());
+        if (!antes) painelEl.querySelector('.flow-ini').classList.add('flow-ini--entra');   // só a primeira vez: redesenhar não volta a animar
         const nova = painelEl.querySelector('.flow-ini input');
         nova.value = antes ? antes.value : '';
-        nova.dispatchEvent(new Event('input'));   // volta a marcar o exemplo escolhido
         if (focado) nova.focus({ preventScroll: true });
         return;
       }

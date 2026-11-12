@@ -19,7 +19,7 @@
       .chat-corpo > .flow-lateral { grid-column: 1 / -1; grid-row: 1; width: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 8px 12px; overflow: visible; border-right: 0; border-bottom: 1px solid var(--borda); }
       .chat-corpo > .chat-dados { grid-column: 1 / -1; grid-row: 2; }
       .chat-corpo > .chat-conversa { grid-row: 2; }   /* a conversa abre por baixo da faixa: o menu nunca fica tapado */
-      .flow-lateral .flow-btn-lateral, .flow-lateral .flow-vistas, .flow-lateral .flow-utilizador, .flow-lateral .flow-nav-titulo { display: none; }
+      .flow-lateral .flow-btn-lateral, .flow-lateral .flow-procurar-ic, .flow-lateral .flow-vistas, .flow-lateral .flow-utilizador, .flow-lateral .flow-nav-titulo { display: none; }
       .chat-corpo > .flow-lateral .flow-pesquisa { display: flex !important; flex: 1 1 170px; width: auto; }
       .chat-corpo > .flow-lateral .flow-nav { flex: 999 1 320px; min-width: 0; }
       .chat-corpo > .flow-lateral #nav-lista { flex-direction: row; gap: 2px; padding: 2px; overflow-x: auto; scrollbar-width: thin; }
