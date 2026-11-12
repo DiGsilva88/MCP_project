@@ -1,0 +1,39 @@
+    /* =========================================================
+       1. Tokens
+       ========================================================= */
+    :root {
+      --navy: #0f1b3d;
+      --fundo: #eef1f6;        
+      --lateral: #f7f8fb;     
+      --cartao: #ffffff;
+      --texto: #16213a;
+      --suave: #4a5570;        
+      --nota: #566179;         
+      --borda: #d5dbe6;
+      --linha: #edf0f5;
+      --esqueleto: #d3dae6;    /* blocos "a carregar": a --linha é quase igual ao --fundo e não se via */
+      --marca: #1d46c0;
+      --marca-escura: #173a9e;
+      --marca-texto: #ffffff;
+      --selecionado: #dce4fa;  
+      --balao-eu: var(--marca);  /* balão de quem pergunta: o azul do topo */
+      --balao-eu-texto: var(--marca-texto);
+      --barra-fundo: #e6ebf5;
+      --aviso-fundo: #fff6e0;
+      --aviso-borda: #e8c26a;
+      --aviso-texto: #6b4a00;
+      --ok: #5be3a0;
+      --ocupado: #ffd27a;
+      --desligado: #ff9a8f;
+      --erro: #b42318;
+      --borda-forte: #b4becf;  /* eixos e tracejados */
+      --borda-cartao: #c3cbd8; /* contorno nítido dos cartões */
+      --anterior: #b9c6ea;     /* barras do ano anterior */
+      --anterior-linha: #7f93cc; 
+      --sobe: #0f6b3f; --sobe-fundo: #e2f4ea;
+      --desce: #a51b0f; --desce-fundo: #fde8e6;
+      --borda-controlo: #7a8599; 
+      --ligacao: #1d46c0;        
+      /* Gráfico circular: 6 cores por ordem fixa, validadas para daltonismo */
+      --serie-1: #2a78d6; --serie-2: #eb6834; --serie-3: #1baf7a; --serie-4: #eda100; --serie-5: #e87ba4; --serie-6: #6250d6;
+    }

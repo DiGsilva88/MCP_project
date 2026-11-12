@@ -57,4 +57,6 @@ public class PaginaChatTests
         Assert.Contains(nome, PaginaChat.Para(login));
         Assert.DoesNotContain("DOMINIO", PaginaChat.Para(login));
     }
+
+ 
 }

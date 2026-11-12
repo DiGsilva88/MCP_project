@@ -1,0 +1,14 @@
+  <!-- Botão "Ficha do cliente": os dados vêm de GET /api/clientes/<id> -->
+  <dialog id="dlg-ficha" aria-labelledby="dlg-ficha-titulo">
+    <form method="dialog">
+      <div>
+        <h2 id="dlg-ficha-titulo">Ficha do cliente</h2>
+        <p class="dlg-nota">Dados da ficha e condições de faturação.</p>
+      </div>
+      <div id="dlg-ficha-corpo" role="status"></div>
+      <div class="dlg-botoes">
+        <button class="res-btn" value="cancelar" formnovalidate>Fechar</button>
+        <button class="res-btn res-btn--primario" value="resumo" id="dlg-ficha-resumo">Ver vendas do cliente</button>
+      </div>
+    </form>
+  </dialog>

@@ -1,0 +1,37 @@
+    /* =========================================================
+       7b. Correções de 10/2026: ficha, filtros, grupos, estado vazio
+       ========================================================= */
+    /* Factos em texto (nome, condição de pagamento): lista rótulo | valor */
+    .chat-ficha {
+      display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px;
+      margin: 0; padding: 14px 18px;
+      background: var(--cartao); border: 1px solid var(--borda-cartao); border-radius: 8px;
+      font-size: 14px;
+    }
+    .chat-ficha dt { color: var(--suave); }
+    .chat-ficha dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+    /* Colunas com o mesmo valor em todas as linhas (ex.: Vendedor) */
+    .chat-filtros { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .chat-filtro {
+      display: inline-flex; gap: 6px; padding: 3px 10px;
+      background: var(--cartao); border: 1px solid var(--borda-cartao); border-radius: 99px;
+      font-size: 12.5px;
+    }
+    .chat-filtro span { color: var(--nota); }
+
+    /* Lista com grupos (ex.: Clientes em Odivelas / Torre da Marinha) */
+    .chat-grupo-cab { padding: 12px 0 4px; border-bottom: 1px solid var(--borda); font-size: 13px; font-weight: 700; }
+    .chat-grupo-cab span { font-weight: 400; color: var(--nota); }
+    .chat-lista-titulo { margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--suave); }
+    .chat-item-barra--neg span { background: var(--desce); }
+
+    /* Sem correspondência: valores possíveis em botões */
+    .chat-vazio-titulo { margin: 0; font-size: 16px; font-weight: 700; color: var(--texto); }
+    .chat-opcoes-titulo { margin: 0; font-size: 12.5px; font-weight: 600; color: var(--suave); }
+    .chat-opcoes { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chat-opcoes .chat-chip { min-height: 36px; padding: 6px 12px; font-size: 14px; }
+    .chat-chip small { margin-left: 6px; color: var(--nota); font-variant-numeric: tabular-nums; }
+    .chat-mais summary { display: inline-flex; align-items: center; list-style: none; cursor: pointer; }
+    .chat-mais summary::-webkit-details-marker { display: none; }
+    .chat-mais[open] summary { margin-bottom: 8px; }

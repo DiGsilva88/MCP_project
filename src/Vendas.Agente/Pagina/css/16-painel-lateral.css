@@ -1,0 +1,200 @@
+    /* =========================================================
+       7l. PROPOSTA D 11/2026 — painel lateral, avatar no topo
+       Fica depois das outras secções: ganha às regras antigas com a mesma especificidade
+       ========================================================= */
+    /* Cores da proposta D: sobe/desce das linhas, texto claro no painel escuro */
+    :root { --flow-sobe: #0b6e45; --flow-desce: #b3261e; --flow-claro: #b3bdd0; --flow-navy-borda: #2c3a62; --flow-azul-escuro: #1e3a8a; --flow-azul-borda: #c3d1f7; --flow-tinta-azul: #1e3a8a; }
+
+    /* ---------- Painel lateral ---------- */
+    .flow-lateral { width: 300px; flex: none; padding: 18px 16px 24px; display: flex; flex-direction: column; gap: 18px; background: var(--navy); color: #e9edf5; overflow-y: auto; scrollbar-width: thin; }
+    .flow-lateral :focus-visible { outline-color: #fff; }
+    .flow-lateral--recolhido { width: 72px; align-items: center; padding: 16px 0; }
+    .flow-lateral--recolhido .flow-so-aberto { display: none !important; }
+    .flow-lateral--recolhido .flow-btn-lateral svg { transform: rotate(180deg); }
+    .flow-lateral--recolhido .flow-marca { flex-direction: column; }
+    .flow-marca { display: flex; align-items: center; gap: 6px; }
+    .flow-marca-logo { width: 48px; height: 35px; flex: none; display: block; }
+    .flow-lateral:not(.flow-lateral--recolhido) .flow-btn-lateral { margin-left: auto; }
+    .flow-btn-lateral { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 1px solid var(--flow-navy-borda); border-radius: 10px; background: transparent; color: #e9edf5; }
+    .flow-btn-lateral:hover { background: rgb(255 255 255 / .06); }
+
+    /* Cartão branco do Resumo (fica branco também no modo escuro) */
+    .flow-resumo { margin-top: 28px; padding: 16px; border-radius: 14px; background: #fff; color: var(--marca); text-align: center; }
+    .flow-resumo p { margin: 0; }
+    .flow-resumo-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 8px; }
+    .flow-resumo h2 { margin: 0; font-size: 14px; }
+    .flow-etiqueta { padding: 1px 8px; border-radius: 6px; background: #e6edff; font-size: 12px; }
+    .flow-nota { font-size: 12px; color: var(--flow-azul-escuro); }
+    .flow-resumo > .flow-nota:first-of-type { margin: 2px 0 12px; }
+    .flow-nota--rotulo { font-size: 13px; }
+    .flow-total { font-size: 22px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; }
+    .flow-resumo .chat-delta { margin-top: 4px; font-weight: 800; }
+    .flow-resumo .chat-delta--sobe { background: #eef3ff; color: #1d5bff; }
+    .flow-resumo .chat-delta--desce { background: #e9ebef; color: #0b0f17; }
+    .flow-spark { display: block; width: 100%; height: auto; margin-top: 14px; overflow: visible; }
+    .flow-spark text { font-size: 9px; fill: var(--flow-azul-escuro); }
+    .flow-spark-legenda { display: flex; justify-content: center; gap: 12px; font-size: 12px; color: var(--flow-azul-escuro); }
+    .flow-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 14px; margin: 18px 0 0; }
+    .flow-kpis dt { font-size: 12px; color: var(--flow-azul-escuro); margin-bottom: 2px; }
+    .flow-kpis dd { margin: 0; overflow-wrap: anywhere; }   /* valores grandes partem na coluna em vez de passar por cima da vizinha */
+    .flow-kpis dd + dd { margin-top: 4px; }
+    .flow-valor { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .flow-perda { margin-top: 18px; padding-top: 14px; border-top: 1px solid #d5dbe6; font-size: 13px; }
+
+    /* Vistas guardadas */
+    .flow-vistas h2 { margin: 0 0 6px; font-size: 13px; color: var(--flow-claro); }
+    .flow-vistas ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+    .flow-vista { width: 100%; min-height: 44px; padding: 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 0; border-radius: 10px; background: transparent; color: #e9edf5; text-align: left; font-size: 14px; }
+    .flow-vista:hover { background: rgb(255 255 255 / .06); }
+    .flow-vista span + span { flex: none; font-size: 12px; color: var(--flow-claro); font-variant-numeric: tabular-nums; }
+    .flow-vista[aria-current="true"] { background: var(--marca); color: #fff; }
+    .flow-vista[aria-current="true"] span + span { color: #fff; }
+    .flow-pedir { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px dashed #4a5a85; border-radius: 10px; background: transparent; color: #e9edf5; font-size: 13px; }
+    .flow-vistas .flow-pedir { margin-top: 8px; }
+    .flow-vistas-acoes { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; padding: 0 12px; }
+    .flow-vistas-acoes .chat-acao { min-height: 32px; color: #e9edf5; font-size: 13px; text-decoration: underline; }
+    .flow-carregar { margin: 28px 0 0; font-size: 13px; color: var(--flow-claro); }
+    .flow-carregar span { display: block; margin-top: 10px; border-radius: 6px; background: rgb(255 255 255 / .14); animation: chat-pulsar 1.2s infinite ease-in-out; }
+    .flow-pedir:hover:not(:disabled) { background: rgb(255 255 255 / .06); }
+    .flow-pedir:disabled { opacity: .55; cursor: not-allowed; }   /* desativado parecia igual e o clique "não fazia nada" */
+
+    /* ---------- Barra do topo: separadores, ações, procurar ---------- */
+    .chat-abas { flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 24px; background: var(--fundo); border-bottom: 0; }
+    .chat-painel:not(.chat-painel--sem-conversa) .chat-abas { padding-right: 24px; }   /* a conversa abre por baixo desta barra */
+    .chat-abas-lista { flex-wrap: wrap; align-items: center; gap: 4px; margin-right: auto; overflow: visible; }
+    .flow-acoes { display: flex; gap: 6px; }
+    .flow-btn-sub { min-height: 32px; padding: 0 10px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--linha); border-radius: 6px; background: var(--cartao); color: var(--texto); font-size: 12px; }
+    .flow-btn-sub:hover:not(:disabled) { border-color: var(--marca); }
+    .flow-pesquisa { min-height: 44px; padding: 0 14px; display: flex; align-items: center; gap: 8px; margin: 0; border: 1px solid var(--borda); border-radius: 999px; background: var(--cartao); color: var(--nota); }
+    .flow-pesquisa:focus-within { outline: 2px solid var(--marca); outline-offset: 2px; }
+    .flow-pesquisa input { width: 200px; border: 0; background: transparent; color: var(--texto); font-size: 13px; outline: none; }
+    .flow-iniciais { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--selecionado); color: var(--flow-tinta-azul); font-weight: 700; }
+
+    /* ---------- Topo do Resumo: saudação grande, período e os 2 números principais ---------- */
+    .chat-painel-dados { padding: 4px 100px 40px 24px; }   /* 100px: o avatar não tapa os dados com a conversa fechada */
+    .res-barra { position: static; margin: 0 0 6px; padding: 0; background: none; border: 0; }
+    .flow-topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 40px; margin: 8px 0 20px; }
+    .flow-topo-ola { display: flex; flex-direction: column; align-items: flex-start; }
+    .flow-hoje { margin: 8px 0 0; font-size: 14px; color: var(--suave); }
+    .flow-hoje::first-letter { text-transform: uppercase; }
+    .flow-topo-kpis { display: flex; align-items: stretch; gap: 32px; margin-right: auto; }
+    .flow-topo-kpi > span { font-size: 14px; color: var(--suave); }
+    .flow-topo-kpi > div { display: flex; align-items: center; gap: 14px; }
+    .flow-topo-kpi strong { font-size: 46px; line-height: 1.1; font-weight: 400; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+    .flow-topo-chips { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .flow-topo-chips .chat-delta { font-weight: 800; }
+    .flow-chip-neutro { border: 1px solid var(--borda); border-radius: 999px; background: var(--cartao); color: var(--texto); font-weight: 400 !important; }
+    .flow-topo-sep { width: 1px; background: var(--borda); }
+    @container (max-width: 640px) { .flow-topo-kpi strong { font-size: 32px; } .flow-topo-kpis { flex-wrap: wrap; } }
+
+    /* ---------- Vendas por mês: cartão do gráfico + cartão azul do mês + 3 números ---------- */
+    .flow-serie { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+    .chat-bloco.chat-grafico { padding: 0; background: none; border: 0; }
+    .flow-linha-grafico { display: flex; gap: 16px; align-items: stretch; }
+    .flow-grafico-lado { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 16px; padding: 20px 22px; background: var(--cartao); border: 1px solid var(--linha); border-radius: 16px; }
+    .flow-grafico-lado .chat-grafico-cab { flex-direction: column; align-items: flex-start; }
+    .chat-grafico .flow-grafico-lado h3 { font-size: 15px; font-weight: 700; color: var(--texto); }
+    .chat-grafico-sub { margin: 2px 0 0; font-size: 13px; color: var(--suave); }
+    .flow-grafico-lado .chat-legenda { font-size: 13px; }
+
+    /* área (4+ meses) */
+    .flow-area { position: absolute; inset: 0 0 auto 0; width: 100%; height: 280px; overflow: visible; pointer-events: none; }
+    .flow-area-fundo { fill: rgb(29 70 192 / .14); }
+    .flow-linha { fill: none; stroke: var(--marca); stroke-width: 3; stroke-linejoin: round; }
+    .flow-linha-ant { fill: none; stroke: var(--anterior-linha); stroke-width: 2; stroke-dasharray: 5 4; }
+    .flow-linha-parcial { fill: none; stroke: var(--marca); stroke-width: 2; stroke-dasharray: 2 4; }
+    .chat-linha-area:has(.flow-area) .chat-guia { border-top: 1px solid var(--linha); }
+    /* faixa do mês escolhido: desce até ao nome do mês */
+    .flow-marca-mes { top: -10px; bottom: -30px; transform: translateX(-50%); border-left: 0; border-radius: 8px; background: rgb(29 70 192 / .09); pointer-events: none; }
+    /* pontos só com área (com barras continuam escondidos): brancos com contorno azul; o escolhido fica cheio */
+    .chat-linha-area:has(.flow-area) .chat-ponto-mes span { opacity: 1; box-sizing: border-box; width: 12px; height: 12px; background: var(--cartao); border: 3px solid var(--marca); box-shadow: none; }
+    .chat-linha-area:has(.flow-area) .chat-ponto-mes--parcial span { border: 2px dashed var(--marca); }
+    .chat-linha-area:has(.flow-area) .chat-ponto-mes:hover span,
+    .chat-linha-area:has(.flow-area) .chat-ponto-mes[aria-pressed="true"] span { width: 18px; height: 18px; background: var(--cartao); border: 4px solid var(--marca); box-shadow: 0 0 0 3px rgb(29 70 192 / .25); }
+    .chat-barra-valor { background: transparent; font-weight: 500; }
+    .chat-barra-valor--abaixo { transform: translate(-50%, 0); background: var(--cartao); }
+    .chat-barra-valor--ativo { padding: 1px 6px; border-radius: 5px; background: var(--marca); color: #fff; font-weight: 800; }
+    .chat-grafico .chat-rotulos { font-size: 13px; }
+    .flow-legenda-linha { width: 18px !important; height: 3px !important; border-radius: 2px !important; background: var(--marca); }
+    .flow-legenda-linha--ant { height: 0 !important; background: none; border-top: 2px dashed var(--anterior-linha); }
+    .flow-legenda-linha--parcial { height: 0 !important; background: none; border-top: 2px dotted var(--marca); }
+
+    /* cartão azul do mês escolhido, fora do cartão do gráfico */
+    .chat-leitura { flex: 0 0 240px; align-self: stretch; justify-content: space-between; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 2px; padding: 16px 18px; border-radius: 12px; background: var(--marca); color: #fff; font-size: 13px; }
+    .chat-leitura h4 { margin: 0; font-size: 12px; font-weight: 600; }
+    .chat-leitura .chat-leitura-nome { min-width: 0; font-size: 18px; font-weight: 800; }
+    .chat-leitura small { font-size: 12px; color: rgb(255 255 255 / .85); }
+    .chat-leitura .chat-leitura-topo, .chat-leitura .chat-leitura-kpi { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .chat-leitura .chat-leitura-kpi { flex: 1; justify-content: center; gap: 6px; padding: 14px 0; }   /* o espaço livre fica à volta do valor */
+    .chat-leitura-valor { font-size: 32px; line-height: 1.05; font-weight: 700; letter-spacing: -.02em; overflow-wrap: anywhere; }
+    .chat-leitura .chat-delta { font-size: 13px; font-weight: 800; }
+    .chat-leitura .chat-leitura-comp { margin: 0; padding-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid rgb(255 255 255 / .3); }
+    .chat-leitura .chat-leitura-comp div { display: flex; flex-direction: column; gap: 2px; }
+    .chat-leitura-comp dt { font-size: 12px; color: rgb(255 255 255 / .85); }
+    .chat-leitura-comp dd { margin: 0; font-size: 14px; font-weight: 700; }
+    .chat-leitura .chat-delta--sobe { background: #eef3ff; color: #1d5bff; }
+    .chat-leitura .chat-delta--desce { background: #e9ebef; color: #0b0f17; }
+    .chat-leitura-btn { margin-top: 12px; min-height: 36px; border: 0; border-radius: 6px; background: #fff; color: var(--marca); font-size: 13px; font-weight: 700; }
+    .chat-leitura-btn:hover { background: #e6edff; }
+    .chat-leitura :focus-visible { outline-color: #fff; }
+    @container (max-width: 640px) { .flow-linha-grafico { flex-wrap: wrap; } .chat-leitura { flex-basis: 100%; } }
+
+
+    /* ---------- Janela do email à segunda ---------- */
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) { width: min(340px, calc(100% - 32px)); padding: 16px; border: 1px solid var(--linha); border-radius: 12px; background: var(--cartao); color: var(--texto); font-size: 13px; box-shadow: 0 12px 28px rgb(19 32 59 / .16); }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha)::backdrop { background: rgb(15 27 61 / .45); }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) form { display: flex; flex-direction: column; gap: 12px; }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) h2 { margin: 0; font-size: 15px; }
+    .dlg-nota { margin: 2px 0 0; color: var(--suave); }
+    .flow-aviso { position: fixed; left: 50%; bottom: 20px; z-index: 60; transform: translateX(-50%); max-width: calc(100% - 32px); margin: 0; padding: 11px 16px; border-radius: 10px; background: #0b0f17; color: #fff; font-size: 13px; box-shadow: 0 10px 30px rgb(11 15 23 / .3); }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) fieldset { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 6px; }
+    :is(#dlg-email, #dlg-exportar, #dlg-ficha) legend { margin-bottom: 4px; padding: 0; font-weight: 700; }
+    .dlg-opcao:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+    .dlg-opcao { display: flex; gap: 8px; align-items: flex-start; padding: 8px; border: 1px solid var(--linha); border-radius: 8px; cursor: pointer; }
+    .dlg-opcao:has(input:checked) { border-color: var(--marca); background: var(--selecionado); }
+    .dlg-opcao input { margin: 2px 0 0; accent-color: var(--marca); }
+    .dlg-opcao b { font-weight: 400; }
+    .dlg-opcao small { display: block; font-size: 12px; color: var(--suave); }
+    .dlg-campo { display: flex; flex-direction: column; gap: 4px; }
+    .dlg-campo input { min-height: 36px; padding: 0 10px; border: 1px solid var(--borda-controlo); border-radius: 6px; background: var(--cartao); }
+    .dlg-botoes { display: flex; justify-content: flex-end; gap: 8px; }
+
+    /* ---------- Conversa por baixo da barra do topo, aberta pelo avatar Flow ---------- */
+    @keyframes ava-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @keyframes pop { 0% { opacity: 0; transform: translateX(24px) scale(.4); } 70% { opacity: 1; transform: translateX(-2px) scale(1.03); } 100% { transform: none; } }
+    .chat-lancador { top: 76px; bottom: auto; right: 24px; width: 60px; height: 60px; padding: 0; border: 1px solid var(--borda); border-radius: 20px; background: #fff; box-shadow: 0 8px 20px rgb(29 78 216 / .35); animation: ava-bob 3.2s ease-in-out infinite; transition: transform .2s; }
+    .chat-lancador:hover { transform: rotate(-6deg) scale(1.06); animation-play-state: paused; }
+    .chat-lancador .chat-avatar { width: 36px; height: 36px; }
+    .chat-conversa { top: 76px; bottom: auto; right: 98px; width: 290px; max-height: calc(100% - 92px); border-color: var(--linha); border-radius: 16px; box-shadow: 0 16px 40px rgb(19 32 59 / .2); font-size: 13px; animation: pop .35s cubic-bezier(.2, .8, .3, 1.2) both; transform-origin: right 30px; }
+    .chat-painel:not(.chat-painel--sem-conversa) .chat-painel-dados { padding-right: 404px; }
+    .chat-conversa-topo { padding: 12px 14px; border-bottom-color: #e5e9f0; }
+    .chat-conversa-titulo { font-size: 14px; }
+    .chat-conversa .chat-esconder { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--flow-azul-borda); border-radius: 6px; background: var(--selecionado); color: var(--flow-tinta-azul); }
+    .flow-btn-fechar { width: 32px; height: 32px; border: 0; border-radius: 6px; background: transparent; color: var(--texto); font-size: 20px; }
+    .flow-btn-fechar:hover { background: var(--linha); }
+    .chat-conversa .chat-area { padding: 14px; gap: 10px; }
+
+    /* boas-vindas: mensagem, nota do Resumo, "Como quer começar?" */
+    .flow-msg { margin: 0; padding: 12px 14px; border-radius: 14px 14px 14px 4px; background: var(--fundo); font-size: 13px; line-height: 1.5; }
+    .flow-msg p { margin: 0; }
+    .flow-msg p + p, .flow-msg ul { margin-top: 6px; }
+    .flow-msg ul { margin-bottom: 0; padding-left: 20px; }
+    .flow-msg li + li { margin-top: 4px; }
+    .flow-msg small { display: block; margin-top: 8px; font-size: 12px; color: var(--suave); }
+    .flow-msg-ola { font-size: 15px; font-weight: 700; }
+    .flow-msg--destaque { background: var(--selecionado); }
+    .flow-pergunta { margin: 4px 0 0; font-size: 14px; font-weight: 700; }
+    .flow-modo { width: 100%; display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid var(--linha); border-radius: 12px; background: var(--cartao); color: var(--texto); text-align: left; }
+    .flow-modo:hover { border-color: var(--marca); }
+    .flow-modo-ic { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--selecionado); color: var(--marca); }
+    .flow-modo-ic--escuro { background: var(--texto); color: var(--cartao); }
+    .flow-modo b { display: block; font-size: 14px; }
+    .flow-modo small { display: block; font-size: 13px; color: var(--suave); }
+    .flow-modo-atual { margin: 0; display: flex; justify-content: space-between; align-items: center; color: var(--suave); }
+    .flow-mudar { min-height: 32px; padding: 0; border: 0; background: none; color: var(--ligacao); text-decoration: underline; text-underline-offset: 3px; }
+    .chat-conversa .chat-rodape { border-width: 1px; border-radius: 12px; }
+
+    @container (max-width: 820px) {
+      .chat-painel-dados, .chat-painel:not(.chat-painel--sem-conversa) .chat-painel-dados { padding-right: 24px; }
+      .chat-conversa { top: 144px; left: 8px; right: 8px; width: auto; max-height: calc(100% - 152px); }
+    }

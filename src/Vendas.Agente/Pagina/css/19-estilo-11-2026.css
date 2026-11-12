@@ -1,0 +1,115 @@
+    /* =========================================================
+       10. Estilo 11/2026: barra branca no topo, breadcrumb por cima da saudação,
+       números em cartões e a conversa encaixada à direita (deixa de flutuar por cima dos dados).
+       Fica no fim da folha: ganha às regras anteriores com a mesma especificidade.
+       ========================================================= */
+    :root {
+      --fundo: #f4f5f7; --lateral: #f4f5f7; --cartao: #ffffff; --texto: #0b0f17; --suave: #5b6472; --nota: #5b6472;
+      --borda: #e4e7ec; --linha: #eef0f3; --borda-cartao: #e4e7ec; --borda-campo: #d7dbe2; --balao: #f4f5f7;
+      --marca: #1d5bff; --marca-escura: #0b3fd1; --ligacao: #1d5bff; --selecionado: #eef3ff;
+      --navy: #0d1829; --flow-navy-borda: #1e2a44; --flow-azul-borda: #dce6ff; --flow-tinta-azul: #1e3a8a;
+      --sobe: #1d5bff; --sobe-fundo: #eef3ff; --desce: #0b0f17; --desce-fundo: #e9ebef;
+    }
+
+    /* Barra do topo: ações e pesquisa à direita (voltar atrás faz-se pela breadcrumb do painel) */
+    .chat-abas { padding: 12px 24px; background: var(--cartao); border-bottom: 1px solid var(--borda); }
+    .flow-btn-sub { min-height: 34px; padding: 0 12px; border-color: var(--borda-campo); border-radius: 12px; font-weight: 600; box-shadow: 0 1px 2px rgb(15 23 42 / .05); }
+    .flow-btn-sub:hover:not(:disabled) { border-color: var(--borda-campo); background: var(--fundo); }
+    .flow-pesquisa { min-height: 36px; border-color: var(--borda-campo); border-radius: 12px; background: var(--fundo); }
+    .flow-pesquisa:focus-within { outline: 2px solid var(--marca); outline-offset: 1px; background: var(--cartao); }
+    .flow-iniciais { width: 34px; height: 34px; font-size: 12px; border: 1px solid var(--flow-azul-borda); }
+    /* Grelha: lateral à esquerda (altura toda); a barra do topo por cima dos dados e da conversa,
+       por isso a conversa começa à altura da breadcrumb. Com a conversa minimizada a 3.ª coluna fica a 0. */
+    .chat-corpo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr); }
+    .flow-lateral { grid-column: 1; grid-row: 1 / span 2; }
+    .chat-corpo > .chat-abas { grid-column: 2 / 4; grid-row: 1; display: flex; }
+    .chat-dados { grid-column: 2; grid-row: 2; }
+    .chat-conversa { grid-column: 3; grid-row: 2; }
+
+    /* Barra numa só linha quando cabe: os separadores fazem scroll em vez de ficarem por baixo das ações,
+       e a pesquisa encolhe. Em menos de 700px as ações passam à linha seguinte. */
+    .chat-abas-lista { flex: 1 1 160px; min-width: 0; }
+    .flow-acoes { flex: none; }
+    .flow-btn-sub { white-space: nowrap; }
+    .flow-pesquisa { flex: 0 1 230px; min-width: 120px; }
+    .flow-pesquisa input { width: 100%; min-width: 0; }
+    @container (min-width: 700px) {
+      .chat-abas { flex-wrap: nowrap; }
+      .chat-abas-lista { flex: 1 1 0; min-width: 100px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+    }
+
+    /* Breadcrumb: onde se está (Inforap Flow › Vendas › …), por cima da saudação e de cada resposta */
+    .flow-migalhas ol { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12px; font-weight: 500; color: var(--nota); }
+    .flow-migalhas li { display: flex; align-items: center; gap: 8px; }
+    .flow-migalhas li + li::before { content: '/'; color: #9aa3b2; }
+    /* Azul e sublinhado: é por aqui que se volta atrás */
+    .flow-migalhas button { min-height: 24px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+    .flow-migalhas button:hover { color: var(--texto); text-decoration: underline; text-underline-offset: 3px; }
+    .flow-migalhas [aria-current="page"] { color: var(--texto); }
+
+    /* Saudação compacta à esquerda, período à direita */
+    .flow-topo { flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin: 0 0 8px; }
+    .flow-topo-ola { display: block; }
+    .flow-hoje { margin: 2px 0 0; font-size: 12px; font-weight: 500; color: var(--nota); }
+    .flow-topo .res-menu { left: auto; right: 0; }   /* o botão está à direita: o menu abre para dentro */
+
+    .res-cartao--inteiro { flex-basis: 100%; }
+
+    /* Cartões: cantos de 16px e contorno claro, como os números */
+    :is(.res-cartao, .flow-grafico-lado, .chat-kpi) { border-color: var(--borda); border-radius: 16px; box-shadow: 0 1px 2px rgb(15 23 42 / .04); }
+
+    /* Painel lateral */
+    .flow-lateral { border-right: 1px solid var(--flow-navy-borda); }
+    .flow-btn-lateral { border-color: transparent; color: #94a3b8; }
+    .flow-btn-lateral:hover { color: #fff; background: rgb(255 255 255 / .08); }
+    .flow-resumo { border-radius: 16px; box-shadow: 0 12px 24px rgb(0 0 0 / .25); }
+    .flow-vista { min-height: 40px; border-radius: 12px; color: #cbd5e1; font-size: 13px; font-weight: 500; }
+    .flow-vista:hover { color: #fff; background: rgb(255 255 255 / .08); }
+    .flow-vista[aria-current="true"] { box-shadow: 0 4px 12px rgb(30 58 138 / .35); }
+    .flow-pedir { border-color: #334155; border-radius: 12px; font-weight: 600; color: #cbd5e1; }
+
+    /* Conversa encaixada à direita, à altura toda; o avatar redondo só aparece com ela minimizada */
+    .chat-conversa { position: relative; inset: auto; z-index: auto; width: 384px; flex: none; max-height: none; border: 0; border-left: 1px solid var(--borda); border-radius: 0; box-shadow: none; animation: none; }
+    .chat-painel:not(.chat-painel--sem-conversa) :is(.chat-abas, .chat-painel-dados) { padding-right: 24px; }
+    .chat-painel:not(.chat-painel--sem-conversa) .chat-lancador { display: none; }
+    .chat-lancador { top: auto; bottom: 20px; right: 24px; }
+    .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 408px; }
+    .chat-conversa-topo { padding: 20px 14px 14px; background: var(--fundo); border-bottom: 1px solid var(--borda); }   /* afasta o "Flow" da barra do topo */
+    .chat-conversa .chat-area { padding-top: 20px; }
+    .chat-conversa .chat-estado { font-size: 12px; font-weight: 600; }
+    .chat-conversa .chat-ponto { background: var(--marca); }
+    .chat-conversa .chat-esconder { border-color: var(--borda); background: var(--cartao); color: var(--suave); }
+    .chat-conversa .chat-temas { border-bottom-color: var(--borda); }
+    .chat-conversa .chat-tema { border-color: transparent; border-radius: 999px; background: var(--balao); }
+    .chat-conversa .chat-tema[aria-pressed="true"] { border-color: var(--marca); background: var(--marca); color: #fff; }
+    .chat-conversa .chat-balao-eu { border-radius: 16px 4px 16px 16px; background: var(--marca); }
+    .chat-conversa :is(.flow-msg, .chat-msg--agente .chat-folha) { border: 1px solid var(--borda); border-radius: 4px 16px 16px 16px; background: var(--balao); }
+    .chat-conversa .flow-msg--destaque { border-color: var(--flow-azul-borda); background: var(--selecionado); }
+    .chat-conversa :is(.flow-modo, .chat-cartao) { border-color: var(--borda); border-radius: 12px; }
+    .chat-conversa .chat-rodape { margin: 0 12px 12px; border: 1px solid var(--borda-campo); border-radius: 16px; }
+    .chat-conversa .chat-rodape:focus-within { border-color: var(--marca); outline: 1px solid var(--marca); outline-offset: 0; }
+    .chat-conversa .chat-enviar { width: 30px; height: 30px; }
+
+    /* Até 1200px (lateral + conversa deixavam menos de 600px para os dados): a conversa abre por cima dos dados, com o avatar para a fechar */
+    @container (max-width: 1200px) {
+      /* grid-column/row: em grelha, o absoluto mede-se pela célula; a coluna da conversa tem 0px aqui */
+      .chat-conversa { grid-column: 1 / -1; grid-row: 1 / -1; position: absolute; z-index: 5; inset: 8px 8px 84px 8px; width: auto; border: 1px solid var(--borda); border-radius: 16px; box-shadow: 0 16px 40px rgb(19 32 59 / .2); }
+      .chat-painel:not(.chat-painel--sem-conversa) .chat-lancador { display: grid; }
+      .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 84px; }
+    }
+    /* Com a lateral visível, a conversa fica encostada à direita e não tapa a navegação */
+    @container (min-width: 821px) and (max-width: 1200px) { .chat-conversa { left: auto; } }
+    /* 11/2026: sem azul escuro no modo claro: painel lateral e mapa em tons claros; Resumo, "Precisa de atenção" e mês escolhido com fundo azul */
+    :root { --navy: #eef4ff; --flow-navy-borda: #dbe6fb; --flow-claro: #475569; }
+    .flow-lateral, .flow-btn-lateral, .flow-vista, .flow-pedir, .flow-vistas-acoes .chat-acao { color: var(--texto); }
+    .flow-lateral :focus-visible { outline-color: var(--marca); }
+    .flow-btn-lateral { color: var(--suave); }
+    :is(.flow-btn-lateral, .flow-vista, .flow-pedir:not(:disabled)):hover { color: var(--texto); background: rgb(29 91 255/ .08); }
+    .flow-vista[aria-current="true"] { background: var(--selecionado); color: var(--marca); box-shadow: none; }
+    .flow-vista[aria-current="true"] span + span { color: var(--marca); }
+    .flow-pedir { border-color: #93c5fd; }
+    .flow-carregar span { background: var(--esqueleto); }
+    :is(.flow-resumo, .res-cartao--atencao) { background: #dbeafe; border: 1px solid #bfdbfe; box-shadow: 0 1px 2px rgb(15 23 42 / .04); }
+    .res-cartao--atencao { border-top: 3px solid #b45309; }
+    .flow-etiqueta { background: #fff; }
+    .flow-perda, .res-cartao--atencao .res-alertas li { border-color: #bfdbfe; }

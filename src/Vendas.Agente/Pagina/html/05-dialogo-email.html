@@ -1,0 +1,22 @@
+  <!-- Resumo por email: POST /agendamentos guarda a escolha; a tarefa agendada das segundas envia (ver README) -->
+  <dialog id="dlg-email" aria-labelledby="dlg-email-titulo">
+    <form method="dialog">
+      <div>
+        <h2 id="dlg-email-titulo">Resumo por email</h2>
+        <p class="dlg-nota">Enviado à segunda-feira às 08:00, com os números do período. Só endereços @inforap.pt.</p>
+      </div>
+      <fieldset>
+        <legend>Que período?</legend>
+        <label class="dlg-opcao"><input type="radio" name="freq" value="semanal" checked><span><b>Semanal</b><small>Todas as segundas, com a semana anterior</small></span></label>
+        <label class="dlg-opcao"><input type="radio" name="freq" value="mensal"><span><b>Mensal</b><small>Na 1.ª segunda do mês, com o mês anterior</small></span></label>
+        <label class="dlg-opcao"><input type="radio" name="freq" value="nenhum"><span><b>Deixar de receber</b><small>Cancela o envio para este endereço</small></span></label>
+      </fieldset>
+      <label class="dlg-campo"><b>Enviar para</b><input type="email" name="email" placeholder="nome@inforap.pt" maxlength="200" required></label>
+      <p class="dlg-nota" id="dlg-email-estado" role="status" hidden></p>
+      <div class="dlg-botoes">
+        <!-- type="button": o Enter usa o 1.º botão de submeter, que tem de ser o Agendar -->
+        <button class="res-btn" type="button" id="dlg-email-fechar">Fechar</button>
+        <button class="res-btn res-btn--primario" value="agendar">Agendar envio</button>
+      </div>
+    </form>
+  </dialog>

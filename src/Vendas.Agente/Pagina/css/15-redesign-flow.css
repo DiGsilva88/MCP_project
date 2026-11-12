@@ -1,0 +1,122 @@
+    /* =========================================================
+       7k. REDESIGN 11/2026 — Inforap Flow
+       Resumo como painel inicial (dados de GET /resumo, geral ou de um cliente), barra fixa,
+       voltar ao topo e gráfico mensal em barras. A conversa NÃO muda.
+       ========================================================= */
+    .chat-titulo { font-size: 16px; font-weight: 800; }
+
+    /* Barra fixa no topo do painel ao fazer scroll */
+    .res-barra {
+      position: sticky; top: -20px; z-index: 4;
+      margin: -20px -24px 14px; padding: 14px 24px 10px;
+      background: var(--fundo); border-bottom: 1px solid var(--borda);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .res-linha { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; }
+    .res-titulo { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .res-icone { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 9px; background: var(--marca); color: var(--marca-texto); }
+    .res-titulo h2 { margin: 0; font-size: 18px; font-weight: 800; }
+    .res-btn { min-height: 38px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--borda-controlo); border-radius: 8px; background: var(--cartao); font-size: 13.5px; font-weight: 700; }
+    .res-btn[aria-expanded="true"] { border: 2px solid var(--ligacao); background: var(--selecionado); }
+    .res-btn--primario { border-color: var(--marca); background: var(--marca); color: var(--marca-texto); }
+    .res-contador { min-width: 20px; height: 20px; padding: 0 5px; display: inline-grid; place-items: center; border-radius: 99px; background: var(--marca); color: var(--marca-texto); font-size: 12px; }
+    .res-info { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12.5px; color: var(--nota); }
+    .res-filtro-ativo { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px; border: 2px solid var(--ligacao); border-radius: 8px; background: var(--selecionado); font-size: 13px; }
+
+    /* Menu Filtros */
+    .res-menu-wrap { position: relative; }
+    .res-menu {
+      position: absolute; top: calc(100% + 8px); left: 0; z-index: 7; width: 340px;
+      padding: 14px; display: flex; flex-direction: column; gap: 12px;
+      background: var(--cartao); border: 1px solid var(--borda-cartao); border-radius: 12px;
+      box-shadow: 0 12px 32px rgb(22 33 58 / .18);
+    }
+    .res-menu h3 { margin: 0 0 6px; font-size: 12px; font-weight: 700; color: var(--suave); text-transform: uppercase; letter-spacing: .05em; }
+    .res-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .res-chip { min-height: 34px; padding: 0 12px; border: 1px solid var(--borda-controlo); border-radius: 99px; background: var(--cartao); font-size: 13px; }
+    .res-chip[aria-pressed="true"] { background: var(--marca); border-color: var(--marca); color: var(--marca-texto); font-weight: 700; }
+    .res-menu-rodape { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 10px; border-top: 1px solid var(--linha); }
+    .res-cliente { display: flex; gap: 6px; margin: 0; }
+    .res-cliente input { flex: 1; min-width: 0; min-height: 38px; padding: 0 10px; border: 1px solid var(--borda-controlo); border-radius: 8px; background: var(--lateral); }
+    .res-nota { margin: 0; font-size: 12.5px; color: var(--nota); }
+
+    /* Conteúdo do Resumo */
+    .res-conteudo { display: flex; flex-direction: column; gap: 14px; max-width: 1400px; font-variant-numeric: tabular-nums; }
+    .res-grelha { display: flex; flex-wrap: wrap; gap: 14px; align-items: stretch; }
+    .res-cartao { flex: 1 1 420px; min-width: 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; background: var(--cartao); border: 1px solid var(--borda-cartao); border-radius: 8px; }
+    .res-cartao--largo { flex: 2 1 520px; }
+    .res-cartao--atencao { flex: 1 1 280px; border-top: 3px solid #b45309; }
+    .res-cartao h3 { margin: 0; font-size: 15px; font-weight: 700; }
+    .res-sub { margin: 2px 0 0; font-size: 12px; color: var(--nota); }
+    .res-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+    .res-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+    .res-kpis .chat-kpi-valor { font-size: 19px; }
+    .res-legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--suave); }
+    .res-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+
+    .res-grafico { position: relative; margin-left: 54px; }
+    .res-grafico svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .res-y { position: absolute; left: -58px; width: 52px; text-align: right; font-size: 12px; color: var(--nota); white-space: nowrap; transform: translateY(-50%); }
+    .res-x { position: relative; height: 18px; margin-left: 54px; font-size: 12px; }
+    .res-x span { position: absolute; transform: translateX(-50%); font-weight: 600; }
+    .res-ponto { position: absolute; transform: translate(-50%, -50%); }
+    .res-rotulo { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; font-size: 12px; font-weight: 700; }
+    .res-zona { position: absolute; top: 0; height: 100%; padding: 0; border: 0; background: transparent; cursor: crosshair; }
+    .res-tooltip { position: absolute; top: 4px; z-index: 3; transform: translateX(-50%); padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; background: var(--cartao); border: 1px solid var(--borda-controlo); border-radius: 8px; box-shadow: 0 6px 16px rgb(22 33 58 / .15); font-size: 12.5px; white-space: nowrap; pointer-events: none; }
+
+    .res-alertas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .res-alertas li { display: flex; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--linha); }
+    .res-alerta-ic { width: 26px; height: 26px; flex: none; display: grid; place-items: center; border-radius: 6px; font-size: 12px; font-weight: 800; }
+
+    .res-tabela { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .res-tabela th, .res-tabela td { padding: 6px; }
+    .res-tabela thead th { font-size: 12px; font-weight: 600; color: var(--nota); text-align: right; }
+    .res-tabela thead th:first-child, .res-tabela tbody th { text-align: left; }
+    .res-tabela tbody tr { border-top: 1px solid var(--linha); }
+    .res-tabela tbody th { font-weight: 600; }
+    .res-tabela td { text-align: right; white-space: nowrap; color: var(--suave); }
+    .res-tabela td.forte { font-weight: 700; color: var(--texto); }
+    .res-destaques { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .res-destaque { padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--borda-cartao); border-radius: 8px; font-size: 12.5px; color: var(--suave); }
+    .res-destaque strong { font-size: 13.5px; color: var(--texto); }
+    .res-sobe { color: var(--sobe); font-weight: 700; } .res-desce { color: var(--desce); font-weight: 700; }
+
+    .res-locais { list-style: none; margin: 0; padding: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }   /* sempre numa linha */
+
+
+    .res-pedir { margin: 40px auto; gap: 14px; }
+    .res-exemplo { display: inline-flex; padding: 2px 8px; border: 1px dashed var(--borda-controlo); border-radius: 6px; font-size: 12px; color: var(--nota); }
+    .res-esqueleto span, .res-esq { display: block; border-radius: 6px; background: var(--esqueleto); animation: chat-pulsar 1.2s infinite ease-in-out; }
+    .res-carregar { margin: 0 0 14px; font-size: 14px; font-weight: 600; color: var(--suave); }
+
+    /* Voltar ao topo: ao lado do botão redondo da conversa */
+    .res-topo {
+      position: absolute; z-index: 6; right: 26px; bottom: 84px; width: 40px; height: 40px;   /* por cima do botão da conversa */
+      display: grid; place-items: center; border: 1px solid var(--borda-controlo); border-radius: 50%;
+      background: var(--cartao); color: var(--texto); box-shadow: 0 4px 12px rgb(22 33 58 / .15);
+    }
+
+    /* Gráfico mensal em barras (substitui a linha nas respostas por mês) */
+    .chat-barra-mes { position: absolute; bottom: 0; transform: translateX(-50%); border-radius: 4px 4px 0 0; background: var(--marca); pointer-events: none; }
+    .chat-barra-mes--ant { background: var(--anterior); }
+    .chat-barra-mes--parcial { background: repeating-linear-gradient(135deg, var(--aviso-borda) 0 5px, var(--cartao) 5px 10px); border: 2px dashed #c2410c; border-bottom: 0; }
+    .chat-barra-valor { position: absolute; transform: translate(-50%, -100%); padding: 0 3px; border-radius: 3px; background: var(--cartao); font-size: 12px; font-weight: 700; white-space: nowrap; pointer-events: none; }
+    .chat-legenda-barra { width: 10px !important; height: 10px !important; border-radius: 2px !important; background: var(--marca); }
+    .chat-legenda-barra--ant { background: var(--anterior); }
+    .chat-legenda-barra--parcial { background: repeating-linear-gradient(135deg, var(--aviso-borda) 0 3px, var(--cartao) 3px 6px); outline: 1px dashed #c2410c; }
+    .chat-linha-area .chat-ponto-mes span { opacity: 0; }
+    .chat-linha-area .chat-ponto-mes:hover span, .chat-linha-area .chat-ponto-mes[aria-pressed="true"] span { opacity: 1; width: 10px; height: 10px; background: var(--texto); box-shadow: 0 0 0 2px var(--cartao); }
+
+    @container (max-width: 820px) { .res-destaques { grid-template-columns: 1fr; } }
+
+    /* Posição e alinhamento do modelo "Resumo — chat minimizado" */
+    /* Separadores e Resumo centrados na mesma coluna em ecrã largo (com a conversa aberta fica o padding de 408px) */
+    .chat-dados:has(.res-barra, .res-pedir) :is(.chat-abas, .chat-painel-dados) { padding-left: max(20px, calc((100% - 1520px) / 2)); }
+    .res-conteudo, .chat-painel-dados > .chat-folha:has(> .res-barra) { max-width: none; }
+    /* Indicadores: todos numa linha, mesma largura; valor, variação e frase por baixo uns dos outros */
+    .res-kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+    .res-kpis .chat-kpi { gap: 4px; padding: 12px 14px; border-left: 1px solid var(--borda-cartao); }
+    .res-var { font-size: 12.5px; }
+    .chat-painel:not(.chat-painel--sem-conversa) .res-topo { right: 84px; bottom: 26px; }   /* conversa aberta: ao lado, não por cima da janela */
+    .res-contagem { padding: 2px 10px; border-radius: 99px; background: #fde7cf; color: #9a3412; font-size: 12px; font-weight: 700; }
+    .res-tabela--maiusculas thead th { text-transform: uppercase; letter-spacing: .04em; font-size: 12px; }

@@ -1,0 +1,28 @@
+  <!-- Exportar: no painel escolhem-se as secções do relatório; numa resposta aberta, só o formato -->
+  <dialog id="dlg-exportar" aria-labelledby="dlg-exportar-titulo">
+    <form method="dialog">
+      <div>
+        <h2 id="dlg-exportar-titulo">Exportar dados</h2>
+        <p class="dlg-nota" id="dlg-exportar-nota">Descarrega os dados do separador aberto.</p>
+        <p class="dlg-filtros" id="dlg-exportar-filtros" hidden></p>
+      </div>
+      <fieldset id="exportar-seccoes" hidden>
+        <legend>O que quer incluir?</legend>
+        <div class="dlg-legenda">
+          <button type="button" data-seccoes="todas">Selecionar tudo</button>
+          <button type="button" data-seccoes="nenhuma">Limpar</button>
+        </div>
+        <div class="dlg-seccoes" id="exportar-lista"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Em que formato?</legend>
+        <label class="dlg-opcao"><input type="radio" name="formato" value="exportar"><span><b>CSV (Excel)</b><small>A tabela, para abrir no Excel</small></span></label>
+        <label class="dlg-opcao"><input type="radio" name="formato" value="email"><span><b>Enviar por email</b><small>Descarrega um rascunho com o CSV anexado. Abra-o para rever e enviar.</small></span></label>
+        <label class="dlg-opcao"><input type="radio" name="formato" value="imagem"><span><b>Imagem (PNG)</b><small>O gráfico, para Word, PowerPoint ou email</small></span></label>
+      </fieldset>
+      <div class="dlg-botoes">
+        <button class="res-btn" value="cancelar" formnovalidate>Fechar</button>
+        <button class="res-btn res-btn--primario" value="exportar" id="dlg-exportar-ok">Exportar</button>
+      </div>
+    </form>
+  </dialog>

@@ -1,0 +1,10 @@
+    /* =========================================================
+       4. Topo
+       ========================================================= */
+    .chat-separador { width: 1px; height: 20px; background: rgb(255 255 255 / .35); }
+    .chat-avatar { display: block; width: 26px; height: 26px; flex: none; }
+    .chat-titulo { flex: 1; margin: 0; font-size: 15px; font-weight: 700; }
+    .chat-estado { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; }
+    .chat-ponto { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--ok); }
+    .chat-estado--ocupado .chat-ponto { background: var(--ocupado); }
+    .chat-estado--desligado .chat-ponto { background: var(--desligado); }

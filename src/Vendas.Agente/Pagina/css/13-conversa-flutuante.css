@@ -1,0 +1,57 @@
+    /* =========================================================
+       7i. Layout C: conversa numa janela flutuante, estilo widget de chat
+       ========================================================= */
+    .chat-corpo { position: relative; }
+    /* os dados e os separadores não ficam por baixo da janela */
+    .chat-painel:not(.chat-painel--sem-conversa) :is(.chat-abas, .chat-painel-dados) { padding-right: 408px; }
+    .chat-conversa {
+      position: absolute; z-index: 5; top: 16px; right: 20px; bottom: 84px; width: 368px;
+      border: 1px solid var(--borda); border-radius: 18px; overflow: hidden;
+      box-shadow: 0 12px 32px rgb(22 33 58 / .18);
+      font-size: 13.5px;
+    }
+    .chat-conversa-cab { padding: 0; gap: 0; }
+    .chat-conversa-topo { gap: 10px; padding: 12px 10px 12px 14px; border-bottom: 1px solid var(--linha); }
+    .chat-conversa-topo .chat-avatar { width: 32px; height: 32px; }
+    .chat-conversa-nome { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .chat-conversa .chat-estado { font-size: 12px; color: var(--suave); }
+    .chat-conversa .chat-ponto { width: 7px; height: 7px; background: #1f9d62; }
+    .chat-conversa .chat-temas { padding: 8px 14px; border-bottom: 1px solid var(--linha); }
+    .chat-conversa .chat-tema { min-height: 28px; padding: 3px 11px; font-size: 12.5px; }
+    .chat-conversa .chat-tema[aria-pressed="true"] { background: var(--texto); border-color: var(--texto); color: var(--cartao); }
+
+    /* Balões compactos, sem avatar em cada mensagem */
+    .chat-conversa .chat-area { padding: 12px 14px; gap: 10px; }
+    .chat-conversa .chat-msg > .chat-avatar, .chat-conversa .chat-avatar-eu { display: none; }
+    .chat-conversa .chat-msg-corpo { gap: 3px; }
+    .chat-conversa .chat-msg--agente .chat-folha, .chat-conversa .chat-msg--agente .chat-folha--painel { max-width: 88%; padding: 8px 12px; border-radius: 16px; gap: 8px; }
+    .chat-conversa .chat-balao-eu { padding: 8px 12px; border-radius: 16px; line-height: 1.45; }
+    .chat-conversa .chat-area > .chat-msg--eu { max-width: 82%; }
+    .chat-conversa .chat-msg-meta { gap: 10px; }
+    .chat-conversa .chat-intro-ola { font-size: 13.5px; }
+    .chat-conversa .chat-cartao { padding: 7px 10px; border-radius: 12px; }
+    .chat-conversa .chat-msg--agente ~ .chat-sugestoes, .chat-conversa .chat-feedback { padding-left: 0; }
+    .chat-conversa .chat-sugestoes .chat-chip { padding: 6px 11px; border-radius: 99px; font-size: 12.5px; }
+    .chat-conversa .chat-opcoes .chat-chip { min-height: 30px; padding: 4px 10px; font-size: 12.5px; }
+    .chat-conversa .chat-acao, .chat-conversa .chat-vazio-titulo { font-size: 13.5px; }
+
+    /* Caixa de escrita com contorno, botão de enviar redondo */
+    .chat-conversa .chat-rodape { margin: 0 12px 10px; padding: 8px 8px 8px 12px; border: 1.5px solid var(--texto); border-radius: 14px; gap: 4px; }
+    .chat-conversa .chat-rodape:focus-within { outline: 2px solid var(--ligacao); outline-offset: 2px; }
+    .chat-conversa .chat-campo { min-height: 32px; padding: 0; border: 0; background: none; font-size: 13.5px; }
+    .chat-conversa .chat-campo:focus-visible { outline: none; }   /* o contorno vai na caixa toda */
+    .chat-conversa .chat-enviar { width: 32px; height: 32px; border-radius: 50%; }
+    .chat-conversa .chat-rodape-texto { font-size: 12px; }
+
+    /* Botão redondo: mostra e esconde a janela */
+    .chat-lancador {
+      position: absolute; z-index: 6; right: 20px; bottom: 20px; width: 52px; height: 52px;
+      display: grid; place-items: center; border: 0; border-radius: 50%;
+      background: var(--texto); color: var(--cartao); box-shadow: 0 6px 16px rgb(22 33 58 / .25);
+    }
+
+    /* Janela estreita: a conversa ocupa o painel todo quando está aberta */
+    @container (max-width: 820px) {
+      .chat-painel:not(.chat-painel--sem-conversa) :is(.chat-abas, .chat-painel-dados) { padding-right: 20px; }
+      .chat-conversa { top: 8px; left: 8px; right: 8px; bottom: 80px; width: auto; }
+    }

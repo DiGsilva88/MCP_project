@@ -1,0 +1,188 @@
+    /* =========================================================
+       7. Folha de resposta
+       ========================================================= */
+    .chat-folha {
+      background: var(--cartao);
+      border: 1px solid var(--borda);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 14px;
+      animation: chat-entrar .18s ease-out;
+    }
+    .chat-folha:focus { outline: none; }
+    .chat-folha-cab { display: flex; flex-direction: column; gap: 2px; }
+    .chat-folha-titulo { margin: 0; font-size: 13.5px; font-weight: 600; color: var(--suave); line-height: 1.4; }
+    .chat-folha-meta { margin: 0; font-size: 12.5px; color: var(--nota); }
+    .chat-folha-resumo { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .chat-texto { margin: 0; white-space: pre-wrap; }
+
+    .chat-aviso {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 12px;
+      background: var(--aviso-fundo); color: var(--aviso-texto);
+      border: 1px solid var(--aviso-borda); border-radius: 8px;
+      font-size: 14px;
+    }
+    .chat-aviso svg { flex: none; margin-top: 2px; }
+
+    /* Lista numerada: posição | nome e código | valor */
+    .chat-lista-cab {
+      display: flex; justify-content: flex-end;
+      padding-bottom: 6px; border-bottom: 1px solid var(--borda);
+      font-size: 12px; font-weight: 600; color: var(--nota);
+    }
+    .chat-lista { list-style: none; margin: 0; padding: 0; }
+    .chat-item {
+      display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px 10px;
+      align-items: start;
+      padding: 9px 0; border-bottom: 1px solid var(--linha);
+      font-variant-numeric: tabular-nums;
+    }
+    .chat-item:last-child { border-bottom: 0; }
+    .chat-item-pos { font-size: 13px; color: var(--nota); padding-top: 1px; }
+    .chat-item-corpo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .chat-item-nome { font-size: 14.5px; line-height: 1.35; overflow-wrap: anywhere; }
+    .chat-item-nome--vazio { font-style: italic; color: var(--suave); }
+    .chat-item-codigo { font-size: 12.5px; color: var(--nota); }
+    .chat-item-barra { display: block; height: 8px; margin-top: 6px; border-radius: 2px; background: var(--barra-fundo); }
+    .chat-item-barra span { display: block; height: 100%; border-radius: 2px; background: var(--ligacao); }
+    .chat-item-valor { display: flex; flex-direction: column; align-items: flex-end; text-align: right; font-size: 14.5px; white-space: nowrap; }
+    .chat-item-valor strong { font-weight: 700; }
+    .chat-item-valor .chat-data { font-variant-numeric: normal; }
+    .chat-item-rotulo, .chat-item-pct { font-size: 12.5px; color: var(--nota); }
+
+    /* Resposta estruturada: cartões soltos sobre o fundo, como num painel de indicadores */
+    .chat-folha--painel { background: transparent; border: 0; padding: 0; gap: 16px; }
+    .chat-bloco {
+      display: flex; flex-direction: column; gap: 14px;
+      padding: 16px 18px;
+      background: var(--cartao);
+      border: 1px solid var(--borda-cartao); border-radius: 8px;
+    }
+    .chat-bloco--lista { gap: 0; padding-top: 8px; padding-bottom: 8px; }
+    .chat-bloco--lista .chat-lista-cab { padding-top: 8px; }
+
+    /* Cartões de números: rótulo pequeno, valor grande, variação ao lado, período por baixo */
+    .chat-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; font-variant-numeric: tabular-nums; }
+    .chat-kpi {
+      display: flex; flex-direction: column; gap: 6px;
+      min-height: 112px;
+      padding: 16px 18px;
+      background: var(--cartao);
+      border: 1px solid var(--borda-cartao); border-radius: 8px;
+    }
+    .chat-kpi-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--suave); }
+    .chat-kpi-icone { width: 28px; height: 28px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--borda-cartao); color: var(--texto); }
+    .chat-kpi-linha { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-top: 2px; }
+    .chat-kpi-valor { font-size: 24px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; }
+    .chat-kpi-detalhe { font-size: 13px; color: var(--nota); }
+
+    /* Etiqueta de variação: verde sobe, vermelho desce, cinzento sem comparação */
+    .chat-delta { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--fundo); color: var(--suave); }
+    .chat-delta svg { flex: none; }
+    .chat-delta--sobe { background: var(--sobe-fundo); color: var(--sobe); }
+    .chat-delta--desce { background: var(--desce-fundo); color: var(--desce); }
+    .chat-aviso .chat-justa { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; color: var(--texto); }
+
+    /* Gráfico por mês: cabeçalho, legenda, eixo e leitura do mês escolhido */
+    .chat-grafico { display: flex; flex-direction: column; gap: 12px; }
+    .chat-grafico h3, .chat-meses h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--suave); }
+    .chat-grafico-cab { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
+    .chat-legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--suave); }
+    .chat-legenda > span { display: flex; align-items: center; gap: 6px; }
+    .chat-legenda-cor { width: 8px; height: 8px; border-radius: 50%; }
+    .chat-grafico-corpo { display: flex; gap: 8px; }
+    .chat-eixo { position: relative; width: 56px; height: 280px; flex: none; font-size: 12px; color: var(--nota); font-variant-numeric: tabular-nums; }
+    .chat-eixo span { position: absolute; right: 0; white-space: nowrap; }
+    .chat-colunas { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+    .chat-guia { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--borda); }
+    .chat-rotulos { display: grid; font-size: 12px; text-align: center; color: var(--nota); }
+    .chat-rotulos .chat-rotulo--ativo { color: var(--texto); font-weight: 700; }
+    .chat-leitura { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; padding: 12px 14px; background: var(--lateral); border-radius: 8px; font-variant-numeric: tabular-nums; }
+    .chat-leitura strong { min-width: 80px; font-size: 14px; }
+    .chat-leitura div { display: flex; flex-direction: column; }
+    .chat-leitura small { font-size: 12px; color: var(--nota); }
+
+    /* Gráfico de linhas: evolução por mês */
+    .chat-linha-area { position: relative; height: 280px; border-bottom: 1px solid var(--borda-forte); }
+    .chat-linha-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .chat-linha-marca { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--borda-forte); }
+    .chat-ponto-mes {
+      position: absolute; width: 44px; height: 44px; padding: 0;   /* área de toque; o ponto visível continua pequeno */
+      transform: translate(-50%, -50%);
+      display: grid; place-items: center;
+      border: 0; border-radius: 50%; background: transparent;
+    }
+    .chat-ponto-mes span { width: 10px; height: 10px; border-radius: 50%; background: var(--marca); box-shadow: 0 0 0 2px var(--cartao); }
+    .chat-ponto-mes--parcial span { background: var(--cartao); box-shadow: inset 0 0 0 2px var(--marca); }
+    .chat-ponto-mes:hover span, .chat-ponto-mes[aria-pressed="true"] span { width: 14px; height: 14px; box-shadow: 0 0 0 3px var(--selecionado); }
+    .chat-ponto-mes--parcial[aria-pressed="true"] span { box-shadow: inset 0 0 0 2px var(--marca), 0 0 0 3px var(--selecionado); }
+    .chat-legenda-atual { background: var(--marca); }
+    .chat-legenda-traco { width: 16px !important; height: 0 !important; border-radius: 0 !important; border-top: 2px dashed var(--anterior-linha); }
+    .chat-legenda-oca { width: 9px !important; height: 9px !important; box-shadow: inset 0 0 0 2px var(--marca); }
+
+    /* Ranking: nome | barra grossa | valor, linhas juntas e eixo por baixo */
+    .chat-ranking { gap: 0; }
+    .chat-rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+    .chat-rank-linha {
+      display: grid; grid-template-columns: 22px minmax(90px, 28%) minmax(60px, 1fr) minmax(96px, auto);
+      gap: 12px; align-items: center;
+      min-height: 36px;
+      font-variant-numeric: tabular-nums;
+    }
+    .chat-rank-pos { font-size: 12.5px; color: var(--nota); }
+    .chat-rank-nome { display: flex; flex-direction: column; min-width: 0; font-size: 14px; line-height: 1.25; }
+    .chat-rank-nome span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-rank-nome small { font-size: 12px; color: var(--nota); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chat-rank-pista { display: block; height: 14px; border-radius: 3px; background: var(--barra-fundo); }
+    .chat-rank-pista span { display: block; height: 100%; border-radius: 3px; background: var(--ligacao); }
+    .chat-rank-valor { display: flex; flex-direction: column; align-items: flex-end; font-size: 14px; white-space: nowrap; }
+    .chat-rank-valor strong { font-weight: 600; }
+    .chat-rank-valor small { font-size: 12px; color: var(--nota); }
+    .chat-rank-eixo { min-height: 0; margin-top: 8px; font-size: 12px; color: var(--nota); }
+    .chat-rank-marcas { display: flex; justify-content: space-between; }
+    .chat-rank-marcas span:first-child { transform: translateX(-30%); }
+    .chat-rank-marcas span:last-child { transform: translateX(30%); }
+
+    /* Tabela de detalhe por mês */
+    .chat-meses { display: flex; flex-direction: column; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .chat-meses h3 { margin-bottom: 8px; }
+    .chat-meses-linha { display: grid; grid-template-columns: minmax(0, 1fr) minmax(90px, auto) minmax(90px, auto) minmax(90px, auto); gap: 12px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--linha); }
+    .chat-meses-linha > :not(:first-child) { text-align: right; }
+    .chat-meses-cab { padding-top: 0; border-bottom-color: var(--borda); font-size: 12px; font-weight: 600; color: var(--nota); }
+    .chat-meses-linha .chat-atual { font-weight: 600; }
+    .chat-meses-linha .chat-ant { color: var(--suave); }
+
+    /* Tabela (respostas em CSV) */
+    .chat-tabela { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+    .chat-tabela th { padding: 0 8px 6px 0; border-bottom: 1px solid var(--borda); text-align: left; font-size: 12px; font-weight: 600; color: var(--nota); white-space: nowrap; }
+    .chat-tabela th::first-letter { text-transform: uppercase; }
+    .chat-tabela td { padding: 7px 8px 7px 0; border-bottom: 1px solid var(--linha); }
+    .chat-tabela .chat-num { text-align: right; padding-left: 8px; padding-right: 0; }
+    .chat-barra { width: 64px; height: 8px; border-radius: 2px; background: var(--barra-fundo); }
+    .chat-barra span { display: block; height: 100%; border-radius: 2px; background: var(--ligacao); }
+
+    .chat-folha-rodape { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; padding-top: 2px; }
+    .chat-folha-rodape .chat-folha-meta { margin-left: auto; }
+    .chat-acao {
+      align-self: flex-start;
+      min-height: 36px; padding: 0;
+      border: 0; background: none;
+      color: var(--ligacao); font-size: 14px; font-weight: 600;
+    }
+    .chat-acao:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    /* Espera e erro */
+    .chat-espera p { margin: 0; color: var(--suave); }
+    .chat-pontos { display: flex; gap: 5px; margin: 0; }
+    .chat-pontos[hidden], .chat-esqueleto[hidden] { display: none; }   /* o display: flex anulava o hidden */
+    .chat-pontos span { width: 7px; height: 7px; border-radius: 50%; background: var(--suave); animation: chat-pulsar 1.2s infinite ease-in-out; }
+    .chat-pontos span:nth-child(2) { animation-delay: .2s; }
+    .chat-pontos span:nth-child(3) { animation-delay: .4s; }
+    .chat-esqueleto { display: flex; flex-direction: column; gap: 9px; }
+    .chat-esqueleto span { display: block; height: 10px; border-radius: 3px; background: var(--esqueleto); animation: chat-pulsar 1.2s infinite ease-in-out; }
+    .chat-esqueleto span:nth-child(1) { width: 90%; }
+    .chat-esqueleto span:nth-child(2) { width: 72%; }
+    .chat-esqueleto span:nth-child(3) { width: 56%; }
+    .chat-folha--erro { border-color: var(--erro); }
+    .chat-folha--erro p { margin: 0; color: var(--erro); }

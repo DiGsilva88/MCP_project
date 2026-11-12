@@ -1,0 +1,51 @@
+    /* =========================================================
+       7g. Proposta A: dados ao centro em separadores, conversa à direita
+       ========================================================= */
+    .chat-dados { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--fundo); }
+    .chat-abas { display: flex; align-items: flex-end; gap: 8px; padding: 10px 20px 0; background: var(--lateral); border-bottom: 1px solid var(--borda); }
+    .chat-abas-lista { display: flex; gap: 4px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+    .chat-mostrar-conversa { margin-bottom: 4px; }
+    .chat-painel:not(.chat-painel--sem-conversa) .chat-mostrar-conversa { display: none; }
+    /* container: os @container dos gráficos medem o espaço dos dados, não a janela toda
+       (com a lateral e a conversa abertas a janela é larga mas os dados não, e os indicadores saíam do cartão) */
+    .chat-painel-dados { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 24px; container-type: inline-size; }
+    .chat-painel-dados > .chat-folha { max-width: 1100px; }
+    /* painel vazio: o texto fica ao centro, na horizontal e na vertical */
+    .chat-painel-dados:has(> .chat-painel-vazio) { display: grid; place-items: center; }
+    .chat-painel-vazio { max-width: 52ch; text-align: center; display: flex; flex-direction: column; gap: 8px; color: var(--suave); }
+    /* esqueleto enquanto o agente responde: o mesmo desenho de uma resposta (título, cartões, gráfico) */
+    .chat-painel-esqueleto { max-width: 1100px; display: flex; flex-direction: column; gap: 16px; }
+    .chat-painel-esqueleto :is(.chat-esq-linha, .chat-esq-cartao, .chat-esq-grafico span) { display: block; border-radius: 6px; background: var(--esqueleto); animation: chat-pulsar 1.2s infinite ease-in-out; }
+    .chat-esq-linha { height: 22px; width: 40%; }
+    .chat-esq-linha--curta { height: 14px; width: 24%; }
+    .chat-esq-cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+    .chat-esq-cartao { height: 76px; }
+    .chat-esq-grafico { height: 220px; display: flex; align-items: flex-end; gap: 4%; padding: 12px; border: 1px solid var(--esqueleto); border-radius: 8px; }
+    .chat-esq-grafico span { flex: 1; }
+    .chat-painel-vazio h2 { margin: 0; font-size: 18px; color: var(--texto); }
+    .chat-painel-vazio p { margin: 0; }
+
+    .chat-conversa { width: 380px; flex: none; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--borda); background: var(--cartao); }
+    .chat-painel--sem-conversa .chat-conversa { display: none; }
+    .chat-conversa-cab { padding: 12px 16px; border-bottom: 1px solid var(--linha); display: flex; flex-direction: column; gap: 10px; }
+    .chat-conversa-topo { display: flex; align-items: center; justify-content: space-between; }
+    .chat-conversa-titulo { margin: 0; font-size: 14px; font-weight: 700; }
+    .chat-esconder { width: 32px; height: 32px; border: 0; border-radius: 6px; background: none; color: var(--nota); font-size: 16px; }
+    .chat-esconder:hover { background: var(--linha); }
+    .chat-conversa .chat-temas { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .chat-conversa .chat-tema { min-height: 30px; padding: 4px 12px; border: 1px solid var(--borda-controlo); border-radius: 99px; background: var(--cartao); font-size: 13px; }
+    .chat-conversa .chat-tema[aria-pressed="true"] { background: var(--marca); border-color: var(--marca); color: var(--marca-texto); }
+    .chat-conversa .chat-area { padding: 16px; gap: 14px; }
+    .chat-conversa .chat-folha { gap: 10px; }
+    .chat-conversa .chat-msg--agente ~ .chat-sugestoes, .chat-conversa .chat-feedback { margin-left: 0; padding-left: 42px; box-sizing: border-box; }
+    .chat-cartao { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--borda-controlo); border-radius: 8px; background: var(--cartao); text-align: left; color: var(--ligacao); }
+    .chat-cartao[aria-current="true"] { padding: 7px 9px; border: 2px solid var(--ligacao); }
+    .chat-cartao-texto { display: flex; flex-direction: column; min-width: 0; color: var(--texto); }
+    .chat-cartao-texto b { font-size: 13px; }
+    .chat-cartao-texto small { font-size: 12px; color: var(--nota); }
+
+    /* Janela estreita: os dados em cima, a conversa em baixo */
+    @container (max-width: 820px) {
+      .chat-corpo { flex-direction: column; }
+      .chat-conversa { width: auto; flex: 1; border-left: 0; border-top: 1px solid var(--borda); }
+    }

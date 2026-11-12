@@ -25,9 +25,9 @@
   <!-- O ficheiro passa a viajar dentro do .exe -->
   <EmbeddedResource Include="Pagina\pagina-chat.html" />
     <!-- Partes da página, juntadas pelo PaginaChat ({{inclui:...}}) -->
-  <EmbeddedResource Include="Pagina\css*.css" LogicalName="pagina/css/%(Filename)%(Extension)" />
-  <EmbeddedResource Include="Pagina\html*.html" LogicalName="pagina/html/%(Filename)%(Extension)" />
-  <EmbeddedResource Include="Pagina\js*.js" LogicalName="pagina/js/%(Filename)%(Extension)" />
+  <EmbeddedResource Include="Pagina\css\*.css" LogicalName="pagina/css/%(Filename)%(Extension)" />
+  <EmbeddedResource Include="Pagina\html\*.html" LogicalName="pagina/html/%(Filename)%(Extension)" />
+  <EmbeddedResource Include="Pagina\js\*.js" LogicalName="pagina/js/%(Filename)%(Extension)" />
   <!-- Avatar do ecrã de entrada: servido em /imagens/<ficheiro> pelo ModoWebAsync -->
   <EmbeddedResource Include="Pagina\avatar-flow.png" LogicalName="imagens/avatar-flow.png" />
   <!-- Ícone da conversa -->

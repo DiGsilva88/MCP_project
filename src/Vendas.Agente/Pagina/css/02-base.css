@@ -1,0 +1,24 @@
+    /* =========================================================
+       2. Base
+       ========================================================= */
+    /* Fonte 72 (licença em fonts/LICENSE-72.txt); servida pelo agente em /fonts/ */
+    @font-face { font-family: "72"; src: url("/fonts/72-Regular-full.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: "72"; src: url("/fonts/72-Semibold-full.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: "72"; src: url("/fonts/72-Bold-full.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--cartao);
+      color: var(--texto);
+      font: 15px/1.45 "72", system-ui, "Segoe UI", Tahoma, Roboto, Arial, sans-serif;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; opacity: .5; }
+    :focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+    [hidden] { display: none !important; }   /* sem isto, um display:flex ganha ao atributo hidden */
+    .so-leitor {
+      position: absolute; width: 1px; height: 1px; overflow: hidden;
+      clip: rect(0 0 0 0); white-space: nowrap;
+    }

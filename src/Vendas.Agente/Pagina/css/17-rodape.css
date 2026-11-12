@@ -1,0 +1,21 @@
+    /* =========================================================
+       8. Rodapé: pergunta + só leitura
+       ========================================================= */
+    .chat-rodape { flex: none; background: var(--cartao); border-top: 1px solid var(--borda); padding: 12px 16px 10px; display: flex; flex-direction: column; gap: 8px; }
+    .chat-rodape:focus-within { border-top-color: var(--marca); }
+    .chat-escrever { margin: 0; display: flex; gap: 8px; }
+    .chat-campo {
+      flex: 1; min-width: 0; min-height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--borda-controlo); border-radius: 8px;
+      background: var(--lateral);
+    }
+    .chat-campo::placeholder { color: var(--nota); }
+    .chat-enviar {
+      width: 44px; height: 44px; flex: none;
+      display: grid; place-items: center;
+      border: 0; border-radius: 8px;
+      background: var(--marca); color: var(--marca-texto);
+    }
+    .chat-enviar:hover { background: var(--marca-escura); }
+    .chat-rodape-texto { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--nota); }

@@ -1,0 +1,99 @@
+    /* =========================================================
+       7c. Layout compacto (modelo Ember): cartões baixos, gráfico limpo
+       ========================================================= */
+    :root { --kpi-2: #0e8a85; --kpi-3: #13814f; --kpi-4: #6f5fe0; }
+
+    .chat-folha-titulo { font-size: 15px; font-weight: 700; color: var(--texto); }
+    /* Total de uma lista ("5 clientes"): no cabeçalho, sem cartão */
+    .chat-folha-total { margin: 2px 0 0; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .chat-folha-total span { font-weight: 400; color: var(--nota); }
+
+    /* Cartões: rótulo, valor com variação ao lado, detalhe; barra de cor à esquerda */
+    .chat-kpis { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    .chat-kpi { min-height: 0; gap: 2px; padding: 10px 14px 12px; border-left: 3px solid var(--marca); }
+    .chat-kpi:nth-child(4n+2) { border-left-color: var(--kpi-2); }
+    .chat-kpi:nth-child(4n+3) { border-left-color: var(--kpi-3); }
+    .chat-kpi:nth-child(4n+4) { border-left-color: var(--kpi-4); }
+    .chat-kpi-icone { display: none; }
+    .chat-kpi-cab { font-size: 12.5px; }
+    .chat-kpi-linha { margin-top: 0; gap: 4px 8px; }
+    .chat-kpi-valor { font-size: 20px; font-weight: 700; }
+    .chat-kpi-detalhe { font-size: 12px; }
+    .chat-kpi .chat-delta { padding: 1px 7px; border-radius: 99px; font-size: 12px; }
+
+    /* Gráfico: leitura do mês numa linha por cima, tabela por mês fechada */
+    .chat-grafico { gap: 8px; }
+    .chat-leitura { padding: 0; background: none; border-radius: 0; gap: 4px 16px; font-size: 13px; }
+    .chat-leitura strong { min-width: 0; font-size: 13px; }
+    .chat-leitura div { flex-direction: row; align-items: baseline; gap: 6px; }
+    .chat-meses > summary { cursor: pointer; list-style: none; font-size: 13.5px; font-weight: 600; color: var(--marca); }
+    .chat-meses > summary::-webkit-details-marker { display: none; }
+    .chat-meses[open] > summary { margin-bottom: 10px; }
+
+    /* Ranking: uma linha por item, valor e % lado a lado */
+    /* Ranking: todas as linhas partilham as mesmas colunas (subgrid), por isso nada se sobrepõe.
+       posição | nome | barra | valor (e valor secundário por baixo) | variação */
+    .chat-ranking { display: grid; grid-template-columns: 22px minmax(110px, 26%) minmax(60px, 1fr) max-content max-content; column-gap: 12px; }
+    .chat-rank, .chat-rank-linha { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; }
+    .chat-rank { row-gap: 2px; }
+    .chat-rank-linha { min-height: 40px; }
+    .chat-rank-pista { height: 10px; }
+    .chat-rank-valor { flex-direction: column; align-items: flex-end; gap: 0; }
+    .chat-rank-delta { display: flex; }
+    @container (max-width: 640px) {
+      /* Janela estreita: a barra e o eixo saem; ficam nome, valor e variação */
+      .chat-ranking { grid-template-columns: 22px minmax(0, 1fr) max-content max-content; }
+      .chat-rank-pista, .chat-rank-eixo { display: none; }
+      .chat-rank-delta .chat-delta-sufixo { display: none; }   /* "+31,5%" sem "vs 2025": o nome precisa do espaço */
+    }
+    /* Barra curta: 5 valores no eixo colavam-se ("0 213425638 mil"); ficam 0, meio e máximo */
+    @container (max-width: 900px) { .chat-rank-marcas span:nth-child(even) { visibility: hidden; } }
+
+    /* Ranking interativo: controlos, linha que abre o detalhe */
+    .chat-controlos { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+    .chat-seg { display: inline-flex; border: 1px solid var(--borda-controlo); border-radius: 8px; overflow: hidden; background: var(--cartao); }
+    .chat-seg button { border: 0; background: none; padding: 5px 12px; min-height: 34px; font-size: 13.5px; }
+    .chat-seg button + button { border-left: 1px solid var(--borda-controlo); }
+    .chat-seg button[aria-pressed="true"] { background: var(--marca); color: var(--marca-texto); font-weight: 600; }
+    .chat-rank > li { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; }
+    button.chat-rank-linha { align-items: center; margin: 0 -8px; padding: 2px 8px; border: 0; border-radius: 6px; background: none; text-align: left; }
+    button.chat-rank-linha:hover { background: var(--lateral); }
+    button.chat-rank-linha[aria-expanded="true"] { background: var(--selecionado); }
+    .chat-rank-detalhe { grid-column: 1 / -1; margin: 4px 0 10px 34px; padding: 12px 14px; border-left: 3px solid var(--ligacao); border-radius: 0 8px 8px 0; background: var(--lateral); display: flex; flex-direction: column; gap: 10px; }
+    .chat-rank-detalhe strong { font-size: 14.5px; }
+    .chat-factos { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 16px; }
+    .chat-factos div { display: flex; flex-direction: column; }
+    .chat-factos dt { font-size: 12px; color: var(--nota); }
+    .chat-factos dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .chat-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chat-acoes .chat-chip { min-height: 36px; padding: 6px 12px; font-size: 13.5px; }
+    @container (max-width: 640px) { .chat-rank-detalhe { margin-left: 0; } }
+
+    /* Tabela: cabeçalhos que ordenam, filtro e total */
+    .chat-ordenar { display: inline-flex; align-items: center; gap: 2px; min-height: 28px; padding: 0; border: 0; background: none; font-weight: 600; }
+    .chat-tabela th[aria-sort] .chat-ordenar { color: var(--texto); }
+    .chat-tabela tfoot td { padding-top: 8px; border-top: 1px solid var(--borda); border-bottom: 0; font-weight: 700; }
+    .chat-tabela-vazia { color: var(--nota); }
+    .chat-filtrar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--nota); }
+    .chat-filtrar input { min-height: 36px; padding: 0 10px; border: 1px solid var(--borda-controlo); border-radius: 8px; background: var(--cartao); width: min(260px, 100%); }
+
+    .chat-kpi--acao { cursor: pointer; }
+    .chat-kpi--acao:hover { border-color: var(--ligacao); }
+
+    /* Como li a pergunta, editar e repetir, destaque, feedback */
+    .chat-filtro--botao { border-color: var(--borda-controlo); font-size: 12.5px; cursor: pointer; }
+    .chat-filtro--botao:hover { border-color: var(--ligacao); }
+    .chat-periodos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .chat-periodos .chat-chip { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+    .chat-area > .chat-pergunta-bloco {
+      align-self: flex-end; width: auto; max-width: min(85%, 816px);
+      margin-right: max(0px, calc(100% - 960px));
+      display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    }
+    .chat-pergunta-bloco .chat-pergunta { max-width: 100%; }
+    .chat-pergunta-acoes { display: flex; gap: 14px; }
+    .chat-pergunta-acoes .chat-acao { min-height: 28px; font-size: 12.5px; }
+    .chat-destaque { margin: 0; font-size: 14.5px; line-height: 1.5; }
+    .chat-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-left: 42px; font-size: 13px; color: var(--nota); }
+    .chat-feedback .chat-acao { min-height: 32px; font-size: 13px; }
+    .chat-feedback .chat-acoes { flex-basis: 100%; }
