@@ -11,7 +11,7 @@
        Carrega ao abrir a página; filtros, "resumo do cliente X" na conversa e as vistas guardadas voltam a carregar.
        ========================================================= */
     const RES_PERIODOS = [['Ultimos7Dias', 'Últimos 7 dias'], ['MesAtual', 'Este mês'], ['TrimestreAtual', 'Trimestre'], ['AnoAtual', 'Este ano'], ['Ultimos12Meses', 'Últimos 12 meses'], ['AnoAnterior', 'Ano passado']];
-    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, alertaSel: null, alertaFiltro: 'Todos', cliSel: null, marcaSel: null, artVer: false, artPag: 0, cliSeg: 'Todos', cliPag: 0, credTipo: 'Todos', credBusca: '', credPag: 0, fatVista: 'mes', fatDocs: 'cred' };
+    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, alertaSel: null, alertaFiltro: 'Todos', cliSel: null, marcaSel: null, artVer: false, artPag: 0, artMetrica: 'valor', artQtdACarregar: false, artQtdErro: false, cliSeg: 'Todos', cliPag: 0, credTipo: 'Todos', credBusca: '', credPag: 0, fatVista: 'mes', fatDocs: 'cred' };
     // Vistas do Resumo (painel lateral): cada uma mostra só os seus cartões, em vez de tudo numa só página
     const SECOES = [['geral', 'Resumo das vendas'], ['alertas', 'Alertas'], ['clientes', 'Clientes'], ['faturacao', 'Faturação'],
                     ['artigos', 'Artigos'], ['zonas', 'Zonas'], ['previsoes', 'Previsões']];
@@ -121,6 +121,38 @@
     // como os separadores das respostas. O cartão mostra "Guardado às …" com a hora em que os dados vieram.
     // shortcut: só em memória (recarregar a página volta a pedir); sem prazo de validade, porque a sessão é curta.
     const resumosGuardados = new Map();
+    function parametrosResumo() {
+      const q = new URLSearchParams({ periodo: resumoEstado.periodo });
+      if (resumoEstado.cliente) q.set('cliente', resumoEstado.cliente);
+      if (resumoEstado.zona) q.set('zona', resumoEstado.zona);
+      return q;
+    }
+
+    // Botão "Unidades" da vista Artigos: a lista por unidades só se pede quando é precisa e fica com os dados
+    // deste filtro (voltar a ele não pede outra vez). Se falhar, volta a "Valor" com uma mensagem.
+    async function carregarArtigosQtd() {
+      const dados = resumoEstado.dados;
+      if (!dados || dados.artigosQtd || resumoEstado.artQtdACarregar) return;
+      Object.assign(resumoEstado, { artQtdACarregar: true, artQtdErro: false });
+      try {
+        const q = parametrosResumo();
+        q.set('ordenar', 'Quantidade');
+        const r = await fetch('/resumo?' + q);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        dados.artigosQtd = lerLista((await r.json()).artigos || '').itens.filter(i => i.num > 0);
+      } catch (erro) {
+        console.error('Falha a carregar os artigos por unidades:', erro);
+        if (resumoEstado.dados === dados) Object.assign(resumoEstado, { artMetrica: 'valor', artQtdErro: true });
+      }
+      resumoEstado.artQtdACarregar = false;
+      // O filtro mudou a meio do pedido: as unidades dos dados novos ainda não foram pedidas (este pedido bloqueava-as)
+      if (resumoEstado.dados !== dados) { if (resumoEstado.artMetrica === 'unidades') carregarArtigosQtd(); return; }
+      if (!vistaResumo) return;
+      const foco = document.activeElement?.dataset?.artMetrica;   // quem usa teclado não perde o lugar
+      desenharPainel();
+      if (foco) painelEl.querySelector(`[data-art-metrica="${resumoEstado.artMetrica}"]`)?.focus();
+    }
+
     async function carregarResumo() {
       const n = ++pedidosResumo;
       const chave = JSON.stringify([resumoEstado.periodo, resumoEstado.zona, resumoEstado.cliente]);
@@ -130,10 +162,7 @@
       try {
         if (guardado) resumoEstado.dados = guardado;
         else {
-          const q = new URLSearchParams({ periodo: resumoEstado.periodo });
-          if (resumoEstado.cliente) q.set('cliente', resumoEstado.cliente);
-          if (resumoEstado.zona) q.set('zona', resumoEstado.zona);
-          const r = await fetch('/resumo?' + q);
+          const r = await fetch('/resumo?' + parametrosResumo());
           if (!r.ok) throw new Error('HTTP ' + r.status);
           const j = await r.json();
           if (n !== pedidosResumo) return;
@@ -141,6 +170,8 @@
           resumosGuardados.set(chave, resumoEstado.dados);   // só as respostas que chegaram: uma falha volta a tentar
         }
         if (!resumoEstado.cliente && resumoEstado.dados.locais) resumoEstado.zonas = resumoEstado.dados.locais;
+        // Outro período ou filtro com "Unidades" escolhido: as unidades destes dados também se pedem
+        if (resumoEstado.artMetrica === 'unidades') carregarArtigosQtd();
       } catch (erro) {
         if (n !== pedidosResumo) return;
         console.error('Falha a carregar o resumo:', erro);

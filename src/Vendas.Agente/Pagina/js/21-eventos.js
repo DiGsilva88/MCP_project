@@ -10,6 +10,14 @@
     });
 
     desenharTemas();
+    // Recarregar volta ao lugar onde se estava (como "Ir direto ao painel de vendas", já na vista e com os filtros de antes)
+    try {
+      const l = JSON.parse(sessionStorage.getItem(LUGAR));
+      if (l && !l.inicio && SECOES.some(s => s[0] === l.secao)) {
+        Object.assign(resumoEstado, { periodo: l.periodo || 'AnoAtual', zona: l.zona || null, cliente: l.cliente || null });
+        boasVindasAberta = false; secao = l.secao; modoInicio = 'dados';
+      }
+    } catch { }
     mostrarInicio();
     carregarResumo();   // o Resumo carrega logo ao abrir (por trás das boas-vindas)
 

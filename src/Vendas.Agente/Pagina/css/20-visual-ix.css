@@ -226,6 +226,8 @@
     .res-compras-barras i { flex: 1; border-radius: 3px 3px 0 0; background: #1d5bff; }
     .res-compras-barras--parado i { background: #0b0f17; }
     .res-tab--art { grid-template-columns: minmax(0, 1fr) 90px 56px 60px; }
+    .res-tab--art-qtd { grid-template-columns: minmax(0, 1fr) 76px 90px 60px; }   /* Unidades | Faturação: os euros precisam de mais largura que a % */
+    [data-bloco="art"] .res-pilulas { margin: 4px 0 8px; }
     /* Gráfico circular dos artigos: % nas fatias, total ao centro e legenda ao lado; o top 5 vem por baixo */
     .res-art-circulo { display: flex; align-items: center; justify-content: center; gap: 28px; flex-wrap: wrap; margin-bottom: 16px; }
     .res-art-roda { width: 190px; height: 190px; }
@@ -377,7 +379,14 @@
     .doc-acoes a { color: inherit; text-decoration: none; }
     .doc-acoes [aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
     .doc-aviso { margin: 0; padding: 10px 12px; border: 1px solid var(--aviso-borda); border-radius: 8px; background: var(--aviso-fundo); color: var(--aviso-texto); }
-    .doc-pdf { width: 100%; height: 70vh; border: 1px solid var(--borda); border-radius: 8px; }
+    /* "Imprimir" do documento: só a janela do documento, sem botões, e a tabela inteira (sem a barra de deslocar) */
+    @media print {
+      body:has(#dlg-doc[open]) > :not(#dlg-doc) { display: none !important; }
+      #dlg-doc[open] { position: static; display: block; width: auto; height: auto; max-height: none; margin: 0; border: 0; box-shadow: none; animation: none; background: #fff; color: #000; }
+      #dlg-doc::backdrop { background: none; }
+      #dlg-doc :is(.doc-acoes, #dlg-doc-voltar, #dlg-doc-fechar, .doc-link[data-doc-associar], #doc-associar-estado) { display: none; }
+      #dlg-doc .doc-corpo { overflow: visible; }
+    }
     .doc-previa { padding: 14px; border: 1px dashed var(--borda-forte); border-radius: 8px; display: flex; flex-direction: column; gap: 12px; }
     .doc-previa h3 { margin: 0; font-size: 13.5px; }
     .doc-tabela { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -386,8 +395,8 @@
     .doc-tabela tfoot :is(th, td) { font-weight: 700; border-bottom: 0; }
     .doc-link { padding: 0; border: 0; background: none; color: var(--ligacao); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
     .doc-link:hover { text-decoration: underline; }
-    .res-tab--cred[data-doc-linha] { cursor: pointer; }
-    .res-tab--cred[data-doc-linha]:hover, .res-tab--cred[aria-current="true"] { background: var(--selecionado); }
+    :is(.res-tab--cred, .res-tab--doc)[data-doc-linha] { cursor: pointer; }
+    :is(.res-tab--cred, .res-tab--doc)[data-doc-linha]:hover, :is(.res-tab--cred, .res-tab--doc)[aria-current="true"] { background: var(--selecionado); }
     :is(.doc-link, #dlg-doc .res-btn):focus-visible { outline: 2px solid var(--ligacao); outline-offset: 2px; }
     :is(.res-sino, .res-pilula, .res-al-linha, .res-al-todas, .res-regra, .res-btn-negro, .res-btn-discreto, .res-ficha-btn, .res-ver-alertas, .dlg-legenda button):focus-visible { outline: 2px solid #1d5bff; outline-offset: 2px; }
 

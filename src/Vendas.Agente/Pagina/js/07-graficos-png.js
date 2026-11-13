@@ -42,7 +42,7 @@
       g.textBaseline = 'middle'; g.lineWidth = 1;
       [0, topo / 2, topo].forEach(v => {
         g.strokeStyle = COR.grelha; g.beginPath(); g.moveTo(m.l, Y(v)); g.lineTo(L - m.r, Y(v)); g.stroke();
-        g.fillStyle = COR.nota; g.fillText(v ? milhares(v) : '0', m.l - 10, Y(v));
+        g.fillStyle = COR.nota; g.fillText(v ? eixoSerie(s, v) : '0', m.l - 10, Y(v));
       });
       g.textAlign = 'center'; g.textBaseline = 'top';
       s.meses.forEach((x, i) => g.fillText(MESES[x.m - 1].slice(0, 3).toLowerCase(), X(i), m.t + h + 10));
@@ -85,7 +85,7 @@
         const melhor = comDados.reduce((a, b) => b.atual > a.atual ? b : a);
         const i = s.meses.indexOf(melhor);
         g.fillStyle = COR.texto; g.font = fonte(12, 600); g.textAlign = 'center'; g.textBaseline = 'bottom';
-        g.fillText(euros(melhor.atual), X(i), Y(melhor.atual) - 10);
+        g.fillText(valorSerie(s, melhor.atual), X(i), Y(melhor.atual) - 10);
       }
       return cv;
     }

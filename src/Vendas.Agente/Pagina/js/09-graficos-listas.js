@@ -363,6 +363,17 @@
       return frase;
     }
 
+    // Frase da conversa no ticket médio: a média do período e o mês mais alto e mais baixo (só meses completos)
+    function fraseTicket(s, r) {
+      const geral = (r.factos.find(([k]) => /valor m[ée]dio/i.test(k)) || [])[1];
+      const inicio = geral ? `Ticket médio de ${geral} por documento.` : '';
+      const completos = s.meses.filter(x => x.atual != null && !x.parcial);
+      if (completos.length < 2) return inicio;
+      const alto = completos.reduce((a, b) => b.atual > a.atual ? b : a), baixo = completos.reduce((a, b) => b.atual < a.atual ? b : a);
+      const mes = x => MESES[x.m - 1].toLowerCase();
+      return `${inicio} Nos meses completos, foi mais alto em ${mes(alto)} (${comCentimos(alto.atual)}) e mais baixo em ${mes(baixo)} (${comCentimos(baixo.atual)}).`.trim();
+    }
+
     function folhaLista(r, original, pergunta = '') {
       const art = el('article', 'chat-folha');
       const simples = !r.titulo && !r.itens.length && !r.factos.length && !r.avisos.length;
@@ -383,15 +394,20 @@
         r.resumo = r.resumo.replace(/\bem 1 m[eê]s(es)?,\s*/i, 'em ');
       }
 
+      // A pergunta era sobre o ticket médio: a série de meses mostra a média por documento, não o total
+      // (estas respostas vêm direto do servidor, sem o modelo as adaptar à pergunta)
+      const serieBase = lerSerie(r);
+      const pedeTicket = /ticket|valor medio|media por (documento|fatura|venda)/.test(semAcento(pergunta));
+      const serie = (pedeTicket && serieTicketMedio(serieBase)) || serieBase;
+
       const cab = el('div', 'chat-folha-cab');
       const leitura = lerFiltros(r.titulo);
-      if (r.titulo) cab.append(el('h2', 'chat-folha-titulo', maiuscula(leitura.titulo)));
+      if (r.titulo) cab.append(el('h2', 'chat-folha-titulo', serie && serie.medida ? 'Ticket médio por mês' : maiuscula(leitura.titulo)));
       etiquetasLeitura(cab, leitura.filtros, r.periodo, pergunta);
       art.append(cab);
 
       art.classList.add('chat-folha--painel');
       const linhasKpis = desenharKpis(r, cab, art);
-      const serie = lerSerie(r);
 
       r.avisos.forEach((a, n) => {
         const div = el('div', 'chat-aviso');
@@ -418,12 +434,12 @@
       // Um só valor (ex.: um dia) já está nos cartões: não desenha uma barra sozinha
       const soUm = itens.length === 1 && !devolucoes.length && !!art.querySelector('.chat-kpis');
 
-      const destaque = serie ? '' : fraseDestaque(itens);
+      const destaque = serie ? (serie.medida ? fraseTicket(serie, r) : '') : fraseDestaque(itens);
       if (destaque) art.append(el('p', 'chat-destaque', destaque));
 
       let imagem = null;   // gráfico que o botão "Guardar imagem" redesenha em PNG
       const periodo = r.periodo ? 'Período: ' + r.periodo : '';
-      if (serie) { desenharSerie(serie, art); imagem = () => pngSerie(serie, r.titulo, periodo); }
+      if (serie) { desenharSerie(serie, art); imagem = () => pngSerie(serie, serie.medida ? 'Ticket médio por mês' : r.titulo, periodo); }
       else if (soUm) { /* nada a acrescentar */ }
       else if (itens.length && itens.every(i => i.num > 0 && !i.rotulo) && eParteDoTodo(itens)) { desenharCirculo(itens, art, r.titulo); imagem = () => pngCirculo(itens, r.titulo, periodo); }
       else if (itens.length && itens.every(i => i.num > 0 && !i.rotulo)) { desenharRanking(itens, art, r.titulo); imagem = () => pngRanking(itens, r.titulo, periodo); }

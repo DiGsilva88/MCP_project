@@ -87,7 +87,11 @@
       return raiz;
     }
 
+    // Onde se está (vista, período e filtros): recarregar a página volta aqui (ver 21-eventos.js).
+    // Só nesta sessão, como as vistas guardadas: fechar o separador apaga-o.
+    const LUGAR = 'flow-lugar';
     function desenharPainel() {
+      try { sessionStorage.setItem(LUGAR, JSON.stringify({ inicio: boasVindasAberta, secao, periodo: resumoEstado.periodo, zona: resumoEstado.zona, cliente: resumoEstado.cliente })); } catch { }
       painelRaiz.classList.toggle('chat-painel--inicio', boasVindasAberta);
       if (boasVindasAberta) {
         // Recarregar o Resumo redesenha o painel: mantém o texto da pergunta que já estava a ser escrita

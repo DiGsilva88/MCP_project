@@ -110,7 +110,8 @@
         });
         htmlArtRoda = `<div class="res-art-circulo">
           <div class="chat-circulo-roda res-art-roda"><svg viewBox="0 0 120 120" role="img" aria-label="${rEsc(partes.map(p => `${p.nome} ${rPct(p.num / baseArt * 100)}`).join(', '))}">${fatias.join('')}<g class="res-art-pct" aria-hidden="true">${rotulos.join('')}</g></svg>
-            <button type="button" class="chat-circulo-centro res-art-total" data-art-ver aria-expanded="${resumoEstado.artVer}" title="Ver a lista dos artigos"><span>Total de vendas</span><strong>${rCurto(baseArt)}</strong><small>${resumoEstado.artVer ? 'Ver só o top 5' : 'Ver artigos'}</small></button></div>
+            <button type="button" class="chat-circulo-centro res-art-total" data-art-ver aria-expanded="${resumoEstado.artVer}" title="Total de vendas: ${rEur2(baseArt)}. ${resumoEstado.artVer ? 'Ver só o top 5' : 'Ver a lista dos artigos'}"
+              aria-label="Total de vendas ${rEur2(baseArt)}. ${resumoEstado.artVer ? 'Ver só o top 5' : 'Ver a lista dos artigos'}"><span>Total de vendas</span><strong>${rCurto(baseArt)}</strong><small>${resumoEstado.artVer ? 'Ver só o top 5' : 'Ver artigos'}</small></button></div>
         </div>
         ${outrosArt > 0 ? `<p class="res-art-nota"><i class="res-art-ponto" style="background:var(--borda-forte)" aria-hidden="true"></i><span>A cinzento: ${nOutrosArt ? `os restantes ${rGrupos(nOutrosArt)} artigos` : 'os restantes artigos'} (${rPct(outrosArt / baseArt * 100)} das vendas), cada um com menos de ${rEur(topArt[topArt.length - 1].num)}.</span></p>` : ''}`;
       }
@@ -118,16 +119,29 @@
 
       // Artigos mais vendidos: gráfico circular e, por baixo, o top 5 em lista.
       // Clicar no total mostra os artigos todos que a consulta trouxe (os 100 maiores), em páginas.
-      const todosArt = D.artigosTodos || D.artigos;
-      const verTodos = resumoEstado.artVer && todosArt.length > topArt.length;
-      const { itens: listaArt, html: paginacaoArt } = verTodos ? paginar(todosArt, 'artPag', 'data-art-pag', 'Páginas de artigos') : { itens: topArt, html: '' };
+      // Valor | Unidades: em unidades é outra lista (os que mais unidades venderam), pedida só quando se carrega no botão.
+      const porUn = resumoEstado.artMetrica === 'unidades' && !!D.artigosQtd;
+      const todosArt = porUn ? D.artigosQtd : D.artigosTodos || D.artigos;
+      const topLista = porUn ? todosArt.slice(0, CORES_ART.length) : topArt;
+      const verTodos = resumoEstado.artVer && todosArt.length > topLista.length;
+      const { itens: listaArt, html: paginacaoArt } = verTodos ? paginar(todosArt, 'artPag', 'data-art-pag', 'Páginas de artigos') : { itens: topLista, html: '' };
       const inicioArt = verTodos ? todosArt.indexOf(listaArt[0]) : 0;
+      const estadoQtd = resumoEstado.artQtdACarregar ? '<span class="res-sub" role="status">A carregar as unidades…</span>'
+        : resumoEstado.artQtdErro ? '<span class="res-sub" role="status">Não foi possível carregar as unidades. Tente de novo.</span>' : '';
+      const metricasArt = `<div class="res-pilulas" role="group" aria-label="Ordenar artigos por">${[['valor', 'Valor'], ['unidades', 'Unidades']].map(([id, nome]) =>
+        `<button type="button" class="res-pilula" data-art-metrica="${id}" aria-pressed="${resumoEstado.artMetrica === id}">${nome}</button>`).join('')}${estadoQtd}</div>`;
+      const nomeArt = (a, k) => `<span class="res-tab-nome" title="${rEsc(a.nome)}">${porUn ? '' : pontoArt(k)}${verTodos ? `${k + 1}. ` : ''}${rEsc(a.nome)}${a.codigo || a.familia ? `<small>${[a.codigo, a.familia].filter(Boolean).map(rEsc).join(' · ')}</small>` : ''}</span>`;
+      // Em unidades: "18 390 unidades" e "436 176,07 €" vêm assim da ferramenta; a variação é a das unidades
+      const linhaArt = (a, k) => porUn
+        ? `<div class="res-tab-linha res-tab--art-qtd">${nomeArt(a, k)}<strong>${rEsc(a.valor.replace(/\s*unidades$/, ''))}</strong><span>${a.pct ? rEur(paraNumero(a.pct)) : '–'}</span>${celVar(a)}</div>`
+        : `<div class="res-tab-linha res-tab--art">${nomeArt(a, k)}
+            <strong>${rEur(a.num)}</strong><span>${baseArt > 0 ? rPct(a.num / baseArt * 100) : '–'}</span>${celVar(a)}</div>`;
+      const cabArt = porUn ? `<span>Unidades</span><span>Faturação</span>` : `<span>Faturação</span><span>% total</span>`;
       const htmlArt = `<section class="res-cartao res-tabela" data-bloco="art">
-        <div class="res-cab"><h3>Artigos mais vendidos</h3><span class="res-sub">Por faturação${D.artigosTotal ? ` · de ${rGrupos(D.artigosTotal)} artigos` : ''}</span></div>
+        <div class="res-cab"><h3>Artigos mais vendidos</h3><span class="res-sub">Por ${porUn ? 'unidades' : 'faturação'} · total ${rEur2(baseArt)}${D.artigosTotal ? ` · de ${rGrupos(D.artigosTotal)} artigos` : ''}</span></div>
         ${htmlArtRoda}
-        ${topArt.length ? `<div class="res-tab-linha res-tab-cab res-tab--art" aria-hidden="true"><span>${verTodos ? `Os ${todosArt.length} maiores` : `Top ${topArt.length}`}</span><span>Faturação</span><span>% total</span><span>${vsAnt}</span></div>
-          ${listaArt.map((a, i) => { const k = inicioArt + i; return `<div class="res-tab-linha res-tab--art"><span class="res-tab-nome" title="${rEsc(a.nome)}">${pontoArt(k)}${verTodos ? `${k + 1}. ` : ''}${rEsc(a.nome)}${a.codigo || a.familia ? `<small>${[a.codigo, a.familia].filter(Boolean).map(rEsc).join(' · ')}</small>` : ''}</span>
-            <strong>${rEur(a.num)}</strong><span>${baseArt > 0 ? rPct(a.num / baseArt * 100) : '–'}</span>${celVar(a)}</div>`; }).join('')}
+        ${topArt.length ? metricasArt : ''}${topLista.length ? `<div class="res-tab-linha res-tab-cab ${porUn ? 'res-tab--art-qtd' : 'res-tab--art'}" aria-hidden="true"><span>${verTodos ? `Os ${todosArt.length} maiores` : `Top ${topLista.length}`}</span>${cabArt}<span>${vsAnt}</span></div>
+          ${listaArt.map((a, i) => linhaArt(a, inicioArt + i)).join('')}
           ${paginacaoArt}`
           : '<p class="res-nota">Sem vendas de artigos neste período.</p>'}
       </section>`;
@@ -352,7 +366,7 @@
       const vistaDocs = D.creditos && resumoEstado.fatDocs !== 'ultimos' ? 'cred' : 'ultimos';
       const ud = D.ultimosDocs || [];
       const ultimosCorpo = ud.length ? `<div class="res-tab-linha res-tab-cab res-tab--doc" aria-hidden="true"><span>Documento</span><span>Cliente</span><span>Data</span><span>Total</span></div>
-          ${ud.map(d => `<div class="res-tab-linha res-tab--doc"><span class="res-tab-doc">${rEsc(d.doc)}</span><span class="res-tab-nome">${rEsc(nomeProprio(d.cliente))}</span><span>${rEsc(d.data)}</span><strong>${rEur(d.total)}</strong></div>`).join('')}`
+          ${ud.map(d => `<div class="res-tab-linha res-tab--doc" data-doc-linha="${rEsc(docId(d.doc))}"><span><button type="button" class="doc-link res-tab-doc" data-doc-abrir="${rEsc(docId(d.doc))}" aria-label="Abrir o documento ${rEsc(d.doc)}">${rEsc(d.doc)}</button></span><span class="res-tab-nome">${rEsc(nomeProprio(d.cliente))}</span><span>${rEsc(d.data)}</span><strong>${rEur(d.total)}</strong></div>`).join('')}`
         : semDados('Os documentos emitidos mais recentes aparecem aqui.');
       const htmlDocs = `<section class="res-cartao res-cartao--inteiro res-tabela" data-bloco="fat-docs">
         <div class="res-cab"><h3>Documentos</h3><span class="res-sub">${vistaDocs === 'cred' ? 'Mais recentes primeiro' : 'Últimos emitidos'}</span></div>
