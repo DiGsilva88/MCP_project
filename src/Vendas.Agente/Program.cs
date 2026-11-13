@@ -556,8 +556,7 @@ static async Task<string?> LerCorpoAsync(System.Net.HttpListenerRequest pedido, 
 // e os números são os da BD. Devolve os textos tal como a ferramenta os escreve; a página lê-os com o mesmo leitor do chat.
 async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, System.Net.HttpListenerResponse resposta, string? vendedor)
 {
-    string[] periodos = ["Ultimos7Dias", "MesAtual", "TrimestreAtual", "AnoAtual", "Ultimos12Meses", "AnoAnterior"];
-    var periodo = periodos.Contains(q["periodo"]) ? q["periodo"]! : "AnoAtual";
+    var periodo = ApiPainel.Periodos.Contains(q["periodo"]) ? q["periodo"]! : "AnoAtual";
     var cliente = q["cliente"]?.Trim() is { Length: > 0 and <= 100 } c ? c : null;
     var zona = q["zona"]?.Trim() is { Length: > 0 and <= 100 } z ? z : null;
     // Botão "Unidades" da vista Artigos: só a lista dos artigos, por unidades, pedida quando se carrega nele
@@ -668,7 +667,8 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
                 ? new() { ["coluna"] = "Distrito", ["contar"] = true, ["limite"] = 100 }
                 : new() { ["coluna"] = "Distrito", ["contar"] = true, ["limite"] = 100, ["cruzarCom"] = "Vendedor", ["valorCruzado"] = vendedor });
         // Tabela das localidades no painel (o email não a usa)
-        partes["localidades"] = Vendas(new() { ["agrupar"] = "Localidade", ["limite"] = 12, ["compararAnoAnterior"] = true });
+        if (painel)
+            partes["localidades"] = Vendas(new() { ["agrupar"] = "Localidade", ["limite"] = 12, ["compararAnoAnterior"] = true });
         // No painel, a vista Clientes lista os 100 maiores; os outros cartões usam só os 10 primeiros.
         partes["clientes"] = Vendas(new() { ["agrupar"] = "Cliente", ["limite"] = painel ? 100 : 10, ["compararAnoAnterior"] = true });
         if (painel)
