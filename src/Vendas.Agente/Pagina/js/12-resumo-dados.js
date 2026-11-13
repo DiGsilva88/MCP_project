@@ -11,7 +11,7 @@
        Carrega ao abrir a página; filtros, "resumo do cliente X" na conversa e as vistas guardadas voltam a carregar.
        ========================================================= */
     const RES_PERIODOS = [['Ultimos7Dias', 'Últimos 7 dias'], ['MesAtual', 'Este mês'], ['TrimestreAtual', 'Trimestre'], ['AnoAtual', 'Este ano'], ['Ultimos12Meses', 'Últimos 12 meses'], ['AnoAnterior', 'Ano passado']];
-    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, alertaSel: null, alertaFiltro: 'Todos', cliSel: null, cliSeg: 'Todos', cliPag: 0, credTipo: 'Todos', credBusca: '', credPag: 0 };
+    const resumoEstado = { periodo: 'AnoAtual', zona: null, cliente: null, zonas: [], dados: null, erro: null, aCarregar: false, menu: null, alertaSel: null, alertaFiltro: 'Todos', cliSel: null, marcaSel: null, artVer: false, artPag: 0, cliSeg: 'Todos', cliPag: 0, credTipo: 'Todos', credBusca: '', credPag: 0, fatVista: 'mes', fatDocs: 'cred' };
     // Vistas do Resumo (painel lateral): cada uma mostra só os seus cartões, em vez de tudo numa só página
     const SECOES = [['geral', 'Resumo das vendas'], ['alertas', 'Alertas'], ['clientes', 'Clientes'], ['faturacao', 'Faturação'],
                     ['artigos', 'Artigos'], ['zonas', 'Zonas'], ['previsoes', 'Previsões']];
@@ -224,7 +224,8 @@
                      previsto: [ys[5], ...futuros.map(f => f.v)], inferior: [ys[5], ...futuros.map(f => f.inf)], superior: [ys[5], ...futuros.map(f => f.sup)] };
       }
 
-      const artigos = positivos(j.artigos);
+      // O painel pede os 100 maiores (lista "Ver artigos"); o resto da página usa só os 10 primeiros
+      const artigosTodos = positivos(j.artigos), artigos = artigosTodos.slice(0, 10);
       // "(sem distrito)" fica no mosaico (é faturação real), mas não dá alertas: não se analisa um distrito que não existe
       const distritos = positivos(j.zonas), zonas = distritos.filter(i => !/^\(/.test(i.nome));
       // Clientes da ficha em cada distrito (CSV: distrito,clientes,percentagem; a 1.ª e a 2.ª linha são título e cabeçalho)
@@ -282,7 +283,12 @@
         periodoTexto: nomePeriodo + (datas ? ` · ${datas[1]} a ${datas[2]}` : ''),
         mesIncompleto: incompleto ? MESES[incompleto.m - 1] : '',
         anoAnt, total, kpis, previsao, semPrevisao, alertas, acumulado,
-        artigos, artigosSobe: subida(artigos), artigosDesce: pa,
+        artigos, artigosTodos, artigosSobe: subida(artigos), artigosDesce: pa,
+        // Cabeçalho da consulta: "total 2 044 643,20 € em 23 280 artigos" (todos os artigos, não só os da lista)
+        artigosValor: num(j.artigos, /total\s+(-?[\d\s.  ]+,\d+)\s*€/),
+        artigosTotal: +((j.artigos || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,
+        marcas: j.marcas ? positivos(j.marcas).map(i => ({ nome: i.nome, valor: i.num, delta: i.delta, media: i.media, anterior: i.anterior ? paraNumero(i.anterior.valor) : null })) : null,
+        marcasTotal: +((j.marcas || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,
         locais: j.zonas ? distritos.map(i => {
           const sem = /^\(/.test(i.nome), id = sem ? 'sem dados' : i.nome;
           return { id, nome: nomeDistrito(id), sem, fat: i.num, variacao: i.delta, novo: i.novo, clientes: nClientes.get(id.toLowerCase()) };

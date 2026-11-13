@@ -13,6 +13,24 @@ public class PaginaChatTests
     }
 
     [Fact]
+    public void Css_NaoTemComentariosComBarrasDuplas()
+    {
+        // "//" não é comentário em CSS: anulava o :root dos tokens (--marca-texto, --erro, --serie-1..6 ficavam por definir)
+        var inicio = PaginaChat.Html.IndexOf("<style>");
+        var css = PaginaChat.Html[inicio..PaginaChat.Html.IndexOf("</style>", inicio)];
+        Assert.DoesNotMatch(@"(?m)^\s*//", css);
+        Assert.Contains("--marca-texto: #ffffff;", css);
+    }
+
+    [Fact]
+    public void GraficoMensal_MostraADiferencaDeCadaMesFaceAoAnoAnterior()
+    {
+        Assert.Contains("'flow-dif'", PaginaChat.Html);              // faixa por baixo da área, no ecrã
+        Assert.Contains(".flow-dif {", PaginaChat.Html);
+        Assert.Contains("const comDif = !!s.anoAnt", PaginaChat.Html); // e no PNG do "Guardar imagem"
+    }
+
+    [Fact]
     public void Html_TemPainelDoDocumentoELigaAsRotasApi()
     {
         Assert.Contains("id=\"dlg-doc\"", PaginaChat.Html);

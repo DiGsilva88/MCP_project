@@ -28,8 +28,13 @@
         // Redesenha e devolve o foco ao mesmo controlo: quem usa teclado não perde o lugar
         const atualizar = seletor => { redesenhar(); desenharNav(); painelEl.querySelector(seletor)?.focus(); };
         if (d.cliSel) { resumoEstado.cliSel = d.cliSel; atualizar(`[data-cli-sel="${CSS.escape(d.cliSel)}"]`); return; }
+        if ('artVer' in d) { Object.assign(resumoEstado, { artVer: !resumoEstado.artVer, artPag: 0 }); atualizar('[data-art-ver]'); return; }
+        if (d.artPag) { if (b.getAttribute('aria-disabled') === 'true') return; resumoEstado.artPag += +d.artPag; atualizar(`[data-art-pag="${d.artPag}"]`); return; }
+        if (d.marcaSel) { resumoEstado.marcaSel = d.marcaSel; atualizar(`[data-marca-sel="${CSS.escape(d.marcaSel)}"]`); return; }
         if (d.cliPag) { resumoEstado.cliPag += +d.cliPag; atualizar(`[data-cli-pag="${d.cliPag}"]`); return; }
         if (d.cliSeg) { resumoEstado.cliSeg = d.cliSeg; resumoEstado.cliPag = 0; atualizar(`[data-cli-seg="${d.cliSeg}"]`); return; }
+        if (d.fatVista) { resumoEstado.fatVista = d.fatVista; atualizar(`[data-fat-vista="${d.fatVista}"]`); return; }
+        if (d.fatDocs) { resumoEstado.fatDocs = d.fatDocs; atualizar(`[data-fat-docs="${d.fatDocs}"]`); return; }
         if (d.alertaFiltro) { resumoEstado.alertaFiltro = d.alertaFiltro; resumoEstado.alertaSel = null; atualizar(`[data-alerta-filtro="${d.alertaFiltro}"]`); return; }
         if (d.alerta != null) {
           const a = alertasVisiveis(resumoEstado.dados)[+d.alerta];

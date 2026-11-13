@@ -83,25 +83,83 @@
       // Cartão à espera de colunas que a consulta ainda não devolve (contrato mais abaixo, antes dos cartões da Faturação)
       const semDados = texto => `<p class="res-vazio">${svgIc('relogio', 16)}<span><b>Ainda sem dados</b>${texto}</span></p>`;
 
-      // Artigos mais vendidos: tabela (como no protótipo) e, ao lado, o peso de cada um no top
+      // Artigos: gráfico circular do total geral de vendas por artigo (os 5 maiores e o resto em "Outros"),
+      // com a % escrita nas fatias que têm espaço e a legenda ao lado. Por baixo, o top 5 em lista.
+      const CORES_ART = ['--serie-1', '--serie-2', '--serie-3', '--serie-4', '--serie-5'];
+      const topArt = D.artigos.slice(0, CORES_ART.length);
+      const somaTopArt = topArt.reduce((s, a) => s + a.num, 0);
+      const baseArt = Math.max(D.artigosValor || D.total || 0, somaTopArt);
+      const outrosArt = Math.max(0, baseArt - somaTopArt);
+      const nOutrosArt = D.artigosTotal > topArt.length ? D.artigosTotal - topArt.length : null;
+      let htmlArtRoda = '';
+      if (topArt.length && baseArt > 0) {
+        const partes = topArt.map((a, k) => ({ nome: a.nome, num: a.num, cor: `var(${CORES_ART[k]})`, texto: '#fff' }));
+        if (outrosArt > 0) partes.push({ nome: nOutrosArt ? `Restantes ${rGrupos(nOutrosArt)} artigos` : 'Restantes artigos', num: outrosArt, cor: 'var(--borda-forte)', texto: 'var(--texto)' });
+        const folga = partes.length > 1 ? 0.6 : 0;
+        let ini = 0;
+        const fatias = [], rotulos = [];
+        partes.forEach(p => {
+          const parte = p.num / baseArt * 100, len = Math.max(0.4, parte - folga);
+          fatias.push(`<circle cx="60" cy="60" r="46" pathLength="100" stroke-dasharray="${len.toFixed(2)} ${(100 - len).toFixed(2)}" stroke-dashoffset="${(25 - ini).toFixed(2)}" style="stroke:${p.cor}"><title>${rEsc(p.nome)}: ${rEur(p.num)} (${rPct(parte)})</title></circle>`);
+          // A % só vai dentro da fatia quando cabe (≥ 6%); as outras estão no top 5 por baixo e na dica
+          if (parte >= 6) {
+            const ang = (ini + parte / 2) / 100 * 2 * Math.PI - Math.PI / 2;
+            rotulos.push(`<text x="${(60 + 46 * Math.cos(ang)).toFixed(1)}" y="${(60 + 46 * Math.sin(ang)).toFixed(1)}" style="fill:${p.texto}">${rPct(parte)}</text>`);
+          }
+          ini += parte;
+        });
+        htmlArtRoda = `<div class="res-art-circulo">
+          <div class="chat-circulo-roda res-art-roda"><svg viewBox="0 0 120 120" role="img" aria-label="${rEsc(partes.map(p => `${p.nome} ${rPct(p.num / baseArt * 100)}`).join(', '))}">${fatias.join('')}<g class="res-art-pct" aria-hidden="true">${rotulos.join('')}</g></svg>
+            <button type="button" class="chat-circulo-centro res-art-total" data-art-ver aria-expanded="${resumoEstado.artVer}" title="Ver a lista dos artigos"><span>Total de vendas</span><strong>${rCurto(baseArt)}</strong><small>${resumoEstado.artVer ? 'Ver só o top 5' : 'Ver artigos'}</small></button></div>
+        </div>
+        ${outrosArt > 0 ? `<p class="res-art-nota"><i class="res-art-ponto" style="background:var(--borda-forte)" aria-hidden="true"></i><span>A cinzento: ${nOutrosArt ? `os restantes ${rGrupos(nOutrosArt)} artigos` : 'os restantes artigos'} (${rPct(outrosArt / baseArt * 100)} das vendas), cada um com menos de ${rEur(topArt[topArt.length - 1].num)}.</span></p>` : ''}`;
+      }
+      const pontoArt = k => k < CORES_ART.length ? `<i class="res-art-ponto" style="background:var(${CORES_ART[k]})" aria-hidden="true"></i>` : '';
+
+      // Artigos mais vendidos: gráfico circular e, por baixo, o top 5 em lista.
+      // Clicar no total mostra os artigos todos que a consulta trouxe (os 100 maiores), em páginas.
+      const todosArt = D.artigosTodos || D.artigos;
+      const verTodos = resumoEstado.artVer && todosArt.length > topArt.length;
+      const { itens: listaArt, html: paginacaoArt } = verTodos ? paginar(todosArt, 'artPag', 'data-art-pag', 'Páginas de artigos') : { itens: topArt, html: '' };
+      const inicioArt = verTodos ? todosArt.indexOf(listaArt[0]) : 0;
       const htmlArt = `<section class="res-cartao res-tabela" data-bloco="art">
-        <div class="res-cab"><h3>Artigos mais vendidos</h3><span class="res-sub">Por faturação</span></div>
-        ${D.artigos.length ? `<div class="res-tab-linha res-tab-cab res-tab--art" aria-hidden="true"><span>Artigo</span><span>Faturação</span><span>% total</span><span>${vsAnt}</span></div>
-          ${D.artigos.map(a => `<div class="res-tab-linha res-tab--art"><span class="res-tab-nome" title="${rEsc(a.nome)}">${rEsc(a.nome)}${a.codigo || a.familia ? `<small>${[a.codigo, a.familia].filter(Boolean).map(rEsc).join(' · ')}</small>` : ''}</span>
-            <strong>${rEur(a.num)}</strong><span>${pctTotal(a)}</span>${celVar(a)}</div>`).join('')}`
+        <div class="res-cab"><h3>Artigos mais vendidos</h3><span class="res-sub">Por faturação${D.artigosTotal ? ` · de ${rGrupos(D.artigosTotal)} artigos` : ''}</span></div>
+        ${htmlArtRoda}
+        ${topArt.length ? `<div class="res-tab-linha res-tab-cab res-tab--art" aria-hidden="true"><span>${verTodos ? `Os ${todosArt.length} maiores` : `Top ${topArt.length}`}</span><span>Faturação</span><span>% total</span><span>${vsAnt}</span></div>
+          ${listaArt.map((a, i) => { const k = inicioArt + i; return `<div class="res-tab-linha res-tab--art"><span class="res-tab-nome" title="${rEsc(a.nome)}">${pontoArt(k)}${verTodos ? `${k + 1}. ` : ''}${rEsc(a.nome)}${a.codigo || a.familia ? `<small>${[a.codigo, a.familia].filter(Boolean).map(rEsc).join(' · ')}</small>` : ''}</span>
+            <strong>${rEur(a.num)}</strong><span>${baseArt > 0 ? rPct(a.num / baseArt * 100) : '–'}</span>${celVar(a)}</div>`; }).join('')}
+          ${paginacaoArt}`
           : '<p class="res-nota">Sem vendas de artigos neste período.</p>'}
       </section>`;
+
+      // Marcas: ficha rápida como a dos clientes. O gráfico (este ano e o anterior) escolhe a marca (as 6 que mais faturam).
+      // A família na BD é quase toda "Familia Geral", por isso usa-se a marca.
+      // As marcas vêm como códigos do ERP ("INA_", "LUK_"): tira-se o "_" de enchimento.
       let htmlArtLado = '';
       if (D.artigos.length) {
-        // Protótipo: faturação por família (D.familias, ainda por vir na consulta)
-        const fam = D.familias || [], maxF = Math.max(1, ...fam.map(f => f.valor));
-        htmlArtLado = `<section class="res-cartao res-cartao--lado" data-bloco="art-lado">
-          <h3>Faturação por família</h3>
-          ${fam.length ? fam.slice(0, 6).map(f => `<div class="res-peso"><div><span title="${rEsc(f.nome)}">${rEsc(nomeProprio(f.nome))}</span><strong>${rCurto(f.valor)}</strong></div>
-            <span class="res-quota"><span style="width:${(f.valor / maxF * 100).toFixed(1)}%"></span></span></div>`).join('')
-            : semDados('A faturação de cada família de artigos aparece aqui.')}
-          ${resDestaques(D.artigosSobe, D.artigosDesce, D.anoAnt, nomeECodigo)}
-          <button type="button" class="res-btn-flow" data-perguntar="Que família de artigos vendeu mais este ano?">${svgIc('brilho', 15)}Perguntar ao Flow</button>
+        const marcas = D.marcas || [];
+        const nomeMarca = n => n.replace(/_+$/, '');
+        const mSel = marcas.find(m => m.nome === resumoEstado.marcaSel) || marcas[0];
+        const posicao = mSel ? marcas.indexOf(mSel) + 1 : 0;
+        const maxM = Math.max(1, ...marcas.flatMap(m => [m.valor, m.anterior || 0]));
+        const larg = v => (v / maxM * 100).toFixed(1) + '%';
+        htmlArtLado = `<section class="res-cartao res-cartao--lado res-ficha-rapida" data-bloco="art-lado">
+          <h3>Vendas por marca</h3>
+          ${mSel ? `${D.anoAnt ? `<div class="res-legenda"><span><i aria-hidden="true"></i>${rEsc(D.serie ? D.serie.anoAtual : 'Este ano')}</span><span><i class="res-barra-ant" aria-hidden="true"></i>${rEsc(D.anoAnt)}</span></div>` : ''}
+            <div class="res-marcas" role="group" aria-label="Vendas por marca: escolher marca">${marcas.map(m =>
+              `<button type="button" class="res-marca" data-marca-sel="${rEsc(m.nome)}" aria-pressed="${m === mSel}" title="${rEsc(m.nome)}: ${rEur(m.valor)}${m.anterior ? ` · ${rEsc(D.anoAnt)}: ${rEur(m.anterior)}` : ''}">
+                <span>${rEsc(nomeMarca(m.nome))}</span><strong>${rCurto(m.valor)}</strong>
+                <span class="res-marca-barras" aria-hidden="true"><i style="width:${larg(m.valor)}"></i>${m.anterior ? `<i class="res-barra-ant" style="width:${larg(m.anterior)}"></i>` : ''}</span></button>`).join('')}</div>
+            <h4>${rEsc(nomeMarca(mSel.nome))}</h4>
+            <small>${posicao}.ª marca em faturação${D.marcasTotal ? `, de ${rGrupos(D.marcasTotal)}` : ''}</small>
+            <div class="res-ficha-num">
+              <div><span>Faturação</span><strong>${rEur(mSel.valor)}</strong></div>
+              <div><span>${vsAnt}</span><strong class="${rVarCls(mSel.delta)}">${rVar(mSel.delta)}</strong></div>
+              <div><span>Peso nas vendas</span><strong>${baseArt > 0 ? rPct(mSel.valor / baseArt * 100) : '–'}</strong></div>
+              <div><span>Valor médio</span><strong>${mSel.media ? rEsc(mSel.media) : '–'}</strong></div>
+            </div>
+            <button type="button" class="res-btn-flow" data-perguntar="Comparar as vendas por marca com o ano passado">${svgIc('brilho', 15)}Perguntar ao Flow</button>`
+            : semDados('A faturação de cada marca aparece aqui.')}
         </section>`;
       }
 
@@ -232,7 +290,7 @@
       //   D.creditos, D.ultimosDocs   [{ doc (DocumentoID), cliente, data ('dd-mm-aaaa'), total }] (créditos: também tipo)
       // Ainda à espera de colunas que a consulta não devolve:
       //   D.novosClientes { n, dif (diferença face ao ano anterior) }
-      //   D.familias      [{ nome, valor }]          D.objetivo  (objetivo anual em €)
+      //   D.objetivo  (objetivo anual em €)
       //   em cada artigo de D.artigos: familia
       // Faturação — líquido em destaque e um cartão por fluxo (faturas e faturas-recibo)
       const Fat = D.faturacao;
@@ -250,31 +308,11 @@
           <dl class="res-fluxo">${fila('Vendas (F + V)', rGrupos(Fat.total.documentos), 'Faturas e faturas-recibo')}${fila('Créditos (N + C)', rGrupos(Fat.total.docCreditos), 'Notas de crédito e créditos')}</dl></div>
       </div>` : '';
 
-      // Faturação — valor por mês, cascata e tabela de créditos
-      const htmlFatMes = `<section class="res-cartao res-cartao--inteiro" data-bloco="fat-mes">
-        <div class="res-cab"><h3>Faturação por mês</h3><span class="res-sub">Valores em euros, sem IVA</span></div>
-        ${D.docsPorMes && D.docsPorMes.length ? graficoFaturacaoHtml(D.docsPorMes) : semDados('O valor de cada mês aparece aqui.')}
-      </section>`;
-      const htmlCascata = Fat ? `<section class="res-cartao res-cartao--inteiro" data-bloco="cascata">
-        <div class="res-cab"><h3>Do bruto ao líquido</h3><span class="res-sub">Valores em euros, sem IVA</span></div>${cascataHtml(Fat)}
-      </section>` : '';
-      const htmlCreditos = D.creditos ? `<section class="res-cartao res-cartao--inteiro res-tabela" data-bloco="creditos">
-        <div class="res-cab"><h3>Notas de crédito e créditos</h3><span class="res-sub">Mais recentes primeiro</span></div>
-        <div class="res-cred-busca"><label class="so-leitor" for="res-cred-busca">Procurar por documento ou cliente</label><input id="res-cred-busca" maxlength="100" autocomplete="off" placeholder="Procurar documento ou cliente…" value="${rEsc(resumoEstado.credBusca)}"></div>
-        <div id="res-creditos-corpo">${creditosHtml()}</div>
-      </section>` : '';
+      // Vista Faturação em 3 secções: números (htmlTipos), evolução (por mês ou acumulado) e documentos (créditos ou últimos emitidos)
+      const separador = (atr, id, nome, ativo) => `<button type="button" class="res-pilula" data-${atr}="${id}" aria-pressed="${ativo}">${nome}</button>`;
 
-      // Faturação — últimos documentos
-      const ud = D.ultimosDocs || [];
-      const htmlUltimos = `<section class="res-cartao res-cartao--inteiro res-tabela" data-bloco="ultimos">
-        <div class="res-cab"><h3>Últimos documentos</h3></div>
-        ${ud.length ? `<div class="res-tab-linha res-tab-cab res-tab--doc" aria-hidden="true"><span>Documento</span><span>Cliente</span><span>Data</span><span>Total</span></div>
-          ${ud.map(d => `<div class="res-tab-linha res-tab--doc"><span class="res-tab-doc">${rEsc(d.doc)}</span><span class="res-tab-nome">${rEsc(nomeProprio(d.cliente))}</span><span>${rEsc(d.data)}</span><strong>${rEur(d.total)}</strong></div>`).join('')}`
-          : semDados('Os documentos emitidos mais recentes aparecem aqui.')}
-      </section>`;
-
-      // Faturação acumulada vs. ano anterior (os mesmos dias do ano anterior)
-      let htmlAcum = '';
+      // Acumulado vs. ano anterior (os mesmos dias do ano anterior): a frase fica sempre à vista; o gráfico é a 2.ª vista da evolução
+      let fraseAcum = '', acumCorpo = '';
       const A = D.acumulado;
       if (A) {
         const n = A.rotulos.length, na = A.atual.length;
@@ -284,10 +322,8 @@
         const at = A.atual[na - 1], an = A.anterior[na - 1], dif = at - an;
         // Último ponto perto do fim do eixo: os rótulos vão para a esquerda (à direita saíam do cartão)
         const ladoRotulo = BX(na - 1) > 800 ? 'translate(calc(-100% - 6px),-100%)' : 'translate(6px,-100%)';
-        htmlAcum = `<section class="res-cartao" data-bloco="acum">
-          <div><h3>Faturação acumulada vs. ${A.anoAnterior}</h3><p class="res-sub">Sem objetivo definido: compara com o mesmo período do ano anterior</p></div>
-          ${an > 0 ? `<p class="chat-destaque"><strong>Até ${A.nomes[na - 1]}, vai ${rDec(Math.abs(dif / an * 100), 1)}% ${dif >= 0 ? 'à frente de' : 'atrás de'} ${A.anoAnterior}</strong> (${dif >= 0 ? 'mais' : 'menos'} ${rEur(Math.abs(dif))}).</p>` : ''}
-          <div class="res-legenda"><span><svg width="26" height="10" aria-hidden="true"><line x1="0" y1="5" x2="26" y2="5" stroke="var(--marca)" stroke-width="3"/></svg>${A.anoAtual}</span>
+        fraseAcum = an > 0 ? `<p class="chat-destaque"><strong>Até ${A.nomes[na - 1]}, vai ${rDec(Math.abs(dif / an * 100), 1)}% ${dif >= 0 ? 'à frente de' : 'atrás de'} ${A.anoAnterior}</strong> (${dif >= 0 ? 'mais' : 'menos'} ${rEur(Math.abs(dif))}).</p>` : '';
+        acumCorpo = `<div class="res-legenda"><span><svg width="26" height="10" aria-hidden="true"><line x1="0" y1="5" x2="26" y2="5" stroke="var(--marca)" stroke-width="3"/></svg>${A.anoAtual}</span>
             <span><svg width="26" height="10" aria-hidden="true"><line x1="0" y1="5" x2="26" y2="5" stroke="var(--anterior-linha)" stroke-width="2" stroke-dasharray="5 3"/></svg>${A.anoAnterior}</span></div>
           <div class="res-grafico" style="height:200px;margin-left:50px">
             ${[0, topo / 2, topo].map(g => `<span class="res-y" style="left:-50px;width:44px;top:${BY(g) / 3}%">${g ? rCurto(g) : '0'}</span>`).join('')}
@@ -300,9 +336,30 @@
             <span class="res-rotulo" style="left:${BX(na - 1) / 10}%;top:calc(${BY(at) / 3}% - 6px);transform:${ladoRotulo};color:var(--texto);background:var(--cartao);padding:0 3px">${A.anoAtual}: ${rCurto(at)}</span>
             <span class="res-rotulo" style="left:${BX(na - 1) / 10}%;top:calc(${BY(an) / 3}% + 20px);transform:${ladoRotulo};color:var(--suave);background:var(--cartao);padding:0 3px">${A.anoAnterior}: ${rCurto(an)}</span>
           </div>
-          <div class="res-x" style="margin-left:50px">${A.rotulos.map((m, i) => `<span style="left:${BX(i) / 10}%;color:var(--nota)">${m}</span>`).join('')}</div>
-        </section>`;
+          <div class="res-x" style="margin-left:50px">${A.rotulos.map((m, i) => `<span style="left:${BX(i) / 10}%;color:var(--nota)">${m}</span>`).join('')}</div>`;
       }
+
+      // 2 · Evolução: por mês (F, V, N, C e o líquido) ou acumulado face ao ano anterior
+      const vistaFat = A && resumoEstado.fatVista === 'acum' ? 'acum' : 'mes';
+      const htmlEvolucao = `<section class="res-cartao res-cartao--inteiro" data-bloco="fat-evolucao">
+        <div class="res-cab"><h3>Evolução da faturação</h3><span class="res-sub">${vistaFat === 'acum' ? 'Sem objetivo definido: compara com o mesmo período do ano anterior' : 'Valores em euros, sem IVA'}</span></div>
+        ${fraseAcum}
+        ${A ? `<div class="res-pilulas" role="group" aria-label="Ver a evolução">${separador('fat-vista', 'mes', 'Por mês', vistaFat === 'mes')}${separador('fat-vista', 'acum', 'Acumulado vs. ' + rEsc(A.anoAnterior), vistaFat === 'acum')}</div>` : ''}
+        ${vistaFat === 'acum' ? acumCorpo : D.docsPorMes && D.docsPorMes.length ? graficoFaturacaoHtml(D.docsPorMes) : semDados('O valor de cada mês aparece aqui.')}
+      </section>`;
+
+      // 3 · Documentos: notas de crédito e créditos (com pesquisa) ou os últimos emitidos
+      const vistaDocs = D.creditos && resumoEstado.fatDocs !== 'ultimos' ? 'cred' : 'ultimos';
+      const ud = D.ultimosDocs || [];
+      const ultimosCorpo = ud.length ? `<div class="res-tab-linha res-tab-cab res-tab--doc" aria-hidden="true"><span>Documento</span><span>Cliente</span><span>Data</span><span>Total</span></div>
+          ${ud.map(d => `<div class="res-tab-linha res-tab--doc"><span class="res-tab-doc">${rEsc(d.doc)}</span><span class="res-tab-nome">${rEsc(nomeProprio(d.cliente))}</span><span>${rEsc(d.data)}</span><strong>${rEur(d.total)}</strong></div>`).join('')}`
+        : semDados('Os documentos emitidos mais recentes aparecem aqui.');
+      const htmlDocs = `<section class="res-cartao res-cartao--inteiro res-tabela" data-bloco="fat-docs">
+        <div class="res-cab"><h3>Documentos</h3><span class="res-sub">${vistaDocs === 'cred' ? 'Mais recentes primeiro' : 'Últimos emitidos'}</span></div>
+        ${D.creditos ? `<div class="res-pilulas" role="group" aria-label="Que documentos ver">${separador('fat-docs', 'cred', 'Notas de crédito e créditos', vistaDocs === 'cred')}${separador('fat-docs', 'ultimos', 'Últimos emitidos', vistaDocs === 'ultimos')}</div>` : ''}
+        ${vistaDocs === 'cred' ? `<div class="res-cred-busca"><label class="so-leitor" for="res-cred-busca">Procurar por documento ou cliente</label><input id="res-cred-busca" maxlength="100" autocomplete="off" placeholder="Procurar documento ou cliente…" value="${rEsc(resumoEstado.credBusca)}"></div>
+        <div id="res-creditos-corpo">${creditosHtml()}</div>` : ultimosCorpo}
+      </section>`;
 
       // Cada vista mostra só os seus cartões (a série por mês junta-se em folhaResumo, nas vistas que a têm)
       // Vista Clientes: quatro números sobre os clientes (só com o que a consulta traz)
@@ -319,7 +376,7 @@
       }
 
       // Cada linha da vista: um ou mais cartões lado a lado
-      const porSecao = { geral: [htmlCli + htmlAten], alertas: [alertasHtml(D)], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlFatMes, htmlCascata, htmlUltimos, htmlCreditos, htmlAcum], artigos: [htmlArt + htmlArtLado],
+      const porSecao = { geral: [htmlCli + htmlAten], alertas: [alertasHtml(D)], clientes: [htmlCliKpis, htmlCliTab + htmlCliLado], faturacao: [htmlTipos, htmlEvolucao, htmlDocs], artigos: [htmlArt + htmlArtLado],
                          zonas: [htmlLoc, htmlZonaDet, htmlLocTab + htmlLocLado], previsoes: [htmlPrevKpis, htmlPrev, htmlPrevMeses] }[secao].filter(Boolean);
       return porSecao.length || secaoComSerie() ? porSecao.map(h => `<div class="res-grelha">${h}</div>`).join('')
         : `<p class="res-nota">Sem dados para a vista ${rEsc(nomeSecao())} com estes filtros.</p>`;
