@@ -29,6 +29,11 @@
         const atualizar = seletor => { redesenhar(); desenharNav(); painelEl.querySelector(seletor)?.focus(); };
         if (d.cliSel) { resumoEstado.cliSel = d.cliSel; atualizar(`[data-cli-sel="${CSS.escape(d.cliSel)}"]`); return; }
         if ('artVer' in d) { Object.assign(resumoEstado, { artVer: !resumoEstado.artVer, artPag: 0 }); atualizar('[data-art-ver]'); return; }
+        if (d.artMetrica) {
+          Object.assign(resumoEstado, { artMetrica: d.artMetrica, artPag: 0, artQtdErro: false });
+          if (d.artMetrica === 'unidades') carregarArtigosQtd();   // já guardadas: não faz pedido
+          atualizar(`[data-art-metrica="${d.artMetrica}"]`); return;
+        }
         if (d.artPag) { if (b.getAttribute('aria-disabled') === 'true') return; resumoEstado.artPag += +d.artPag; atualizar(`[data-art-pag="${d.artPag}"]`); return; }
         if (d.marcaSel) { resumoEstado.marcaSel = d.marcaSel; atualizar(`[data-marca-sel="${CSS.escape(d.marcaSel)}"]`); return; }
         if (d.cliPag) { resumoEstado.cliPag += +d.cliPag; atualizar(`[data-cli-pag="${d.cliPag}"]`); return; }
@@ -122,12 +127,13 @@
     const docNav = { atual: null, pilha: [], pedidos: 0 };
     const docAbreviado = id => id.replace('-', ' ').replaceAll('-', '/');
 
-    function docHtml(d, urlPdf) {
-      const t = d.totais, nome = nomeProprio(d.cliente.nome), url = `mailto:?subject=${encodeURIComponent('Documento ' + d.documento)}`;
+    // shortcut: sem PDF emitido (não se sabe onde o VB o guarda; ver ApiPainel), imprime-se a pré-visualização. Ligar o PDF quando se souber.
+    function docHtml(d) {
+      const t = d.totais, nome = nomeProprio(d.cliente.nome);
       const origem = d.origem
         ? `<button type="button" class="doc-link" data-doc-origem="${rEsc(docId(d.origem))}">${rEsc(d.origem)}</button>`
         : `<span title="${SEM_ORIGEM}">Sem referência</span>`;
-      const previa = urlPdf ? `<iframe class="doc-pdf" src="${rEsc(urlPdf)}" title="PDF do documento ${rEsc(d.documento)}"></iframe>` : `
+      const previa = `
         <p class="doc-aviso" role="note"><strong>Pré-visualização, não é o documento fiscal.</strong> Gerada a partir dos dados. O documento oficial é o PDF emitido pela aplicação de faturação.</p>
         <div class="doc-previa">
           <h3>${rEsc(d.documento)} · ${rEsc(d.data)}</h3>
@@ -153,8 +159,8 @@
         </dl>
         ${d.origem ? '' : `<p class="res-nota">${SEM_ORIGEM} <button type="button" class="doc-link" data-doc-associar>Associar fatura</button> <span id="doc-associar-estado" role="status"></span></p>`}
         <div class="doc-acoes">
-          ${urlPdf ? `<a class="res-btn" href="${rEsc(urlPdf)}" download>Descarregar PDF</a>` : `<button type="button" class="res-btn" aria-disabled="true" title="O PDF emitido ainda não está disponível aqui">Descarregar PDF</button>`}
-          <a class="res-btn" href="${url}">Enviar por email</a>
+          <button type="button" class="res-btn" data-doc-imprimir title="Imprime a pré-visualização (ou guarda-a em PDF na janela de impressão)">Imprimir</button>
+          <button type="button" class="res-btn" data-doc-email title="Descarrega um rascunho de email para abrir no Outlook">Enviar por email</button>
           <button type="button" class="res-btn" data-doc-copiar="${rEsc(d.documento)}">Copiar nº</button>
           <span id="doc-copiar-estado" class="res-nota" role="status"></span>
         </div>
@@ -172,14 +178,15 @@
       dlgDocCorpo.textContent = 'A carregar o documento…';
       if (!dlgDoc.open) dlgDoc.showModal();
       try {
-        const [r, pdf] = await Promise.all([fetch(url), fetch(url + '/pdf')]);
+        const r = await fetch(url);
         if (n !== docNav.pedidos) return;
         if (r.status === 404) { dlgDocCorpo.textContent = 'Este documento não existe ou não pertence à sua carteira. Confirme o número na lista.'; return; }
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const d = await r.json();
         if (n !== docNav.pedidos) return;
         document.getElementById('dlg-doc-titulo').textContent = d.documento;
-        dlgDocCorpo.innerHTML = docHtml(d, pdf.ok ? url + '/pdf' : null);
+        docNav.dados = d;   // o "Enviar por email" usa o documento aberto
+        dlgDocCorpo.innerHTML = docHtml(d);
       } catch (erro) {
         if (n !== docNav.pedidos) return;
         console.error('Falha a abrir o documento:', erro);
@@ -187,6 +194,16 @@
       }
     }
     function abrirDoc(id) { docNav.pilha = []; mostrarDoc(id); }
+
+    // Rascunho com o resumo do documento no corpo (sem PDF: é a pré-visualização em texto, com o mesmo aviso)
+    function enviarDocPorEmail(d) {
+      const t = d.totais;
+      const texto = [`Documento ${d.documento} de ${d.data}`, `Cliente: ${nomeProprio(d.cliente.nome)} (${d.cliente.id})`, '',
+        ...d.linhas.map(l => `- ${l.artigo} (${l.artigoId}): ${rDec(l.quantidade, 2)} un., líquido ${rEur2(l.liquido)}, IVA ${rEur2(l.iva)}`), '',
+        `Líquido: ${rEur2(t.liquido)}`, `IVA: ${rEur2(t.iva)}`, `Total: ${rEur2(t.total)}`, '',
+        'Resumo gerado a partir dos dados do Inforap Flow; não é o documento fiscal.'].join('\r\n');
+      descarregarRascunho('Documento ' + d.documento, texto, nomeFicheiro('documento ' + d.documento, 'eml'));
+    }
 
     // Setas: o documento ao lado na lista, a passar de página quando chega à ponta. Aberto por link direto, não há lista onde andar.
     async function navegarDoc(passo) {
@@ -212,6 +229,8 @@
       if ('docRepetir' in d) { mostrarDoc(docNav.atual); return; }
       if (d.docCliente) { abrirFicha(d.docCliente, d.docNome); return; }
       if (d.docOrigem) { docNav.pilha.push(docNav.atual); mostrarDoc(d.docOrigem); return; }
+      if ('docImprimir' in d) { window.print(); return; }   // o CSS de impressão deixa só a pré-visualização
+      if ('docEmail' in d) { enviarDocPorEmail(docNav.dados); return; }
       if ('docAssociar' in d) { document.getElementById('doc-associar-estado').textContent = 'Simulação: nenhuma associação foi gravada.'; return; }
       if (d.docCopiar) {
         const estado = document.getElementById('doc-copiar-estado');

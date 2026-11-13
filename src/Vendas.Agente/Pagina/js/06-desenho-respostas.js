@@ -75,17 +75,24 @@
 
     const emBase64 = texto => { let s = ''; for (const b of new TextEncoder().encode(texto)) s += String.fromCharCode(b); return btoa(s); };
 
-    // O mailto não aceita anexos: este .eml com X-Unsent abre no Outlook como rascunho, já com o CSV.
-    function enviarCsvPorEmail(linhas, titulo) {
-      const limite = 'flow-' + Date.now(), csv = nomeFicheiro(titulo, 'csv');
+    // O mailto não aceita anexos e não abre nada sem programa de email definido (ex.: servidores RDS):
+    // este .eml com X-Unsent abre no Outlook como rascunho. anexo (opcional): { nome, tipo, conteudo }.
+    function descarregarRascunho(assunto, texto, nomeEml, anexo) {
+      const limite = 'flow-' + Date.now();
       const quebrar = b64 => b64.replace(/.{76}(?=.)/g, '$&\r\n');
-      const assunto = `Exportação: ${titulo || 'vendas'}`.slice(0, 40);   // uma palavra codificada tem no máximo 75 caracteres
-      const eml = ['X-Unsent: 1', 'To: ', `Subject: =?UTF-8?B?${emBase64(assunto)}?=`, 'MIME-Version: 1.0', `Content-Type: multipart/mixed; boundary="${limite}"`, '',
-        `--${limite}`, 'Content-Type: text/plain; charset="utf-8"', 'Content-Transfer-Encoding: base64', '', quebrar(emBase64('Segue em anexo o ficheiro exportado do Inforap Flow.')),
-        `--${limite}`, `Content-Type: text/csv; charset="utf-8"; name="${csv}"`, `Content-Disposition: attachment; filename="${csv}"`, 'Content-Transfer-Encoding: base64', '', quebrar(emBase64(textoCsv(linhas))),
+      const parte = (tipo, conteudo, extra = []) => [`--${limite}`, `Content-Type: ${tipo}`, ...extra, 'Content-Transfer-Encoding: base64', '', quebrar(emBase64(conteudo))];
+      // uma palavra codificada tem no máximo 75 caracteres
+      const eml = ['X-Unsent: 1', 'To: ', `Subject: =?UTF-8?B?${emBase64(assunto.slice(0, 40))}?=`, 'MIME-Version: 1.0', `Content-Type: multipart/mixed; boundary="${limite}"`, '',
+        ...parte('text/plain; charset="utf-8"', texto),
+        ...(anexo ? parte(`${anexo.tipo}; charset="utf-8"; name="${anexo.nome}"`, anexo.conteudo, [`Content-Disposition: attachment; filename="${anexo.nome}"`]) : []),
         `--${limite}--`, ''].join('\r\n');
-      descarregarFicheiro(eml, 'message/rfc822', nomeFicheiro(titulo, 'eml'));
+      descarregarFicheiro(eml, 'message/rfc822', nomeEml);
       anunciar('Rascunho de email descarregado. Abra o ficheiro para o enviar.');
+    }
+
+    function enviarCsvPorEmail(linhas, titulo) {
+      descarregarRascunho(`Exportação: ${titulo || 'vendas'}`, 'Segue em anexo o ficheiro exportado do Inforap Flow.', nomeFicheiro(titulo, 'eml'),
+        { nome: nomeFicheiro(titulo, 'csv'), tipo: 'text/csv', conteudo: textoCsv(linhas) });
     }
 
     function botaoExportar(linhas, titulo) {

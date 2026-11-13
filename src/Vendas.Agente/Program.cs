@@ -551,11 +551,13 @@ async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, Sys
     var periodo = periodos.Contains(q["periodo"]) ? q["periodo"]! : "AnoAtual";
     var cliente = q["cliente"]?.Trim() is { Length: > 0 and <= 100 } c ? c : null;
     var zona = q["zona"]?.Trim() is { Length: > 0 and <= 100 } z ? z : null;
+    // Botão "Unidades" da vista Artigos: só a lista dos artigos, por unidades, pedida quando se carrega nele
+    var porQuantidade = q["ordenar"] == "Quantidade";
 
     Dictionary<string, string> partes;
     try
     {
-        partes = await ResumoGuardadoAsync(periodo, cliente, zona, vendedor);
+        partes = await ResumoGuardadoAsync(periodo, cliente, zona, vendedor, porQuantidade);
     }
     catch (Exception ex)
     {
@@ -569,9 +571,9 @@ async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, Sys
 }
 
 // O resumo da página, da cache (ver "resumos") ou montado agora. Uma falha não fica guardada: o pedido seguinte tenta de novo.
-Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cliente, string? zona, string? vendedor)
+Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cliente, string? zona, string? vendedor, bool artigosPorQuantidade = false)
 {
-    var chave = $"{DateTime.Today:yyyyMMdd}|{periodo}|{cliente}|{zona}|{vendedor}";
+    var chave = $"{DateTime.Today:yyyyMMdd}|{periodo}|{cliente}|{zona}|{vendedor}|{artigosPorQuantidade}";
     var validade = TimeSpan.FromMinutes(10);
     lock (resumos)
     {
@@ -590,14 +592,15 @@ Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cli
         var meses = periodo == "MesAtual"
             ? new Dictionary<string, object?> { ["mes"] = DateTime.Today.Month, ["ano"] = DateTime.Today.Year }
             : [];
-        return await MontarResumoAsync(new() { ["periodo"] = periodo }, meses, cliente, zona, limite.Token, vendedor: vendedor);
+        return await MontarResumoAsync(new() { ["periodo"] = periodo }, meses, cliente, zona, limite.Token, vendedor: vendedor, artigosPorQuantidade: artigosPorQuantidade);
     }
 }
 
 // As consultas do resumo, iguais na página e no email. janela: o período de todas (periodo, ou dataInicio e dataFim).
 // meses: argumentos a mais da evolução por mês; null = sem ela.
 async Task<Dictionary<string, string>> MontarResumoAsync(
-    Dictionary<string, object?> janela, Dictionary<string, object?>? meses, string? cliente, string? zona, CancellationToken ct, DateOnly? dia = null, string? vendedor = null)
+    Dictionary<string, object?> janela, Dictionary<string, object?>? meses, string? cliente, string? zona, CancellationToken ct, DateOnly? dia = null, string? vendedor = null,
+    bool artigosPorQuantidade = false)
 {
     // Só o email passa dia: continua com as zonas da ficha. No painel, "zona" é o distrito escolhido.
     var painel = dia is null;
@@ -628,6 +631,10 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
         try { return await consulta; }
         catch (Exception ex) { Console.Error.WriteLine($"Consulta opcional do resumo falhou: {ex.Message}"); return ""; }
     }
+
+    // Só a lista da vista Artigos, por unidades: os mesmos filtros, sem as outras consultas
+    if (artigosPorQuantidade)
+        return new() { ["artigos"] = await Vendas(new() { ["agrupar"] = "Artigo", ["limite"] = 100, ["ordenar"] = "Quantidade", ["compararAnoAnterior"] = true }) };
 
     var partes = new Dictionary<string, Task<string>>
     {

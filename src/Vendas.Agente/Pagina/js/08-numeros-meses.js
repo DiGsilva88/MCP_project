@@ -111,6 +111,18 @@
       return { meses, anoAtual: meses[0].a, anoAnt, justa };
     }
 
+    // "Ticket médio por mês": a série mostra o valor médio por documento de cada mês; o total vai para o lado.
+    // A resposta não traz a média do ano anterior por mês, por isso a comparação sai. null = falta a média nalgum mês.
+    function serieTicketMedio(s) {
+      if (!s || !s.meses.every(x => x.atual == null || x.media)) return null;
+      return { ...s, medida: 'media', anoAnt: null, justa: null,
+        meses: s.meses.map(x => ({ ...x, total: x.atual, atual: x.media ? paraNumero(x.media) : null, anterior: null, delta: null, anoAnt: null })) };
+    }
+    // Na série do ticket médio os valores são dezenas de euros: com cêntimos e sem "mil €"
+    const comCentimos = n => n.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    const valorSerie = (s, v) => s.medida ? comCentimos(v) : euros(v);
+    const eixoSerie = (s, v) => s.medida ? comCentimos(v) : milhares(v);
+
     function desenharSerie(s, art) {
       const valores = s.meses.flatMap(x => [x.atual, x.anterior]).filter(v => v > 0);
       const max = Math.max(1, ...valores);   // 1: sem valores > 0 dava -Infinity
@@ -131,10 +143,11 @@
       if (s.meses.some(x => x.parcial)) legenda(tipo + ' ' + tipo + '--parcial', 'Mês incompleto');
       // Valores por cima dos pontos em milhares ("256"), como diz o subtítulo; abaixo de 10 000 € ficam em euros
       const emMil = topo >= 1e4;
-      const rotuloValor = v => Math.round(emMil ? v / 1000 : v).toLocaleString('pt-PT');
+      const rotuloValor = v => s.medida ? comCentimos(v).replace(' €', '') : Math.round(emMil ? v / 1000 : v).toLocaleString('pt-PT');
       const cabTexto = el('div');
-      cabTexto.append(el('h3', '', 'Evolução das vendas em ' + s.anoAtual),
-        el('p', 'chat-grafico-sub', `Faturação por mês, em ${emMil ? 'milhares de euros' : 'euros'}${s.anoAnt ? ', comparada com ' + s.anoAnt : ''}.`));
+      cabTexto.append(el('h3', '', (s.medida ? 'Ticket médio por mês em ' : 'Evolução das vendas em ') + s.anoAtual),
+        el('p', 'chat-grafico-sub', s.medida ? 'Valor médio por documento, em euros, sem IVA.'
+          : `Faturação por mês, em ${emMil ? 'milhares de euros' : 'euros'}${s.anoAnt ? ', comparada com ' + s.anoAnt : ''}.`));
       cab.append(cabTexto, leg);
 
       const corpo = el('div', 'chat-grafico-corpo');
@@ -142,7 +155,7 @@
       eixo.setAttribute('aria-hidden', 'true');
       const ALT = 280;   // altura da área do gráfico em px (igual ao CSS de .chat-eixo, .chat-linha-area e .flow-area)
       [[topo, ALT], [topo / 2, ALT / 2], [0, 0]].forEach(([v, y]) => {
-        const l = el('span', '', v ? milhares(v) : '0'); l.style.bottom = (y - 7) + 'px'; eixo.append(l);
+        const l = el('span', '', v ? eixoSerie(s, v) : '0'); l.style.bottom = (y - 7) + 'px'; eixo.append(l);
       });
       const colunas = el('div', 'chat-colunas');
       // Gráfico de linhas: pontos no centro de cada coluna de mês
@@ -151,7 +164,7 @@
       const Y = v => ALT - v / topo * ALT;            // px a partir do topo
       const barras = el('div', 'chat-linha-area');
       barras.setAttribute('role', 'group');
-      barras.setAttribute('aria-label', 'Evolução das vendas por mês. Escolha um mês para ver os valores.');
+      barras.setAttribute('aria-label', (s.medida ? 'Ticket médio por mês' : 'Evolução das vendas por mês') + '. Escolha um mês para ver os valores.');
       [ALT / 2, ALT].forEach(y => { const g = el('span', 'chat-guia'); g.setAttribute('aria-hidden', 'true'); g.style.bottom = y + 'px'; barras.append(g); });
       const marca = el('span', 'chat-linha-marca');
       marca.setAttribute('aria-hidden', 'true');
@@ -244,7 +257,7 @@
         topo.append(el('h4', '', 'Mês selecionado'), el('strong', 'chat-leitura-nome', `${mes} ${x.a}`),
           el('small', '', x.atual == null ? 'Sem vendas registadas' : x.parcial ? 'Mês incompleto' : 'Mês completo'));
         const kpi = el('div', 'chat-leitura-kpi');
-        kpi.append(el('span', 'chat-leitura-valor', x.atual == null ? '—' : rEur(x.atual)));
+        kpi.append(el('span', 'chat-leitura-valor', x.atual == null ? '—' : s.medida ? comCentimos(x.atual) : rEur(x.atual)));
         if (x.atual != null && !x.parcial && x.delta != null) kpi.append(chipDelta(x.delta, s.anoAnt ? ' face a ' + s.anoAnt : ''));
         if (x.atual != null && !x.parcial && x.anterior != null) {
           const dif = x.atual - x.anterior;
@@ -253,7 +266,8 @@
         const comp = el('dl', 'chat-leitura-comp');
         const par = (rotulo, valor) => { const d = el('div'); d.append(el('dt', '', rotulo), el('dd', '', valor)); comp.append(d); };
         if (s.anoAnt) par('Em ' + s.anoAnt, x.anterior == null ? '—' : rEur(x.anterior));
-        if (x.media) par('Valor médio', x.media);
+        if (s.medida) { if (x.total != null) par('Faturação', rEur(x.total)); }
+        else if (x.media) par('Valor médio', x.media);
         leitura.replaceChildren(topo, kpi);
         if (comp.children.length) leitura.append(comp);
         const pergunta = `Vendas de ${mes.toLowerCase()} de ${x.a}` + (s.anoAnt ? ` comparadas com ${mes.toLowerCase()} de ${s.anoAnt}` : '');
@@ -269,7 +283,7 @@
         b.style.left = X(i) + '%';
         b.style.top = Y(x.atual) + 'px';
         b.append(el('span'));
-        b.setAttribute('aria-label', nomeMes(x) + ': ' + euros(x.atual) + (x.anterior != null ? ', ' + s.anoAnt + ': ' + euros(x.anterior) : '')
+        b.setAttribute('aria-label', nomeMes(x) + ': ' + valorSerie(s, x.atual) + (x.anterior != null ? ', ' + s.anoAnt + ': ' + euros(x.anterior) : '')
           + (x.parcial ? ', mês incompleto' : x.delta != null ? ', ' + textoDelta(x.delta) : ''));
         botoes.push(b);
         barras.append(b);
@@ -325,7 +339,9 @@
       grelha.setAttribute('role', 'table');
       grelha.setAttribute('aria-label', 'Detalhe por mês');
       // Colunas opcionais: ano anterior só com comparação, valor médio só quando vem em cada mês
-      const comMedia = s.meses.some(x => x.media);
+      // No ticket médio a coluna a mais é a faturação do mês (a média já é a coluna principal)
+      const comMedia = s.medida || s.meses.some(x => x.media);
+      const extra = x => s.medida ? (x.total == null ? '—' : euros(x.total)) : x.media || '—';
       const linha = (celulas, cabecalho) => {
         const l = el('div', 'chat-meses-linha' + (cabecalho ? ' chat-meses-cab' : ''));
         l.setAttribute('role', 'row');
@@ -333,13 +349,13 @@
         celulas.forEach(c => { c.setAttribute('role', cabecalho ? 'columnheader' : 'cell'); l.append(c); });
         grelha.append(l);
       };
-      linha([el('span', '', 'Mês'), el('span', '', String(s.anoAtual)), ...(s.anoAnt ? [el('span', '', s.anoAnt)] : []),
-             ...(comMedia ? [el('span', '', 'Valor médio')] : []), el('span', '', 'Variação')], true);
+      linha([el('span', '', 'Mês'), el('span', '', s.medida ? 'Ticket médio' : String(s.anoAtual)), ...(s.anoAnt ? [el('span', '', s.anoAnt)] : []),
+             ...(comMedia ? [el('span', '', s.medida ? 'Faturação' : 'Valor médio')] : []), el('span', '', s.medida ? 'Estado' : 'Variação')], true);
       s.meses.filter(x => x.atual != null).forEach(x => {
         const v = el('span'); v.append(variacao(x, true));   // na tabela o cabeçalho já diz "Variação"
-        linha([el('span', '', nomeMes(x) + (x.parcial ? ' (incompleto)' : '')), el('span', 'chat-atual', euros(x.atual)),
+        linha([el('span', '', nomeMes(x) + (x.parcial ? ' (incompleto)' : '')), el('span', 'chat-atual', valorSerie(s, x.atual)),
                ...(s.anoAnt ? [el('span', 'chat-ant', x.anterior == null ? '—' : euros(x.anterior))] : []),
-               ...(comMedia ? [el('span', '', x.media || '—')] : []), v]);
+               ...(comMedia ? [el('span', '', extra(x))] : []), v]);
       });
       tab.append(el('h3', '', 'Detalhe por mês'), grelha);
       art.append(tab);
