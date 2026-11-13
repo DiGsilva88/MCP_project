@@ -631,13 +631,17 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
 
     var partes = new Dictionary<string, Task<string>>
     {
-        ["artigos"] = Vendas(new() { ["agrupar"] = "Artigo", ["limite"] = 10, ["compararAnoAnterior"] = true }),
+        // No painel, os 100 maiores para a lista "Ver artigos" da vista Artigos; o email usa 10.
+        ["artigos"] = Vendas(new() { ["agrupar"] = "Artigo", ["limite"] = painel ? 100 : 10, ["compararAnoAnterior"] = true }),
     };
     if (meses is not null)
         partes["meses"] = Vendas(new(meses) { ["agrupar"] = "Mes", ["compararAnoAnterior"] = true });
     // Vista Faturação do painel (o email não a usa)
     if (painel)
         partes["documentos"] = Filtrada("consultar_documentos", new() { ["limite"] = 10 });
+    // Cartão "Faturação por marca" da vista Artigos (o email não o usa). Marca e não família: na BD a família é quase toda "Familia Geral".
+    if (painel)
+        partes["marcas"] = Vendas(new() { ["agrupar"] = "Marca", ["limite"] = 6, ["compararAnoAnterior"] = true });
     // Só cliente: os rankings de zonas e clientes e os clientes parados não dizem nada sobre um cliente.
     if (cliente is null)
     {

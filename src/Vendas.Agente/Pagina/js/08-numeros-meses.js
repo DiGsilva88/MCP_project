@@ -284,6 +284,27 @@
         botoes[novo].focus();
       });
       colunas.append(barras, rotulos);
+      // Com a área, a variação de cada mês só se via escolhendo o mês: faixa com a diferença face ao ano anterior, sempre à vista
+      if (comArea && s.anoAnt) {
+        const faixa = el('div', 'flow-dif');
+        faixa.setAttribute('aria-hidden', 'true');   // a variação já está no nome de cada ponto
+        faixa.style.gridTemplateColumns = colunasCss;
+        const maxDif = Math.max(1, ...s.meses.map(x => x.parcial ? 0 : Math.abs(x.delta || 0)));
+        s.meses.forEach(x => {
+          const c = el('div', 'flow-dif-mes');
+          if (x.delta == null || x.parcial) c.append(el('span', 'flow-dif-nada', x.atual != null && x.parcial ? 'incomp.' : '—'));
+          else {
+            const h = Math.max(2, Math.abs(x.delta) / maxDif * 30), sobe = x.delta >= 0;
+            const b = el('i', sobe ? 'flow-dif-sobe' : 'flow-dif-desce');
+            b.style.height = h + 'px';
+            const t = el('span', sobe ? 'flow-dif-sobe' : 'flow-dif-desce', textoDelta(x.delta));
+            t.style[sobe ? 'bottom' : 'top'] = (51 + h + 2) + 'px';   // na ponta da barra (linha do zero a 50px)
+            c.append(b, t);
+          }
+          faixa.append(c);
+        });
+        colunas.append(faixa, el('p', 'flow-dif-titulo', 'Diferença face a ' + s.anoAnt + ' (meses completos)'));
+      }
       corpo.append(eixo, colunas);
       // Cartão branco com o gráfico; o cartão azul do mês fica fora, ao lado
       const linhaGrafico = el('div', 'flow-linha-grafico');

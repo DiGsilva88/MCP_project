@@ -23,7 +23,8 @@
 
     // Evolução por mês: os mesmos meses e valores do gráfico do ecrã
     function pngSerie(s, titulo, subtitulo) {
-      const L = 960, A = 420, m = { t: 72, r: 24, b: 36, l: 80 };
+      const comDif = !!s.anoAnt && s.meses.length >= 4;   // igual ao ecrã: a faixa da diferença só vem com a área
+      const L = 960, A = 420 + (comDif ? 90 : 0), m = { t: 72, r: 24, b: 36 + (comDif ? 90 : 0), l: 80 };
       const { cv, g } = novaTela(L, A, titulo, subtitulo);
       const max = Math.max(1, ...s.meses.flatMap(x => [x.atual, x.anterior]).filter(v => v > 0));   // 1: sem valores > 0 dava -Infinity
       const passo = Math.pow(10, Math.floor(Math.log10(max))) / 2;
@@ -44,7 +45,23 @@
         g.fillStyle = COR.nota; g.fillText(v ? milhares(v) : '0', m.l - 10, Y(v));
       });
       g.textAlign = 'center'; g.textBaseline = 'top';
-      s.meses.forEach((x, i) => g.fillText(MESES[x.m - 1].slice(0, 3).toLowerCase(), X(i), A - m.b + 10));
+      s.meses.forEach((x, i) => g.fillText(MESES[x.m - 1].slice(0, 3).toLowerCase(), X(i), m.t + h + 10));
+
+      // Faixa da diferença face ao ano anterior: azul para cima quando sobe, escuro para baixo quando desce
+      if (comDif) {
+        const zero = m.t + h + 80, maxDif = Math.max(1, ...s.meses.map(x => x.parcial ? 0 : Math.abs(x.delta || 0)));
+        g.strokeStyle = COR.grelha; g.lineWidth = 1; g.beginPath(); g.moveTo(m.l, zero); g.lineTo(L - m.r, zero); g.stroke();
+        g.font = fonte(11, 700);
+        s.meses.forEach((x, i) => {
+          if (x.delta == null || x.parcial) return;
+          const alt = Math.max(2, Math.abs(x.delta) / maxDif * 28), sobe = x.delta >= 0, bw = w / n * 0.46;
+          g.fillStyle = sobe ? COR.marca : COR.texto;
+          g.fillRect(X(i) - bw / 2, sobe ? zero - alt : zero, bw, alt);
+          g.textBaseline = sobe ? 'bottom' : 'top';
+          g.fillText(textoDelta(x.delta), X(i), sobe ? zero - alt - 3 : zero + alt + 3);
+        });
+        g.textBaseline = 'top'; g.font = fonte(12); g.fillStyle = COR.nota;
+      }
 
       // Linhas: ano anterior tracejado, ano atual a cheio só nos meses completos
       const linha = (pontos, cor, tracejado) => {
