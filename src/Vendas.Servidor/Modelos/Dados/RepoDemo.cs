@@ -69,10 +69,11 @@ public sealed class RepoDemo : IVendasRepo
 
     public Task<PaginaClientes> ListarAsync(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
-        string? nome = null, CancellationToken cancellationToken = default)
+        string? nome = null, string? id = null, CancellationToken cancellationToken = default)
     {
         var colunas = new[] { "NomeCliente" }.Concat(mostrar.Select(c => c.ToString())).ToArray();
-        var linhas = Clientes.Where(c => Cumpre(c.Id, filtros) && (nome is null || c.Id == nome || c.Nome.StartsWith(nome, StringComparison.OrdinalIgnoreCase)))
+        var linhas = Clientes.Where(c => Cumpre(c.Id, filtros) && (id is null || c.Id == id)
+                                         && (nome is null || c.Id == nome || c.Nome.StartsWith(nome, StringComparison.OrdinalIgnoreCase)))
             .Select(c => new[] { c.Nome }.Concat(mostrar.Select(m => m switch
             {
                 Campo.Vendedor => c.Vendedor,
@@ -84,13 +85,14 @@ public sealed class RepoDemo : IVendasRepo
 
     public Task<PaginaClientes> ListarSensivelAsync(
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
-        string? nome = null, Campo? tambem = null, CancellationToken cancellationToken = default) =>
+        string? nome = null, Campo? tambem = null, string? id = null, CancellationToken cancellationToken = default) =>
         Task.FromResult(new PaginaClientes(["NomeCliente", mostrar.ToString()], [], 0));
 
-    public Task<IReadOnlyList<(string Id, string Nome)>> ProcurarClientesAsync(string cliente, int limite, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<(string Id, string Nome)>> ProcurarClientesAsync(
+        string cliente, int limite, IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default)
     {
         IReadOnlyList<(string, string)> r = Clientes
-            .Where(c => c.Id == cliente.Trim() || c.Nome.StartsWith(cliente.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Where(c => Cumpre(c.Id, filtros) && (c.Id == cliente.Trim() || c.Nome.StartsWith(cliente.Trim(), StringComparison.OrdinalIgnoreCase)))
             .Select(c => (c.Id, c.Nome)).Take(limite).ToList();
         return Task.FromResult(r);
     }

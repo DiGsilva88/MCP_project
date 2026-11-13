@@ -334,19 +334,27 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever, Cancella
 }
 
 // ---- Modo web: a mesma ResponderAsync, servida numa página. Por omissão só em localhost, para uma pessoa.
-// Em RDS corre uma só instância central: VENDAS_ENDERECO diz onde ouve e VENDAS_AUTH=windows identifica cada pedido (ver README).
+// Em RDS corre uma só instância central: VENDAS_ENDERECO diz onde ouve (ver README).
+// Cada pedido é sempre autenticado com o login do Windows: sem perfis.json só entra quem arrancou o agente.
 // Pedidos em paralelo, mas uma pergunta ao modelo de cada vez (o Ollama em CPU também só responde a uma).
 async Task ModoWebAsync()
 {
     var enderecoFixo = Environment.GetEnvironmentVariable("VENDAS_ENDERECO");
+    // Fora deste PC só HTTPS: em HTTP os dados iam em claro na rede, e o browser não manda o Sec-Fetch-Site (o painel dava 403).
+    if (enderecoFixo is not null && !enderecoFixo.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+    {
+        Console.Error.WriteLine("VENDAS_ENDERECO tem de começar por https:// (ver README). O painel não arrancou.");
+        return;
+    }
     var endereco = enderecoFixo ?? "http://localhost:5080/";
-    var autenticar = string.Equals(Environment.GetEnvironmentVariable("VENDAS_AUTH"), "windows", StringComparison.OrdinalIgnoreCase);
-    var perfis = autenticar ? Perfis.Ler(Path.Combine(pastaDados, "perfis.json")) : null;
+    var perfis = Perfis.Ler(Path.Combine(pastaDados, "perfis.json"));
+    var dono = $"{Environment.UserDomainName}\\{Environment.UserName}";
     const int MaxPergunta = 500;
 
     using var servidor = new System.Net.HttpListener();
     servidor.Prefixes.Add(endereco);
-    if (autenticar) servidor.AuthenticationSchemes = System.Net.AuthenticationSchemes.IntegratedWindowsAuthentication;
+    // O browser envia o login do Windows sozinho; quem não se autentica recebe 401 e nunca chega ao TratarAsync.
+    servidor.AuthenticationSchemes = System.Net.AuthenticationSchemes.IntegratedWindowsAuthentication;
     try { servidor.Start(); }
     // Já há um painel aberto neste PC (segundo clique no atalho ou no botão do VB6): mostra esse. Numa instalação com endereço, a falha tem de se ver.
     catch (System.Net.HttpListenerException) when (enderecoFixo is null)
@@ -357,13 +365,14 @@ async Task ModoWebAsync()
     // O painel abre no resumo deste ano: começa já, enquanto o browser abre (a falha aparece no 1.º pedido).
     var preCarregar = ResumoGuardadoAsync("AnoAtual", null, null, null);
     Console.WriteLine($"Chat em {endereco} (Ctrl+C termina). As chamadas às ferramentas aparecem aqui.");
+    Console.WriteLine(perfis is null ? $"Sem perfis.json: só {dono} tem acesso." : $"Acesso pelo perfis.json ({perfis.Count} utilizadores).");
     // Com endereço definido é uma instalação sem ninguém a olhar para este ecrã.
     if (enderecoFixo is null) Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true });
 
     var umaPergunta = new SemaphoreSlim(1); // ResponderAsync usa estado partilhado (chamadas, textoDireto, perguntaAtual…)
     // Por pessoa: o Parar e uma pergunta nova de um utilizador não cancelam a de outro. Sem Dispose: Cancel() num CTS já descartado lançaria exceção.
     var perguntasEmCurso = new System.Collections.Concurrent.ConcurrentDictionary<string, CancellationTokenSource>(StringComparer.OrdinalIgnoreCase);
-    var bloqueioAuditoria = new object();
+    var bloqueioLogs = new object(); // auditoria.log e feedback.log: dois pedidos ao mesmo tempo não podem escrever juntos
     var api = new ApiPainel(
         async (nome, argumentos, ct) =>
         {
@@ -376,7 +385,7 @@ async Task ModoWebAsync()
             try
             {
                 Directory.CreateDirectory(pastaDados);
-                lock (bloqueioAuditoria)
+                lock (bloqueioLogs)
                     File.AppendAllText(Path.Combine(pastaDados, "auditoria.log"), ApiPainel.LinhaAuditoria(DateTimeOffset.Now, perfil.Login, documento) + Environment.NewLine);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -397,8 +406,7 @@ async Task ModoWebAsync()
         var (pedido, resposta) = (ctx.Request, ctx.Response);
         try
         {
-            var login = autenticar ? ctx.User?.Identity?.Name : Environment.UserName;
-            var perfil = login is null ? null : perfis is null ? new Perfil(login, null) : Perfis.Resolver(login, perfis);
+            var perfil = Perfis.Resolver(ctx.User?.Identity?.Name, perfis, dono);
             if (perfil is null)
             {
                 resposta.StatusCode = 403;
@@ -453,7 +461,7 @@ async Task ModoWebAsync()
                 if (await LerCorpoAsync(pedido, 200) is { } corpo && Feedback.Linha(corpo, DateTimeOffset.Now) is { } linha)
                 {
                     Directory.CreateDirectory(pastaDados);
-                    await File.AppendAllTextAsync(Path.Combine(pastaDados, "feedback.log"), linha + Environment.NewLine);
+                    lock (bloqueioLogs) File.AppendAllText(Path.Combine(pastaDados, "feedback.log"), linha + Environment.NewLine);
                     resposta.StatusCode = 204;
                 }
                 else resposta.StatusCode = 400;
@@ -463,7 +471,8 @@ async Task ModoWebAsync()
                 var (agendamento, erro) = await LerCorpoAsync(pedido, 300) is { } corpo ? Agendamentos.DoPedido(corpo) : (null, "Pedido inválido.");
                 resposta.StatusCode = agendamento is null ? 400 : 200;
                 // Sem isto, um erro do disco caía no catch de baixo e a página via 200: "agendado" sem estar.
-                try { if (agendamento is not null) Agendamentos.Guardar(ficheiroAgendamentos, agendamento); }
+                // Quem pediu fica guardado: qualquer perfil "*" pode inscrever qualquer endereço da empresa.
+                try { if (agendamento is not null) Agendamentos.Guardar(ficheiroAgendamentos, agendamento = agendamento with { Criador = perfil.Login }); }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
                 {
                     Console.Error.WriteLine($"Não consegui guardar o agendamento: {ex.Message}");
@@ -471,7 +480,7 @@ async Task ModoWebAsync()
                 }
                 resposta.ContentType = "text/plain; charset=utf-8";
                 await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(erro ?? (agendamento!.Freq == Agendamentos.Cancelar ? "Envio cancelado." : "Agendado.")));
-                Console.WriteLine(agendamento is null ? "[agendamento recusado]" : $"[agendamento {agendamento.Freq}]"); // sem o endereço
+                Console.WriteLine(agendamento is null ? "[agendamento recusado]" : $"[agendamento {agendamento.Freq} por {perfil.Login}]"); // sem o endereço
             }
             else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/perguntar")
             {

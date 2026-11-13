@@ -76,6 +76,21 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task ConsultarVendas_ClienteComFiltroDeVendedor_SoProcuraNosClientesDele()
+    {
+        // O resumo do painel pede cliente=A com o vendedor do perfil: a lista "Vários clientes…" não pode trazer clientes de outros.
+        var repo = new FakeVendasRepo
+        {
+            Clientes = _ => [("1", "Alfa"), ("2", "Alfaiate")],
+            Contagens = [new("Ana", 2, 2, 1)],
+        };
+
+        await CriarSut(repo).ConsultarVendasAsync(cliente: "A", coluna: Campo.Vendedor, valor: "Ana");
+
+        Assert.Equal("Ana", repo.UltimosFiltrosProcura![Campo.Vendedor]);
+    }
+
+    [Fact]
     public async Task ConsultarDocumento_SomaTotais_ETipoEAnoVemDoNumero()
     {
         var repo = new FakeVendasRepo

@@ -1,5 +1,5 @@
 ﻿# Prepara este PC e este utilizador Windows para abrir o Flow. Corre-se uma vez, dentro da pasta do pacote.
-# Só para testes da equipa de desenvolvimento: neste modo não há login nem perfis.
+# Só para testes da equipa de desenvolvimento: sem perfis.json, o painel só abre para o utilizador Windows que o arrancou.
 $ErrorActionPreference = 'Stop'
 
 $runtimes = if (Get-Command dotnet -ErrorAction SilentlyContinue) { dotnet --list-runtimes } else { @() }

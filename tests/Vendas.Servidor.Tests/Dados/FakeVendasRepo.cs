@@ -19,6 +19,8 @@ internal sealed class FakeVendasRepo : IVendasRepo
     public List<(Campo Agrupar, IReadOnlyDictionary<Campo, string> Filtros, int Limite)> ChamadasContar { get; } = [];
 
     public string? UltimoNome { get; private set; }
+    public string? UltimoId { get; private set; }
+    public IReadOnlyDictionary<Campo, string>? UltimosFiltrosProcura { get; private set; }
     public Campo? UltimoTambem { get; private set; }
     public int? UltimoLimite { get; private set; }
     public int? UltimoDeslocamento { get; private set; }
@@ -53,9 +55,10 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public Task<PaginaClientes> ListarSensivelAsync(
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
-        string? nome = null, Campo? tambem = null, CancellationToken ct = default)
+        string? nome = null, Campo? tambem = null, string? id = null, CancellationToken ct = default)
     {
         UltimoNome = nome;
+        UltimoId = id;
         UltimoTambem = tambem;
         UltimoSensivel = (mostrar, maiores);
         UltimosFiltros = filtros;
@@ -67,9 +70,10 @@ internal sealed class FakeVendasRepo : IVendasRepo
 
     public Task<PaginaClientes> ListarAsync(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
-        string? nome = null, CancellationToken ct = default)
+        string? nome = null, string? id = null, CancellationToken ct = default)
     {
         UltimoNome = nome;
+        UltimoId = id;
         UltimoMostrar = mostrar;
         UltimosFiltros = filtros;
         UltimoDeslocamento = deslocamento;
@@ -84,8 +88,9 @@ internal sealed class FakeVendasRepo : IVendasRepo
     public Func<string, IReadOnlyList<(string Id, string Nome)>> Clientes { get; set; } = c => [(c.Trim(), "Cliente " + c.Trim())];
 
     public Task<IReadOnlyList<(string Id, string Nome)>> ProcurarClientesAsync(
-        string cliente, int limite, CancellationToken ct = default)
+        string cliente, int limite, IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken ct = default)
     {
+        UltimosFiltrosProcura = filtros;
         if (LancarExcecao is not null) throw LancarExcecao;
         return Task.FromResult<IReadOnlyList<(string Id, string Nome)>>(Clientes(cliente).Take(limite).ToList());
     }

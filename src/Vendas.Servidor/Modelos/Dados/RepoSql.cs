@@ -24,9 +24,9 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
 
     public async Task<PaginaClientes> ListarAsync(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
-        string? nome = null, CancellationToken cancellationToken = default)
+        string? nome = null, string? id = null, CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaClientes.Listar(mostrar, filtros, deslocamento, nome);
+        var (sql, parametros) = ConsultaClientes.Listar(mostrar, filtros, deslocamento, nome, id);
         var colunas = new[] { "NomeCliente" }.Concat(mostrar.Select(c => c.ToString())).ToArray();
         var total = 0;
 
@@ -43,9 +43,9 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
 
     public async Task<PaginaClientes> ListarSensivelAsync(
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
-        string? nome = null, Campo? tambem = null, CancellationToken cancellationToken = default)
+        string? nome = null, Campo? tambem = null, string? id = null, CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaClientes.ListarSensivel(mostrar, filtros, maiores, deslocamento, nome, tambem);
+        var (sql, parametros) = ConsultaClientes.ListarSensivel(mostrar, filtros, maiores, deslocamento, nome, tambem, id);
         var colunas = tambem is { } t ? new[] { "NomeCliente", mostrar.ToString(), t.ToString() } : ["NomeCliente", mostrar.ToString()];
         var total = 0;
 
@@ -61,9 +61,9 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     }
 
     public async Task<IReadOnlyList<(string Id, string Nome)>> ProcurarClientesAsync(
-        string cliente, int limite, CancellationToken cancellationToken = default)
+        string cliente, int limite, IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaVendas.ProcurarClientes(cliente);
+        var (sql, parametros) = ConsultaVendas.ProcurarClientes(cliente, filtros);
         return await LerAsync(sql, parametros, limite, leitor => (leitor.GetString(0), leitor.GetString(1)), cancellationToken);
     }
 
@@ -150,9 +150,10 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         CancellationToken cancellationToken = default)
     {
         var (sqlMeses, parametrosMeses) = ConsultaVendas.ComprasPorMes(desde, ate, filtros);
+        var (sqlClientes, parametrosClientes) = ConsultaVendas.CarteiraClientes(filtros);
 
         // limite 0: estas consultas não têm TOP
-        var clientes = LerAsync(ConsultaVendas.CarteiraClientes(), _ => { }, 0,
+        var clientes = LerAsync(sqlClientes, parametrosClientes, 0,
             leitor => new ClienteCarteira(leitor.GetString(0), leitor.GetString(1), Data(leitor, 2)), cancellationToken);
         var meses = LerAsync(sqlMeses, parametrosMeses, 0,
             leitor => new CompraMensal(leitor.GetString(0), leitor.GetString(1), leitor.GetDecimal(2), leitor.GetInt32(3)), cancellationToken);

@@ -103,7 +103,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             // "Vendas do cliente X" vinha como coluna=Localidade, valor=X: um valor que não existe na ficha
             // mas é o nome de um só cliente passa a ser o filtro de cliente.
             if (cliente is null && !semVendas && filtros.Count == 1 && await FiltroSemClientesAsync(filtros, ct)
-                && (await repo.ProcurarClientesAsync(filtros.Values.First(), 2, ct)).Count == 1)
+                && (await repo.ProcurarClientesAsync(filtros.Values.First(), 2, cancellationToken: ct)).Count == 1)
             {
                 cliente = filtros.Values.First();
                 filtros.Clear();
@@ -136,7 +136,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
 
         return await Respostas.ExecutarAsync(log, "consultar_documentos", periodo, async () =>
         {
-            var (idCliente, _, erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
+            var (idCliente, _, erro) = await Respostas.ResolverClienteAsync(repo, cliente, filtros, ct);
             if (erro is not null) return erro;
 
             var r = await repo.ResumoDocumentosAsync(janela.Desde, janela.Ate, Math.Clamp(limite, 1, Respostas.Maxlinhas), idCliente, filtros, ct);
@@ -185,7 +185,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
 
         return await Respostas.ExecutarAsync(log, "consultar_creditos", periodo, async () =>
         {
-            var (idCliente, _, erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
+            var (idCliente, _, erro) = await Respostas.ResolverClienteAsync(repo, cliente, filtros, ct);
             if (erro is not null) return erro;
 
             var r = await repo.ListarCreditosAsync(janela.Desde, janela.Ate, tipo, pesquisa, deslocamento, limite, idCliente, filtros, ct);
@@ -362,7 +362,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         DimensaoVenda agrupar, OrdenarVenda ordenar, DimensaoVenda? emCada, bool compararAnoAnterior, bool menores, IntervaloVendas janela,
         int limite, string? cliente, Dictionary<Campo, string> filtros, CancellationToken ct)
     {
-        var (idCliente, rotuloCliente, erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
+        var (idCliente, rotuloCliente, erro) = await Respostas.ResolverClienteAsync(repo, cliente, filtros, ct);
         if (erro is not null) return erro;
 
         var porQuantidade = ordenar == OrdenarVenda.Quantidade;

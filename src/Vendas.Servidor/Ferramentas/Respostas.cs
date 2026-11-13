@@ -100,13 +100,14 @@ internal static class Respostas
 
     // O cliente tem de existir e ser um só: senão "Sem vendas" ou uma soma de vários clientes
     // pareceriam a resposta de um cliente (e na sensível, os contactos de vários). Sem texto: sem filtro de cliente.
+    // filtros: procura só entre esses clientes. Com o vendedor do perfil, nem a lista nem o nome mostram clientes de outro.
     internal static async Task<(string? Id, string? Rotulo, string? Erro)> ResolverClienteAsync(
-        IVendasRepo repo, string? cliente, CancellationToken ct)
+        IVendasRepo repo, string? cliente, IReadOnlyDictionary<Campo, string>? filtros, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(cliente)) return (null, null, null);
 
         var texto = cliente.Trim();
-        var encontrados = await repo.ProcurarClientesAsync(texto, MaxClientes + 1, ct);
+        var encontrados = await repo.ProcurarClientesAsync(texto, MaxClientes + 1, filtros, ct);
         if (encontrados.Count == 0)
             return (null, null, $"Cliente \"{texto}\" não encontrado. Indique o ID ou o início do nome.");
 

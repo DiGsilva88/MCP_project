@@ -192,7 +192,7 @@ Mostra as tools disponíveis e pergunta o modo:
 
 1. **Perguntas livres** — lê perguntas do teclado (Enter vazio termina) e o modelo escolhe a tool. Cada chamada mostra a tool, os argumentos, o tempo e o início do resultado (`[consultar_vendas(agrupar=Cliente, …) 120 ms] …`; em `consultar_sensivel` só o tamanho, para os dados pessoais não ficarem no ecrã). No fim: tempo até ao 1.º token, total e tokens lidos.
 2. **Menu fixo** — sem modelo: escolhas numeradas que chamam a tool `consultar` diretamente.
-3. **Chat no browser** — o mesmo fluxo do modo 1 numa página local em `http://localhost:5080` (abre sozinha). Também arranca direto com `dotnet run --project src/Vendas.Agente -- --web`. A resposta aparece à medida que é gerada; as chamadas às tools e os erros técnicos só aparecem na consola. Só aceita pedidos de `localhost` (POST de outra origem → 403; `GET /resumo` só da própria página), perguntas de 1 a 500 caracteres e uma pergunta ao modelo de cada vez (o Resumo e o resto da página continuam a responder). **Parar** cancela também a geração no Ollama (`POST /parar`).
+3. **Chat no browser** — o mesmo fluxo do modo 1 numa página local em `http://localhost:5080` (abre sozinha). Também arranca direto com `dotnet run --project src/Vendas.Agente -- --web`. A resposta aparece à medida que é gerada; as chamadas às tools e os erros técnicos só aparecem na consola. Cada pedido é autenticado com o login do Windows (o browser envia-o sozinho; sem ele → 401). Sem `perfis.json` só entra o utilizador Windows que arrancou o agente; outra sessão do mesmo PC recebe 403. Só aceita pedidos de `localhost` (POST de outra origem → 403; `GET /resumo` só da própria página), perguntas de 1 a 500 caracteres e uma pergunta ao modelo de cada vez (o Resumo e o resto da página continuam a responder). **Parar** cancela também a geração no Ollama (`POST /parar`).
 
 - Modelo por omissão `qwen3:4b-instruct` (o 7b é pesado demais para CPU); `OLLAMA_MODELO` muda-o. Fica carregado em memória (`keep_alive = -1m`), `Temperature = 0` e janela fixa `NumCtx = 8192` — um prompt maior faria o Ollama cortar o início, que são as regras de segurança.
 - O modelo é aquecido em paralelo com a escolha do modo.
@@ -223,7 +223,7 @@ dotnet run --project src/Vendas.Agente -- --web
 
 ### Pacote para a equipa de desenvolvimento testar
 
-Sem login nem perfis, por isso só nos PCs da equipa e nunca num servidor partilhado. Em RDS, qualquer sessão conseguiria ver os dados.
+Sem `perfis.json`, cada pessoa só vê o painel que ela própria abriu (o login do Windows é verificado em cada pedido), com acesso a todos os clientes.
 
 1. `powershell -ExecutionPolicy Bypass -File scripts\publicar.ps1` gera `pacote\Flow`.
 2. Copiar essa pasta para o PC de quem testa, com o .NET 10 Runtime instalado.
@@ -237,8 +237,8 @@ Corre uma só instância central, que os utilizadores abrem no browser. Uma inst
 
 1. Publicar o agente e o servidor numa pasta do servidor e definir `VENDAS_SERVIDOR_DLL` com o caminho de `Vendas.Servidor.dll`.
 2. Criar uma conta de serviço com acesso de leitura às views `mcp`. `VENDAS_SQL` com `Integrated Security=True` dispensa o `sql.pwd`.
-3. Definir `VENDAS_ENDERECO` (ex.: `http://vendas.empresa.local:5080/`, com a barra final) e `VENDAS_AUTH=windows`, e reservar o endereço para a conta: `netsh http add urlacl url=<endereço> user=<conta>`.
-4. Criar no perfil dessa conta o `%LOCALAPPDATA%\Vendas\perfis.json`, que liga cada login ao vendedor da ficha, ou a `*` para ver tudo. Quem não estiver no ficheiro recebe 403. Depois de o alterar é preciso reiniciar.
+3. Definir `VENDAS_ENDERECO` com HTTPS (ex.: `https://vendas.empresa.local:5443/`, com a barra final; com `http://` o painel não arranca). Reservar o endereço para a conta, `netsh http add urlacl url=<endereço> user=<conta>`, e ligar o certificado à porta: `netsh http add sslcert ipport=0.0.0.0:5443 certhash=<thumbprint> appid={<guid qualquer>}`.
+4. Criar no perfil dessa conta o `%LOCALAPPDATA%\Vendas\perfis.json`, que liga cada login ao vendedor da ficha, ou a `*` para ver tudo. Quem não estiver no ficheiro recebe 403; sem o ficheiro só entra a própria conta de serviço. Depois de o alterar é preciso reiniciar. O filtro de vendedor compara o nome exato da ficha (sem acentos nem maiúsculas).
 
    ```json
    { "DOMINIO\\joao": "João Silva", "DOMINIO\\maria": "*" }
