@@ -91,6 +91,34 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task ConsultarVendas_VendedorSemClientes_NaoPassaAoClienteComOMesmoNome_NemListaOsVendedores()
+    {
+        // perfis.json com um vendedor que não está na ficha e um cliente cujo nome começa igual.
+        var repo = new FakeVendasRepo
+        {
+            Clientes = _ => [("9", "Zé Lda")],
+            Contagens = [],
+        };
+
+        var texto = await CriarSut(repo).ConsultarVendasAsync(vendedor: "Zé");
+
+        Assert.Null(repo.UltimoCliente);
+        Assert.Equal("Zé", repo.UltimosFiltros![Campo.Vendedor]);
+        Assert.StartsWith("Sem vendas:", texto);
+    }
+
+    [Fact]
+    public async Task ConsultarVendas_VendedorEDistrito_AplicaOsDois()
+    {
+        var repo = new FakeVendasRepo { Contagens = [new("Lisboa", 1, 1, 1)], Valores = [new("Casa (1)", 10m, 0, 1, 10m, 1)] };
+
+        await CriarSut(repo).ConsultarVendasAsync(coluna: Campo.Distrito, valor: "Lisboa", vendedor: "Ana");
+
+        Assert.Equal("Lisboa", repo.UltimosFiltros![Campo.Distrito]);
+        Assert.Equal("Ana", repo.UltimosFiltros[Campo.Vendedor]);
+    }
+
+    [Fact]
     public async Task ConsultarDocumento_SomaTotais_ETipoEAnoVemDoNumero()
     {
         var repo = new FakeVendasRepo

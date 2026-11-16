@@ -16,6 +16,17 @@ public class VistasToolsTests
     private static string NL(params string[] linhas) =>
         string.Concat(linhas.Select(l => l + Environment.NewLine));
 
+    [Fact]
+    public async Task Consultar_VendedorSemClientes_NaoListaOsOutrosVendedores()
+    {
+        var repo = new FakeVendasRepo { ContagensPor = (_, f) => f.Count == 0 ? [new("Outro Vendedor", 50, 50, 1)] : [] };
+
+        var r = await CriarSut(repo).ConsultarAsync(Campo.Distrito, contar: true, vendedor: "Zé");
+
+        Assert.DoesNotContain("Outro Vendedor", r);
+        Assert.Equal("Zé", repo.UltimosFiltros![Campo.Vendedor]);
+    }
+
     // ---------- sensível ----------
 
     [Fact]

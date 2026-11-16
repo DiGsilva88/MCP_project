@@ -19,13 +19,14 @@
       // Pedido de resumo: abre o Resumo em vez de chamar o agente (instantâneo, números diretos do SQL)
       const pedidoResumo = intencaoResumo(texto);
       if (pedidoResumo) { responderComResumo(texto, pedidoResumo); return; }
+      if (soPainel) return;   // o resto vai ao modelo, que o servidor recusa ao vendedor
       const item = { pergunta: texto, texto: '', erro: null, hora: new Date(), pendente: true };
       historico.unshift(item);
       bloquear(true);
       desenharTemas();
       const controlo = new AbortController();   // "Parar" cancela o pedido
       // /parar também pára o modelo no servidor (abortar só o fetch deixava-o a gerar)
-      const { aChegar, relogio } = mostrarEspera(texto, () => { controlo.abort(); fetch('/parar', { method: 'POST' }).catch(() => {}); });
+      const { aChegar, relogio, naFila } = mostrarEspera(texto, () => { controlo.abort(); fetch('/parar', { method: 'POST' }).catch(() => {}); });
       desenharPainel();                         // esqueleto no painel até a resposta chegar
       area.setAttribute('aria-busy', 'true');   // o leitor de ecrã lê a resposta no fim, não aos bocados
       try {
@@ -42,7 +43,10 @@
         for (;;) {
           const { done, value } = await leitor.read();
           if (done) break;
-          item.texto += descodificador.decode(value, { stream: true });
+          // Avisos da fila do servidor ("\u0001fila" / "\u0001vez"): mudam a mensagem de espera, não entram na resposta
+          const parte = descodificador.decode(value, { stream: true }).replace(/\u0001(fila|vez)\n/g, (_, a) => (naFila(a === 'fila'), ''));
+          if (!parte) continue;
+          item.texto += parte;
           aChegar();
         }
         item.texto += descodificador.decode();

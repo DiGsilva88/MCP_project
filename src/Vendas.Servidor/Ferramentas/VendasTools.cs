@@ -68,6 +68,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         [Description("true: compara cada linha com o mesmo período um ano antes (variação em %).")] bool compararAnoAnterior = false,
         [Description("Opcional: trimestre 1 a 4 (1 = janeiro a março). Com ano opcional. Tem prioridade sobre mes e periodo.")] int? trimestre = null,
         [Description("true: do menor para o maior (os que vendem menos).")] bool menores = false,
+        [Description("Só do painel, não usar. Vendas de um vendedor: coluna=Vendedor.")] string? vendedor = null,
         CancellationToken ct = default)
     {
         // O modelo repetia agrupar em emCada (ex.: Mes e Mes no "ticket médio por mês"): recusar custava outra volta.
@@ -108,9 +109,13 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
                 cliente = filtros.Values.First();
                 filtros.Clear();
             }
+            // O vendedor do perfil entra depois das ajudas ao modelo: nunca é trocado por um cliente
+            // nem dá a lista "valores existentes" (que mostraria os outros vendedores). Essas só olham para "pedidos".
+            var pedidos = new Dictionary<Campo, string>(filtros);
+            if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
             return semVendas
-                ? await ListarSemVendasAsync(janela, limite, filtros, ct)
-                : await ListarRankingAsync(agrupar, ordenar, emCada, compararAnoAnterior, menores, janela, limite, cliente, filtros, ct);
+                ? await ListarSemVendasAsync(janela, limite, filtros, pedidos, ct)
+                : await ListarRankingAsync(agrupar, ordenar, emCada, compararAnoAnterior, menores, janela, limite, cliente, filtros, pedidos, ct);
         });
     }
 
@@ -123,6 +128,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
         [Description("Opcional: coluna da ficha.")] Campo? coluna = null,
         [Description("Valor dessa coluna.")] string? valor = null,
+        [Description("Opcional: só os clientes deste vendedor.")] string? vendedor = null,
         CancellationToken ct = default)
     {
         var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
@@ -133,6 +139,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
         var filtros = new Dictionary<Campo, string>();
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
+        if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
 
         return await Respostas.ExecutarAsync(log, "consultar_documentos", periodo, async () =>
         {
@@ -242,6 +249,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         [Description("Máximo de clientes, 1 a 100.")] int limite = 100,
         [Description("Opcional: coluna da ficha.")] Campo? coluna = null,
         [Description("Valor dessa coluna.")] string? valor = null,
+        [Description("Opcional: só os clientes deste vendedor.")] string? vendedor = null,
         CancellationToken ct = default)
     {
         var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
@@ -252,6 +260,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
         var filtros = new Dictionary<Campo, string>();
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
+        if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
 
         return await Respostas.ExecutarAsync(log, "consultar_carteira", periodo, async () =>
         {
@@ -350,17 +359,17 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
     }
 
     private async Task<string> ListarSemVendasAsync(
-        IntervaloVendas janela, int limite, Dictionary<Campo, string> filtros, CancellationToken ct)
+        IntervaloVendas janela, int limite, Dictionary<Campo, string> filtros, Dictionary<Campo, string> pedidos, CancellationToken ct)
     {
         var semCompras = await repo.ClientesSemVendasAsync(janela.Desde, janela.Ate, limite, filtros, ct);
-        return semCompras.Count == 0 && await FiltroSemClientesAsync(filtros, ct)
-            ? await Respostas.SemCorrespondenciaAsync(repo, filtros, ct)
+        return semCompras.Count == 0 && await FiltroSemClientesAsync(pedidos, ct)
+            ? await Respostas.SemCorrespondenciaAsync(repo, pedidos, ct)
             : FormatarSemVendas(janela, filtros, semCompras);
     }
 
     private async Task<string> ListarRankingAsync(
         DimensaoVenda agrupar, OrdenarVenda ordenar, DimensaoVenda? emCada, bool compararAnoAnterior, bool menores, IntervaloVendas janela,
-        int limite, string? cliente, Dictionary<Campo, string> filtros, CancellationToken ct)
+        int limite, string? cliente, Dictionary<Campo, string> filtros, Dictionary<Campo, string> pedidos, CancellationToken ct)
     {
         var (idCliente, rotuloCliente, erro) = await Respostas.ResolverClienteAsync(repo, cliente, filtros, ct);
         if (erro is not null) return erro;
@@ -387,8 +396,8 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         }
 
         // Sem vendas com filtro: se o valor nem existe (ex.: "Seixall"), mostra os que existem.
-        if (linhas.Count == 0 && await FiltroSemClientesAsync(filtros, ct))
-            return await Respostas.SemCorrespondenciaAsync(repo, filtros, ct);
+        if (linhas.Count == 0 && await FiltroSemClientesAsync(pedidos, ct))
+            return await Respostas.SemCorrespondenciaAsync(repo, pedidos, ct);
 
         // Período sem vendas nenhumas: diz até onde vão os dados, senão "não houve vendas" parece real
         // quando a view só ainda não foi atualizada.

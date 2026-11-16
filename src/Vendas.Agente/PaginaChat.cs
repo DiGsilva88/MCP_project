@@ -12,8 +12,10 @@ public static class PaginaChat
 Ler("pagina-chat.html"), @"{{inclui:([\w/.-]+)}}", m => Ler(m.Groups[1].Value));
 
     // Nome na saudação: o login do Windows ("DOMINIO\Diana.Silva" -> "Diana Silva"); vai para um atributo, por isso codificado.
-    public static string Para(string login) =>
-        Modelo.Replace("{{UTILIZADOR}}", System.Net.WebUtility.HtmlEncode(login[(login.LastIndexOf('\\') + 1)..].Replace('.', ' ').Replace('_', ' ')));
+    // vendedor: o perfil só vê o painel; a página esconde o chat e o email, que o servidor recusa.
+    public static string Para(string login, bool vendedor = false) =>
+        Modelo.Replace("{{UTILIZADOR}}", System.Net.WebUtility.HtmlEncode(login[(login.LastIndexOf('\\') + 1)..].Replace('.', ' ').Replace('_', ' ')))
+              .Replace("{{VENDEDOR}}", vendedor ? "1" : "");
 
     private static Stream Abrir(string nomeFicheiro)
     {

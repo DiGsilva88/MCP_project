@@ -73,7 +73,8 @@
     // Vistas guardadas: os filtros do Resumo (período + zona + cliente) ou a pergunta de uma resposta.
     // Só nesta sessão (sessionStorage): recarregar mantém-nas, fechar o separador/browser apaga-as. Máximo 6.
     const VISTAS = 'flow-vistas';
-    localStorage.removeItem(VISTAS);   // as versões anteriores guardavam para sempre neste computador
+    // as versões anteriores guardavam para sempre neste computador. Com o armazenamento bloqueado (política do browser) lança: a página tem de abrir na mesma
+    try { localStorage.removeItem(VISTAS); } catch { }
     const lerVistas = () => { try { return JSON.parse(sessionStorage.getItem(VISTAS)) || []; } catch { return []; } };
     // A secção (Clientes, Faturação…) faz parte da vista: sem ela, as mesmas datas noutra secção eram "a mesma vista"
     const chaveVista = v => v.pergunta ? 'p:' + v.pergunta : JSON.stringify([v.secao || 'geral', v.periodo, v.zona || null, v.cliente || null]);
@@ -99,7 +100,7 @@
         if (ativa) b.setAttribute('aria-current', 'true');
         const li = el('li'); li.append(b); return li;
       }));
-      sessionStorage.setItem(VISTAS, JSON.stringify(vistas));
+      guardarValor('sessionStorage', VISTAS, vistas);
       // Exportar (CSV para o Excel) e Descartar: só com vistas na lista
       const acoes = document.getElementById('vistas-acoes');
       acoes.hidden = !vistas.length;
@@ -108,7 +109,7 @@
                              v.cliente || '', v.pergunta || '', v.pergunta || v.total == null ? '' : rEur2(v.total)])];
       const descartar = botaoEl('chat-acao', 'Descartar', () => {
         if (!confirm('Descartar as vistas guardadas desta sessão?')) return;
-        sessionStorage.removeItem(VISTAS);
+        try { sessionStorage.removeItem(VISTAS); } catch { }
         desenharVistas();
         anunciar('Vistas guardadas descartadas.');
         document.getElementById('guardar-vista').focus();   // o botão que tinha o foco desapareceu
@@ -129,7 +130,7 @@
       }
       const vistas = [e, ...lerVistas().filter(v => !mesmaVista(v, e))].slice(0, 6);
       const jaExistia = lerVistas().some(v => mesmaVista(v, e));
-      sessionStorage.setItem(VISTAS, JSON.stringify(vistas));
+      guardarValor('sessionStorage', VISTAS, vistas);
       desenharVistas();
       anunciar('Vista guardada: ' + nome + '.');
       // Confirmação à vista: guardar uma vista que já existia não mudava nada na lista

@@ -5,6 +5,14 @@ public class PaginaChatTests
     private static readonly string Html = PaginaChat.Para("DOM\\teste");
 
     [Fact]
+    public void Vendedor_MarcaOBody_ParaAPaginaEsconderChatEEmail()
+    {
+        Assert.Contains("data-vendedor=\"1\"", PaginaChat.Para("DOM\\ana", vendedor: true));
+        Assert.Contains("data-vendedor=\"\"", Html);
+        Assert.DoesNotContain("{{VENDEDOR}}", Html);
+    }
+
+    [Fact]
     public void Html_TemBotaoDaConversaEPainelLateral()
     {
         Assert.DoesNotContain("{{UTILIZADOR}}", Html);       // o servidor põe o nome de quem tem a sessão

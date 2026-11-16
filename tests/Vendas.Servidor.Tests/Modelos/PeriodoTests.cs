@@ -34,6 +34,16 @@ public class PeriodoTests
 
     private static readonly DateOnly Hoje = new(2026, 10, 15);
 
+    [Theory]
+    [InlineData("01-01-2026", "31-12-9999")]   // rebentava no AddDays(1)
+    [InlineData("01-01-0001", "01-01-2026")]
+    public void Resolver_DatasForaDosAnos_DevolveErroEmVezDeExcecao(string inicio, string fim)
+    {
+        var (intervalo, erro) = Periodos.Resolver(Periodo.AnoAtual, null, null, inicio, fim, Hoje);
+        Assert.Null(intervalo);
+        Assert.Equal("As datas têm de ser de 2000 a 2026.", erro);
+    }
+
     // Prioridade: datas > mes/ano > periodo
     [Fact]
     public void Resolver_DatasGanhamAMesEAno_EOFimFicaIncluido()

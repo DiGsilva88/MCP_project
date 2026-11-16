@@ -6,6 +6,8 @@
     const estadoTexto = document.getElementById('estado-texto');
     const area = document.getElementById('area');
     const temasEl = document.getElementById('temas');
+    // Perfil de vendedor: o servidor recusa o chat e o email (403), por isso a página nem os mostra
+    const soPainel = document.body.dataset.vendedor === '1';
 
     // Mensagem curta para o leitor de ecrã ("Copiado", "Resposta pronta"), sem ler a resposta inteira
     const anuncio = document.getElementById('anuncio');

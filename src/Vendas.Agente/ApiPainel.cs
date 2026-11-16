@@ -36,6 +36,24 @@ public sealed class ApiPainel(
         return m.Success ? $"{m.Groups[1].Value} {m.Groups[2].Value}/{m.Groups[3].Value}/{m.Groups[4].Value}" : null;
     }
 
+    // As regras de acesso do modo web, antes de qualquer rota (o login já foi verificado). null = pode seguir;
+    // senão o pedido recebe 403 com este texto (vazio = sem corpo).
+    // - POST de outra origem: outra página aberta no browser pode fazer POST para localhost sem CORS; o browser diz sempre a Origin.
+    // - Vendedor: o modelo e o email da empresa veem todos os clientes, por isso fica pelo painel, que filtra.
+    // - /resumo e /api/: só a própria página (same-origin) ou o endereço escrito à mão (none); outra porta de localhost é "same-site".
+    public static string? Recusa(string metodo, string caminho, string? origem, string? secFetchSite, string endereco, bool vendedor)
+    {
+        if (metodo == "POST" && origem is not null && (Origem(origem) is not { } o || o != Origem(endereco))) return "";
+        if (metodo == "POST" && vendedor && caminho is "/perguntar" or "/agendamentos") return "Esta função não está disponível para o perfil de vendedor.";
+        if (metodo == "GET" && (caminho == "/resumo" || caminho.StartsWith("/api/")) && secFetchSite is not ("same-origin" or "none")) return "";
+        return null;
+    }
+
+    // "esquema://host[:porta]" como o browser o manda na Origin: host em minúsculas, sem a porta por omissão (443/80).
+    // Comparar o texto tal e qual dava 403 a todos os POST com VENDAS_ENDERECO=https://Vendas.Empresa.local:443/.
+    private static string? Origem(string endereco) =>
+        Uri.TryCreate(endereco, UriKind.Absolute, out var u) ? u.GetLeftPart(UriPartial.Authority) : null;
+
     public static string LinhaAuditoria(DateTimeOffset agora, string login, string documento) =>
         $"{agora:yyyy-MM-dd HH:mm:ss}\t{login}\t{documento}";
 
@@ -111,7 +129,7 @@ public sealed class ApiPainel(
         if (id.Trim() is not { Length: > 0 and <= MaxTexto } cliente) return PedidoInvalido;
 
         var argumentos = new Dictionary<string, object?> { ["cliente"] = cliente };
-        if (perfil.Vendedor is { } vendedor) { argumentos["cruzarCom"] = "Vendedor"; argumentos["valorCruzado"] = vendedor; }
+        if (perfil.Vendedor is { } vendedor) argumentos["vendedor"] = vendedor;
 
         var texto = await ferramenta("consultar", argumentos, ct);
         // Num perfil de vendedor, só a ficha em si: a mensagem de "vários clientes" lista nomes de clientes de outros.
