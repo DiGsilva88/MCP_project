@@ -12,6 +12,29 @@
         clearTimeout(credEspera);
         credEspera = setTimeout(carregarCreditos, 250);
       });
+      // Limite de queda de uma regra de alerta (vista Alertas): só números inteiros de 5 a 90; fora disso fica o anterior e diz-se porquê
+      raiz.addEventListener('change', e => {
+        const campo = e.target.closest('[data-regra-limite]');
+        if (!campo) return;
+        const id = campo.dataset.regraLimite, v = Number(campo.value);
+        if (limiteValido(v)) {
+          limitesAlerta[id] = v;
+          guardarValor('localStorage', 'flow-alertas-limites', limitesAlerta);
+          resumoEstado.limiteMsg = '';
+        } else {
+          resumoEstado.limiteMsg = `O limite tem de ser um número inteiro entre ${LIMITE_MIN} e ${LIMITE_MAX}. Ficou em ${limiteDe(id)}%.`;
+          anunciar(resumoEstado.limiteMsg);   // o painel é recriado: a mensagem nova no ecrã não seria lida sozinha
+        }
+        // Depois de o foco mudar (Enter fica no campo; Tab ou clique vão para outro controlo): redesenha e devolve-lhe o foco.
+        // Conta a partir do fim do painel: a lista de alertas, acima das regras, muda de tamanho com o limite.
+        setTimeout(() => {
+          const focaveis = () => [...painelEl.querySelectorAll('button, input, a[href]')].reverse();
+          const doFim = focaveis().indexOf(document.activeElement);
+          redesenhar();
+          desenharNav();
+          if (doFim >= 0) focaveis()[doFim]?.focus();
+        });
+      });
       raiz.addEventListener('click', e => {
         const b = e.target.closest('button');
         if (!b) { const linha = e.target.closest('[data-doc-linha]'); if (linha) abrirDoc(linha.dataset.docLinha); return; }

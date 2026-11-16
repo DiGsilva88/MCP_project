@@ -60,17 +60,22 @@ public static class Agendamentos
 
     // Um agendamento por endereço: escolher de novo troca a frequência; "nenhum" deixa de enviar.
     // Com lock: dois pedidos ao mesmo tempo liam a mesma lista e um dos agendamentos perdia-se.
-    public static void Guardar(string ficheiro, Agendamento novo)
+    // false = o endereço foi agendado por outra pessoa: só quem o criou o troca ou cancela (os antigos, sem Criador, qualquer um).
+    public static bool Guardar(string ficheiro, Agendamento novo)
     {
         lock (Bloqueio)
         {
             var lista = Ler(ficheiro);
-            lista.RemoveAll(a => a.Email.Equals(novo.Email, StringComparison.OrdinalIgnoreCase));
+            var mesmoEmail = (Agendamento a) => a.Email.Equals(novo.Email, StringComparison.OrdinalIgnoreCase);
+            if (lista.Any(a => mesmoEmail(a) && a.Criador is not null && !a.Criador.Equals(novo.Criador, StringComparison.OrdinalIgnoreCase)))
+                return false;
+            lista.RemoveAll(a => mesmoEmail(a));
             if (novo.Freq != Cancelar) lista.Add(novo);
             Directory.CreateDirectory(Path.GetDirectoryName(ficheiro)!);
             // shortcut: escrita direta, sem ficheiro temporário + troca (o File.Move falhava às vezes com o antivírus a ler o ficheiro);
             // um crash a meio da escrita parte o ficheiro e o Ler diz qual é.
             File.WriteAllText(ficheiro, JsonSerializer.Serialize(lista));
+            return true;
         }
     }
 

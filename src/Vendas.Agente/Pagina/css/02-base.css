@@ -5,6 +5,8 @@
     @font-face { font-family: "72"; src: url("/fonts/72-Regular-full.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
     @font-face { font-family: "72"; src: url("/fonts/72-Semibold-full.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
     @font-face { font-family: "72"; src: url("/fonts/72-Bold-full.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+    /* Onest (licença OFL, fonts/LICENSE-Onest.txt): só no ecrã de entrada. Variável: um ficheiro para os pesos 400 a 700 */
+    @font-face { font-family: "Onest"; src: url("/fonts/Onest-Variable.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {

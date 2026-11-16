@@ -30,8 +30,13 @@
       area.setAttribute('aria-busy', 'true');   // o leitor de ecrã lê a resposta no fim, não aos bocados
       try {
         const r = await fetch('/perguntar', { method: 'POST', body: texto, signal: controlo.signal });
-        mostrarEstado(r.ok ? 'ocupado' : 'desligado');
-        if (!r.ok) throw new Error('HTTP ' + r.status);
+        // O servidor respondeu e diz porquê (403 do perfil de vendedor, 400 da pergunta): não é falta de ligação
+        if (!r.ok) {
+          item.texto = (await r.text()).trim() || `O pedido foi recusado (HTTP ${r.status}).`;
+          item.erro = 'recusado';
+          return;
+        }
+        mostrarEstado('ocupado');
         const leitor = r.body.getReader();
         const descodificador = new TextDecoder();
         for (;;) {

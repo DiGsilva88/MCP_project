@@ -42,64 +42,65 @@
     .chat-painel--inicio :is(.flow-lateral, .chat-conversa, .chat-lancador, .res-topo) { display: none !important; }
     .chat-painel--inicio .chat-dados { grid-column: 1 / -1; grid-row: 1 / -1; }
     .chat-painel--inicio .chat-painel-dados { padding: 0 !important; background: #f7f9fc; }
-    /* Ecrã de entrada (protótipo "Demonstração v2"): cores só aqui; o logótipo não muda */
-    .flow-ini { --ini-azul: #1d5bff; --ini-azul-escuro: #0b3fd1; --ini-texto: #0b0f17; --ini-suave: #2b3240; --ini-borda: #848d9c; position: relative; isolation: isolate; overflow: hidden; min-height: 100%; display: flex; flex-direction: column; color: var(--ini-texto); font-size: 16px; line-height: 1.5; }
-    .flow-ini svg { display: block; stroke-linecap: round; stroke-linejoin: round; }
-    /* Fundo só da zona da saudação e do exemplo: três manchas azuis que derivam devagar e uma grelha; as bordas esbatem-se */
-    .flow-ini-fundo { position: absolute; inset: -40px -48px; z-index: -1; overflow: hidden; pointer-events: none; -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 60%, transparent 100%); mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 60%, transparent 100%); }
-    .flow-ini-fundo span { position: absolute; border-radius: 50%; will-change: transform; animation: ini-deriva 16s ease-in-out infinite alternate; }
-    .flow-ini-fundo span:nth-child(1) { left: -158px; top: -144px; width: 720px; height: 720px; background: radial-gradient(circle, rgb(29 91 255 / .22), transparent 65%); --dx: 160px; --dy: 80px; }
-    .flow-ini-fundo span:nth-child(2) { right: -180px; top: -40px; width: 640px; height: 640px; background: radial-gradient(circle, rgb(110 151 255 / .22), transparent 65%); --dx: -140px; --dy: -60px; animation-duration: 19s; }
-    .flow-ini-fundo span:nth-child(3) { left: 30%; bottom: -360px; width: 700px; height: 700px; background: radial-gradient(circle, rgb(191 208 255 / .5), transparent 65%); --dx: 90px; --dy: -110px; animation-duration: 22s; }
-    .flow-ini-fundo::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgb(11 15 23 / .045) 1px, transparent 1px), linear-gradient(90deg, rgb(11 15 23 / .045) 1px, transparent 1px); background-size: 56px 56px; -webkit-mask-image: radial-gradient(ellipse 60% 60% at 35% 45%, #000 15%, transparent 75%); mask-image: radial-gradient(ellipse 60% 60% at 35% 45%, #000 15%, transparent 75%); }
-    @keyframes ini-deriva { to { transform: translate(var(--dx), var(--dy)) scale(1.1); } }
+    /* Ecrã de entrada (maquete "versão final", 11/2026): cores e fonte (Onest) só aqui; o logótipo é o do ecrã anterior */
+    .flow-ini { --ini-azul: #1f5bf5; --ini-azul-escuro: #1443c9; --ini-azul-claro: #e4ebff; --ini-nevoa: #f4f7fe; --ini-tinta2: #3a404c; --ini-tinta3: #6b7280; --ini-linha: #dce2ed; --ini-erro: #b42318; --ini-erro-fundo: #fef3f2;
+      min-height: 100%; display: flex; flex-direction: column; background: #fff; color: #000; font-family: "Onest", "72", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    .flow-ini :is(button, input) { font: inherit; color: inherit; }
+    .flow-ini :focus-visible { outline: 2px solid var(--ini-azul); outline-offset: 3px; border-radius: 8px; }
+    /* Entrada só na primeira vez (flow-ini--entra): a coluna da pergunta sobe, por ordem */
     @keyframes ini-sobe { from { opacity: 0; transform: translateY(14px); } }
-    @keyframes ini-cursor { 50% { opacity: 0; } }
     .flow-ini--entra .flow-ini-esq > * { animation: ini-sobe .6s ease-out both; }
     .flow-ini--entra .flow-ini-esq > :nth-child(2) { animation-delay: .05s; }
-    .flow-ini--entra .flow-ini-esq > :nth-child(3) { animation-delay: .08s; }
-    .flow-ini--entra .flow-ini-esq > :nth-child(4) { animation-delay: .16s; }
-    .flow-ini-corpo { width: min(1200px, 100%); margin: 0 auto; box-sizing: border-box; }
-    .flow-ini-corpo { flex: 1; padding: 48px 40px 24px; display: flex; flex-direction: column; justify-content: center; gap: 32px; }
-    /* Logótipo no canto superior esquerdo do ecrã, fora da coluna centrada */
-    .flow-ini-marca { flex: none; padding: 32px 48px 0; }
+    .flow-ini--entra .flow-ini-esq > :nth-child(3) { animation-delay: .1s; }
+    .flow-ini--entra .flow-ini-esq > :nth-child(n+4) { animation-delay: .15s; }
+    .flow-ini-topo { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 30px 48px 0; }
     .flow-ini-marca img { display: block; }
-    .flow-ini-linha { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 48px 96px; }
-    .flow-ini-esq { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
-    .flow-ini h1 { margin: 0; font-size: 56px; line-height: 1.1; font-weight: 300; letter-spacing: -.025em; }
-    .flow-ini h1 b { font-weight: 700; }
-    .flow-ini-esq > .flow-ini-lema { margin: 0; font-size: 40px; line-height: 1.15; font-weight: 300; letter-spacing: -.02em; color: var(--ini-texto); }
-    .flow-ini-esq > p { margin: 0; font-size: 18px; color: var(--ini-suave); }
-    .flow-ini-escrever { display: flex; flex-direction: column; gap: 20px; }
-    .flow-ini-campo { position: relative; max-width: 624px; height: 64px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 26px; border: 1px solid var(--ini-borda); border-radius: 32px; background: #fff; box-shadow: 0 18px 44px rgb(29 91 255 / .12), 0 2px 6px rgb(11 15 23 / .04); transition: border-color .2s, box-shadow .2s; }
-    .flow-ini-campo:focus-within { border-color: var(--ini-azul); box-shadow: 0 0 0 4px #eef3ff, 0 18px 44px rgb(29 91 255 / .14); outline: 2px solid transparent; }
-    .flow-ini-campo input { flex: 1; min-width: 0; min-height: 44px; border: 0; outline: none; background: transparent; font: inherit; font-size: 17px; color: var(--ini-texto); }
-    /* Exemplo que se escreve sozinho enquanto a caixa está vazia (só decoração; o nome da caixa está no aria-label) */
-    .flow-ini-dica { display: none; position: absolute; left: 26px; right: 66px; top: 50%; transform: translateY(-50%); overflow: hidden; font-size: 17px; color: #6b7381; white-space: nowrap; pointer-events: none; }
-    .flow-ini-campo input:placeholder-shown + .flow-ini-dica { display: flex; align-items: center; }
-    .flow-ini-dica::after { content: ''; flex: none; width: 2px; height: 20px; margin-left: 2px; background: var(--ini-azul); animation: ini-cursor 1s steps(1) infinite; }
-    .flow-ini-campo button { flex: none; width: 48px; height: 48px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--ini-azul); color: #fff; cursor: pointer; }
-    .flow-ini-campo button:hover { background: var(--ini-azul-escuro); }
-    .flow-ini-dir { flex: 0 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-    .flow-ini-como { padding: 24px; border-radius: 24px; background: #f8faff; display: flex; flex-direction: column; gap: 16px; }
-    .flow-ini-como h2 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 700; letter-spacing: -.02em; color: #475569; }
-    .flow-ini-como ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; }
-    .flow-ini-como li { display: grid; grid-template-columns: 28px minmax(0, 1fr); column-gap: 16px; }
-    .flow-ini-como li > span { grid-row: span 2; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #1f5bff; color: #fff; font-size: 14px; font-weight: 700; }
-    .flow-ini-como b { font-size: 15px; font-weight: 700; }
-    .flow-ini-como small { font-size: 14px; color: #475569; }
-    .flow-ini-ex { margin: 0; padding: 16px; border: 1px solid #e3e9f8; border-radius: 16px; background: #fff; display: flex; flex-direction: column; gap: 16px; }
-    .flow-ini-ex figcaption { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #475569; }
-    .flow-ini-ex > p { margin: 0; align-self: flex-end; max-width: 85%; padding: 6px 12px; border-radius: 16px 16px 4px 16px; background: #1f5bff; color: #fff; font-size: 14px; font-weight: 600; }
-    .flow-ini-ex > div { display: flex; align-items: center; gap: 16px; }
-    .flow-ini-ex svg { flex: none; }
-    .flow-ini-ex div p { margin: 0; font-size: 14px; color: #475569; }
-    .flow-ini-direto { width: 100%; min-height: 56px; padding: 0 24px; display: flex; align-items: center; gap: 14px; border: 1px solid #bfd0ff; border-radius: 18px; background: #fff; color: var(--ini-azul-escuro); font: inherit; font-size: 14.5px; font-weight: 700; text-align: left; cursor: pointer; transition: border-color .2s, background .2s; }
-    .flow-ini-direto:hover { border-color: var(--ini-azul); background: #f5f8ff; }
-    .flow-ini-direto span { flex: none; width: 28px; height: 28px; box-sizing: border-box; display: grid; place-items: center; border: 2px solid currentColor; border-radius: 50%; }
-    /* Rodapé a toda a largura, com a margem do logótipo: aviso à esquerda, direitos à direita */
-    .flow-ini-rodape { padding: 16px 48px 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; font-size: 14px; color: var(--ini-suave); }
-    :is(.flow-ini-direto, .flow-ini-campo button):focus-visible { outline: 3px solid var(--ini-azul); outline-offset: 2px; }
+    .flow-ini-fresco { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 14px; color: var(--ini-tinta2); }
+    .flow-ini-fresco i { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--ini-azul); }
+    .flow-ini-grelha { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; width: 100%; max-width: 1440px; margin: 0 auto; padding: 40px 48px 40px 96px; box-sizing: border-box; }
+    .flow-ini-grelha > * { min-width: 0; }
+    .flow-ini h1 { margin: 0; font-size: 76px; line-height: 1; letter-spacing: -.035em; font-weight: 600; }
+    .flow-ini h1 span { display: block; }
+    .flow-ini h1 .flow-ini-ac { color: var(--ini-azul); }
+    .flow-ini-sub { max-width: 36ch; margin: 28px 0 0; font-size: 19px; line-height: 1.5; color: var(--ini-tinta2); }
+    /* Caixa de pergunta em pílula: o anel azul mostra o foco; vermelho quando se pergunta sem texto */
+    .flow-ini-pergunta { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 560px; margin-top: 36px; padding: 6px 6px 6px 24px; box-sizing: border-box; border: 1.5px solid #000; border-radius: 999px; background: #fff; transition: border-color .15s, box-shadow .15s; }
+    .flow-ini-pergunta:focus-within { border-color: var(--ini-azul); box-shadow: 0 0 0 4px var(--ini-azul-claro); }
+    .flow-ini-pergunta--vazia, .flow-ini-pergunta--vazia:focus-within { border-color: var(--ini-erro); box-shadow: 0 0 0 4px var(--ini-erro-fundo); }
+    .flow-ini .flow-ini-pergunta input { flex: 1; min-width: 0; padding: 12px 0; border: 0; outline: 0; background: none; font-size: 17px; }
+    .flow-ini-pergunta input::placeholder { color: var(--ini-tinta3); }
+    .flow-ini .flow-ini-pergunta button { flex: none; height: 48px; min-width: 132px; padding: 0 22px; border: 0; border-radius: 999px; background: var(--ini-azul); color: #fff; font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+    .flow-ini .flow-ini-pergunta button:hover { background: var(--ini-azul-escuro); }
+    .flow-ini-msg { max-width: 560px; min-height: 22px; margin: 14px 0 0; font-size: 14.5px; line-height: 1.45; color: var(--ini-azul-escuro); }
+    .flow-ini .flow-ini-direto { display: block; margin-top: 18px; padding: 0 0 2px; border: 0; border-bottom: 1.5px solid #000; border-radius: 0; background: none; font-size: 15px; font-weight: 500; cursor: pointer; }
+    .flow-ini .flow-ini-direto:hover { color: var(--ini-azul); border-color: var(--ini-azul); }
+    /* Ilustração à direita (decorativa, com a legenda "Exemplo"): painel claro com a pergunta e dois cartões por cima */
+    .flow-ini-arte { position: relative; height: 560px; }
+    .flow-ini-fundo { position: absolute; inset: 20px 60px 20px 40px; overflow: hidden; border-radius: 28px; background: var(--ini-nevoa); }
+    .flow-ini-fundo svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .flow-ini-balao { position: absolute; top: 44%; left: 24%; max-width: 240px; margin: 0; padding: 14px 18px; border-radius: 18px 18px 4px 18px; background: var(--ini-azul); color: #fff; font-size: 15px; font-weight: 500; line-height: 1.35; }
+    .flow-ini-cartao { position: absolute; padding: 18px 20px; border-radius: 16px; background: #fff; box-shadow: 0 1px 0 var(--ini-linha), 0 18px 40px -22px rgb(20 40 90 / .35); }
+    .flow-ini-cartao h4 { display: flex; justify-content: space-between; gap: 16px; margin: 0; font-size: 14px; font-weight: 600; }
+    .flow-ini-cartao h4 small { font-size: 12.5px; font-weight: 400; color: var(--ini-tinta3); }
+    .flow-ini-c1 { top: 0; right: 0; width: 270px; }
+    .flow-ini-c2 { bottom: 0; left: 0; width: 310px; }
+    .flow-ini-barras { position: relative; display: flex; align-items: flex-end; gap: 10px; height: 120px; margin-top: 14px; }
+    .flow-ini-barras i { flex: 1; border-radius: 3px 3px 0 0; background: var(--ini-azul); }
+    .flow-ini-barras i.flow-ini-claro { background: var(--ini-azul-claro); }
+    .flow-ini-media { position: absolute; left: 0; right: 0; border-top: 1.5px dashed #000; }
+    .flow-ini-meses { display: flex; gap: 10px; margin-top: 6px; }
+    .flow-ini-meses span { flex: 1; text-align: center; font-size: 11.5px; color: var(--ini-tinta3); }
+    .flow-ini-leg { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; font-size: 12.5px; color: var(--ini-tinta2); }
+    .flow-ini-leg i { display: block; width: 14px; border-top: 1.5px dashed #000; }
+    .flow-ini-donut { display: flex; align-items: center; gap: 18px; margin-top: 14px; }
+    .flow-ini-donut svg { flex: none; }
+    .flow-ini-donut ul { flex: 1; display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 12.5px; }
+    .flow-ini-donut li { display: flex; justify-content: space-between; gap: 10px; }
+    .flow-ini-donut li b { display: flex; align-items: center; gap: 7px; font-weight: 500; }
+    .flow-ini-donut li b i { display: block; width: 8px; height: 8px; border-radius: 50%; }
+    .flow-ini-donut li span { color: var(--ini-tinta3); font-variant-numeric: tabular-nums; }
+    .flow-ini-exemplo { position: absolute; right: 76px; bottom: 28px; margin: 0; font-size: 12px; color: var(--ini-tinta3); }
+    .flow-ini-rodape { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 22px 48px; font-size: 13px; color: var(--ini-tinta2); }
 
     /* Protótipo 11/2026 — Resumo: indicadores no topo; clientes e "Precisa de atenção" lado a lado (1,35 : 1) */
     .res-grelha > [data-bloco="cli"] { flex: 1.35 1 380px; }
@@ -339,6 +340,14 @@
     .res-regra i::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; }
     .res-regra[aria-checked="true"] i { background: #1d5bff; }
     .res-regra[aria-checked="true"] i::after { left: 18px; }
+    /* Limite de queda por baixo de cada regra: pequeno, como a explicação; separador fino entre regras */
+    .res-regra-linha { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; }
+    .res-regra-linha + .res-regra-linha { border-top: 1px solid #eef1f6; }
+    .res-regra-limite { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5b6472; }
+    .res-regra-limite input { width: 56px; min-height: 32px; box-sizing: border-box; padding: 4px 8px; border: 1px solid #c3cad6; border-radius: 8px; background: #fff; color: var(--texto); font: inherit; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
+    .res-regra-limite input:focus-visible { outline: 2px solid #1d5bff; outline-offset: 1px; border-color: #1d5bff; }
+    .res-regra-msg { margin: 8px 0 0; font-size: 12px; line-height: 1.4; color: #b42318; }
+    .res-regra-msg:empty { display: none; }
 
     /* Demonstração — Clientes: a linha escolhida alimenta a ficha rápida */
     button.res-tab-linha[aria-pressed="true"] { background: #eef3ff; border-radius: 8px; box-shadow: inset 3px 0 0 #1d5bff; }

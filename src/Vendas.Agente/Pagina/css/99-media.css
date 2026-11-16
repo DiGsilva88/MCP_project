@@ -52,12 +52,10 @@
     }
 
     /* ---------- de: 20-visual-ix.css ---------- */
-    /* 970px: as duas colunas (360 + 96 + 400, mais 80 de margens e a barra de deslocamento) já não cabem lado a lado */
-    @media (max-width: 970px) { .flow-ini-dir { flex: 1 1 100%; } }
-    /* Janelas baixas (portáteis, browser com barras): tudo à vista sem deslocar; o exemplo é o primeiro a sair */
-    @media (min-width: 971px) and (max-height: 950px) { .flow-ini-marca { padding-top: 20px; } .flow-ini-corpo { padding: 24px 40px 8px; gap: 16px; } .flow-ini-rodape { padding: 8px 48px 16px; } }
-    @media (min-width: 971px) and (max-height: 760px) { .flow-ini-ex { display: none; } }
-    @media (max-width: 560px) { .flow-ini-marca { padding: 16px 16px 0; } .flow-ini-corpo { padding: 24px 16px 16px; } .flow-ini-rodape { padding: 16px; } .flow-ini h1 { font-size: 40px; } .flow-ini-esq > .flow-ini-lema { font-size: 30px; } .flow-ini-esq > p { font-size: 17px; } }
+    /* Ecrã de entrada, como na maquete: 1100px título menor; 900px uma coluna; 520px sem a ilustração */
+    @media (max-width: 1100px) { .flow-ini h1 { font-size: 60px; } .flow-ini-grelha { padding-left: 48px; gap: 40px; } }
+    @media (max-width: 900px) { .flow-ini-grelha { grid-template-columns: 1fr; padding: 32px 24px; } .flow-ini-topo, .flow-ini-rodape { padding-left: 24px; padding-right: 24px; } .flow-ini h1 { font-size: 48px; } .flow-ini-arte { height: 460px; } .flow-ini-fundo { inset: 20px 30px 20px 10px; } }
+    @media (max-width: 520px) { .flow-ini-topo { flex-direction: column; align-items: flex-start; } .flow-ini h1 { font-size: 40px; } .flow-ini-pergunta { padding-left: 18px; } .flow-ini .flow-ini-pergunta input { font-size: 16px; } .flow-ini .flow-ini-pergunta button { min-width: 0; padding: 0 16px; } .flow-ini-arte { display: none; } .flow-ini-fresco { font-size: 12.5px; } }
     @media (max-width: 640px) {
       #dlg-doc { margin: auto 0 0; width: 100%; height: 88dvh; border-left: 0; border-top: 1px solid var(--borda); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 24px rgb(19 32 59 / .16); }
       .doc-resumo { grid-template-columns: 100px minmax(0, 1fr); }
