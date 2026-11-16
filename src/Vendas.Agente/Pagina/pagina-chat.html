@@ -6,6 +6,9 @@
   <!-- 11/2026: só tons claros; as regras de modo escuro ficaram em "@media not all" (nunca se aplicam) -->
   <meta name="color-scheme" content="light">
   <title>Assistente de vendas</title>
+  <link rel="icon" href="data:,">
+  <!-- A Onest é a fonte do ecrã de entrada (título de 76px): carregada já, para não saltar quando chega -->
+  <link rel="preload" href="/fonts/Onest-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <meta name="description" content="Pergunte em linguagem natural e consulte vendas, faturação, documentos, notas de crédito e carteira de clientes, com resultados em tabelas e gráficos.">
 
   <style>
@@ -36,7 +39,8 @@
   </style>
 </head>
 <body data-utilizador="{{UTILIZADOR}}">
-  <div class="chat-painel">
+  <!-- Já com --inicio: o browser pinta antes do script e o ecrã de boas-vindas saltava de largura (CLS 0,175) -->
+  <div class="chat-painel chat-painel--inicio">
 
 <!-- PROPOSTA D: o nome passa para o painel lateral -->
 

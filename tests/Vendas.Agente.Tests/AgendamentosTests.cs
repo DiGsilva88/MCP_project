@@ -72,6 +72,27 @@ public class AgendamentosTests
         Assert.Null(Agendamentos.DoPedido("""{"freq":"semanal","email":"a@inforap.pt","criador":"DOM\\outro"}""").Agendamento!.Criador);
 
     [Fact]
+    public void Guardar_SoQuemCriouTrocaOuCancela()
+    {
+        var ficheiro = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "agendamentos.json");
+        try
+        {
+            Assert.True(Agendamentos.Guardar(ficheiro, new("semanal", "a@inforap.pt", "DOM\\ana")));
+
+            Assert.False(Agendamentos.Guardar(ficheiro, new(Agendamentos.Cancelar, "a@inforap.pt", "DOM\\rui")));
+            Assert.False(Agendamentos.Guardar(ficheiro, new("mensal", "A@inforap.pt", "dom\\RUI")));
+            Assert.Equal([new("semanal", "a@inforap.pt", "DOM\\ana")], Agendamentos.Ler(ficheiro));
+
+            Assert.True(Agendamentos.Guardar(ficheiro, new(Agendamentos.Cancelar, "a@inforap.pt", "dom\\ANA")));   // o login vem com outra caixa
+            Assert.Empty(Agendamentos.Ler(ficheiro));
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(ficheiro)!, true);
+        }
+    }
+
+    [Fact]
     public void Guardar_EmParalelo_NaoPerdeNenhum()
     {
         var ficheiro = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "agendamentos.json");

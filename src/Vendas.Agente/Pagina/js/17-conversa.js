@@ -30,6 +30,7 @@
         art.setAttribute('role', 'alert');
         art.append(el('p', '', item.erro === 'vazio' ? 'O agente não devolveu resposta. Tente de novo.'
           : item.erro === 'parado' ? 'Parou a resposta antes de terminar.'
+          : item.erro === 'recusado' ? item.texto
           : 'Sem ligação ao agente. Confirme que está a correr e tente de novo.'));
         art.append(botaoEl('chat-acao', 'Tentar de novo', () => {
           historico.splice(historico.indexOf(item), 1);
@@ -89,14 +90,13 @@
         el('p', '', 'Respondo a perguntas sobre vendas, clientes e artigos com os dados da base de dados.'), lista,
         el('small', '', 'Só consulto dados — não altero nada na base de dados.'));
       const filhos = [msg];
-      // Com o Resumo carregado, o Flow aponta logo a maior quebra por zona
-      const D = resumoEstado.dados, pz = D && !D.erro && D.locaisDesce;
-      if (pz) {
+      // Com o Resumo carregado, o Flow aponta logo a maior quebra por distrito (a do alerta, com o limite e a regra escolhidos)
+      const D = resumoEstado.dados, alerta = D && !D.erro && alertasAtivos(D).filter(a => a.tipo === 'local').sort((a, b) => a.delta - b.delta)[0];
+      if (alerta) {
         const nota = el('div', 'flow-msg flow-msg--destaque');
         const texto = el('p');
-        texto.append('Hoje reparei numa coisa: ', nomeProprio(pz.nome), ' faturou ', el('strong', '', `menos ${rDec(Math.abs(pz.delta), 1)}%`), ` do que em ${D.anoAnt}. Quer ver o detalhe?`);
-        const alerta = D.alertas.find(a => a.tipo === 'local');
-        nota.append(texto, botaoEl('flow-mudar', 'Ver detalhe', () => { if (!ocupado && alerta) perguntar(alerta.pergunta); }));
+        texto.append('Hoje reparei numa coisa: ', nomeProprio(alerta.zona), ' faturou ', el('strong', '', `menos ${rDec(Math.abs(alerta.delta), 1)}%`), ` do que em ${D.anoAnt}. Quer ver o detalhe?`);
+        nota.append(texto, botaoEl('flow-mudar', 'Ver detalhe', () => { if (!ocupado) perguntar(alerta.pergunta); }));
         filhos.push(nota);
       }
       const modo = (cls, icone, titulo, texto, acao) => {

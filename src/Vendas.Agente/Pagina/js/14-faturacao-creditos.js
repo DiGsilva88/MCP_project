@@ -29,7 +29,7 @@
         <div class="res-al-lado">${detalhe}
           <section class="res-cartao" data-bloco="al-regras">
             <h3>Regras de alerta</h3>
-            ${REGRAS_ALERTA.map(([id, nome, sub]) => `<button type="button" class="res-regra" role="switch" data-regra="${id}" aria-checked="${regrasAlerta[id] !== false}"><span>${nome}<small>${sub}</small></span><i aria-hidden="true"></i></button>`).join('')}
+            ${REGRAS_ALERTA.map(r => [...r, nomeRegra(r)]).map(([id, , sub, , nome]) => `<button type="button" class="res-regra" role="switch" data-regra="${id}" aria-checked="${regrasAlerta[id] !== false}"><span>${nome}<small>${sub}</small></span><i aria-hidden="true"></i></button>`).join('')}
           </section>
         </div>`;
     }

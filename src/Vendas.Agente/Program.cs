@@ -116,32 +116,33 @@ IChatClient modelo = llm
         {
             var t = Stopwatch.StartNew();
             // Os argumentos da sensível trazem nomes de clientes: ficam fora da consola, como os resultados.
-            var argumentos = ctx.Function.Name == "consultar_sensivel"
-                ? "…"
-                : string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
+            // As recusas repetem o valor ("cliente=<nome> não está na pergunta"), por isso também.
+            var sensivel = ctx.Function.Name == "consultar_sensivel";
+            var argumentos = sensivel ? "…" : string.Join(", ", ctx.Arguments.Select(a => $"{a.Key}={a.Value}"));
+            string ParaConsola(string recusa) => sensivel ? "…" : recusa;
 
             // Valor fora do esquema: corrige-se aqui, sem ir ao servidor (lá daria um erro genérico).
             if (PoliticasSeguranca.ArgumentoInvalido(ctx.Function.JsonSchema, ctx.Arguments) is { } invalido)
             {
-                Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {invalido}");
+                Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {ParaConsola(invalido)}");
                 return invalido;
             }
             if ((PoliticasSeguranca.ValorInventado(perguntaAtual, resultadosPergunta.ToString(), ctx.Arguments)
                  ?? PoliticasSeguranca.ContarEmVezDeVendas(ctx.Function.Name, perguntaAtual, ctx.Arguments)) is { } inventado)
             {
-                Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {inventado}");
+                Console.WriteLine($"[{ctx.Function.Name}({argumentos}) recusado] {ParaConsola(inventado)}");
                 return inventado;
             }
             if (PoliticasSeguranca.PeriodoEmFalta(ctx.Function.Name, perguntaAtual, ctx.Arguments) is { } periodo)
                 ctx.Arguments["periodo"] = periodo;
             if (PoliticasSeguranca.CorrigirVendas(ctx.Function.Name, perguntaAtual, ctx.Arguments) is { } corrigido)
-                Console.WriteLine($"[{ctx.Function.Name}({argumentos}) corrigido] {corrigido}");
+                Console.WriteLine($"[{ctx.Function.Name}({argumentos}) corrigido] {ParaConsola(corrigido)}");
 
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var texto = PoliticasSeguranca.TextoDoResultado(resultado);
             resultadosPergunta.AppendLine(texto);
             // dados pessoais (NIF, contactos) não ficam no ecrã/scrollback: só o tamanho
-            var amostra = ctx.Function.Name == "consultar_sensivel"
+            var amostra = sensivel
                 ? $"({texto.Length} caracteres)"
                 : texto[..Math.Min(texto.Length, 120)].ReplaceLineEndings(" ");
             Console.WriteLine($"[{ctx.Function.Name}({argumentos}) {t.ElapsedMilliseconds} ms] {amostra}");
@@ -441,7 +442,7 @@ async Task ModoWebAsync()
                 }
             }
             // Outra página aberta no browser pode fazer POST para localhost sem CORS; o browser diz sempre a Origin.
-            else if (pedido.HttpMethod == "POST" && pedido.Headers["Origin"] is { } origem && origem != endereco.TrimEnd('/'))
+            else if (pedido.HttpMethod == "POST" && pedido.Headers["Origin"] is { } origem && (Origem(origem) is not { } o || o != Origem(endereco)))
                 resposta.StatusCode = 403;
             // Botão "Parar": cancelar só o fetch deixava o Ollama a gerar até ao fim.
             else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/parar")
@@ -472,7 +473,11 @@ async Task ModoWebAsync()
                 resposta.StatusCode = agendamento is null ? 400 : 200;
                 // Sem isto, um erro do disco caía no catch de baixo e a página via 200: "agendado" sem estar.
                 // Quem pediu fica guardado: qualquer perfil "*" pode inscrever qualquer endereço da empresa.
-                try { if (agendamento is not null) Agendamentos.Guardar(ficheiroAgendamentos, agendamento = agendamento with { Criador = perfil.Login }); }
+                try
+                {
+                    if (agendamento is not null && !Agendamentos.Guardar(ficheiroAgendamentos, agendamento = agendamento with { Criador = perfil.Login }))
+                        (agendamento, erro, resposta.StatusCode) = (null, "Este endereço foi agendado por outra pessoa: só ela o pode alterar.", 403);
+                }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
                 {
                     Console.Error.WriteLine($"Não consegui guardar o agendamento: {ex.Message}");
@@ -499,7 +504,9 @@ async Task ModoWebAsync()
                     // A página só pergunta de novo depois de Parar ou recarregar: a pergunta anterior está abandonada.
                     var cancelar = new CancellationTokenSource();
                     perguntasEmCurso.AddOrUpdate(perfil.Login, cancelar, (_, anterior) => { anterior.Cancel(); return cancelar; });
-                    await umaPergunta.WaitAsync();
+                    // Parar (ou uma pergunta nova) também tira da fila quem ainda espera pela vez
+                    try { await umaPergunta.WaitAsync(cancelar.Token); }
+                    catch (OperationCanceledException) { return; }
                     try
                     {
                         await ResponderAsync(pergunta, async texto =>
@@ -542,6 +549,11 @@ async Task ModoWebAsync()
         }
     }
 }
+
+// "esquema://host[:porta]" como o browser o manda na Origin: host em minúsculas, sem a porta por omissão (443/80).
+// Comparar o texto tal e qual dava 403 a todos os POST com VENDAS_ENDERECO=https://Vendas.Empresa.local:443/.
+static string? Origem(string endereco) =>
+    Uri.TryCreate(endereco, UriKind.Absolute, out var u) ? u.GetLeftPart(UriPartial.Authority) : null;
 
 // Lê no máximo max + 1 caracteres: um corpo enorme nunca chega todo à memória. null = maior que max.
 static async Task<string?> LerCorpoAsync(System.Net.HttpListenerRequest pedido, int max)

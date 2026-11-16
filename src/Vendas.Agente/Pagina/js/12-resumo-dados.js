@@ -27,12 +27,20 @@
     const alertasLidos = new Set(lerGuardado('sessionStorage', 'flow-alertas-lidos', []));
     const guardarLidos = () => guardarValor('sessionStorage', 'flow-alertas-lidos', [...alertasLidos]);
     const regrasAlerta = lerGuardado('localStorage', 'flow-alertas-regras', {});
-    const REGRAS_ALERTA = [['distrito', 'Distrito cai mais de 20%', 'Comparado com o mesmo período do ano anterior'], ['artigo', 'Artigo cai mais de 25%', 'Entre os artigos mais vendidos'],
-                           ['cliente', 'Cliente cai mais de 25%', 'Entre os maiores clientes'], ['parados', 'Clientes sem compras há 90 dias', 'Em toda a carteira']];
+    // [id, nome, explicação, limite por omissão (% de queda; null = sem limite: os 90 dias dos parados vêm do servidor)]
+    const REGRAS_ALERTA = [['distrito', 'Distrito cai mais de', 'Comparado com o mesmo período do ano anterior', 20], ['artigo', 'Artigo cai mais de', 'Entre os artigos mais vendidos', 25],
+                           ['cliente', 'Cliente cai mais de', 'Entre os maiores clientes', 25], ['parados', 'Clientes sem compras há 90 dias', 'Em toda a carteira', null]];
+    // Limites de queda escolhidos na vista Alertas (neste computador, como as regras). Um valor guardado fora de 5–90 volta ao da regra.
+    const LIMITE_MIN = 5, LIMITE_MAX = 90;
+    const limiteValido = v => Number.isInteger(v) && v >= LIMITE_MIN && v <= LIMITE_MAX;
+    const limitesAlerta = lerGuardado('localStorage', 'flow-alertas-limites', {});
+    const limiteDe = id => { const r = REGRAS_ALERTA.find(x => x[0] === id); return r && r[3] != null ? (limiteValido(limitesAlerta[id]) ? limitesAlerta[id] : r[3]) : null; };
+    const nomeRegra = ([id, nome, , omissao]) => omissao == null ? nome : `${nome} ${limiteDe(id)}%`;
     const SEV_ORDEM = { 'Crítico': 0, 'Aviso': 1, 'Info': 2 }, SEV_CLASSE = { 'Crítico': 'res-sev--critico', 'Aviso': 'res-sev--aviso', 'Info': 'res-sev--info' };
     const alertaPorLer = a => !alertasLidos.has(a.id);
     const FILTROS_ALERTA = [['Todos', () => true], ['Por ler', alertaPorLer], ['Críticos', a => a.sev === 'Crítico'], ['Avisos', a => a.sev === 'Aviso'], ['Info', a => a.sev === 'Info']];
-    const alertasAtivos = D => !D || !D.alertas ? [] : D.alertas.filter(a => !a.regra || regrasAlerta[a.regra] !== false).sort((a, b) => SEV_ORDEM[a.sev] - SEV_ORDEM[b.sev]);
+    // Os alertas guardam a queda (delta): o limite aplica-se aqui, por isso mudá-lo não volta a pedir o resumo
+    const alertasAtivos = D => !D || !D.alertas ? [] : D.alertas.filter(a => (!a.regra || regrasAlerta[a.regra] !== false) && (a.delta == null || a.delta <= -limiteDe(a.regra))).sort((a, b) => SEV_ORDEM[a.sev] - SEV_ORDEM[b.sev]);
     const alertasVisiveis = D => alertasAtivos(D).filter((FILTROS_ALERTA.find(f => f[0] === resumoEstado.alertaFiltro) || FILTROS_ALERTA[0])[1]);
     const nAlertasPorLer = D => alertasAtivos(D).filter(alertaPorLer).length;
 
@@ -263,18 +271,19 @@
       const nClientes = new Map((j.distritosClientes || '').split(/\r?\n/).slice(2).map(l => partir(l.trim(), ','))
         .filter(c => c.length === 3).map(c => [c[0].toLowerCase(), +c[1]]));
       const locais = positivos(j.localidades).filter(i => !/^\(/.test(i.nome));
-      // Alertas: só o que os dados dizem. Queda de 50% ou mais é crítica; abaixo disso, aviso. Os limites são os das REGRAS_ALERTA.
+      // Alertas: só o que os dados dizem. Queda de 50% ou mais é crítica; abaixo disso, aviso.
+      // Entram todas as quedas desde o limite mínimo (LIMITE_MIN), com o delta: o limite de cada regra filtra-as no alertasAtivos.
       const idAlerta = (regra, nome) => [resumoEstado.periodo, resumoEstado.zona, resumoEstado.cliente, regra, nome].join('|');
       const quebras = (itens, limite) => itens.filter(i => i.delta <= limite).sort((a, b) => a.delta - b.delta);
       const gravidade = d => d <= -50 ? 'Crítico' : 'Aviso';
       const menos = i => `menos ${rPct(Math.abs(i.delta))} do que no mesmo período de ${anoAnt}`;
       const alertas = rm.avisos.map(a => ({ id: idAlerta('dados', a), tipo: 'dados', sev: 'Info', cat: 'Dados', regra: null, ver: 'geral', tag: 'Dados incompletos', titulo: 'Dados incompletos', texto: maiuscula(a), pergunta: '' }));
-      const pa = descida(artigos), zonasEmQuebra = quebras(resumoEstado.zona ? zonas.filter(z => z.nome === resumoEstado.zona) : zonas, -20), pz = zonasEmQuebra[0];
-      zonasEmQuebra.forEach(z => alertas.push({ id: idAlerta('distrito', z.nome), tipo: 'local', sev: gravidade(z.delta), cat: 'Distritos', regra: 'distrito', ver: 'zonas', zona: z.nome, tag: 'Distrito em quebra',
+      const pa = descida(artigos);
+      quebras(resumoEstado.zona ? zonas.filter(z => z.nome === resumoEstado.zona) : zonas, -LIMITE_MIN).forEach(z => alertas.push({ id: idAlerta('distrito', z.nome), tipo: 'local', sev: gravidade(z.delta), delta: z.delta, cat: 'Distritos', regra: 'distrito', ver: 'zonas', zona: z.nome, tag: 'Distrito em quebra',
         titulo: `${nomeProprio(z.nome)} caiu ${rPct(Math.abs(z.delta))}`, texto: `Faturou ${rEur(z.num)}, ${menos(z)}.`, pergunta: `Comparar as vendas do distrito ${nomeProprio(z.nome)} mês a mês com o ano passado` }));
-      quebras(artigos, -25).forEach(a => alertas.push({ id: idAlerta('artigo', a.nome), tipo: 'artigo', sev: gravidade(a.delta), cat: 'Artigos', regra: 'artigo', ver: 'artigos', tag: 'Artigo em quebra',
+      quebras(artigos, -LIMITE_MIN).forEach(a => alertas.push({ id: idAlerta('artigo', a.nome), tipo: 'artigo', sev: gravidade(a.delta), delta: a.delta, cat: 'Artigos', regra: 'artigo', ver: 'artigos', tag: 'Artigo em quebra',
         titulo: `${a.nome} caiu ${rPct(Math.abs(a.delta))}`, texto: `Vendeu ${rEur(a.num)}, ${menos(a)}.`, pergunta: resumoEstado.cliente ? '' : 'Comparar as vendas por artigo com o ano passado' }));
-      quebras(positivos(j.clientes).slice(0, 10), -25).forEach(c => alertas.push({ id: idAlerta('cliente', c.nome), tipo: 'cliente', sev: gravidade(c.delta), cat: 'Clientes', regra: 'cliente', ver: 'clientes', cliente: c.codigo || c.nome, tag: 'Cliente em queda',
+      quebras(positivos(j.clientes).slice(0, 10), -LIMITE_MIN).forEach(c => alertas.push({ id: idAlerta('cliente', c.nome), tipo: 'cliente', sev: gravidade(c.delta), delta: c.delta, cat: 'Clientes', regra: 'cliente', ver: 'clientes', cliente: c.codigo || c.nome, tag: 'Cliente em queda',
         titulo: `${nomeProprio(c.nome)} caiu ${rPct(Math.abs(c.delta))}`, texto: `Comprou ${rEur(c.num)}, ${menos(c)}.`, pergunta: `Que artigos comprou o cliente ${nomeProprio(c.nome)} este ano?` }));
       const parados = num(j.semVendas, /^Clientes sem vendas[^:]*:\s*([\d\s]+?)\s+clientes/);
       if (parados) alertas.push({ id: idAlerta('parados', ''), tipo: 'cliente', sev: 'Aviso', cat: 'Clientes', regra: 'parados', ver: 'clientes', tag: 'Clientes sem compras', titulo: `${rGrupos(parados)} clientes sem compras`, texto: `${rGrupos(parados)} clientes não compram há 90 dias.`, pergunta: 'Clientes que não compram há 90 dias?' });
@@ -328,7 +337,6 @@
         localidades: j.localidades ? positivos(j.localidades).map(i => ({ nome: i.nome, num: i.num, delta: i.delta, novo: i.novo, semDados: /^\(/.test(i.nome) })) : null,
         localidadesTotal: +((j.localidades || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,
         localidadesSobe: subida(locais), localidadesDesce: descida(locais),
-        locaisDesce: pz,
         clientes: j.clientes ? positivos(j.clientes).slice(0, 10) : null,
         carteira: j.clientes ? positivos(j.clientes).map(c => ({ ...c, ...fichaCarteira.get(c.codigo) })) : null,
         clientesTotal: +((j.clientes || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,

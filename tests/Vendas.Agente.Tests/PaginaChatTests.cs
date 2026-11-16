@@ -44,8 +44,11 @@ public class PaginaChatTests
     [Fact]
     public void EcraDeEntrada_TemOAvatarEmbebido()
     {
-        Assert.Contains("Como o Flow responde", Html);
-        Assert.Contains("'flow-ini-dica'", Html);
+        Assert.Contains("'Uma plataforma.'", Html);
+        Assert.Contains("'flow-ini-pergunta'", Html);
+        Assert.Contains("/fonts/Onest-Variable.woff2", Html);
+        using var fonte = typeof(PaginaChat).Assembly.GetManifestResourceStream("fonts/Onest-Variable.woff2");
+        Assert.NotNull(fonte);    // a fonte do ecrã de entrada: sem o recurso, o título caía para a 72
         Assert.Contains("/imagens/avatar-flow.png", Html);
         using var imagem = typeof(PaginaChat).Assembly.GetManifestResourceStream("imagens/avatar-flow.png");
         Assert.NotNull(imagem);   // sem o recurso, a rota dava 404 e o ecrã ficava sem avatar
