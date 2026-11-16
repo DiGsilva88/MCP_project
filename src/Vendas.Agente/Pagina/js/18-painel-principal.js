@@ -65,7 +65,7 @@
           <p class="flow-ini-leg"><i></i>Média 198 mil €</p></div>
         <div class="flow-ini-cartao flow-ini-c2"><h4>Faturação por loja <small>Últimos 30 dias</small></h4>
           <div class="flow-ini-donut"><svg width="96" height="96" viewBox="0 0 42 42"><circle cx="21" cy="21" r="15.9" fill="none" stroke="#e4ebff" stroke-width="6"/><circle cx="21" cy="21" r="15.9" fill="none" stroke="#1f5bf5" stroke-width="6" stroke-dasharray="44 56" stroke-dashoffset="25"/><circle cx="21" cy="21" r="15.9" fill="none" stroke="#000" stroke-width="6" stroke-dasharray="26 74" stroke-dashoffset="81"/><circle cx="21" cy="21" r="15.9" fill="none" stroke="#9db5ff" stroke-width="6" stroke-dasharray="18 82" stroke-dashoffset="55"/></svg><ul>${fatias}</ul></div></div>
-        <p class="flow-ini-exemplo">Exemplo</p>`;
+        <p></p>`;
 
       const grelha = el('div', 'flow-ini-grelha');
       grelha.append(esq, arte);
@@ -133,6 +133,7 @@
     // Mostrar ou esconder a janela da conversa; o botão redondo diz sempre o que vai fazer
     const lancador = document.getElementById('mostrar-conversa');
     function verConversa(sim) {
+      if (soPainel) return;
       painelRaiz.classList.toggle('chat-painel--sem-conversa', !sim);
       lancador.setAttribute('aria-expanded', String(sim));
       lancador.setAttribute('aria-label', sim ? 'Flow, assistente de vendas: minimizar a conversa' : 'Flow, assistente de vendas: abrir a conversa');
@@ -293,14 +294,17 @@
       const msg = el('p', '', 'A consultar…');
       // o modelo em CPU pode levar mais de um minuto; o contador mostra que não parou
       const inicio = Date.now();
+      let rotulo = 'A consultar…';
       const relogio = setInterval(() => {
-        msg.textContent = `A consultar… ${Math.round((Date.now() - inicio) / 1000)} s`;
+        msg.textContent = `${rotulo} ${Math.round((Date.now() - inicio) / 1000)} s`;
       }, 1000);
+      // Outra pessoa a ser atendida: diz porque espera, até chegar a vez
+      const naFila = fila => { rotulo = fila ? 'Na fila: há outra pergunta em curso, a sua começa a seguir…' : 'A consultar…'; msg.textContent = rotulo; };
       art.append(msg, esq, pontos, botaoEl('chat-acao', 'Parar', parar));
       desenharConversa();                          // a pergunta já aparece na conversa
       area.append(comAvatar(art));
       area.scrollTop = area.scrollHeight;
       // Chamada no 1.º bocado da resposta: para o relógio e troca a mensagem pelos pontos
       const aChegar = () => { clearInterval(relogio); msg.hidden = true; esq.hidden = true; pontos.hidden = false; };
-      return { aChegar, relogio };
+      return { aChegar, relogio, naFila };
     }

@@ -139,7 +139,7 @@ public class ApiPainelTests
         Assert.Equal(200, r.Estado);
         Assert.StartsWith("text/plain", r.Tipo);
         Assert.Equal("1003", t.Chamadas[0].Args["cliente"]);
-        Assert.False(t.Chamadas[0].Args.ContainsKey("cruzarCom"));
+        Assert.False(t.Chamadas[0].Args.ContainsKey("vendedor"));
     }
 
     [Theory]
@@ -150,9 +150,33 @@ public class ApiPainelTests
         var t = new Tools(resposta);
 
         Assert.Equal(404, (await t.Api().TratarAsync("/api/clientes/1", Q(), Ana)).Estado);
-        Assert.Equal("Vendedor", t.Chamadas[0].Args["cruzarCom"]);
-        Assert.Equal("Ana", t.Chamadas[0].Args["valorCruzado"]);
+        Assert.Equal("Ana", t.Chamadas[0].Args["vendedor"]);
     }
+
+    [Theory]
+    // POST: só da própria origem (sem Origin = não veio de um browser noutra página)
+    [InlineData("POST", "/feedback", "http://localhost:5080", null, false, false)]
+    [InlineData("POST", "/feedback", null, null, false, false)]
+    [InlineData("POST", "/perguntar", "https://evil.example", null, false, true)]
+    [InlineData("POST", "/feedback", "http://localhost:5081", null, false, true)]   // outra porta do mesmo PC
+    [InlineData("POST", "/feedback", "nao-e-url", null, false, true)]
+    // Vendedor: sem chat nem email
+    [InlineData("POST", "/perguntar", "http://localhost:5080", null, true, true)]
+    [InlineData("POST", "/agendamentos", "http://localhost:5080", null, true, true)]
+    [InlineData("POST", "/feedback", "http://localhost:5080", null, true, false)]
+    // /resumo e /api/: só a própria página ou o endereço escrito à mão
+    [InlineData("GET", "/resumo", null, "same-origin", false, false)]
+    [InlineData("GET", "/api/creditos", null, "none", false, false)]
+    [InlineData("GET", "/resumo", null, "same-site", false, true)]
+    [InlineData("GET", "/api/creditos", null, "cross-site", false, true)]
+    [InlineData("GET", "/api/creditos", null, null, false, true)]
+    [InlineData("GET", "/", null, "cross-site", false, false)]                       // a página em si abre de qualquer lado
+    public void Recusa_RegrasDeAcesso(string metodo, string caminho, string? origem, string? secFetchSite, bool vendedor, bool recusado)
+        => Assert.Equal(recusado, ApiPainel.Recusa(metodo, caminho, origem, secFetchSite, "http://localhost:5080/", vendedor) is not null);
+
+    [Fact]
+    public void Recusa_OrigemComPortaPorOmissaoEMaiusculas_Aceite()
+        => Assert.Null(ApiPainel.Recusa("POST", "/feedback", "https://vendas.empresa.local", null, "https://Vendas.Empresa.local:443/", false));
 
     [Fact]
     public async Task FalhaDaFerramenta_502()

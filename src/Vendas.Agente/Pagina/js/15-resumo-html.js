@@ -66,7 +66,7 @@
       const alertaHtml = a => {
         const corpo = `<span class="res-alerta-ic" style="${(IC[a.tipo] || IC.dados)[1]}">${svgIc((IC[a.tipo] || IC.dados)[0], 18)}</span>
           <span class="res-alerta-txt"><b>${rEsc(a.titulo)}</b><span>${rEsc(a.texto)}</span></span>`;
-        return a.pergunta ? `<li><button type="button" class="res-alerta" data-perguntar="${rEsc(a.pergunta)}" title="Perguntar ao Flow">${corpo}</button></li>` : `<li><div class="res-alerta">${corpo}</div></li>`;
+        return a.pergunta && !soPainel ? `<li><button type="button" class="res-alerta" data-perguntar="${rEsc(a.pergunta)}" title="Perguntar ao Flow">${corpo}</button></li>` : `<li><div class="res-alerta">${corpo}</div></li>`;
       };
       const emAtencao = alertasAtivos(D);
       const htmlAten = `<section class="res-cartao res-cartao--atencao" data-bloco="aten">
@@ -219,7 +219,7 @@
         htmlLocTab = `<section class="res-cartao res-tabela" data-bloco="loc-tab">
           <div class="res-cab"><h3>Localidades com mais vendas</h3><span class="res-sub">Por faturação${D.localidadesTotal > locs.length ? ` · as ${locs.length} maiores, de ${D.localidadesTotal}` : ''}</span></div>
           <div class="res-tab-linha res-tab-cab res-tab--art" aria-hidden="true"><span>Localidade</span><span>Faturação</span><span>% total</span><span>${vsAnt}</span></div>
-          ${locs.map(l => l.semDados ? `<div class="res-tab-linha res-tab--art">${celulas(l)}</div>`
+          ${locs.map(l => l.semDados || soPainel ? `<div class="res-tab-linha res-tab--art">${celulas(l)}</div>`
             : `<button type="button" class="res-tab-linha res-tab--art" data-perguntar="${rEsc(`Comparar as vendas da localidade ${nomeProprio(l.nome)} mês a mês com o ano passado`)}">${celulas(l)}</button>`).join('')}
         </section>`;
         htmlLocLado = `<section class="res-cartao res-cartao--lado" data-bloco="loc-lado">

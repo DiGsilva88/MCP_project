@@ -94,7 +94,8 @@ projeto_Mcp/
    - `semVendas=true`: clientes **sem** compras no período, com a data da última compra (não se combina com `cliente`);
    - `emCada` (opcional): o 1.º de `agrupar` dentro de cada grupo, com a % no grupo (ex.: `agrupar=Artigo, emCada=Distrito` = o artigo mais vendido em cada distrito; `agrupar=Localidade, emCada=Mes`). Não se aplica a `Cliente`, e as duas dimensões não podem ser ambas da ficha;
    - `compararAnoAnterior=true`: cada linha com o mesmo intervalo um ano antes (01-01 a 26-10 contra 01-01 a 26-10 do ano anterior), com a variação em %, e o total dos dois no título. Meses e trimestres emparelham pelo ano − 1 (`2026-01` ↔ `2025-01`), o resto pelo nome. Não se combina com `semVendas` nem `emCada`;
-   - `limite` (1–100; ignorado em `Mes`/`Trimestre`, que vêm sempre completos).
+   - `limite` (1–100; ignorado em `Mes`/`Trimestre`, que vêm sempre completos);
+   - `vendedor`: só do painel, com o filtro do perfil de vendedor (também em `consultar`, `consultar_documentos`, `consultar_carteira` e `consultar_creditos`). Nunca é trocado por um cliente nem dá a lista de valores existentes; o `Vendas.Agente` tira-o sempre ao modelo.
 
    A resposta traz um título com período, datas, total e nº de documentos, o valor médio por documento, a lista numerada (valor e % do total, ou unidades) e o rodapé `Mostro N de M`. Avisa (`Atenção: …`) quando a última venda do período é mais de 7 dias antes do fim, ou quando o período vem vazio (diz até onde vão os dados).
 
@@ -192,7 +193,7 @@ Mostra as tools disponíveis e pergunta o modo:
 
 1. **Perguntas livres** — lê perguntas do teclado (Enter vazio termina) e o modelo escolhe a tool. Cada chamada mostra a tool, os argumentos, o tempo e o início do resultado (`[consultar_vendas(agrupar=Cliente, …) 120 ms] …`; em `consultar_sensivel` só o tamanho, para os dados pessoais não ficarem no ecrã). No fim: tempo até ao 1.º token, total e tokens lidos.
 2. **Menu fixo** — sem modelo: escolhas numeradas que chamam a tool `consultar` diretamente.
-3. **Chat no browser** — o mesmo fluxo do modo 1 numa página local em `http://localhost:5080` (abre sozinha). Também arranca direto com `dotnet run --project src/Vendas.Agente -- --web`. A resposta aparece à medida que é gerada; as chamadas às tools e os erros técnicos só aparecem na consola. Cada pedido é autenticado com o login do Windows (o browser envia-o sozinho; sem ele → 401). Sem `perfis.json` só entra o utilizador Windows que arrancou o agente; outra sessão do mesmo PC recebe 403. Só aceita pedidos de `localhost` (POST de outra origem → 403; `GET /resumo` só da própria página), perguntas de 1 a 500 caracteres e uma pergunta ao modelo de cada vez (o Resumo e o resto da página continuam a responder). **Parar** cancela também a geração no Ollama (`POST /parar`).
+3. **Chat no browser** — o mesmo fluxo do modo 1 numa página local em `http://localhost:5080` (abre sozinha). Também arranca direto com `dotnet run --project src/Vendas.Agente -- --web`. A resposta aparece à medida que é gerada; as chamadas às tools e os erros técnicos só aparecem na consola. Cada pedido é autenticado com o login do Windows (o browser envia-o sozinho; sem ele → 401). Sem `perfis.json` só entra o utilizador Windows que arrancou o agente; outra sessão do mesmo PC recebe 403. Só aceita pedidos de `localhost` (POST de outra origem → 403; `GET /resumo` só da própria página), perguntas de 1 a 500 caracteres e uma pergunta ao modelo de cada vez (quem espera vê "Na fila"; o Resumo e o resto da página continuam a responder). **Parar** cancela também a geração no Ollama (`POST /parar`).
 
 - Modelo por omissão `qwen3:4b-instruct` (o 7b é pesado demais para CPU); `OLLAMA_MODELO` muda-o. Fica carregado em memória (`keep_alive = -1m`), `Temperature = 0` e janela fixa `NumCtx = 8192` — um prompt maior faria o Ollama cortar o início, que são as regras de segurança.
 - O modelo é aquecido em paralelo com a escolha do modo.
@@ -210,7 +211,7 @@ Mostra as tools disponíveis e pergunta o modo:
 - **Ficha do cliente**: `GET /api/clientes/<ID>` chama a tool `consultar`, sem modelo. Mostra a ficha e as condições de faturação, sem NIF nem contactos.
 - **Notas de crédito**: `GET /api/creditos?tipo=N|C&q=&page=&periodo=&zona=&cliente=` pagina no SQL e guarda cada resposta 60 s. Clicar numa linha abre `GET /api/documentos/<N-10-2026-1034675>`. O painel mostra uma pré-visualização, que nunca substitui o PDF emitido, e aceita ligações diretas com `#N-10-2026-1034675`. As setas ↑/↓ mudam de documento e Esc fecha.
 - **Por ligar**: `GET /api/documentos/<id>/pdf` devolve sempre 404 e a origem, o ATCUD e o QR vêm vazios, porque ainda não se sabe em que tabelas estão. "Associar fatura" é só uma simulação e não grava nada.
-- **Auditoria**: cada documento aberto acrescenta uma linha a `%LOCALAPPDATA%\Vendas\auditoria.log` (data, login e documento). Nada é escrito na base de dados.
+- **Auditoria**: cada documento aberto e cada chamada a `consultar_sensivel` (NIF, contactos…) acrescentam uma linha a `%LOCALAPPDATA%\Vendas\auditoria.log` (data, login e o documento ou os argumentos da chamada). Nada é escrito na base de dados.
 
 ### Ver o painel sem a base de dados
 
@@ -246,7 +247,7 @@ Corre uma só instância central, que os utilizadores abrem no browser. Uma inst
 
 5. Arrancar `Vendas.Agente.exe --web` com o Agendador do Windows, ao iniciar o sistema e com essa conta. Com vários servidores RDS a aceder a um central, usar HTTPS.
 
-Um perfil de vendedor vê o painel e as listas filtrados, mas não o chat nem o envio de resumos por email, que têm dados de todos os clientes.
+Um perfil de vendedor vê o painel e as listas filtrados (o filtro vai no parâmetro `vendedor` das ferramentas e soma-se ao distrito escolhido), mas não o chat nem o envio de resumos por email, que têm dados de todos os clientes: a página nem os mostra.
 - **Exportar**: no painel escolhem-se as secções que entram no CSV; o ficheiro respeita o período e os filtros aplicados.
 
 ### Testar com a Claude em vez do Ollama

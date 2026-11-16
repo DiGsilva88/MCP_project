@@ -42,7 +42,7 @@ public static class Periodos
         if (trimestre is not null && mes is not null) return (null, "mes e trimestre não se combinam. Chama de novo só com um.");
 
         if (dataInicio is not null || dataFim is not null)
-            return ResolverDatas(dataInicio, dataFim);
+            return ResolverDatas(dataInicio, dataFim, hoje);
 
         // O modelo pequeno não fazia as contas às datas de "1.º trimestre": escolhia TrimestreAtual.
         if (trimestre is { } t)
@@ -73,7 +73,7 @@ public static class Periodos
         return null;
     }
 
-    private static (IntervaloVendas? Intervalo, string? Erro) ResolverDatas(string? dataInicio, string? dataFim)
+    private static (IntervaloVendas? Intervalo, string? Erro) ResolverDatas(string? dataInicio, string? dataFim, DateOnly hoje)
     {
         if (dataInicio is null || dataFim is null)
             return (null, "dataInicio e dataFim têm de ser usados juntos.");
@@ -83,6 +83,8 @@ public static class Periodos
             return (null, "Datas no formato dd-MM-aaaa, ex.: 01-08-2026.");
 
         if (fim < inicio) return (null, "dataFim tem de ser igual ou depois de dataInicio.");
+        // Os mesmos anos que mes/ano: 31-12-9999 rebentava no AddDays(1) (e 01-01-0001 na comparação com o ano anterior).
+        if (inicio.Year < 2000 || fim.Year > hoje.Year) return (null, $"As datas têm de ser de 2000 a {hoje.Year}.");
 
         // "Ate" é exclusivo: soma-se um dia à data final pedida.
         return (new IntervaloVendas(inicio, fim.AddDays(1), "período indicado"), null);

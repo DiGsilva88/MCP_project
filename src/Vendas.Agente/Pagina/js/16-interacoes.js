@@ -97,7 +97,7 @@
         if ('semCliente' in d) { pedirResumo(null); return; }
         if ('repetir' in d) { carregarResumo(); return; }
         if ('limpar' in d) { Object.assign(resumoEstado, { zona: null, cliente: null, periodo: 'AnoAtual' }); carregarResumo(); return; }
-        if (d.perguntar) { verConversa(true); prepararPergunta(d.perguntar); }
+        if (d.perguntar && !soPainel) { verConversa(true); prepararPergunta(d.perguntar); }
       });
     }
 

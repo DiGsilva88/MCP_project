@@ -18,6 +18,8 @@
         boasVindasAberta = false; secao = l.secao; modoInicio = 'dados';
       }
     } catch { }
+    // Vendedor: as boas-vindas são uma caixa de pergunta, que ele não pode usar; entra direto no painel, sem conversa
+    if (soPainel) { boasVindasAberta = false; modoInicio = 'dados'; painelRaiz.classList.add('chat-painel--sem-conversa'); }
     mostrarInicio();
     carregarResumo();   // o Resumo carrega logo ao abrir (por trás das boas-vindas)
 

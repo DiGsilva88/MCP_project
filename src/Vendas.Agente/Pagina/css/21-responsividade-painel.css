@@ -50,3 +50,5 @@
     /* Alvos de clique com pelo menos 24px de altura (WCAG 2.5.8) */
     :is(.res-ver-todos, .res-ver-alertas, .doc-link) { min-height: 24px; }
     .flow-pesquisa input { min-height: 24px; }
+    /* Perfil de vendedor: sem conversa, email à segunda nem botões "Perguntar ao Flow" (o servidor recusa-os) */
+    body[data-vendedor="1"] :is(.chat-conversa, .chat-lancador, #topo-email, .res-btn-flow, .chat-leitura-btn, .flow-ini-pergunta, .flow-ini-sub, .flow-ini-msg) { display: none !important; }

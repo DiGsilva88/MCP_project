@@ -46,6 +46,7 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         [Description("Página das linhas, 1 é a primeira (não pagina contagens).")] int pagina = 1,
         [Description("Opcional: início do nome do cliente, tal como o utilizador o disse.")] string? nomeComecaPor = null,
         [Description("Opcional: ID ou nome de um só cliente.")] string? cliente = null,
+        [Description("Só do painel, não usar. Clientes de um vendedor: coluna ou cruzarCom=Vendedor.")] string? vendedor = null,
         CancellationToken ct = default)
     {
         // "Ficha do cliente 28121": sem este parâmetro o modelo não tinha forma de pedir um cliente pelo ID.
@@ -79,6 +80,9 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
         var filtros = new Dictionary<Campo, string>();
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
         if (temValorCruzado) filtros[cruzarCom!.Value] = valorCruzado!.Trim();
+        // "Valores existentes" só fala do que foi pedido: com o vendedor do perfil mostraria os outros vendedores.
+        var pedidos = new Dictionary<Campo, string>(filtros);
+        if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
 
         limite = Math.Clamp(limite, 1, Respostas.Maxlinhas);
         var deslocamento = (Math.Clamp(pagina, 1, MaxPaginas) - 1) * limite;
@@ -88,8 +92,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             if (contar)
             {
                 var contagens = await repo.ContarAsync(coluna!.Value, filtros, limite, ct);
-                return contagens.Count == 0 && filtros.Count > 0
-                    ? avisoMesmoValor ?? await Respostas.SemCorrespondenciaAsync(repo, filtros, ct)
+                return contagens.Count == 0 && pedidos.Count > 0
+                    ? avisoMesmoValor ?? await Respostas.SemCorrespondenciaAsync(repo, pedidos, ct)
                     : FormatarContagem(coluna.Value.ToString(), contagens, filtros);
             }
 
@@ -102,8 +106,8 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
 
             var resultado = await repo.ListarAsync(
                 coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, nomeComecaPor, id, ct);
-            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor) && id is null
-                ? avisoMesmoValor ?? await Respostas.SemCorrespondenciaAsync(repo, filtros, ct)
+            return resultado.Linhas.Count == 0 && pedidos.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor) && id is null
+                ? avisoMesmoValor ?? await Respostas.SemCorrespondenciaAsync(repo, pedidos, ct)
                 : FormatarDados(resultado, filtros);
         });
     }
