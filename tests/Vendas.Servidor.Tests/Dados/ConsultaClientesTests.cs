@@ -28,6 +28,25 @@ public class ConsultaClientesTests
     }
 
     [Fact]
+    public void FiltroDeVendedor_SoONomeExato()
+    {
+        // Com LIKE, o perfil "Ana Silva" via também os clientes de "Ana Silva Costa".
+        var (sql, _) = ConsultaClientes.FiltrosWhere(new Dictionary<Campo, string> { [Campo.Vendedor] = "Ana Silva" });
+
+        Assert.Equal("WHERE (c.[Vendedor] COLLATE Latin1_General_CI_AI = @filtro0)", sql);
+    }
+
+    [Fact]
+    public void Listar_ComId_SoOIdExato()
+    {
+        var (sql, aplicar) = ConsultaClientes.Listar([Campo.Zona], new Dictionary<Campo, string>(), 0, id: "12");
+
+        Assert.Contains("CAST(c.ClienteID AS nvarchar(50)) = @id", sql);
+        Assert.DoesNotContain("@nome", sql); // "12" não apanha o cliente "12 Garrafas"
+        Assert.Equal("12", Aplicar(aplicar)["@id"].Value);
+    }
+
+    [Fact]
     public void Listar_SemFiltros_NaoTemWhereEPaginaComOffset()
     {
         var (sql, aplicarParametros) = ConsultaClientes.Listar(

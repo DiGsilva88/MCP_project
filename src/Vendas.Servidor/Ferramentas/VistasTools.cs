@@ -93,16 +93,16 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
                     : FormatarContagem(coluna.Value.ToString(), contagens, filtros);
             }
 
+            string? id = null;
             if (temCliente)
             {
-                var (id, _, erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
+                (id, _, var erro) = await Respostas.ResolverClienteAsync(repo, cliente, filtros, ct);
                 if (erro is not null) return erro;
-                nomeComecaPor = id;
             }
 
             var resultado = await repo.ListarAsync(
-                coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, nomeComecaPor, ct);
-            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor)
+                coluna is null ? TodasAsColunas : [coluna.Value], filtros, deslocamento, limite, nomeComecaPor, id, ct);
+            return resultado.Linhas.Count == 0 && filtros.Count > 0 && deslocamento == 0 && string.IsNullOrWhiteSpace(nomeComecaPor) && id is null
                 ? avisoMesmoValor ?? await Respostas.SemCorrespondenciaAsync(repo, filtros, ct)
                 : FormatarDados(resultado, filtros);
         });
@@ -154,14 +154,14 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             // Sem valores no log de erros: são dados pessoais.
             return await Respostas.ExecutarAsync(log, "consultar_sensivel", dado, async () =>
             {
-                string? rotulo = null;
+                string? rotulo = null, id = null;
                 if (temCliente)
                 {
-                    (nomeComecaPor, rotulo, var erro) = await Respostas.ResolverClienteAsync(repo, cliente, ct);
+                    (id, rotulo, var erro) = await Respostas.ResolverClienteAsync(repo, cliente, filtros, ct);
                     if (erro is not null) return erro;
                 }
 
-                var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, nomeComecaPor, mostrarTambem, ct);
+                var resultado = await repo.ListarSensivelAsync(dado, filtros, maiores, deslocamento, limite, nomeComecaPor, mostrarTambem, id, ct);
                 linhas = resultado.Linhas.Count;
                 // Diz qual cliente é: a linha só traz o nome, e "Nenhuma linha" parecia "o cliente não existe".
                 if (rotulo is not null)
@@ -178,9 +178,9 @@ public sealed class VistasTools(IVendasRepo repo, ILogger<VistasTools> log)
             // Auditoria de cada acesso, também os que falham. Regista os parâmetros (o que permite ver
             // extrações por nomeComecaPor/páginas) mas nunca os valores devolvidos.
             log.LogInformation(
-                "Auditoria: consultar_sensivel dado={Dado} filtros={Filtros} nomeComecaPor={Nome} maiores={Maiores} " +
+                "Auditoria: consultar_sensivel dado={Dado} filtros={Filtros} nomeComecaPor={Nome} cliente={Cliente} maiores={Maiores} " +
                 "mostrarTambem={Tambem} pagina={Pagina} limite={Limite} linhas={Linhas}",
-                dado, string.Join(", ", filtros.Select(f => $"{f.Key}={f.Value}")), nomeComecaPor, maiores,
+                dado, string.Join(", ", filtros.Select(f => $"{f.Key}={f.Value}")), nomeComecaPor, cliente, maiores,
                 mostrarTambem, pagina, limite, linhas?.ToString() ?? "falhou");
         }
     }

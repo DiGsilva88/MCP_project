@@ -149,20 +149,25 @@ internal static class ConsultaVendas
     // Clientes com esse ID exato ou cujo nome começa pelo texto (sem acentos/maiúsculas); o ID exato vem primeiro.
     // A tool usa isto para saber se o cliente existe e se é só um, antes de somar vendas.
     // Os REPLACE escapam [ % _ para o texto do modelo nunca funcionar como wildcard (igual à ConsultaClientes).
-    public static (string Sql, Action<SqlParameterCollection> Parametros) ProcurarClientes(string cliente)
+    // filtros: só procura entre esses clientes (ex.: o vendedor do perfil), para a lista "Vários clientes…" e o nome
+    // devolvido nunca mostrarem clientes de outro vendedor.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) ProcurarClientes(
+        string cliente, IReadOnlyDictionary<Campo, string>? filtros = null)
     {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
         var sql = $"""
             SELECT TOP (@limite)
                    CAST([ClienteID] AS nvarchar(50)) AS Id,
                    COALESCE([NomeCliente], '(sem nome)') AS Nome
             FROM   {Clientes}
-            WHERE  CAST([ClienteID] AS nvarchar(50)) = @cliente
-               OR  [NomeCliente] COLLATE Latin1_General_CI_AI LIKE
-                   REPLACE(REPLACE(REPLACE(@cliente, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%'
+            WHERE  (CAST([ClienteID] AS nvarchar(50)) = @cliente
+               OR   [NomeCliente] COLLATE Latin1_General_CI_AI LIKE
+                    REPLACE(REPLACE(REPLACE(@cliente, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%')
+                   {ficha}
             ORDER BY CASE WHEN CAST([ClienteID] AS nvarchar(50)) = @cliente THEN 0 ELSE 1 END, [NomeCliente];
             """;
 
-        return (sql, p => p.Add("@cliente", SqlDbType.NVarChar, 100).Value = cliente.Trim());
+        return (sql, p => { p.Add("@cliente", SqlDbType.NVarChar, 100).Value = cliente.Trim(); aplicarFicha(p); });
     }
 
     // Só as vendas de um cliente, pelo ID exato (a tool já o resolveu com ProcurarClientes).
@@ -358,17 +363,24 @@ internal static class ConsultaVendas
 
     // Vista Clientes do painel: zona e última compra de sempre de cada cliente (a nota de crédito não é uma compra).
     // Uma só passagem pela view: um OUTER APPLY por cliente passava dos 30 s que o painel espera.
-    public static string CarteiraClientes() => $"""
-        SELECT CAST(u.[ClienteID] AS nvarchar(50)),
-               COALESCE(c.[Zona], '(sem zona)'),
-               u.Ultima
-        FROM (
-            SELECT [ClienteID], MAX(CASE WHEN [ValorLiquido] > 0 THEN [DataDoc] END) AS Ultima
-            FROM   {Vendas}
-            GROUP BY [ClienteID]
-        ) AS u
-        LEFT JOIN {Clientes} AS c ON c.[ClienteID] = u.[ClienteID];
-        """;
+    // filtros: os mesmos das compras por mês. Um vendedor só lê os seus clientes, não o histórico de todos.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) CarteiraClientes(IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            SELECT CAST(u.[ClienteID] AS nvarchar(50)),
+                   COALESCE(c.[Zona], '(sem zona)'),
+                   u.Ultima
+            FROM (
+                SELECT [ClienteID], MAX(CASE WHEN [ValorLiquido] > 0 THEN [DataDoc] END) AS Ultima
+                FROM   {Vendas}
+                WHERE  1 = 1 {ficha}
+                GROUP BY [ClienteID]
+            ) AS u
+            LEFT JOIN {Clientes} AS c ON c.[ClienteID] = u.[ClienteID];
+            """;
+        return (sql, aplicarFicha);
+    }
 
     // Valor e documentos de cada cliente em cada mês do período. Um documento tem uma só data: somar os meses não repete nenhum.
     public static (string Sql, Action<SqlParameterCollection> Parametros) ComprasPorMes(

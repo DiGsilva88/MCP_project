@@ -39,10 +39,10 @@ internal static class ConsultaClientes
     }
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) Listar(
-        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, string? nome = null)
+        IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, string? nome = null, string? id = null)
     {
         var colunas = string.Join(", ", mostrar.Select(Coluna));
-        var (whereSql, aplicarFiltros) = FiltrosWhere(filtros, nome);
+        var (whereSql, aplicarFiltros) = FiltrosWhere(filtros, nome, id);
 
         var sql = $"""
             SELECT c.NomeCliente, {colunas},
@@ -65,10 +65,11 @@ internal static class ConsultaClientes
     // Como Listar, mas com uma coluna da view sensível. "maiores" ordena do maior para o menor
     // (rankings); só faz sentido nas colunas numéricas, quem chama já o validou.
     internal static (string Sql, Action<SqlParameterCollection> Parametros) ListarSensivel(
-        CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, string? nome = null, Campo? tambem = null)
+        CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, string? nome = null, Campo? tambem = null,
+        string? id = null)
     {
         var coluna = ColunaSensivel(mostrar);
-        var (whereSql, aplicarFiltros) = FiltrosWhere(filtros, nome);
+        var (whereSql, aplicarFiltros) = FiltrosWhere(filtros, nome, id);
         var extra = tambem is { } t ? ", " + Coluna(t) : ""; // coluna da ficha/faturação na mesma linha
 
         var sql = $"""
@@ -125,16 +126,21 @@ internal static class ConsultaClientes
     // valor "sem dados" não existe como texto na BD (a view guarda o marcador da coluna: "(sem ...)"
     // ou "0 - sem ...") por isso vira NULL/vazio/marcador em vez de comparação exata.
     // "nome" (opcional): só clientes cujo NomeCliente começa por esse texto (sem acentos/maiúsculas) ou com esse ID exato.
+    // "id" (opcional): só o cliente com esse ID exato (um ID já resolvido não pode apanhar o cliente "12 Garrafas").
     internal static (string Sql, Action<SqlParameterCollection> Parametros) FiltrosWhere(
-        IReadOnlyDictionary<Campo, string> filtros, string? nome = null)
+        IReadOnlyDictionary<Campo, string> filtros, string? nome = null, string? id = null)
     {
         var temNome = !string.IsNullOrWhiteSpace(nome);
-        if (filtros.Count == 0 && !temNome)
+        var temId = !string.IsNullOrWhiteSpace(id);
+        if (filtros.Count == 0 && !temNome && !temId)
             return ("", _ => { });
 
         var pares = filtros.ToArray();
         var condicoes = pares.Select((par, i) => EhSemDados(par.Value)
             ? CondicaoSemDados(par.Key)
+            // O vendedor é o filtro do perfil: só o nome exato, senão "Ana Silva" via também os clientes de "Ana Silva Costa".
+            : par.Key == Campo.Vendedor
+            ? $"({Coluna(par.Key)} COLLATE Latin1_General_CI_AI = @filtro{i})"
             // COLLATE accent/case-insensitive: o modelo (e o utilizador) escreve "Setubal", a BD guarda "Setúbal".
             // Também aceita o início do valor por palavras inteiras: "30 dias" apanha "30 Dias Fim do Mês".
             // Os REPLACE escapam [ % _ para o valor do modelo nunca funcionar como wildcard.
@@ -146,10 +152,14 @@ internal static class ConsultaClientes
                 "(c.NomeCliente COLLATE Latin1_General_CI_AI LIKE " +
                 "REPLACE(REPLACE(REPLACE(@nome, '[', '[[]'), '%', '[%]'), '_', '[_]') + '%' " +
                 "OR CAST(c.ClienteID AS nvarchar(50)) = @nome)");
+        if (temId)
+            condicoes = condicoes.Append("CAST(c.ClienteID AS nvarchar(50)) = @id");
         var sql = "WHERE " + string.Join(" AND ", condicoes);
 
         void Parametros(SqlParameterCollection p)
         {
+            if (temId)
+                p.Add("@id", SqlDbType.NVarChar, 50).Value = id!.Trim();
             if (temNome)
                 p.Add("@nome", SqlDbType.NVarChar, 100).Value = nome!.Trim();
             for (var i = 0; i < pares.Length; i++)

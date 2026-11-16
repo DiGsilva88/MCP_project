@@ -93,6 +93,24 @@ public class ConsultaVendasTests
     }
 
     [Fact]
+    public void ProcurarClientes_ComVendedor_SoProcuraNosClientesDele()
+    {
+        var (sql, aplicar) = ConsultaVendas.ProcurarClientes("A", new Dictionary<Campo, string> { [Campo.Vendedor] = "Ana" });
+
+        Assert.Contains("[ClienteID] IN (SELECT c.ClienteID", sql);
+        Assert.Equal("Ana", Aplicar(aplicar)["@filtro0"].Value);
+    }
+
+    [Fact]
+    public void CarteiraClientes_ComVendedor_NaoLeOHistoricoDeTodos()
+    {
+        var (sql, aplicar) = ConsultaVendas.CarteiraClientes(new Dictionary<Campo, string> { [Campo.Vendedor] = "Ana" });
+
+        Assert.Contains("[ClienteID] IN (SELECT c.ClienteID", sql);
+        Assert.Equal("Ana", Aplicar(aplicar)["@filtro0"].Value);
+    }
+
+    [Fact]
     public void SomasSemValores_DaoZeroENaoNull()
     {
         // Um SUM só de NULL dá NULL e o GetDecimal rebentava com a consulta toda.

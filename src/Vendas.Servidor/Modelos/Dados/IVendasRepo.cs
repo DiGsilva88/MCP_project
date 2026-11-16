@@ -13,19 +13,21 @@ public interface IVendasRepo
         CancellationToken cancellationToken = default);
 
     // Clientes que cumprem os filtros, com os campos pedidos. nome: só clientes cujo nome começa por esse texto.
+    // id: só o cliente com esse ID exato.
     Task<PaginaClientes> ListarAsync(
         IReadOnlyList<Campo> mostrar, IReadOnlyDictionary<Campo, string> filtros, int deslocamento, int limite,
-        string? nome = null, CancellationToken cancellationToken = default);
+        string? nome = null, string? id = null, CancellationToken cancellationToken = default);
 
     // Como ListarAsync, mas com um dado da view sensível (NIF, contactos, valores reais).
     // maiores=true ordena esse dado do maior para o menor (só colunas numéricas).
     Task<PaginaClientes> ListarSensivelAsync(
         CampoSensivel mostrar, IReadOnlyDictionary<Campo, string> filtros, bool maiores, int deslocamento, int limite,
-        string? nome = null, Campo? tambem = null, CancellationToken cancellationToken = default);
+        string? nome = null, Campo? tambem = null, string? id = null, CancellationToken cancellationToken = default);
 
     // Clientes com esse ID ou cujo nome começa pelo texto (o ID exato primeiro), no máximo "limite".
+    // filtros (opcional): só entre os clientes com esses valores na ficha (ex.: o vendedor do perfil).
     Task<IReadOnlyList<(string Id, string Nome)>> ProcurarClientesAsync(
-        string cliente, int limite, CancellationToken cancellationToken = default);
+        string cliente, int limite, IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
 
     // Rankings de vendas no período [desde, ate[. cliente (opcional): só as vendas desse cliente (ID exato).
     // filtros (opcional): só clientes com esses valores na ficha (ex.: Localidade = Seixal).

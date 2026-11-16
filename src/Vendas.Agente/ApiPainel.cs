@@ -13,7 +13,8 @@ public sealed class ApiPainel(
 {
     private const int MaxTexto = 100;
     private static readonly TimeSpan ValidadeCreditos = TimeSpan.FromSeconds(60);
-    private static readonly string[] Periodos = ["Ultimos7Dias", "MesAtual", "TrimestreAtual", "AnoAtual", "Ultimos12Meses", "AnoAnterior"];
+    // Os períodos que o painel aceita (também no /resumo do Program.cs).
+    internal static readonly string[] Periodos =["Ultimos7Dias", "MesAtual", "TrimestreAtual", "AnoAtual", "Ultimos12Meses", "AnoAnterior"];
 
     private static readonly Regex IdDocumento =
         new("^([A-Za-z0-9]{1,10})-([A-Za-z0-9]{1,10})-([0-9]{4})-([0-9]{1,12})$", RegexOptions.CultureInvariant);

@@ -169,16 +169,26 @@ public class ApiPainelTests
     {
         var mapa = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["DOM\\ana"] = "Ana", ["DOM\\maria"] = Perfis.VeTudo };
 
-        Assert.Equal(vendedor, Perfis.Resolver(login, mapa)!.Vendedor);
+        Assert.Equal(vendedor, Perfis.Resolver(login, mapa, "DOM\\dono")!.Vendedor);
     }
 
     [Fact]
     public void Perfis_LoginForaDoFicheiro_FicaSemAcesso() =>
-        Assert.Null(Perfis.Resolver("DOM\\intruso", new Dictionary<string, string>()));
+        Assert.Null(Perfis.Resolver("DOM\\intruso", new Dictionary<string, string>(), "DOM\\intruso"));
 
     [Fact]
-    public void Perfis_SemFicheiro_NinguemEntra() =>
-        Assert.Empty(Perfis.Ler(Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json")));
+    public void Perfis_SemAutenticacao_NinguemEntra() =>
+        Assert.Null(Perfis.Resolver(null, null, "DOM\\dono"));
+
+    [Fact]
+    public void Perfis_SemFicheiro_SoODonoEntraEVeTudo()
+    {
+        var mapa = Perfis.Ler(Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json"));
+
+        Assert.Null(mapa);
+        Assert.Null(Perfis.Resolver("DOM\\diana", mapa, "DOM\\dono"));   // outra sessão do mesmo PC (RDS)
+        Assert.Equal(new Perfil("dom\\DONO", null), Perfis.Resolver("dom\\DONO", mapa, "DOM\\dono"));
+    }
 
     [Fact]
     public void LinhaAuditoria_TemQuemOQueEQuando() =>

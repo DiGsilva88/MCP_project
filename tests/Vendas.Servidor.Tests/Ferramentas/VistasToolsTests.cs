@@ -19,12 +19,14 @@ public class VistasToolsTests
     // ---------- sensível ----------
 
     [Fact]
-    public async Task Sensivel_Cliente_FiltraPeloIdOuNome()
+    public async Task Sensivel_Cliente_FiltraSoPeloIdExato()
     {
         var repo = new FakeVendasRepo();
         await CriarSut(repo).ConsultarSensivelAsync(CampoSensivel.Email, cliente: "1003");
 
-        Assert.Equal("1003", repo.UltimoNome);
+        // Como id exato e não como início do nome: "12" não pode trazer também os contactos de "12 Garrafas".
+        Assert.Equal("1003", repo.UltimoId);
+        Assert.Null(repo.UltimoNome);
     }
 
     [Fact]

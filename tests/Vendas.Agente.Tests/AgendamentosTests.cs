@@ -68,6 +68,27 @@ public class AgendamentosTests
     }
 
     [Fact]
+    public void DoPedido_CriadorNuncaVemDoBrowser() =>
+        Assert.Null(Agendamentos.DoPedido("""{"freq":"semanal","email":"a@inforap.pt","criador":"DOM\\outro"}""").Agendamento!.Criador);
+
+    [Fact]
+    public void Guardar_EmParalelo_NaoPerdeNenhum()
+    {
+        var ficheiro = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "agendamentos.json");
+        try
+        {
+            Parallel.For(0, 20, i => Agendamentos.Guardar(ficheiro, new("semanal", $"p{i}@inforap.pt", "DOM\\ana")));
+
+            Assert.Equal(20, Agendamentos.Ler(ficheiro).Count);
+            Assert.All(Agendamentos.Ler(ficheiro), a => Assert.Equal("DOM\\ana", a.Criador));
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(ficheiro)!, true);
+        }
+    }
+
+    [Fact]
     public void Ler_FicheiroCorrompido_DizQualE()
     {
         var ficheiro = Path.GetTempFileName();
