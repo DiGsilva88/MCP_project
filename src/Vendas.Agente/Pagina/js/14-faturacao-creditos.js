@@ -29,7 +29,11 @@
         <div class="res-al-lado">${detalhe}
           <section class="res-cartao" data-bloco="al-regras">
             <h3>Regras de alerta</h3>
-            ${REGRAS_ALERTA.map(r => [...r, nomeRegra(r)]).map(([id, , sub, , nome]) => `<button type="button" class="res-regra" role="switch" data-regra="${id}" aria-checked="${regrasAlerta[id] !== false}"><span>${nome}<small>${sub}</small></span><i aria-hidden="true"></i></button>`).join('')}
+            ${REGRAS_ALERTA.map(r => { const [id, , sub, omissao] = r;
+              // O limite fica ao lado do interruptor (um campo não pode estar dentro de um botão); só nas regras de queda
+              const limite = omissao == null ? '' : `<label class="res-regra-limite">Limite de queda <input type="number" inputmode="numeric" min="${LIMITE_MIN}" max="${LIMITE_MAX}" step="1" value="${limiteDe(id)}" data-regra-limite="${id}" aria-describedby="res-regra-msg"> %</label>`;
+              return `<div class="res-regra-linha"><button type="button" class="res-regra" role="switch" data-regra="${id}" aria-checked="${regrasAlerta[id] !== false}"><span>${nomeRegra(r)}<small>${sub}</small></span><i aria-hidden="true"></i></button>${limite}</div>`; }).join('')}
+            <p class="res-regra-msg" id="res-regra-msg">${rEsc(resumoEstado.limiteMsg || '')}</p>
           </section>
         </div>`;
     }
