@@ -121,12 +121,15 @@
 
     // Resumo e factos -> métricas ("Total", "Valor médio", "Melhor mês") e ficha (os factos em texto)
     function metricasDe(r) {
-      const metricas = [], ficha = [];
+      const metricas = [], ficha = [], textos = [];
       if (r.resumo) {
-        const principal = r.resumo.split(/\.\s+(?=\S)/)[0];
+        const [principal, ...resto] = r.resumo.split(/\.\s+(?=\S)/);
         const m = semPonto(principal).match(/^(?:total\s+)?(-?\d[\d\s.  ]*(?:,\d+)?\s*€)\s*(.*)$/i);
         if (m) metricas.push({ r: 'Total', v: fmt.eur(paraNumero(m[1])), nota: maiuscula(m[2].replace(/^em\s+/i, '')) });
         else if (/^\d/.test(principal)) metricas.push({ r: 'Total', v: semPonto(principal) });
+        else textos.push(principal);   // não é um total: é uma frase da resposta ("últimos 90 dias (…)")
+        // O que vem depois da 1.ª frase também é resposta ("Todos os clientes … compraram neste período."); só a nota dos valores é ruído
+        textos.push(...resto.filter(f => !/^valores em euros/i.test(f)));
       }
       const curto = v => /^[-−+]?[\d\s.,  ]+\s*(€|%|\p{L}+)?$/u.test(v);
       for (const [k, v] of r.factos) {
@@ -138,13 +141,13 @@
         if (!curto(v) || /^\d{6,}$/.test(v)) { ficha.push([k, v]); continue; }
         metricas.push({ r: k, v });
       }
-      return { metricas, ficha };
+      return { metricas, ficha, textos: textos.map(semPonto).filter(Boolean).map(t => maiuscula(t) + '.') };
     }
 
     // A resposta inteira -> { titulo, paragrafos, metricas, avisos, opcoes, painel (HTML da vista completa ou null), linhas, sugestoes }
     function analisarResposta(texto, pergunta = '') {
       texto = texto.split('\n').map(limparMarkdown).join('\n');
-      const base = { titulo: '', paragrafos: [], metricas: [], avisos: [], opcoes: [], painel: null, linhas: null, sugestoes: [] };
+      const base = { titulo: '', paragrafos: [], metricas: [], avisos: [], opcoes: [], painel: null, linhas: null, sugestoes: [], nota: '' };
 
       const sr = lerSemResultado(texto);
       if (sr) {
@@ -183,11 +186,11 @@
       const serie = (pedeTicket && serieTicketMedio(serieBase)) || serieBase;
       const leitura = lerFiltros(r.titulo);
       const titulo = serie?.medida ? 'Ticket médio por mês' : maiuscula(leitura.titulo) || 'Resposta';
-      const { metricas, ficha } = metricasDe(r);
+      const { metricas, ficha, textos } = metricasDe(r);
       const devolucoes = r.itens.filter(i => i.num < 0), itens = r.itens.filter(i => !(i.num < 0));
       const destaque = serie ? '' : fraseDestaque(itens);
       const sub = [r.periodo ? 'Período: ' + r.periodo : '', ...leitura.filtros.map(([k, v]) => `${k}: ${v}`)].filter(Boolean).join('. ');
-      const paragrafos = [destaque, ...r.paragrafos].filter(Boolean);
+      const paragrafos = [destaque, ...textos, ...r.paragrafos].filter(Boolean);
 
       // Vista completa no painel principal
       let corpo = '';
@@ -218,7 +221,31 @@
       const linhas = !r.itens.length ? [['Indicador', 'Valor', 'Detalhe'], ...metricas.map(m => [m.r, m.v, m.nota || '']), ...ficha.map(([k, v]) => [rotuloCampo(k), v, ''])]
         : serie ? [['Mês', serie.anoAtual, serie.anoAnt || '', 'Variação (%)'], ...serie.meses.map(x => [`${MESES[x.m - 1]} ${x.a}`, x.atual, x.anterior, x.delta])]
         : [['Posição', 'Nome', 'Código', 'Valor', '%', 'Variação (%)'], ...r.itens.map(i => [i.pos, i.nome, i.codigo, i.valor, i.pct, i.delta])];
-      return { ...base, titulo, sub, paragrafos, metricas: metricas.slice(0, 4), avisos: r.avisos, linhas,
+      return { ...base, titulo, sub, paragrafos, nota: r.nota, metricas: metricas.slice(0, 4), avisos: r.avisos, linhas,
         painel: corpo || null, sugestoes: r.itens.length ? perguntasSeguintes(r, itens, serie) : [] };
     }
     const nomeProprioSe = v => /\p{L}/u.test(v) ? nomeProprio(v) : v;
+
+    // O briefing de um cliente (consultar_briefing) como resposta do Flow, sem passar pelo modelo. b: o JSON do servidor;
+    // c: a linha do cliente na carteira do painel (pode faltar); D: os dados do painel (só para o ano anterior).
+    function analiseBriefing(b, c, D) {
+      const nome = nomeProprio(String(b.cliente || '').replace(/\s*\([^()]*\)\s*$/, '')) || 'o cliente';
+      const a = b.emAberto || {}, parados = b.deixouDeComprar || [], paragrafos = [], metricas = [];
+      const plural = (n, um, mais) => n === 1 ? um : mais;
+      if (c) metricas.push({ r: 'Faturação', v: fmt.eur(c.num), ...(c.delta != null && !c.novo ? { delta: c.delta, ano: D && D.anoAnt } : {}) });
+      if (c && c.ultima) metricas.push({ r: 'Última compra', v: fmt.dataCurta(c.ultima) });
+      metricas.push({ r: 'Faturas por pagar (com IVA)', v: a.documentos ? fmt.eur2(a.total) : 'Nenhuma' });
+      if (a.documentosCredito) metricas.push({ r: 'Notas de crédito por abater', v: fmt.eur2(a.creditos) });
+      if (b.maisComprado) paragrafos.push(`Artigo mais comprado: ${nomeProprio(b.maisComprado.artigo)}.`);
+      paragrafos.push(parados.length
+        ? `Deixou de comprar ${parados.length} ${plural(parados.length, 'artigo', 'artigos')}: ${parados.slice(0, 3).map(x =>
+          `${nomeProprio(x.artigo)} (comprava ${fmt.decimal(x.mediaMes, x.mediaMes % 1 ? 1 : 0)} por mês, última compra a ${fmt.dataCurta(x.ultima)})`).join('; ')}${parados.length > 3 ? '…' : ''}.`
+        : 'Continua a comprar os artigos habituais.');
+      paragrafos.push(a.documentos
+        ? `Tem ${fmt.inteiro(a.documentos)} ${plural(a.documentos, 'fatura', 'faturas')} por pagar, ${fmt.eur2(a.total)} com IVA${a.vencido > 0 ? `, dos quais ${fmt.eur2(a.vencido)} vencidos` : ''}.`
+        : 'Não tem faturas por pagar.');
+      if (a.documentosCredito) paragrafos.push(`Tem ${fmt.inteiro(a.documentosCredito)} ${plural(a.documentosCredito, 'nota de crédito', 'notas de crédito')} por abater, ${fmt.eur2(a.creditos)}.`);
+      return { titulo: `Antes de visitar ${nome}`, paragrafos, metricas: metricas.slice(0, 4), avisos: [], opcoes: [], painel: null, nota: '',
+        linhas: [['Indicador', 'Valor'], ...metricas.map(m => [m.r, m.v])],
+        sugestoes: [`Que artigos comprou o cliente ${nome} este ano?`, `Evolução mensal das vendas do cliente ${nome} este ano`] };
+    }

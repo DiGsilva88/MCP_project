@@ -169,12 +169,14 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         var (sql, parametros) = ConsultaVendas.EmAberto(hoje, cliente, soVencidos);
         var linhas = await LerAsync(sql, parametros, limite, leitor => (
             Item: new DocumentoEmAberto(leitor.GetString(0), leitor.GetString(1), Data(leitor, 2), Data(leitor, 3), leitor.GetDecimal(4)),
-            Documentos: leitor.GetInt32(5), Total: leitor.GetDecimal(6), Vencido: leitor.GetDecimal(7)),
+            Documentos: leitor.GetInt32(5), Total: leitor.GetDecimal(6), Vencido: leitor.GetDecimal(7),
+            DocumentosCredito: leitor.GetInt32(8), Creditos: leitor.GetDecimal(9)),
             cancellationToken);
 
         return linhas.Count == 0
             ? new ResumoEmAberto([], 0, 0, 0)
-            : new ResumoEmAberto(linhas.Select(l => l.Item).ToList(), linhas[0].Documentos, linhas[0].Total, linhas[0].Vencido);
+            : new ResumoEmAberto(linhas.Select(l => l.Item).ToList(), linhas[0].Documentos, linhas[0].Total, linhas[0].Vencido,
+                                 linhas[0].DocumentosCredito, linhas[0].Creditos);
     }
 
     public async Task<IReadOnlyList<ArtigoCliente>> ArtigosDoClienteAsync(

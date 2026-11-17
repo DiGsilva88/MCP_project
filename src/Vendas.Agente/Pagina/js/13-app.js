@@ -81,6 +81,17 @@
       });
     }
     async function ligarAlerta(id) {
+      // Um alerta personalizado: liga ou desliga na lista de cada utilizador
+      const meus = app.prefs.alertasPers || [], proprio = meus.find(a => a.id === id);
+      if (proprio) {
+        app.prefs.alertasPers = meus.map(a => a.id === id ? { ...a, ligada: !a.ligada } : a);
+        try { await guardarPrefs(); aviso(`Alerta "${proprio.nome}" ${proprio.ligada ? 'desativado' : 'ativado'}.`); }
+        catch { app.prefs.alertasPers = meus; aviso('Não foi possível guardar. Tente outra vez.'); }
+        redesenhar();
+        principal.querySelector(`[data-ligar-alerta="${id}"]`)?.focus();
+        carregarAtrasos();
+        return;
+      }
       const r = alertasRegras.regra(app.prefs.alertas, id), antes = app.prefs.alertas[id];
       app.prefs.alertas = { ...app.prefs.alertas, [id]: { ...(antes || {}), ligada: !r.ligada } };
       try { await guardarPrefs(); aviso(`Alerta "${r.nome}" ${r.ligada ? 'desativado' : 'ativado'}.`); }
@@ -107,9 +118,10 @@
       const b = e.target.closest('button, [data-mes], tr.clicavel');
       if (!b) return;
       const d = b.dataset, g = id => (app.prefs.guardados || []).find(x => x.id === id);
-      if (d.periodo) { Object.assign(app, { periodo: d.periodo, mes: null, credPag: 0 }); carregarResumo(); guardarFiltrosPrefs(); }
+      // Mês, Trimestre ou Ano: substitui as datas De/Até que houvesse nos filtros
+      if (d.periodo) aplicarFiltros({ ...app.filtros, de: '', ate: '' }, d.periodo);
       else if ('filtros' in d) abrirFiltros();
-      else if (d.tirarFiltro) aplicarFiltros(filtros.remover(app.filtros, d.tirarFiltro));
+      else if (d.tirarFiltro) aplicarFiltros(filtros.remover(app.filtros, d.tirarFiltro, d.valor));
       else if ('limparFiltros' in d) { aplicarFiltros(filtros.vazios()); aviso('Filtros limpos.'); }
       else if ('exportar' in d) abrirMenuExportar(b, f => { const x = exportacaoAtual(); aviso(x ? exportar(f, x) : 'Ainda não há dados para exportar.'); });
       else if ('agendar' in d) abrirAgendar();
@@ -121,14 +133,17 @@
       else if (d.mes) { app.mes = +d.mes; redesenhar(); principal.querySelector('[data-grafico]')?.focus({ preventScroll: true }); }
       else if (d.abaAlertas) { app.alertaAba = d.abaAlertas; redesenhar(); principal.querySelector(`[data-aba-alertas="${d.abaAlertas}"]`)?.focus(); }
       else if (d.filtroAlertas) { app.alertaFiltro = d.filtroAlertas; redesenhar(); }
-      else if (d.editarAlerta) abrirEditarAlerta(d.editarAlerta);
+      else if (d.novoAlerta) abrirCriarAlerta({ tipo: d.novoAlerta });
+      else if (d.editarAlerta) REGRAS_ALERTA.some(r => r[0] === d.editarAlerta) ? abrirEditarAlerta(d.editarAlerta) : abrirCriarAlerta({ id: d.editarAlerta });
       else if (d.ligarAlerta) ligarAlerta(d.ligarAlerta);
-      else if (d.estadoCli) { app.cliEstado = d.estadoCli; principal.querySelectorAll('[data-estado-cli]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); document.getElementById('cli-tabela').innerHTML = tabelaClientes(app.dados); }
+      else if (d.verTodos) { app.ver[d.verTodos] = !app.ver[d.verTodos]; app.pag[d.verTodos] = 0; redesenhar(); principal.querySelector(`[data-ver-todos="${d.verTodos}"]`)?.focus({ preventScroll: true }); }
+      else if (d.pag) { const [k, passo] = d.pag.split('|'); app.pag[k] = Math.max(0, (app.pag[k] || 0) + +passo); redesenhar(); }
+      else if (d.estadoCli) { app.cliEstado = d.estadoCli; app.pag.clientes = 0; principal.querySelectorAll('[data-estado-cli]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); document.getElementById('cli-tabela').innerHTML = tabelaClientes(app.dados); }
       else if (d.credTipo) { Object.assign(app, { credTipo: d.credTipo, credPag: 0 }); carregarCreditos(); }
       else if (d.credPag) { app.credPag += +d.credPag; carregarCreditos(); }
       else if ('repetirCreditos' in d) { creditos.erro = false; carregarCreditos(); desenharCreditos(); }
-      else if (d.metricaArt) { app.artMetrica = d.metricaArt; if (d.metricaArt === 'unidades') carregarArtigosQtd(); redesenhar(); }
-      else if (d.filtrarZona) { aplicarFiltros({ ...app.filtros, zona: d.filtrarZona }); aviso(`Painel filtrado pela zona ${nomeZona(d.filtrarZona)}.`); }
+      else if (d.metricaArt) { app.artMetrica = d.metricaArt; app.pag.artigos = 0; if (d.metricaArt === 'unidades') carregarArtigosQtd(); redesenhar(); }
+      else if (d.filtrarZona) { aplicarFiltros({ ...app.filtros, zonas: [d.filtrarZona] }); aviso(`Painel filtrado pela zona ${nomeZona(d.filtrarZona)}.`); }
       else if (d.cenario) { app.cenario = d.cenario; redesenhar(); }
       else if (d.filtroGuardados) { app.guardFiltro = d.filtroGuardados; redesenhar(); }
       else if (d.abrirGuardado) abrirGuardado(g(d.abrirGuardado));
@@ -156,7 +171,7 @@
     });
     let esperaCred;
     principal.addEventListener('input', e => {
-      if (e.target.id === 'cli-q') { app.cliQ = e.target.value; document.getElementById('cli-tabela').innerHTML = tabelaClientes(app.dados); }
+      if (e.target.id === 'cli-q') { app.cliQ = e.target.value; app.pag.clientes = 0; document.getElementById('cli-tabela').innerHTML = tabelaClientes(app.dados); }
       if (e.target.id === 'cred-q') { Object.assign(app, { credQ: e.target.value, credPag: 0 }); clearTimeout(esperaCred); esperaCred = setTimeout(carregarCreditos, 250); }   // cada letra seria uma consulta
     });
     principal.addEventListener('scroll', () => totop.classList.toggle('on', principal.scrollTop > 80));
@@ -178,6 +193,21 @@
       if (app.dados?.carteira && clientesFiltrados(app.dados).length) irPara('clientes');
       else { Object.assign(app, { separador: 'clientes', resposta: null, cliQ: '' }); aplicarFiltros({ ...app.filtros, cliente: t }); desenharFlow(); }
     });
+    // Sair: volta ao ecrã de entrada (e esquece que já se entrou). O vendedor não tem entrada, por isso fecha-se a janela.
+    document.getElementById('sair').addEventListener('click', () => {
+      drawer.fechar(false);
+      fecharMenu();
+      abrirFlow(false);
+      try { sessionStorage.removeItem(LUGAR); } catch { }
+      if (app.vendedor) { window.close(); aviso('Pode fechar esta janela.'); return; }
+      Object.assign(app, { separador: 'resumo', resposta: null });
+      entrada.hidden = false;
+      document.querySelector('.app').inert = true;
+      entCampo.value = '';
+      estadoEntrada('');
+      desenharArteEntrada();
+      entCampo.focus({ preventScroll: true });
+    });
     window.addEventListener('hashchange', () => { const id = location.hash.slice(1); if (DOC_ID.test(id)) abrirDocumento(id); });
 
     /* ---------- Arranque ---------- */
@@ -185,13 +215,15 @@
       const iniciais = nomeUtilizador.split(/\s+/).filter(Boolean);
       document.getElementById('avatar').textContent = iniciais.length ? (iniciais[0][0] + (iniciais.length > 1 ? iniciais.at(-1)[0] : '')).toUpperCase() : '';
       document.getElementById('avatar').title = nomeUtilizador;
-      let voltou = false;
-      try { voltou = sessionStorage.getItem(LUGAR) === '1'; } catch { }
-      // "#clientes" (atalho ou ligação direta) abre logo esse separador. O vendedor não pode perguntar: entra direto no painel.
+      // A entrada só se salta ao recarregar o painel, num "#clientes" (atalho ou ligação direta) ou para o vendedor (que não pode perguntar).
+      // Abrir o Flow de novo, mesmo na mesma janela, mostra a entrada: a marca de "já entrei" só vale para o reload.
+      let marca = false, navegacao = '';
+      try { marca = sessionStorage.getItem(LUGAR) === '1'; } catch { }
+      try { navegacao = performance.getEntriesByType('navigation')[0]?.type || ''; } catch { }
       const ancora = location.hash.slice(1);
       if (VISTAS[ancora]) app.separador = ancora;
-      if (app.vendedor || voltou || VISTAS[ancora] || DOC_ID.test(ancora)) entrada.hidden = true;
-      else { document.querySelector('.app').inert = true; entCampo.focus({ preventScroll: true }); }
+      if (arranque.saltarEntrada({ vendedor: app.vendedor, ancoraValida: !!VISTAS[ancora] || DOC_ID.test(ancora), navegacao, marca })) entrada.hidden = true;
+      else { try { sessionStorage.removeItem(LUGAR); } catch { } document.querySelector('.app').inert = true; entCampo.focus({ preventScroll: true }); }
       desenharFlow();
       await carregarPrefs();
       const f = app.prefs.filtros;

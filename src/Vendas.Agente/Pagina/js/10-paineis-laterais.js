@@ -4,32 +4,48 @@
        ========================================================= */
 
     /* ---------- Filtros: valem para todos os separadores e chegam às consultas do servidor ---------- */
+    const hojeIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
     function abrirFiltros() {
-      const zonas = (app.dados?.zonas || []).filter(z => !z.sem).map(z => [z.id, z.nome]).sort((a, b) => a[1].localeCompare(b[1], 'pt'));
-      if (app.filtros.zona && !zonas.some(z => z[0] === app.filtros.zona)) zonas.unshift([app.filtros.zona, nomeZona(app.filtros.zona)]);
+      const F = app.filtros, D = app.dados;
+      // As opções vêm do servidor (zonas e marcas com vendas no período); as já escolhidas ficam sempre na lista
+      const comEscolhidas = (opcoes, escolhidas, nome) => [...opcoes, ...escolhidas.filter(v => !opcoes.some(o => o[0] === v)).map(v => [v, nome(v)])].sort((a, b) => a[1].localeCompare(b[1], 'pt'));
+      const zonas = comEscolhidas((D?.zonas || []).map(z => [z.id, z.nome]), F.zonas, nomeZona);
+      const marcas = comEscolhidas((D?.marcas || []).map(m => [m.nome, nomeProprio(m.nome)]), F.marcas, nomeProprio);
+      const caixas = (nome, opcoes, escolhidas) => opcoes.length ? `<div class="opcoes">${opcoes.map(([v, t]) =>
+        `<label class="opcao"><input type="checkbox" name="${nome}" value="${esc(v)}"${escolhidas.includes(v) ? ' checked' : ''}> ${esc(t)}</label>`).join('')}</div>` : '<p class="muted">Sem valores no período.</p>';
       const form = drawer.abrir({ topo: 'Aplica-se a todos os separadores', form: true,
         html: `<h3 id="dr-t" tabindex="-1">Filtros</h3><div class="form">
-          <label>Período<select name="periodo">${PERIODOS.map(([v]) => `<option value="${v}"${v === app.periodo ? ' selected' : ''}>${esc(nomePeriodo(v))}</option>`).join('')}</select></label>
-          <label>Cliente<input name="cliente" maxlength="100" autocomplete="off" value="${esc(app.filtros.cliente)}" placeholder="Código ou início do nome"></label>
-          <fieldset><legend>Zona</legend><div class="opcoes">${[['', 'Todas as zonas'], ...zonas].map(([v, t]) =>
-            `<label class="opcao"><input type="radio" name="zona" value="${esc(v)}"${v === (app.filtros.zona || '') ? ' checked' : ''}> ${esc(t)}</label>`).join('')}</div></fieldset>
+          <div class="linha2"><label>De<input type="date" name="de" value="${esc(F.de)}" min="2000-01-01" max="${hojeIso()}" aria-describedby="fl-erro"></label>
+            <label>Até<input type="date" name="ate" value="${esc(F.ate)}" min="2000-01-01" max="${hojeIso()}" aria-describedby="fl-erro"></label></div>
+          <span class="erro-campo" id="fl-erro" role="alert"></span>
+          <label>Comparar com<select name="comparar"><option value="ano"${F.comparar !== 'nenhum' ? ' selected' : ''}>Mesmo período do ano anterior</option><option value="nenhum"${F.comparar === 'nenhum' ? ' selected' : ''}>Sem comparação</option></select></label>
+          <label>Cliente<input name="cliente" maxlength="100" autocomplete="off" value="${esc(F.cliente)}" placeholder="Código ou início do nome"></label>
+          <fieldset><legend>Zona</legend>${caixas('zonas', zonas, F.zonas)}</fieldset>
+          <fieldset><legend>Marca</legend>${caixas('marcas', marcas, F.marcas)}</fieldset>
+          <fieldset><legend>Tipo de documento</legend>${caixas('tipos', Object.entries(TIPOS_DOC), F.tipos)}</fieldset>
         </div>`,
         pe: '<button type="button" class="btn" data-limpar>Limpar filtros</button><button type="submit" class="btn btn-pri">Aplicar filtros</button>' });
       form.querySelector('[data-limpar]').addEventListener('click', () => {
-        form.elements.periodo.value = 'AnoAtual'; form.elements.cliente.value = '';
-        form.querySelector('input[name="zona"][value=""]').checked = true;
+        form.elements.de.value = form.elements.ate.value = form.elements.cliente.value = '';
+        form.elements.comparar.value = 'ano';
+        form.querySelectorAll('input[type="checkbox"]').forEach(c => { c.checked = false; });
+        form.querySelector('#fl-erro').textContent = '';
       });
       form.addEventListener('submit', e => {
         e.preventDefault();
-        const d = new FormData(form), novos = filtros.limpos({ cliente: d.get('cliente'), zona: d.get('zona') });
+        const d = new FormData(form), erro = filtros.validarDatas(d.get('de'), d.get('ate'), hojeIso());
+        form.querySelector('#fl-erro').textContent = erro;
+        ['de', 'ate'].forEach(k => form.elements[k].setAttribute('aria-invalid', String(!!erro)));
+        if (erro) { form.elements.de.focus(); return; }
+        const novos = filtros.limpos({ de: d.get('de'), ate: d.get('ate'), comparar: d.get('comparar'), cliente: d.get('cliente'), zonas: d.getAll('zonas'), marcas: d.getAll('marcas'), tipos: d.getAll('tipos') });
         drawer.fechar();
-        aplicarFiltros(novos, d.get('periodo'));
+        aplicarFiltros(novos);
         const n = filtros.ativos(novos).length;
         aviso(n ? `${n} ${n > 1 ? 'filtros aplicados' : 'filtro aplicado'} a todos os separadores.` : 'Filtros limpos.');
       });
     }
     function aplicarFiltros(F, periodo = app.periodo) {
-      Object.assign(app, { filtros: F, periodo, mes: null, credPag: 0 });
+      Object.assign(app, { filtros: F, periodo, mes: null, credPag: 0, pag: { artigos: 0, clientes: 0, marcas: 0, zonas: 0 } });
       carregarResumo();
       guardarFiltrosPrefs();   // voltam na próxima sessão, por utilizador
     }
@@ -45,16 +61,22 @@
         : c.delta != null ? `Cliente ativo. Faturação ${c.delta >= 0 ? 'acima' : 'abaixo'} de ${D.anoAnt} (${fmt.pct(Math.abs(c.delta))}).${c.ultima ? ` Última compra a ${fmt.dataLonga(c.ultima)}.` : ''}`
         : `Cliente ativo${c.ultima ? `. Última compra a ${fmt.dataLonga(c.ultima)}` : ''}.`;
       const ano = D?.datas?.[1] ? D.datas[1].slice(-4) : anoAtual(), espera = '<span class="muted">A carregar…</span>';
-      const factos = [...(c ? [['Zona', esc(nomeProprio(c.zona || '—'))], [app.periodo === 'AnoAtual' ? `Faturação em ${ano}` : `Faturação (${nomePeriodo(app.periodo).toLowerCase()})`, fmt.eur(c.num)],
+      const factos = [...(c ? [['Zona', esc(nomeProprio(c.zona || '—'))], [emAno() ? `Faturação em ${ano}` : `Faturação (${descricaoPeriodo().toLowerCase()})`, fmt.eur(c.num)],
         [D.anoAnt ? 'Face a ' + D.anoAnt : 'Variação', c.novo ? 'Novo' : variacaoHtml(c.delta)], ['Última compra', esc(c.ultima ? fmt.dataCurta(c.ultima) : '—')]] : []),
-        ['Artigo mais comprado', espera, 'b-artigo'], ['Faturas por pagar', espera, 'b-aberto']];
+        ['Artigo mais comprado', espera, 'b-artigo'], ['Faturas por pagar (com IVA)', espera, 'b-aberto'], ['Notas de crédito por abater', espera, 'b-credito']];
       const el = drawer.abrir({ topo: 'Briefing antes da visita',
         html: `<h3 id="dr-t" tabindex="-1">${esc(titulo)}</h3><p>${esc(resumoTexto)}</p>
           <ul class="factos">${factos.map(([k, v, id]) => `<li><span>${esc(k)}</span><b class="num"${id ? ` id="${id}"` : ''}>${v}</b></li>`).join('')}</ul>
           <h4 class="bloco-t">Artigos que deixou de comprar <span class="muted" id="b-n"></span></h4><div id="b-parados">${aCarregar('A procurar os artigos habituais…')}</div>`,
-        pe: `<button type="button" class="btn" data-fechar>Fechar</button>${app.vendedor ? '' : `<button type="button" class="btn btn-pri" data-perguntar-briefing>${ic('flow')}Perguntar ao Flow</button>`}` });
+        pe: `<button type="button" class="btn" data-fechar>Fechar</button>${app.vendedor ? '' : `<button type="button" class="btn btn-pri" data-perguntar-briefing disabled>${ic('flow')}Perguntar ao Flow</button>`}` });
       el.querySelector('[data-fechar]').addEventListener('click', () => drawer.fechar());
-      el.querySelector('[data-perguntar-briefing]')?.addEventListener('click', () => { drawer.fechar(false); perguntarFlow(`O que devo saber antes de visitar o cliente ${titulo}?`); });
+      // O Flow responde com os dados deste briefing, sem o modelo (o modelo confundia a pergunta com um pedido de dados do cliente)
+      let briefing = null;
+      el.querySelector('[data-perguntar-briefing]')?.addEventListener('click', () => {
+        if (!briefing) return;
+        drawer.fechar(false);
+        responderLocal(`O que devo saber antes de visitar o cliente ${titulo}?`, analiseBriefing(briefing, c, D));
+      });
       el.addEventListener('click', e => { const b = e.target.closest('[data-perguntar-artigo]'); if (b) { drawer.fechar(false); perguntarFlow(`Porque é que o cliente ${titulo} deixou de comprar ${b.dataset.perguntarArtigo}?`); } });
       const aqui = () => n === pedidoBriefing && document.getElementById('b-parados');
       try {
@@ -64,10 +86,16 @@
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const b = await r.json();
         if (!aqui()) return;
+        briefing = b;
+        el.querySelector('[data-perguntar-briefing]')?.removeAttribute('disabled');
         const a = b.emAberto, m = b.maisComprado;
         document.getElementById('b-artigo').textContent = m ? nomeProprio(m.artigo) : 'Sem compras nos últimos 12 meses';
         document.getElementById('b-aberto').innerHTML = !a.documentos ? 'Nenhuma'
           : `${fmt.inteiro(a.documentos)} ${a.documentos > 1 ? 'documentos' : 'documento'}, ${fmt.eur2(a.total)}${a.vencido > 0 ? `<span class="celula-sub">${fmt.eur2(a.vencido)} vencidos</span>` : ''}`;
+        // Notas de crédito por abater: à parte (não abatem às faturas nem entram no vencido); só aparecem se existirem
+        const credito = document.getElementById('b-credito');
+        credito.textContent = `${fmt.inteiro(a.documentosCredito)} ${a.documentosCredito > 1 ? 'documentos' : 'documento'}, ${fmt.eur2(a.creditos)}`;
+        credito.closest('li').hidden = !a.documentosCredito;
         document.getElementById('b-n').textContent = b.deixouDeComprar.length;
         document.getElementById('b-parados').innerHTML = b.deixouDeComprar.length
           ? `<ul class="factos" style="margin-top:8px">${b.deixouDeComprar.map(x => `<li><div><b style="font-weight:500">${esc(nomeProprio(x.artigo))}</b>
@@ -78,6 +106,7 @@
         if (!aqui()) return;
         console.error('Falha a carregar o briefing:', e);
         ['b-artigo', 'b-aberto'].forEach(i => { document.getElementById(i).textContent = '—'; });
+        document.getElementById('b-credito').closest('li').hidden = true;
         document.getElementById('b-parados').innerHTML = e.semCliente ? '<p class="muted" style="margin-top:8px">Este cliente não pertence à sua carteira.</p>'
           : comErro('Não foi possível carregar o briefing. Tente outra vez.', '');
       }
@@ -235,4 +264,101 @@
         try { await guardarPrefs(); drawer.fechar(); aviso(`Alerta "${r.nome}" guardado.`); redesenhar(); }
         catch { app.prefs.alertas[id] = antes; form.querySelector('#al-erro')?.replaceChildren('Não foi possível guardar. Tente outra vez.'); }
       });
+    }
+
+    /* ---------- Criar ou editar um alerta personalizado ----------
+       Nome, o que vigiar, limite, zona, frequência e email opcional. A frase do alerta e o que encontraria com os dados de hoje
+       atualizam-se enquanto se preenche. O envio por email ainda não é automático: o aviso aparece no painel. */
+    function abrirCriarAlerta({ tipo = 'zona', id = null } = {}) {
+      const existentes = app.prefs.alertasPers || [], atual = id ? existentes.find(a => a.id === id) : null;
+      const m0 = alertasPers.modelo(atual ? atual.tipo : tipo) || MODELOS_ALERTA[0];
+      const st = atual || { id: null, nome: m0.nome, tipo: m0.tipo, limite: m0.omissao, zona: '', freq: FREQ_ALERTA[1], mail: false, email: '', ligada: true, ultimo: '' };
+      const modelos = MODELOS_ALERTA.filter(m => !(m.tipo === 'fatura' && app.vendedor));
+      const zonas = (app.dados?.zonas || []).filter(z => !z.sem).map(z => [z.id, z.nome]);
+      if (st.zona && !zonas.some(z => z[0] === st.zona)) zonas.unshift([st.zona, nomeZona(st.zona)]);
+      const form = drawer.abrir({ topo: atual ? 'Editar alerta' : 'Novo alerta', form: true,
+        html: `<h3 id="dr-t" tabindex="-1">${atual ? 'Editar alerta' : 'Criar alerta'}</h3><div class="form">
+          <label>Nome<input name="nome" maxlength="60" autocomplete="off" value="${esc(st.nome)}" required aria-describedby="al-erro"></label>
+          <label>O que vigiar<select name="tipo">${modelos.map(m => `<option value="${m.tipo}"${m.tipo === m0.tipo ? ' selected' : ''}>${esc(m.nome)}</option>`).join('')}</select></label>
+          <label>Limite<span class="em-linha"><input name="limite" type="number" inputmode="numeric" step="1" value="${esc(st.limite)}" required aria-describedby="al-erro"><span class="muted" id="al-un"></span></span></label>
+          <label id="al-zona">Zona<select name="zona"><option value="">Todas as zonas</option>${zonas.map(([v, t]) => `<option value="${esc(v)}"${v === st.zona ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+          <label>Verificar<select name="freq">${FREQ_ALERTA.map(f => `<option${f === st.freq ? ' selected' : ''}>${esc(f)}</option>`).join('')}</select></label>
+          <label class="opcao"><input type="checkbox" name="mail"${st.mail ? ' checked' : ''}> Enviar também por email</label>
+          <label id="al-email">Email<input name="email" type="email" autocomplete="off" value="${esc(st.email)}" placeholder="nome@${EMAIL_EMPRESA}" aria-describedby="al-erro"></label>
+          <span class="muted" id="al-email-nota" style="font-size:12.5px">O aviso aparece sempre no painel. O envio automático por email ainda não está ativo.</span>
+          <span class="erro-campo" id="al-erro" role="alert"></span></div>
+          <div class="frase"><span class="muted">O alerta fica assim</span><p id="al-frase"></p></div>
+          <div class="frase frase--contorno"><span class="muted">Com os dados de hoje, encontraria</span><p id="al-prev" aria-live="polite"></p></div>`,
+        pe: `${atual ? '<button type="button" class="btn" data-apagar>Apagar alerta</button>' : '<button type="button" class="btn" data-fechar>Cancelar</button>'}<button type="submit" class="btn btn-pri">${atual ? 'Guardar alerta' : 'Criar alerta'}</button>` });
+      const $ = s => form.querySelector(s), E = form.elements;
+      const ler = () => ({ id: st.id, ligada: st.ligada, ultimo: st.ultimo, nome: E.nome.value, tipo: E.tipo.value, limite: E.limite.value, zona: E.zona.value, freq: E.freq.value, mail: E.mail.checked, email: E.email.value });
+      let atrasosPrevia = null, aConsultar = false, espera;
+      const pintar = () => {
+        const a = ler(), m = alertasPers.modelo(a.tipo), n = Number(a.limite), valido = Number.isInteger(n) && n >= m.min && n <= m.max;
+        $('#al-un').textContent = m.un;
+        $('#al-zona').hidden = a.tipo !== 'zona';
+        $('#al-email').hidden = $('#al-email-nota').hidden = !a.mail;
+        $('#al-frase').textContent = valido ? alertasPers.frase({ ...a, limite: n }, nomeZona) : `Escreva um limite inteiro entre ${fmt.inteiro(m.min)} e ${fmt.inteiro(m.max)}.`;
+        if (!valido) { $('#al-prev').textContent = '—'; return; }
+        if (a.tipo === 'fatura' && !atrasosPrevia) { $('#al-prev').textContent = aConsultar ? 'A consultar as faturas por pagar…' : 'Não foi possível consultar as faturas por pagar.'; return; }
+        const r = alertasPers.avaliar({ ...a, limite: n, id: 'previa' }, app.dados, atrasosPrevia);
+        $('#al-prev').textContent = !app.dados ? 'Os dados ainda não carregaram.' : r.length ? `${fmt.inteiro(r.length)} ${r.length > 1 ? 'resultados' : 'resultado'}: ${r.slice(0, 5).map(x => x.titulo).join('; ')}${r.length > 5 ? '…' : '.'}` : 'Nada, por agora.';
+      };
+      // Faturas em atraso: a pré-visualização pede ao servidor com o limite escrito (sem pedir a cada tecla)
+      const consultarAtrasos = () => {
+        clearTimeout(espera);
+        const n = Number(E.limite.value);
+        if (E.tipo.value !== 'fatura' || !Number.isInteger(n) || n < 1 || n > 3650) return;
+        aConsultar = true; atrasosPrevia = null; pintar();
+        espera = setTimeout(async () => {
+          try { atrasosPrevia = await pedirJson('/api/atrasos?dias=' + n); } catch (e) { console.error(e); atrasosPrevia = null; }
+          aConsultar = false;
+          if (form.isConnected) pintar();
+        }, 400);
+      };
+      E.tipo.addEventListener('change', () => {
+        const acompanha = !E.nome.value.trim() || modelos.some(m => m.nome === E.nome.value);   // o nome ainda é o de um modelo: acompanha a troca
+        const m = alertasPers.modelo(E.tipo.value);
+        if (acompanha) E.nome.value = m.nome;
+        E.limite.value = m.omissao;
+        pintar(); consultarAtrasos();
+      });
+      E.limite.addEventListener('input', () => { pintar(); consultarAtrasos(); });
+      [E.zona, E.mail, E.nome, E.email].forEach(c => c.addEventListener('input', pintar));
+      E.freq.addEventListener('change', pintar);
+      form.querySelector('[data-fechar]')?.addEventListener('click', () => drawer.fechar());
+
+      const guardar = async nova => {
+        const antes = app.prefs.alertasPers || [];
+        app.prefs.alertasPers = nova;
+        try { await guardarPrefs(); return true; } catch { app.prefs.alertasPers = antes; return false; }
+      };
+      const depois = mensagem => {
+        drawer.fechar(false);
+        aviso(mensagem);
+        Object.assign(app, { separador: 'alertas', alertaAba: 'personalizados', resposta: null });
+        redesenhar(true); desenharFlow();
+        carregarAtrasos();
+      };
+      let confirmar = false;
+      form.querySelector('[data-apagar]')?.addEventListener('click', async e => {
+        if (!confirmar) { confirmar = true; e.currentTarget.textContent = 'Confirmar: apagar'; return; }
+        if (await guardar(existentes.filter(a => a.id !== atual.id))) depois(`Alerta "${atual.nome}" apagado.`);
+        else $('#al-erro').textContent = 'Não foi possível apagar. Tente outra vez.';
+      });
+      form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const r = alertasPers.limpar(ler(), existentes);
+        ['nome', 'limite', 'email'].forEach(k => E[k].removeAttribute('aria-invalid'));
+        $('#al-erro').textContent = r.erro || '';
+        if (r.erro) { const c = E[r.campo]; c?.setAttribute('aria-invalid', 'true'); c?.focus(); return; }
+        const botao = form.querySelector('[type="submit"]');
+        botao.disabled = true;
+        const ok = await guardar(atual ? existentes.map(a => a.id === atual.id ? r.alerta : a) : [r.alerta, ...existentes]);
+        botao.disabled = false;
+        if (ok) depois(`Alerta "${r.alerta.nome}" ${atual ? 'guardado' : 'criado'}.`);
+        else $('#al-erro').textContent = 'Não foi possível guardar. Tente outra vez.';
+      });
+      pintar(); consultarAtrasos();
+      E.nome.focus();
     }

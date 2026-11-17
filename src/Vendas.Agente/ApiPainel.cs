@@ -112,6 +112,7 @@ public sealed class ApiPainel(
                 ["api", "documentos", _, "pdf"] => Mensagem(404, "O PDF emitido não está disponível."),
                 ["api", "clientes", var id] => await ClienteAsync(Uri.UnescapeDataString(id), perfil, ct),
                 ["api", "clientes", var id, "briefing"] => await BriefingAsync(Uri.UnescapeDataString(id), perfil, ct),
+                ["api", "atrasos"] => await AtrasosAsync(q, perfil, ct),
                 _ => Mensagem(404, "Rota inexistente."),
             };
         }
@@ -162,6 +163,17 @@ public sealed class ApiPainel(
         if (!texto.StartsWith('{')) return Indisponivel;
         auditar(perfil, documento); // só o que foi mesmo aberto
         return new(200, texto);
+    }
+
+    // Faturas vencidas há mais de N dias (alerta personalizado "Fatura em atraso"). As faturas por pagar não trazem o vendedor do cliente:
+    // um vendedor veria as dos clientes dos outros, por isso só o perfil geral as pode pedir.
+    private async Task<RespostaApi> AtrasosAsync(NameValueCollection q, Perfil perfil, CancellationToken ct)
+    {
+        if (perfil.Vendedor is not null) return Mensagem(403, "Esta consulta não está disponível para o perfil de vendedor.");
+        if (!int.TryParse(q["dias"], out var dias) || dias is < 1 or > 3650) return PedidoInvalido;
+
+        var texto = await ferramenta("consultar_atrasos", new Dictionary<string, object?> { ["dias"] = dias }, ct);
+        return texto.StartsWith('{') ? new(200, texto) : Indisponivel;
     }
 
     // Briefing antes da visita: artigos que deixou de comprar, artigo mais comprado e documentos por pagar (consultar_briefing)

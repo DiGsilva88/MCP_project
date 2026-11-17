@@ -15,6 +15,9 @@ internal static class ConsultaVendas
     private const string Vendas = "[mcp].[ViewMCP_vendas]";
     private const string Clientes = "[mcp].[ViewMCP_cliente]";
     private const string EmAbertoView = "[mcp].[ViewMCP_resp_aberto_cli]";
+    // Tipos de documento que a view de documentos por pagar traz com o saldo POSITIVO mas que são créditos (verificado na BD: as notas
+    // de crédito "N" valem -46,12 nas vendas e aparecem como 46,11 aqui). Acrescentar o "R" (recibos, aplicação GTS) se se confirmar.
+    private static readonly string[] TiposCredito = ["N"];
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) RankingPorCliente(
         DateOnly desde, DateOnly ate, string? cliente = null, IReadOnlyDictionary<Campo, string>? filtros = null)
@@ -470,19 +473,25 @@ internal static class ConsultaVendas
     public static (string Sql, Action<SqlParameterCollection> Parametros) EmAberto(
         DateOnly hoje, string? cliente = null, bool soVencidos = false)
     {
+        // Os totais (Documentos, Total, Vencido) são só das faturas por pagar (saldo positivo). As notas de crédito por abater
+        // vão à parte (DocumentosCredito, Creditos, negativo): somadas às faturas inflacionavam o que os clientes devem.
+        var credito = string.Join(", ", TiposCredito.Select(t => $"'{t}'"));
         var sql = $"""
             SELECT TOP (@limite)
                    CONCAT(COALESCE(c.[NomeCliente], '(cliente sem ficha)'), ' (', r.[EntidadeID], ')') AS Cliente,
                    CONCAT(RTRIM(r.[TipoDocID]), ' ', r.[Ano], '/', r.[DocID]) AS Documento,
                    r.[DataEmissao], r.[DataVencimento], r.Valor,
-                   COUNT(*)     OVER () AS Documentos,
-                   SUM(r.Valor) OVER () AS Total,
-                   SUM(CASE WHEN r.[DataVencimento] < @hoje THEN r.Valor ELSE 0 END) OVER () AS Vencido
-            FROM (SELECT *, CAST(COALESCE([RemanMoedaAdop], 0) AS decimal(18,2)) AS Valor FROM {EmAbertoView}) AS r
+                   COUNT(CASE WHEN r.Valor > 0 THEN 1 END) OVER () AS Documentos,
+                   SUM(CASE WHEN r.Valor > 0 THEN r.Valor ELSE 0 END) OVER () AS Total,
+                   SUM(CASE WHEN r.Valor > 0 AND r.[DataVencimento] < @hoje THEN r.Valor ELSE 0 END) OVER () AS Vencido,
+                   COUNT(CASE WHEN r.Valor < 0 THEN 1 END) OVER () AS DocumentosCredito,
+                   SUM(CASE WHEN r.Valor < 0 THEN r.Valor ELSE 0 END) OVER () AS Creditos
+            FROM (SELECT *, CASE WHEN RTRIM([TipoDocID]) IN ({credito}) THEN -1 ELSE 1 END
+                            * CAST(COALESCE([RemanMoedaAdop], 0) AS decimal(18,2)) AS Valor FROM {EmAbertoView}) AS r
             LEFT JOIN {Clientes} AS c ON CAST(c.[ClienteID] AS nvarchar(50)) = CAST(r.[EntidadeID] AS nvarchar(50))
             WHERE 1 = 1
               {(string.IsNullOrWhiteSpace(cliente) ? "" : "AND CAST(r.[EntidadeID] AS nvarchar(50)) = @cliente")}
-              {(soVencidos ? "AND r.[DataVencimento] < @hoje" : "")}
+              {(soVencidos ? "AND r.Valor > 0 AND r.[DataVencimento] < @hoje" : "")}
             ORDER BY r.[DataVencimento], Documento;
             """;
 

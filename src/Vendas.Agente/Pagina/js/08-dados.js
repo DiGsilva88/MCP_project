@@ -6,17 +6,20 @@
       separador: 'resumo', periodo: 'AnoAtual', filtros: filtros.vazios(),
       dados: null, erro: false, aCarregar: false, pedidos: 0,
       vendedor: document.body.dataset.vendedor === '1',
-      prefs: { guardados: [], alertas: {} },
+      prefs: { guardados: [], alertas: {}, alertasPers: [] },
+      atrasos: null,            // faturas em atraso (/api/atrasos), só para os alertas personalizados "Fatura em atraso"
       resposta: null,           // resposta do Flow aberta no painel principal
       // estado de cada separador
       mes: null, cliEstado: 'todos', cliQ: '', alertaAba: 'recebidos', alertaFiltro: 'todos', guardFiltro: 'todos',
-      artMetrica: 'valor', cenario: 'provavel', credTipo: 'Todos', credQ: '', credPag: 0
+      artMetrica: 'valor', cenario: 'provavel', credTipo: 'Todos', credQ: '', credPag: 0,
+      // listas longas: "Ver todos" aberto ou não, e a página de cada uma (ver fatiaLista)
+      ver: { artigos: false, marcas: false, zonas: false }, pag: { artigos: 0, clientes: 0, marcas: 0, zonas: 0 }
     };
     const TIPOS_DOC = { F: 'Faturas (F)', V: 'Faturas-recibo (V)', N: 'Notas de crédito s/ faturas (N)', C: 'Créditos s/ faturas-recibo (C)' };
 
     // Preferências por utilizador (Guardados, regras de alerta): no servidor, um ficheiro por login
     async function carregarPrefs() {
-      try { app.prefs = { guardados: [], alertas: {}, ...(await pedirJson('/api/preferencias')) }; }
+      try { app.prefs = { guardados: [], alertas: {}, alertasPers: [], ...(await pedirJson('/api/preferencias')) }; }
       catch (e) { console.error('Falha a ler as preferências:', e); }
     }
     async function guardarPrefs() {
@@ -47,7 +50,10 @@
         Object.assign(app, { dados: null, erro: true });
       }
       app.aCarregar = false;
+      const bom = !!app.dados && !app.dados.erro;
+      if (bom) atualizarUltimos();
       redesenhar();
+      if (bom) carregarAtrasos();
     }
     // Artigos por unidades: só se pede quando se escolhe "Unidades"
     async function carregarArtigosQtd() {
@@ -55,7 +61,7 @@
       if (!D || D.artigosQtd || D.artQtdPedido) return;
       D.artQtdPedido = true;
       try {
-        const q = new URLSearchParams({ ...consultaAtual(), ordenar: 'Quantidade' });
+        const q = new URLSearchParams([...consultaAtual(), ['ordenar', 'Quantidade']]);
         D.artigosQtd = lerLista((await pedirJson('/resumo?' + q)).artigos || '').itens.filter(i => i.num > 0);
       } catch (e) {
         console.error('Falha a carregar os artigos por unidades:', e);
@@ -109,7 +115,7 @@
       // shortcut: reta simples; trocar por um modelo com sazonalidade quando houver vários anos de histórico.
       let previsao = null, semPrevisao = '';
       const completos = meses.filter(x => x.atual != null && !x.parcial);
-      if (!['AnoAtual', 'Ultimos12Meses'].includes(app.periodo)) semPrevisao = 'A previsão só se calcula para o ano ou para os últimos 12 meses.';
+      if (app.filtros.de || !['AnoAtual', 'Ultimos12Meses'].includes(app.periodo)) semPrevisao = 'A previsão só se calcula para o ano ou para os últimos 12 meses, sem datas De/Até nos filtros.';
       else if (completos.length < 6) semPrevisao = 'Ainda não há 6 meses completos para prever a faturação.';
       else {
         const ult = completos.slice(-6), ys = ult.map(x => x.atual), my = ys.reduce((s, v) => s + v, 0) / 6;
@@ -127,11 +133,11 @@
       const parados = num(j.semVendas, /^Clientes sem vendas[^:]*:\s*([\d\s  ]+?)\s+clientes/);
 
       // Alertas: só o que os dados dizem (deteção de desvios que já existia). O limite de cada regra filtra-os depois.
-      const idAlerta = (regra, nome) => [app.periodo, app.filtros.zona, app.filtros.cliente, regra, nome].join('|');
+      const idAlerta = (regra, nome) => JSON.stringify([consultaAtual(), regra, nome]);
       const quebras = itens => itens.filter(i => i.delta <= -LIMITE_MIN).sort((a, b) => a.delta - b.delta);
       const menos = i => `menos ${fmt.pct(Math.abs(i.delta))} que no mesmo período de ${anoAnt}`;
       const alertas = rm.avisos.map(a => ({ id: idAlerta('dados', a), tipo: 'dados', icone: 'info', titulo: 'Dados incompletos', texto: maiuscula(a), pergunta: '' }));
-      quebras(app.filtros.zona ? zonasReais.filter(z => z.nome === app.filtros.zona) : zonasReais).forEach(z => alertas.push({ id: idAlerta('distrito', z.nome), tipo: 'zonas', regra: 'distrito', delta: z.delta, icone: 'descida', zona: z.nome,
+      quebras(app.filtros.zonas.length ? zonasReais.filter(z => app.filtros.zonas.includes(z.nome)) : zonasReais).forEach(z => alertas.push({ id: idAlerta('distrito', z.nome), tipo: 'zonas', regra: 'distrito', delta: z.delta, icone: 'descida', zona: z.nome,
         titulo: `${nomeZona(z.nome)} caiu ${fmt.pct(Math.abs(z.delta))}`, texto: `Faturou ${fmt.eur(z.num)}, ${menos(z)}.`, pergunta: `Porque caiu a faturação do distrito ${nomeZona(z.nome)} face ao ano passado?` }));
       quebras(artigos).forEach(a => alertas.push({ id: idAlerta('artigo', a.nome), tipo: 'artigos', regra: 'artigo', delta: a.delta, icone: 'descida',
         titulo: `${a.nome} caiu ${fmt.pct(Math.abs(a.delta))}`, texto: `Vendeu ${fmt.eur(a.num)}, ${menos(a)}.`, pergunta: app.filtros.cliente ? '' : 'Comparar as vendas por artigo com o ano passado' }));
@@ -160,7 +166,24 @@
     }
 
     // Alertas detetados que contam, com as regras e os limites de cada utilizador
-    const alertasAtivos = D => !D || !D.alertas ? [] : D.alertas.filter(a => alertasRegras.conta(app.prefs.alertas, a));
+    // Os detetados (com as regras e limites de cada utilizador) e o que encontram os alertas personalizados ligados
+    const alertasAtivos = D => !D || !D.alertas ? [] : [...D.alertas.filter(a => alertasRegras.conta(app.prefs.alertas, a)),
+      ...(app.prefs.alertasPers || []).filter(a => a.ligada).flatMap(a => alertasPers.avaliar(a, D, app.atrasos))];
+    // Faturas em atraso para os alertas "Fatura em atraso": só se há algum ligado e só o perfil geral (o vendedor não as pode ver)
+    async function carregarAtrasos() {
+      const dias = Math.min(...(app.prefs.alertasPers || []).filter(a => a.ligada && a.tipo === 'fatura').map(a => a.limite));
+      if (app.vendedor || !isFinite(dias)) { app.atrasos = null; return; }
+      try { app.atrasos = await pedirJson('/api/atrasos?dias=' + dias); }
+      catch (e) { console.error('Falha a carregar as faturas em atraso:', e); app.atrasos = null; return; }
+      atualizarUltimos();
+      redesenhar();
+    }
+    function atualizarUltimos() {
+      const r = alertasPers.marcarUltimos(app.prefs.alertasPers || [], app.dados, app.atrasos, hojeIso());
+      if (!r.mudou) return;
+      app.prefs.alertasPers = r.lista;
+      guardarPrefs().catch(e => console.error('Falha a guardar o último aviso:', e));
+    }
     // Os já vistos só nesta sessão (têm nomes de clientes): o número no sino e no menu são os novos
     const ALERTAS_VISTOS = 'flow-alertas-vistos';
     const alertasVistos = new Set((() => { try { return JSON.parse(sessionStorage.getItem(ALERTAS_VISTOS)) || []; } catch { return []; } })());
@@ -174,7 +197,7 @@
     const CRED_POR_PAGINA = 15;
     const creditos = { dados: null, erro: false, chave: null, pedidos: 0 };
     async function carregarCreditos() {
-      const n = ++creditos.pedidos, q = new URLSearchParams({ ...consultaAtual(), page: app.credPag + 1 });
+      const n = ++creditos.pedidos, q = new URLSearchParams([...consultaAtual(), ['page', app.credPag + 1]]);
       if (app.credTipo !== 'Todos') q.set('tipo', app.credTipo);
       if (app.credQ.trim()) q.set('q', app.credQ.trim());
       try {

@@ -10,7 +10,7 @@ public static class Preferencias
 {
     public const int MaxCaracteres = 256 * 1024;
     // Só estas chaves: a página não pode usar o ficheiro para guardar outra coisa.
-    private static readonly HashSet<string> Chaves = ["guardados", "alertas", "filtros"];
+    private static readonly HashSet<string> Chaves = ["guardados", "alertas", "alertasPers", "filtros"];
     private static readonly object Bloqueio = new();
 
     // Hash e não o login tal e qual: "DOMINIO\\ana" não é um nome de ficheiro, e assim não há ..\ possível.

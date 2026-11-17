@@ -73,6 +73,21 @@ public class ConsultaVendasTests
         Assert.Null(FiltrosVenda.Criar(zonas is { } n ? Enumerable.Range(0, n).Select(i => "Z" + i).ToArray() : null, null, tipos).Filtros);
 
     [Fact]
+    public void EmAberto_NotaDeCreditoVaiComSinalNegativo_EOsTotaisSaoSoDasFaturas()
+    {
+        // Verificado na BD: o saldo por pagar das notas de crédito (N) vem positivo (o valor com IVA, sem o sinal das vendas)
+        var (sql, aplicar) = ConsultaVendas.EmAberto(new DateOnly(2026, 11, 17), "1003", soVencidos: true);
+        var p = Aplicar(aplicar);
+
+        Assert.Contains("RTRIM([TipoDocID]) IN ('N')", sql);                      // as notas de crédito passam a negativas
+        Assert.Contains("DocumentosCredito", sql);                                // e contam à parte
+        Assert.Contains("AS Creditos", sql);
+        Assert.Contains("r.Valor > 0 AND r.[DataVencimento] < @hoje", sql);       // só as faturas contam como vencidas
+        Assert.Equal("1003", p["@cliente"].Value);
+        Assert.Equal(new DateTime(2026, 11, 17), p["@hoje"].Value);
+    }
+
+    [Fact]
     public void PaginaCreditos_PaginaNoSqlEParametrizaAPesquisa()
     {
         var (sql, aplicar) = ConsultaVendas.PaginaCreditos(Desde, Ate, "N", "50%_[x", 30, null, null);

@@ -197,7 +197,15 @@ public static class PoliticasSeguranca
     public static bool PodeIrParaCloud(string ferramenta) => ferramenta != "consultar_sensivel";
 
     // Devolvem JSON para os cartões do painel: o modelo não precisa delas e o esquema ocupava lugar no prompt.
-    public static bool SoDoPainel(string ferramenta) => ferramenta is "consultar_documentos" or "consultar_carteira" or "consultar_creditos" or "consultar_documento" or "consultar_briefing";
+    // Parâmetros que só o painel usa e que o modelo vê no esquema de consultar_vendas: o vendedor é o filtro do perfil e os outros
+    // são os filtros transversais do painel. O modelo não os escolhe (um modelo pequeno preenchia-os e filtrava sem ninguém pedir).
+    private static readonly string[] ArgumentosSoDoPainel = ["vendedor", "zonas", "marcas", "tiposDoc"];
+    public static void RemoverSoDoPainel(IDictionary<string, object?> argumentos)
+    {
+        foreach (var nome in ArgumentosSoDoPainel) argumentos.Remove(nome);
+    }
+
+    public static bool SoDoPainel(string ferramenta) => ferramenta is "consultar_documentos" or "consultar_carteira" or "consultar_creditos" or "consultar_documento" or "consultar_briefing" or "consultar_atrasos";
 
     // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
     public static string TextoDoResultado(object? resultado) =>
