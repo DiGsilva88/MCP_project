@@ -78,6 +78,51 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task ConsultarBriefing_ArtigosParadosMaisCompradoEPorPagar_ContadosDaUltimaVenda()
+    {
+        var ultima = new DateOnly(2026, 9, 4);
+        var repo = new FakeVendasRepo
+        {
+            UltimaVenda = ultima,
+            ArtigosCliente =
+            [
+                new("A1", "Pastilhas", 120m, 12, ultima.AddDays(-3), 2400m),     // compra sempre: não está parado
+                new("A2", "Discos", 36m, 6, ultima.AddDays(-120), 900m),         // comprava em 6 meses, parou há 120 dias
+                new("A3", "Lâmpada", 2m, 1, ultima.AddDays(-200), 10m),          // comprou uma vez: não era habitual
+            ],
+            EmAberto = new([new("Casa Costa (1003)", "F 2026/12", null, new DateOnly(2026, 8, 1), 300m)], 2, 450m, 300m),
+        };
+        var sut = new VendasTools(repo, NullLogger<VendasTools>.Instance, new RelogioFixo(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero)));
+
+        using var d = System.Text.Json.JsonDocument.Parse(await sut.ConsultarBriefingAsync("1003", vendedor: "Ana"));
+
+        var r = d.RootElement;
+        Assert.Equal(("1003", new DateOnly(2025, 9, 5), new DateOnly(2026, 9, 5)), repo.UltimosArtigosCliente);   // 12 meses até à última venda
+        Assert.Equal("Ana", repo.UltimosFiltros![Campo.Vendedor]);
+        Assert.Equal("Ana", repo.UltimosFiltrosProcura![Campo.Vendedor]);   // o cliente tem de ser deste vendedor
+        Assert.Equal("Pastilhas", r.GetProperty("maisComprado").GetProperty("artigo").GetString());
+        var parados = r.GetProperty("deixouDeComprar");
+        Assert.Equal(1, parados.GetArrayLength());
+        Assert.Equal("Discos", parados[0].GetProperty("artigo").GetString());
+        Assert.Equal(4m, parados[0].GetProperty("mediaMes").GetDecimal());   // 36 em 9 meses (setembro a junho)
+        Assert.Equal("07-05-2026", parados[0].GetProperty("ultima").GetString());
+        Assert.Equal(450m, r.GetProperty("emAberto").GetProperty("total").GetDecimal());
+        Assert.Equal("1003", repo.UltimoEmAberto!.Value.Cliente);
+    }
+
+    [Fact]
+    public async Task ConsultarBriefing_ClienteDeOutroVendedor_NaoVaiAosDocumentosPorPagar()
+    {
+        var repo = new FakeVendasRepo { Clientes = _ => [] };
+
+        var json = await CriarSut(repo).ConsultarBriefingAsync("1003", vendedor: "Ana");
+
+        Assert.Contains("\"erro\"", json);
+        Assert.Null(repo.UltimoEmAberto);
+        Assert.Null(repo.UltimosArtigosCliente);
+    }
+
+    [Fact]
     public async Task ConsultarEmAberto_ClienteInexistente_NaoVaiAoRepo()
     {
         var repo = new FakeVendasRepo { Clientes = _ => [] };
@@ -227,6 +272,41 @@ public class VendasToolsTests
         Assert.Equal("N", credito.GetProperty("tipo").GetString());
         Assert.Equal(-10m, credito.GetProperty("total").GetDecimal());
         Assert.Equal("Setúbal", repo.UltimosFiltros![Campo.Distrito]);
+    }
+
+    [Fact]
+    public async Task ConsultarDocumentos_FiltrosDoPainelChegamAoRepo()
+    {
+        var repo = new FakeVendasRepo { Documentos = new([], [], [], []) };
+
+        await CriarSut(repo).ConsultarDocumentosAsync(zonas: ["Braga", "Porto"], marcas: ["Bosch"], tiposDoc: ["F"], vendedor: "Ana");
+
+        var f = Assert.IsType<FiltrosVenda>(repo.UltimosFiltros);
+        Assert.Equal(["Braga", "Porto"], f.Zonas);
+        Assert.Equal(["Bosch"], f.Marcas);
+        Assert.Equal(["F"], f.Tipos);
+        Assert.Equal("Ana", f[Campo.Vendedor]);
+    }
+
+    [Fact]
+    public async Task ConsultarCarteira_DatasInvalidas_DevolveOErroSemIrAoRepo()
+    {
+        var repo = new FakeVendasRepo();
+
+        var r = await CriarSut(repo).ConsultarCarteiraAsync(dataInicio: "31-12-2026", dataFim: "01-01-2026");
+
+        Assert.False(r.StartsWith('{'));
+        Assert.Null(repo.UltimosFiltros);
+    }
+
+    [Fact]
+    public async Task ConsultarDocumentos_DizAUltimaVendaDaBd()
+    {
+        var repo = new FakeVendasRepo { Documentos = new([], [], [], []), UltimaVenda = new DateOnly(2026, 9, 4) };
+
+        using var d = System.Text.Json.JsonDocument.Parse(await CriarSut(repo).ConsultarDocumentosAsync());
+
+        Assert.Equal("04-09-2026", d.RootElement.GetProperty("ultimaVenda").GetString());
     }
 
     [Theory]

@@ -170,10 +170,10 @@ internal static class ConsultaClientes
         return (sql, Parametros);
     }
 
-    private static bool EhSemDados(string valor) =>
+    internal static bool EhSemDados(string valor) =>
         valor.Equals(Campos.SemDados, StringComparison.OrdinalIgnoreCase);
 
-    private static string CondicaoSemDados(Campo campo)
+    internal static string CondicaoSemDados(Campo campo)
     {
         var coluna = Coluna(campo);
         return $"({coluna} IS NULL OR {coluna} = '' OR {coluna} LIKE '{Campos.PrefixoSemTexto}%' OR {coluna} LIKE '{Campos.PrefixoSemNumero}%')";

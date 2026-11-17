@@ -1,0 +1,41 @@
+    /* =========================================================
+       Chat do Flow: conversa, respostas e caixa de pergunta
+       ========================================================= */
+    .ola { padding: 14px 16px; border-radius: var(--raio-cartao); background: var(--blue-mist); line-height: 1.5; }
+    .ola b { display: block; margin-bottom: 4px; }
+    .ola b.dentro { display: inline; margin: 0; }
+    .ola + .ola { margin-top: 10px; }
+    .troca + .troca { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .q { width: max-content; max-width: 85%; margin-left: auto; padding: 8px 12px; border-radius: var(--raio-controlo); background: var(--blue-pale); font-size: 14px; overflow-wrap: anywhere; }
+    .resp h2 { margin-top: 18px; font-size: 16px; font-weight: 600; line-height: 1.3; }
+    .resp p { margin-top: 8px; font-size: 14px; line-height: 1.55; color: var(--ink-2); overflow-wrap: anywhere; }
+    .resp p b { color: var(--black); }
+    .resp-texto { white-space: pre-wrap; }
+    .resp-espera { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--blue-deep); }
+    .resp-erro { margin-top: 14px; padding: 12px 14px; border-radius: var(--raio-cartao); background: var(--error-bg); color: var(--error); }
+    .resp-erro button { margin-top: 8px; border: 0; background: none; color: inherit; font-weight: 600; text-decoration: underline; display: block; }
+    .metricas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+    .m { padding: 12px; border-radius: var(--raio-controlo); background: var(--blue-mist); min-width: 0; }
+    .m-r { font-size: 12.5px; color: var(--ink-3); }
+    .m-v { margin-top: 6px; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .resp-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .resp-acoes .btn { padding: 6px 10px; font-size: 13px; }
+    .resp-acoes .btn[aria-pressed="true"] { color: var(--blue); border-color: var(--blue-pale); }
+    .avaliar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 12.5px; color: var(--ink-3); }
+    .avaliar .chip { padding: 4px 10px; font-size: 12.5px; }
+    .mais { margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .mais h3 { font-size: 12.5px; font-weight: 500; color: var(--ink-3); }
+    .mais button { display: block; width: 100%; padding: 8px 0; border: 0; background: none; text-align: left; font-size: 14px; font-weight: 500; }
+    .mais button:hover { color: var(--blue); }
+    .mais button:disabled { color: var(--ink-3); }
+
+    .caixa { padding: 12px 12px 10px 14px; border: 1.5px solid var(--black); border-radius: var(--raio-cartao); background: var(--white); }
+    .caixa:focus-within { border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-pale); }
+    .caixa input { width: 100%; border: 0; outline: 0; background: none; font-size: 15px; }
+    .caixa input:disabled { color: var(--ink-3); }
+    .caixa-pe { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; font-size: 12px; color: var(--ink-3); }
+    .enviar { flex: none; width: 34px; height: 34px; border: 0; border-radius: 9px; background: var(--blue); color: var(--white); display: grid; place-items: center; }
+    .enviar:hover { background: var(--blue-deep); }
+    .enviar:disabled { background: var(--blue-pale); color: var(--ink-2); }
+    .enviar--parar { background: var(--black); }
+    .enviar--parar:hover { background: var(--ink-2); }

@@ -75,6 +75,11 @@ public interface IVendasRepo
         DateOnly hoje, int limite, string? cliente = null, bool soVencidos = false,
         CancellationToken cancellationToken = default);
 
+    // Briefing: o que um cliente (ID exato) comprou em [desde, ate[, um registo por artigo, do maior valor para o menor.
+    Task<IReadOnlyList<ArtigoCliente>> ArtigosDoClienteAsync(
+        string cliente, DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null,
+        CancellationToken cancellationToken = default);
+
     // Data da venda mais recente que existe (null = sem vendas nenhumas).
     Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default);
 }

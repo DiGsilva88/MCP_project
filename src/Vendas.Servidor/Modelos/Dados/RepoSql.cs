@@ -177,6 +177,16 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
             : new ResumoEmAberto(linhas.Select(l => l.Item).ToList(), linhas[0].Documentos, linhas[0].Total, linhas[0].Vencido);
     }
 
+    public async Task<IReadOnlyList<ArtigoCliente>> ArtigosDoClienteAsync(
+        string cliente, DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null,
+        CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaVendas.ArtigosDoCliente(cliente, desde, ate, filtros);
+        return await LerAsync(sql, parametros, 500, leitor => new ArtigoCliente(
+            leitor.GetString(0), leitor.GetString(1), Convert.ToDecimal(leitor.GetValue(2), CultureInfo.InvariantCulture),
+            leitor.GetInt32(3), Data(leitor, 4), leitor.GetDecimal(5)), cancellationToken);
+    }
+
     public async Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default)
     {
         var (sql, parametros) = ConsultaVendas.UltimaVenda();

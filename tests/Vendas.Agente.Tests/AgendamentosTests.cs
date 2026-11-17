@@ -2,6 +2,16 @@ namespace Vendas.Agente.Tests;
 
 public class AgendamentosTests
 {
+    [Fact]
+    public void DoCriador_SoOsDessaPessoa_SemOsAntigosSemCriador()
+    {
+        List<Agendamento> lista = [new("semanal", "a@inforap.pt", "DOM\\ana"), new("mensal", "b@inforap.pt", "DOM\\rui"), new("semanal", "c@inforap.pt")];
+
+        var meus = Agendamentos.DoCriador(lista, "dom\\ANA");
+
+        Assert.Equal(["a@inforap.pt"], meus.Select(a => a.Email));
+    }
+
     [Theory]
     [InlineData("""{"freq":"semanal","email":"diana.silva@inforap.pt"}""", "semanal", "diana.silva@inforap.pt")]
     [InlineData("""{"freq":"mensal","email":"  Ana@INFORAP.PT "}""", "mensal", "Ana@INFORAP.PT")]

@@ -1,0 +1,126 @@
+    /* =========================================================
+       Estrutura do painel: menu (64px) | barra de topo + conteúdo | Flow (380px)
+       ========================================================= */
+    .app {
+      display: grid; height: 100vh;
+      grid-template-columns: var(--menu-largura) minmax(0, 1fr) var(--flow-largura);
+      grid-template-rows: var(--topo-altura) minmax(0, 1fr);
+    }
+
+    /* Menu lateral */
+    .rail {
+      grid-row: 1 / 3; border-right: 1px solid var(--line);
+      display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 0;
+    }
+    .rail-marca { margin-bottom: 18px; display: grid; place-items: center; }
+    .rail-item {
+      position: relative; width: 40px; height: 40px; border: 0; border-radius: var(--raio-controlo);
+      background: none; color: var(--ink-2); display: grid; place-items: center;
+    }
+    .rail-item:hover { background: var(--blue-mist); color: var(--black); }
+    .rail-item[aria-current="page"] { background: var(--blue-mist); color: var(--blue); }
+    .rail-n {
+      position: absolute; top: 4px; right: 3px; min-width: 16px; height: 16px; padding: 0 4px;
+      border-radius: var(--raio-chip); background: var(--blue); color: var(--white);
+      font-size: 10px; font-weight: 600; display: grid; place-items: center;
+    }
+    .rail-n--escuro { background: var(--black); }
+    .rail-dica {
+      position: absolute; left: 48px; z-index: 5; padding: 4px 8px; border-radius: 6px;
+      background: var(--black); color: var(--white); font-size: 12px; white-space: nowrap;
+      opacity: 0; pointer-events: none; transition: opacity .12s;
+    }
+    .rail-item:hover .rail-dica, .rail-item:focus-visible .rail-dica { opacity: 1; }
+    .rail-fim { margin-top: auto; }
+    .rail-avatar {
+      margin-top: 8px; width: 34px; height: 34px; border-radius: 50%;
+      background: var(--black); color: var(--white); font-size: 12px; font-weight: 600; display: grid; place-items: center;
+    }
+
+    /* Barra de topo */
+    .topbar {
+      grid-column: 2; display: flex; align-items: center; gap: 16px; padding: 0 28px;
+      border-bottom: 1px solid var(--line); min-width: 0;
+    }
+    .pesquisa { flex: 1; display: flex; align-items: center; gap: 10px; color: var(--ink-3); min-width: 0; }
+    .pesquisa input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--black); }
+    .pesquisa:focus-within { color: var(--blue); }
+    .fresco {
+      display: flex; align-items: center; gap: 8px; padding: 6px 12px; white-space: nowrap;
+      border: 1px solid var(--line); border-radius: var(--raio-chip); font-size: 13px; color: var(--ink-2);
+    }
+    .fresco i { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); display: block; }
+    .botao-icone {
+      position: relative; flex: none; width: 36px; height: 36px; border: 1px solid var(--line);
+      border-radius: var(--raio-controlo); background: var(--white); display: grid; place-items: center; color: var(--black);
+    }
+    .botao-icone:hover { border-color: var(--black); }
+    .botao-icone .rail-n { top: -6px; right: -6px; min-width: 17px; height: 17px; }
+
+    /* Conteúdo */
+    .principal { grid-column: 2; overflow: auto; padding: 28px 32px 40px; min-width: 0; }
+    .cabeca { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+    .cabeca h1 { font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.2; }
+    .cabeca h1:focus { outline: none; }
+    .cabeca-sub { color: var(--ink-2); margin-top: 6px; max-width: 72ch; }
+    .cabeca-iva { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+    .acoes { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    /* Flow, sempre visível ao lado */
+    .flow {
+      grid-column: 3; grid-row: 1 / 3; border-left: 1px solid var(--line);
+      display: flex; flex-direction: column; min-height: 0; background: var(--white);
+    }
+    .flow-cab {
+      height: var(--topo-altura); flex: none; display: flex; align-items: center; gap: 10px; padding: 0 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .flow-nome { font-weight: 600; }
+    .flow-ctx {
+      margin-left: auto; padding: 4px 10px; border-radius: var(--raio-chip);
+      background: var(--blue-mist); color: var(--ink-2); font-size: 12px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+    }
+    .flow-fechar { display: none; }
+    .flow-corpo { flex: 1; overflow: auto; padding: 18px; }
+    .flow-pe { flex: none; padding: 14px 18px 16px; }
+    .flow-abrir { display: none; }
+
+    /* Voltar ao topo: canto inferior direito da área principal */
+    .totop {
+      position: fixed; right: calc(var(--flow-largura) + 24px); bottom: 24px; z-index: 10;
+      width: 42px; height: 42px; border-radius: var(--raio-cartao); border: 1px solid var(--line);
+      background: var(--white); display: grid; place-items: center; box-shadow: var(--sombra);
+      opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .15s, transform .15s;
+    }
+    .totop.on { opacity: 1; pointer-events: auto; transform: none; }
+    .totop:hover { border-color: var(--black); }
+
+    /* Abaixo de 1280px o Flow abre por cima do conteúdo, a partir de um botão, em vez de desaparecer */
+    @media (max-width: 1280px) {
+      .app { grid-template-columns: var(--menu-largura) minmax(0, 1fr); }
+      .flow {
+        position: fixed; top: 0; right: 0; bottom: 0; z-index: 25; width: min(var(--flow-largura), 100vw);
+        box-shadow: var(--sombra-drawer); transform: translateX(100%); visibility: hidden;
+        transition: transform .2s, visibility .2s;
+      }
+      .flow.aberto { transform: none; visibility: visible; }
+      .flow-fechar { display: grid; margin-left: 4px; }
+      .flow-ctx { margin-left: auto; }
+      .flow-abrir {
+        position: fixed; right: 24px; bottom: 24px; z-index: 11; display: inline-flex; align-items: center; gap: 8px;
+        height: 44px; padding: 0 16px 0 12px; border: 0; border-radius: var(--raio-chip);
+        background: var(--blue); color: var(--white); font-weight: 600; box-shadow: var(--sombra);
+      }
+      .flow-abrir:hover { background: var(--blue-deep); }
+      .totop { right: 24px; bottom: 80px; }
+    }
+    @media (max-width: 720px) {
+      .app { grid-template-columns: 1fr; grid-template-rows: var(--topo-altura) auto minmax(0, 1fr); }
+      .rail { grid-row: 2; flex-direction: row; overflow-x: auto; padding: 6px 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .rail-marca, .rail-fim, .rail-avatar, .rail-dica { display: none; }
+      .topbar, .principal { grid-column: 1; }
+      .topbar { grid-row: 1; padding: 0 16px; gap: 10px; }
+      .principal { grid-row: 3; padding: 20px 16px 96px; }
+      .fresco { display: none; }
+    }

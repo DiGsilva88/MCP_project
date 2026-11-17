@@ -36,10 +36,41 @@ public class ApiPainelTests
         Assert.Equal("costa", a["pesquisa"]);
         Assert.Equal(4, a["pagina"]);
         Assert.Equal("MesAtual", a["periodo"]);
-        Assert.Equal("Distrito", a["coluna"]);
-        Assert.Equal("Lisboa", a["valor"]);
+        Assert.Equal(["Lisboa"], (string[])a["zonas"]!);
         Assert.False(a.ContainsKey("vendedor"));
     }
+
+    [Fact]
+    public void Filtros_TodosOsCamposComVariosValores()
+    {
+        var q = new NameValueCollection { { "de", "01-02-2026" }, { "ate", "28-02-2026" }, { "zona", "Braga" }, { "zona", "Porto" }, { "zona", "braga" },
+                                          { "marca", "Bosch" }, { "tipodoc", "F" }, { "cliente", " Casa " }, { "comparar", "nao" } };
+
+        var f = FiltrosPainel.Ler(q, new DateOnly(2026, 11, 17))!;
+        var args = f.Janela();
+        f.Aplicar(args);
+
+        Assert.Equal("01-02-2026", args["dataInicio"]);
+        Assert.Equal("28-02-2026", args["dataFim"]);
+        Assert.False(args.ContainsKey("periodo"));       // as datas ganham ao período
+        Assert.Equal(["Braga", "Porto"], (string[])args["zonas"]!);
+        Assert.Equal(["Bosch"], (string[])args["marcas"]!);
+        Assert.Equal(["F"], (string[])args["tiposDoc"]!);
+        Assert.Equal("Casa", args["cliente"]);
+        Assert.False(f.Comparar);
+    }
+
+    [Theory]
+    [InlineData("de", "28-02-2026", "ate", "01-02-2026")]   // De depois de Até
+    [InlineData("de", "2026-02-01", "ate", "28-02-2026")]   // formato errado
+    [InlineData("de", "01-02-2026", "x", "")]               // só uma das datas
+    [InlineData("tipodoc", "F' OR 1=1", "x", "")]
+    public void Filtros_Invalidos_DaoNull(string k1, string v1, string k2, string v2) =>
+        Assert.Null(FiltrosPainel.Ler(new NameValueCollection { { k1, v1 }, { k2, v2 } }, new DateOnly(2026, 11, 17)));
+
+    [Fact]
+    public void Filtros_SemNada_SaoOAnoAtualComComparacao() =>
+        Assert.Equal(FiltrosPainel.Omissao.Chave, FiltrosPainel.Ler(new NameValueCollection(), new DateOnly(2026, 11, 17))!.Chave);
 
     [Theory]
     [InlineData("F")]
@@ -151,6 +182,28 @@ public class ApiPainelTests
 
         Assert.Equal(404, (await t.Api().TratarAsync("/api/clientes/1", Q(), Ana)).Estado);
         Assert.Equal("Ana", t.Chamadas[0].Args["vendedor"]);
+    }
+
+    [Fact]
+    public async Task Briefing_PassaOVendedorDoPerfil_EDevolveOJson()
+    {
+        var t = new Tools("""{"cliente":"Casa (1003)","deixouDeComprar":[]}""");
+
+        var r = await t.Api().TratarAsync("/api/clientes/1003/briefing", Q(), Ana);
+
+        Assert.Equal(200, r.Estado);
+        Assert.Equal(("consultar_briefing", "1003", "Ana"), (t.Chamadas[0].Nome, t.Chamadas[0].Args["cliente"], t.Chamadas[0].Args["vendedor"]));
+    }
+
+    [Fact]
+    public async Task Briefing_ClienteDeOutroVendedor_404SemNomes()
+    {
+        var t = new Tools("""{"erro":"Vários clientes começam por \"1\"..."}""");
+
+        var r = await t.Api().TratarAsync("/api/clientes/1/briefing", Q(), Ana);
+
+        Assert.Equal(404, r.Estado);
+        Assert.DoesNotContain("Vários", r.Corpo);
     }
 
     [Theory]

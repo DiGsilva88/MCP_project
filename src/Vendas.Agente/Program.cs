@@ -534,6 +534,42 @@ async Task ModoWebAsync()
                     finally { umaPergunta.Release(); }
                 }
             }
+            // Guardados, alertas personalizados e filtros: um ficheiro por login (ver Preferencias)
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/api/preferencias")
+            {
+                resposta.ContentType = "application/json; charset=utf-8";
+                resposta.Headers["Cache-Control"] = "no-store";
+                await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(Preferencias.Ler(Preferencias.Ficheiro(pastaDados, perfil.Login))));
+            }
+            else if (pedido.HttpMethod == "POST" && pedido.Url?.AbsolutePath == "/preferencias")
+            {
+                var corpo = await LerCorpoAsync(pedido, Preferencias.MaxCaracteres);
+                var erro = corpo is null ? "Demasiados dados guardados." : Preferencias.Validar(corpo);
+                try
+                {
+                    if (erro is null) Preferencias.Guardar(Preferencias.Ficheiro(pastaDados, perfil.Login), corpo!);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    Console.Error.WriteLine($"Não consegui guardar as preferências: {ex.Message}");
+                    erro = "Não foi possível guardar.";
+                }
+                resposta.StatusCode = erro is null ? 204 : 400;
+                if (erro is not null)
+                {
+                    resposta.ContentType = "text/plain; charset=utf-8";
+                    await resposta.OutputStream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(erro));
+                }
+            }
+            else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/api/agendamentos")
+            {
+                List<Agendamento> meus;
+                try { meus = Agendamentos.DoCriador(Agendamentos.Ler(ficheiroAgendamentos), perfil.Login); }
+                catch (InvalidDataException ex) { Console.Error.WriteLine(ex.Message); meus = []; }
+                resposta.ContentType = "application/json; charset=utf-8";
+                resposta.Headers["Cache-Control"] = "no-store";
+                await resposta.OutputStream.WriteAsync(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(meus.Select(a => new { freq = a.Freq, email = a.Email })));
+            }
             else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/resumo")
                 await ResumoAsync(pedido.QueryString, resposta, perfil.Vendedor);
             else if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath is { } rotaApi && rotaApi.StartsWith("/api/"))

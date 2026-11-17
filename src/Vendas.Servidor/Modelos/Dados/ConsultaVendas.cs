@@ -155,7 +155,7 @@ internal static class ConsultaVendas
     public static (string Sql, Action<SqlParameterCollection> Parametros) ProcurarClientes(
         string cliente, IReadOnlyDictionary<Campo, string>? filtros = null)
     {
-        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var (ficha, aplicarFicha) = FiltroFicha(filtros, vendas: false);   // a ficha não tem Marca nem TipoDocID
         var sql = $"""
             SELECT TOP (@limite)
                    CAST([ClienteID] AS nvarchar(50)) AS Id,
@@ -180,12 +180,45 @@ internal static class ConsultaVendas
         $"WHERE [DataDoc] >= @desde AND [DataDoc] < @ate {FiltroCliente(cliente)} {ficha}";
 
     // Só clientes com essa Localidade/Distrito/Zona/... (mesmo filtro da tool consultar).
+    // Com FiltrosVenda (painel): também várias zonas e, nas consultas sobre as vendas (vendas=true), marcas e tipos de documento.
     private static (string Sql, Action<SqlParameterCollection> Parametros) FiltroFicha(
-        IReadOnlyDictionary<Campo, string>? filtros)
+        IReadOnlyDictionary<Campo, string>? filtros, bool vendas = true)
     {
-        if (filtros is not { Count: > 0 }) return ("", _ => { });
-        var (where, aplicar) = ConsultaClientes.FiltrosWhere(filtros);
-        return ($"AND [ClienteID] IN (SELECT c.ClienteID FROM {ConsultaClientes.Origem} {where})", aplicar);
+        var (sql, aplicar) = ("", (Action<SqlParameterCollection>)(_ => { }));
+        if (filtros is { Count: > 0 })
+        {
+            var (where, a) = ConsultaClientes.FiltrosWhere(filtros);
+            (sql, aplicar) = ($"AND [ClienteID] IN (SELECT c.ClienteID FROM {ConsultaClientes.Origem} {where})", a);
+        }
+        if (filtros is not FiltrosVenda { TemListas: true } f) return (sql, aplicar);
+
+        var (zonas, aplicarZonas) = FiltroZonas(f, "[ClienteID]");
+        sql += zonas;
+        if (vendas && f.Marcas.Count > 0)
+            sql += $" AND [Marca] COLLATE Latin1_General_CI_AI IN ({string.Join(", ", f.Marcas.Select((_, i) => $"@marca{i}"))})";
+        if (vendas && f.Tipos.Count > 0)
+            sql += $" AND [TipoDocID] IN ({string.Join(", ", f.Tipos.Select((_, i) => $"@tipodoc{i}"))})";
+        return (sql, p =>
+        {
+            aplicar(p);
+            aplicarZonas(p);
+            if (!vendas) return;
+            for (var i = 0; i < f.Marcas.Count; i++) p.Add($"@marca{i}", SqlDbType.NVarChar, FiltrosVenda.MaxTexto).Value = f.Marcas[i];
+            for (var i = 0; i < f.Tipos.Count; i++) p.Add($"@tipodoc{i}", SqlDbType.NVarChar, 10).Value = f.Tipos[i];
+        });
+    }
+
+    // Uma ou mais zonas (distritos da ficha). "sem dados" são os clientes sem distrito, como no filtro de um só valor.
+    private static (string Sql, Action<SqlParameterCollection> Parametros) FiltroZonas(FiltrosVenda? f, string colunaCliente)
+    {
+        if (f is not { Zonas.Count: > 0 }) return ("", _ => { });
+        var distrito = ConsultaClientes.Coluna(Campo.Distrito);
+        var valores = f.Zonas.Where(z => !ConsultaClientes.EhSemDados(z)).ToList();
+        var condicoes = new List<string>();
+        if (valores.Count > 0) condicoes.Add($"{distrito} COLLATE Latin1_General_CI_AI IN ({string.Join(", ", valores.Select((_, i) => $"@zona{i}"))})");
+        if (valores.Count < f.Zonas.Count) condicoes.Add(ConsultaClientes.CondicaoSemDados(Campo.Distrito));
+        return ($" AND {colunaCliente} IN (SELECT c.ClienteID FROM {ConsultaClientes.Origem} WHERE {string.Join(" OR ", condicoes)})",
+            p => { for (var i = 0; i < valores.Count; i++) p.Add($"@zona{i}", SqlDbType.NVarChar, FiltrosVenda.MaxTexto).Value = valores[i]; });
     }
 
     // Clientes da ficha sem nenhuma venda em [desde, ate[, com a data da última compra antes disso
@@ -194,6 +227,8 @@ internal static class ConsultaVendas
         DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null)
     {
         var (where, aplicarFiltros) = ConsultaClientes.FiltrosWhere(filtros ?? new Dictionary<Campo, string>());
+        var (zonas, aplicarZonas) = FiltroZonas(filtros as FiltrosVenda, "c.ClienteID");
+        if (zonas.Length > 0) where = (where.Length == 0 ? "WHERE 1 = 1" : where) + zonas;
         var sql = $"""
             SELECT TOP (@limite)
                    CONCAT(COALESCE(c.[NomeCliente], '(sem nome)'), ' (', c.[ClienteID], ')') AS Nome,
@@ -208,7 +243,7 @@ internal static class ConsultaVendas
             ORDER BY u.UltimaData DESC, Nome;
             """;
 
-        return (sql, p => { Preencher(p, desde, ate, null); aplicarFiltros(p); });
+        return (sql, p => { Preencher(p, desde, ate, null); aplicarFiltros(p); aplicarZonas(p); });
     }
 
     // Vista Faturação do painel: valor e n.º de documentos por tipo de documento (TipoDocID).
@@ -381,6 +416,35 @@ internal static class ConsultaVendas
             LEFT JOIN {Clientes} AS c ON c.[ClienteID] = u.[ClienteID];
             """;
         return (sql, aplicarFicha);
+    }
+
+    // Briefing do painel: o que um cliente comprou em [desde, ate[, por artigo (quantidade, em quantos meses, última compra, valor).
+    // As notas de crédito não contam como compra. filtros: o vendedor do perfil só vê os seus clientes.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) ArtigosDoCliente(
+        string cliente, DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            SELECT TOP (@limite)
+                   CAST([ArtigoID] AS nvarchar(50)), COALESCE(MAX([Artigo]), '(sem descrição)'),
+                   COALESCE(SUM([Quantidade]), 0),
+                   COUNT(DISTINCT CONVERT(char(7), [DataDoc], 120)),
+                   MAX([DataDoc]),
+                   COALESCE(SUM([ValorLiquido]), 0)
+            FROM   {Vendas}
+            WHERE  CAST([ClienteID] AS nvarchar(50)) = @cliente
+              AND  [DataDoc] >= @desde AND [DataDoc] < @ate
+              AND  [ValorLiquido] > 0 {ficha}
+            GROUP BY [ArtigoID]
+            ORDER BY SUM([ValorLiquido]) DESC;
+            """;
+        return (sql, p =>
+        {
+            p.Add("@cliente", SqlDbType.NVarChar, 100).Value = cliente.Trim();
+            p.Add("@desde", SqlDbType.Date).Value = desde.ToDateTime(TimeOnly.MinValue);
+            p.Add("@ate", SqlDbType.Date).Value = ate.ToDateTime(TimeOnly.MinValue);
+            aplicarFicha(p);
+        });
     }
 
     // Valor e documentos de cada cliente em cada mês do período. Um documento tem uma só data: somar os meses não repete nenhum.

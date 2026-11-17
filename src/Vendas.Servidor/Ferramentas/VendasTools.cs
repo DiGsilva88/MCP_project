@@ -69,6 +69,9 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         [Description("Opcional: trimestre 1 a 4 (1 = janeiro a março). Com ano opcional. Tem prioridade sobre mes e periodo.")] int? trimestre = null,
         [Description("true: do menor para o maior (os que vendem menos).")] bool menores = false,
         [Description("Só do painel, não usar. Vendas de um vendedor: coluna=Vendedor.")] string? vendedor = null,
+        [Description("Só do painel, não usar.")] string[]? zonas = null,
+        [Description("Só do painel, não usar.")] string[]? marcas = null,
+        [Description("Só do painel, não usar.")] string[]? tiposDoc = null,
         CancellationToken ct = default)
     {
         // O modelo repetia agrupar em emCada (ex.: Mes e Mes no "ticket médio por mês"): recusar custava outra volta.
@@ -95,7 +98,8 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         if (menores && (agrupar == DimensaoVenda.Cliente || emCada is not null || semVendas))
             return "menores não se combina com agrupar=Cliente, emCada nem semVendas. Chama de novo sem menores.";
 
-        var filtros = new Dictionary<Campo, string>();
+        var (filtros, erroFiltros) = FiltrosVenda.Criar(zonas, marcas, tiposDoc);
+        if (filtros is null) return erroFiltros!;
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
 
         return await Respostas.ExecutarAsync(log, "consultar_vendas", $"{agrupar} {periodo}", async () =>
@@ -129,15 +133,21 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         [Description("Opcional: coluna da ficha.")] Campo? coluna = null,
         [Description("Valor dessa coluna.")] string? valor = null,
         [Description("Opcional: só os clientes deste vendedor.")] string? vendedor = null,
+        [Description("Opcional: data inicial dd-MM-aaaa. Usar com dataFim. Tem prioridade sobre periodo.")] string? dataInicio = null,
+        [Description("Opcional: data final dd-MM-aaaa (incluída).")] string? dataFim = null,
+        [Description("Opcional: várias zonas (distritos).")] string[]? zonas = null,
+        [Description("Opcional: marcas.")] string[]? marcas = null,
+        [Description("Opcional: tipos de documento.")] string[]? tiposDoc = null,
         CancellationToken ct = default)
     {
         var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
-        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, null, null, null, null, hoje, null);
+        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, null, null, dataInicio, dataFim, hoje, null);
         if (intervalo is not { } janela) return erroPeriodo!;
 
         var temValor = !string.IsNullOrWhiteSpace(valor);
         if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
-        var filtros = new Dictionary<Campo, string>();
+        var (filtros, erroFiltros) = FiltrosVenda.Criar(zonas, marcas, tiposDoc);
+        if (filtros is null) return erroFiltros!;
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
         if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
 
@@ -147,9 +157,12 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             if (erro is not null) return erro;
 
             var r = await repo.ResumoDocumentosAsync(janela.Desde, janela.Ate, Math.Clamp(limite, 1, Respostas.Maxlinhas), idCliente, filtros, ct);
+            // "Dados até …" do painel: a última venda em toda a BD, nunca a data de hoje nem o fim do período
+            var ultimaVenda = await repo.UltimaVendaAsync(ct);
             static object Documento(DocumentoEmitido d) => new { documento = d.DocumentoId, tipo = d.TipoDocId, data = Data(d.DataDoc), cliente = d.Cliente, total = d.Total };
             return JsonSerializer.Serialize(new
             {
+                ultimaVenda = ultimaVenda is { } u ? Data(u) : null,
                 tipos = r.Tipos.Select(t => new { tipo = t.TipoDocId, valor = t.Valor, documentos = t.Documentos }),
                 meses = r.Meses.Select(m => new { mes = m.Mes, tipo = m.TipoDocId, valor = m.Valor, documentos = m.Documentos }),
                 ultimos = r.Ultimos.Select(Documento),
@@ -171,18 +184,24 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         [Description("Opcional: coluna da ficha.")] Campo? coluna = null,
         [Description("Valor dessa coluna.")] string? valor = null,
         [Description("Opcional: só os clientes deste vendedor.")] string? vendedor = null,
+        [Description("Opcional: data inicial dd-MM-aaaa. Usar com dataFim. Tem prioridade sobre periodo.")] string? dataInicio = null,
+        [Description("Opcional: data final dd-MM-aaaa (incluída).")] string? dataFim = null,
+        [Description("Opcional: várias zonas (distritos).")] string[]? zonas = null,
+        [Description("Opcional: marcas.")] string[]? marcas = null,
+        [Description("Opcional: tipos de documento.")] string[]? tiposDoc = null,
         CancellationToken ct = default)
     {
         if (tipo is not (null or "N" or "C")) return "tipo tem de ser N ou C.";
         if (pesquisa?.Length > MaxPesquisa) return $"A pesquisa tem no máximo {MaxPesquisa} caracteres.";
 
         var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
-        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, null, null, null, null, hoje, null);
+        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, null, null, dataInicio, dataFim, hoje, null);
         if (intervalo is not { } janela) return erroPeriodo!;
 
         var temValor = !string.IsNullOrWhiteSpace(valor);
         if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
-        var filtros = new Dictionary<Campo, string>();
+        var (filtros, erroFiltros) = FiltrosVenda.Criar(zonas, marcas, tiposDoc);
+        if (filtros is null) return erroFiltros!;
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
         // Depois da coluna: o perfil de vendedor nunca é substituído por um filtro pedido.
         if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
@@ -250,15 +269,21 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         [Description("Opcional: coluna da ficha.")] Campo? coluna = null,
         [Description("Valor dessa coluna.")] string? valor = null,
         [Description("Opcional: só os clientes deste vendedor.")] string? vendedor = null,
+        [Description("Opcional: data inicial dd-MM-aaaa. Usar com dataFim. Tem prioridade sobre periodo.")] string? dataInicio = null,
+        [Description("Opcional: data final dd-MM-aaaa (incluída).")] string? dataFim = null,
+        [Description("Opcional: várias zonas (distritos).")] string[]? zonas = null,
+        [Description("Opcional: marcas.")] string[]? marcas = null,
+        [Description("Opcional: tipos de documento.")] string[]? tiposDoc = null,
         CancellationToken ct = default)
     {
         var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
-        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, null, null, null, null, hoje, null);
+        var (intervalo, erroPeriodo) = Periodos.Resolver(periodo, null, null, dataInicio, dataFim, hoje, null);
         if (intervalo is not { } janela) return erroPeriodo!;
 
         var temValor = !string.IsNullOrWhiteSpace(valor);
         if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
-        var filtros = new Dictionary<Campo, string>();
+        var (filtros, erroFiltros) = FiltrosVenda.Criar(zonas, marcas, tiposDoc);
+        if (filtros is null) return erroFiltros!;
         if (temValor) filtros[coluna!.Value] = valor!.Trim();
         if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
 
@@ -285,6 +310,49 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
                         meses = g.OrderBy(m => m.Mes, StringComparer.Ordinal).Select(m => new { mes = m.Mes, valor = m.Valor }),
                     };
                 }),
+            });
+        });
+    }
+
+    // "Deixou de comprar": comprava em pelo menos 3 meses diferentes e não compra há mais de 90 dias.
+    internal const int DiasSemComprar = 90, MesesHabitual = 3;
+
+    // Só para o briefing do painel (o agente não a oferece ao modelo). JSON, como consultar_carteira.
+    [McpServerTool(Name = "consultar_briefing")]
+    [Description("Briefing de um cliente antes da visita, em JSON: artigo mais comprado, artigos que deixou de comprar e documentos por pagar.")]
+    public async Task<string> ConsultarBriefingAsync(
+        [Description("ID do cliente ou início do nome.")] string cliente,
+        [Description("Opcional: só se o cliente for deste vendedor.")] string? vendedor = null,
+        CancellationToken ct = default)
+    {
+        var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
+        var filtros = new Dictionary<Campo, string>();
+        if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
+
+        return await Respostas.ExecutarAsync(log, "consultar_briefing", "cliente", async () =>
+        {
+            // Com o vendedor nos filtros: um cliente de outro vendedor é "não encontrado", e as faturas por pagar dele nunca saem
+            var (id, rotulo, erro) = await Respostas.ResolverClienteAsync(repo, cliente, filtros, ct);
+            if (erro is not null) return JsonSerializer.Serialize(new { erro });
+
+            // Conta a partir da última venda registada (como o estado da carteira): com os dados por atualizar, tudo pareceria parado
+            var referencia = await repo.UltimaVendaAsync(ct) ?? hoje;
+            var (desde, ate, corte) = (referencia.AddDays(1).AddMonths(-12), referencia.AddDays(1), referencia.AddDays(-DiasSemComprar));
+            var artigos = await repo.ArtigosDoClienteAsync(id!, desde, ate, filtros, ct);
+            var aberto = await repo.EmAbertoAsync(hoje, 5, id, false, ct);
+            var mesesAntes = Math.Max(1, corte.Year * 12 + corte.Month - (desde.Year * 12 + desde.Month));
+            return JsonSerializer.Serialize(new
+            {
+                cliente = rotulo,
+                referencia = Data(referencia),
+                maisComprado = artigos.FirstOrDefault() is { } a ? new { artigo = a.Artigo, id = a.ArtigoId, valor = a.Valor } : null,
+                deixouDeComprar = artigos.Where(x => x.Meses >= MesesHabitual && x.Ultima < corte).Take(10)
+                    .Select(x => new { artigo = x.Artigo, id = x.ArtigoId, mediaMes = Math.Round(x.Quantidade / mesesAntes, 1), ultima = x.Ultima is { } u ? Data(u) : null }),
+                emAberto = new
+                {
+                    documentos = aberto.Documentos, total = aberto.Total, vencido = aberto.Vencido,
+                    itens = aberto.Itens.Select(d => new { documento = d.Documento, vencimento = d.Vencimento is { } v ? Data(v) : null, valor = d.EmAberto }),
+                },
             });
         });
     }

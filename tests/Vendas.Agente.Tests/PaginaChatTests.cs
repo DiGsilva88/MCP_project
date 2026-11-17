@@ -1,83 +1,117 @@
+using System.Text.RegularExpressions;
+
 namespace Vendas.Agente.Tests;
 
 public class PaginaChatTests
 {
     private static readonly string Html = PaginaChat.Para("DOM\\teste");
 
+    // Os ficheiros da página tal como estão embebidos (pagina/css/…, pagina/html/…, pagina/js/…)
+    private static IEnumerable<(string Nome, string Texto)> Recursos(string pasta)
+    {
+        var a = typeof(PaginaChat).Assembly;
+        foreach (var nome in a.GetManifestResourceNames().Where(n => n.StartsWith($"pagina/{pasta}/")))
+        {
+            using var leitor = new StreamReader(a.GetManifestResourceStream(nome)!);
+            yield return (nome, leitor.ReadToEnd());
+        }
+    }
+
     [Fact]
     public void Vendedor_MarcaOBody_ParaAPaginaEsconderChatEEmail()
     {
         Assert.Contains("data-vendedor=\"1\"", PaginaChat.Para("DOM\\ana", vendedor: true));
         Assert.Contains("data-vendedor=\"\"", Html);
+        Assert.DoesNotContain("{{inclui:", Html);   // todas as inclusões e marcas foram trocadas
+        Assert.DoesNotContain("{{UTILIZADOR}}", Html);
         Assert.DoesNotContain("{{VENDEDOR}}", Html);
     }
 
     [Fact]
-    public void Html_TemBotaoDaConversaEPainelLateral()
+    public void Html_TemAEstruturaDaNovaUi()
     {
-        Assert.DoesNotContain("{{UTILIZADOR}}", Html);       // o servidor põe o nome de quem tem a sessão
-        Assert.Contains("id=\"mostrar-conversa\"", Html);   // avatar Flow que abre a conversa
-        Assert.Contains("id=\"procurar\"", Html);           // pesquisa no painel lateral
-        Assert.Contains("id=\"nav\"", Html);                // vistas do Resumo (em vez de tudo numa página)
-        Assert.Contains("content=\"light\"", Html);         // só tons claros
+        foreach (var id in new[] { "entrada", "ent-pergunta", "rail-lista", "pesquisa", "fresco", "sino", "principal", "flow", "flow-corpo", "flow-campo", "flow-abrir", "totop", "drawer-root", "menu-root", "anuncio" })
+            Assert.Contains($"id=\"{id}\"", Html);
+        Assert.Contains("content=\"light\"", Html);
+        Assert.Contains("Valores apresentados sem IVA.", Html);
+        Assert.Contains("Só leitura. Não altera a base de dados.", Html);
+        Assert.Contains("Pergunte sobre esta vista…", Html);
+    }
+
+    [Fact]
+    public void Css_SoOsTokensTemCores()
+    {
+        // Nenhum componente escreve cores à mão: só o 01-tokens.css tem hexadecimais e rgba
+        var cor = new Regex(@"#[0-9A-Fa-f]{3}\b|#[0-9A-Fa-f]{6}\b|rgba?\(");
+        foreach (var (nome, texto) in Recursos("css").Concat(Recursos("html")).Concat(Recursos("js")).Where(r => !r.Nome.EndsWith("01-tokens.css")))
+            Assert.False(cor.IsMatch(texto), $"{nome} tem uma cor escrita à mão: {cor.Match(texto).Value}");
+        Assert.Contains("--blue: #1F5BF5;", Html);
+        Assert.Contains("--ink-3: #6B7280;", Html);
     }
 
     [Fact]
     public void Css_NaoTemComentariosComBarrasDuplas()
     {
-        // "//" não é comentário em CSS: anulava o :root dos tokens (--marca-texto, --erro, --serie-1..6 ficavam por definir)
+        // "//" não é comentário em CSS: anulava a regra seguinte
         var inicio = Html.IndexOf("<style>");
-        var css = Html[inicio..Html.IndexOf("</style>", inicio)];
-        Assert.DoesNotMatch(@"(?m)^\s*//", css);
-        Assert.Contains("--marca-texto: #ffffff;", css);
+        Assert.DoesNotMatch(@"(?m)^\s*//", Html[inicio..Html.IndexOf("</style>", inicio)]);
+    }
+
+    [Theory]
+    // Clientes, artigos, documentos, valores e emails de exemplo dos protótipos (docs/ui): nada disto pode estar no código
+    [InlineData("Público Com Desconto")]
+    [InlineData("Façanha Assertiva")]
+    [InlineData("Box Self-Storage")]
+    [InlineData("Auto Peças Minho")]
+    [InlineData("Oficina Cávado")]
+    [InlineData("Pastilhas de travão")]
+    [InlineData("Filtro de óleo")]
+    [InlineData("2026/34816")]
+    [InlineData("direcao@empresa.pt")]
+    [InlineData("Guimarães")]
+    [InlineData("Diana")]
+    [InlineData("Dados de exemplo")]
+    [InlineData("Protótipo")]
+    public void Html_NaoTemDadosDosPrototipos(string exemplo) => Assert.DoesNotContain(exemplo, Html);
+
+    [Fact]
+    public void Html_NaoTemValoresEscritosNoCodigo()
+    {
+        // Os números do ecrã vêm sempre do servidor: nenhum valor em euros nem "Dados até <data>" no código.
+        // Os comentários ficam de fora: descrevem o formato do texto que o servidor escreve.
+        var codigo = Regex.Replace(Regex.Replace(Html, @"/\*.*?\*/", "", RegexOptions.Singleline), @"(?m)^\s*//.*$", "");
+        Assert.DoesNotMatch(@"\d[\s ]?€", codigo);
+        Assert.DoesNotMatch(@"Dados (atualizados )?até \d", codigo);
+        Assert.Contains("fmt.dataLonga(D.ate)", Html);   // "Dados até" sai da última venda que o servidor devolve
     }
 
     [Fact]
-    public void GraficoMensal_MostraADiferencaDeCadaMesFaceAoAnoAnterior()
+    public void Js_LigaAsRotasDoServidor()
     {
-        Assert.Contains("'flow-dif'", Html);              // faixa por baixo da área, no ecrã
-        Assert.Contains(".flow-dif {", Html);
-        Assert.Contains("const comDif = !!s.anoAnt", Html); // e no PNG do "Guardar imagem"
+        foreach (var rota in new[] { "'/resumo?'", "'/api/creditos?'", "/api/clientes/${encodeURIComponent(id)}/briefing","'/api/documentos/'", "'/api/preferencias'", "'/preferencias'", "'/api/agendamentos'", "'/agendamentos'", "'/perguntar'", "'/parar'", "'/feedback'" })
+            Assert.Contains(rota, Html);
+        Assert.Contains("não é o documento fiscal", Html);   // a pré-visualização nunca pode parecer o documento fiscal
     }
 
     [Fact]
-    public void Html_TemPainelDoDocumentoELigaAsRotasApi()
+    public void Acessibilidade_DrawersGraficosEMovimento()
     {
-        Assert.Contains("id=\"dlg-doc\"", Html);
-        Assert.Contains("'/api/creditos?'", Html);
-        Assert.Contains("/api/clientes/", Html);
-        Assert.Contains("Pré-visualização", Html);   // nunca pode parecer o documento fiscal
+        Assert.Contains("role=\"dialog\" aria-modal=\"true\"", Html);
+        Assert.Contains("aria-current=\"page\"", Html);
+        Assert.Contains("role=\"img\"", Html);
+        Assert.Contains("prefers-reduced-motion", Html);
+        Assert.Contains(":focus-visible { outline: 2px solid var(--blue)", Html);
     }
 
     [Fact]
-    public void EcraDeEntrada_TemOAvatarEmbebido()
+    public void EcraDeEntrada_TemOTituloEAFonteLocal()
     {
-        Assert.Contains("'Uma plataforma.'", Html);
-        Assert.Contains("'flow-ini-pergunta'", Html);
+        Assert.Contains("Uma plataforma.", Html);
+        Assert.Contains("Ir direto ao painel de vendas", Html);
         Assert.Contains("/fonts/Onest-Variable.woff2", Html);
+        Assert.DoesNotContain("fonts.googleapis.com", Html);   // os servidores RDS podem não ter internet
         using var fonte = typeof(PaginaChat).Assembly.GetManifestResourceStream("fonts/Onest-Variable.woff2");
-        Assert.NotNull(fonte);    // a fonte do ecrã de entrada: sem o recurso, o título caía para a 72
-        Assert.Contains("/imagens/avatar-flow.png", Html);
-        using var imagem = typeof(PaginaChat).Assembly.GetManifestResourceStream("imagens/avatar-flow.png");
-        Assert.NotNull(imagem);   // sem o recurso, a rota dava 404 e o ecrã ficava sem avatar
-        Assert.Contains("/imagens/avatar-assistente-vendas.png", Html);
-        using var icone = typeof(PaginaChat).Assembly.GetManifestResourceStream("imagens/avatar-assistente-vendas.png");
-        Assert.NotNull(icone);    // o ícone da conversa, separado do logótipo
-    }
-
-    [Fact]
-    public void Html_FaturacaoTemTotalDeDocumentosEmVezDoGraficoPorMes()
-    {
-        Assert.Contains("Total de documentos", Html);
-        Assert.DoesNotContain("Documentos emitidos por mês", Html);
-    }
-
-    [Fact]
-    public void Html_ExportarTemEmailComRascunhoEOpcoesSemNegrito()
-    {
-        Assert.Contains("name=\"formato\" value=\"email\"", Html);
-        Assert.Contains("X-Unsent: 1", Html);          // sem isto o Outlook abre como email recebido
-        Assert.Contains(".dlg-opcao b { font-weight: 400; }", Html);
+        Assert.NotNull(fonte);
     }
 
     [Theory]
@@ -88,6 +122,4 @@ public class PaginaChatTests
         Assert.Contains(nome, PaginaChat.Para(login));
         Assert.DoesNotContain("DOMINIO", PaginaChat.Para(login));
     }
-
- 
 }

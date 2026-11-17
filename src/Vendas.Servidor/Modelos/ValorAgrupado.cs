@@ -31,6 +31,7 @@ public sealed record CreditoListado(string DocumentoId, string TipoDocId, DateOn
 public sealed record PaginaCreditos(IReadOnlyList<CreditoListado> Itens, int TotalN, int TotalC);
 
 //documentos por pagar (mcp.ViewMCP_resp_aberto_cli). Documentos, Total e Vencido contam todos, não só os itens devolvidos
+public sealed record ArtigoCliente(string ArtigoId, string Artigo, decimal Quantidade, int Meses, DateOnly? Ultima, decimal Valor);
 public sealed record DocumentoEmAberto(string Cliente, string Documento, DateOnly? Emissao, DateOnly? Vencimento, decimal EmAberto);
 public sealed record ResumoEmAberto(IReadOnlyList<DocumentoEmAberto> Itens, int Documentos, decimal Total, decimal Vencido);
 
