@@ -150,5 +150,17 @@ public sealed class RepoDemo : IVendasRepo
             escolhidos.Select(c => new CompraMensal(c.Id, Hoje.ToString("yyyy-MM"), 1000m, 3)).ToList()));
     }
 
+    // Um documento por pagar por cliente: os dois primeiros já vencidos.
+    public Task<ResumoEmAberto> EmAbertoAsync(
+        DateOnly hoje, int limite, string? cliente = null, bool soVencidos = false, CancellationToken cancellationToken = default)
+    {
+        var todos = Clientes.Select((c, i) => new DocumentoEmAberto($"{c.Nome} ({c.Id})", $"F {hoje.Year}/{2000 + i}",
+                hoje.AddDays(-60 + 15 * i), hoje.AddDays(-30 + 15 * i), 250m * (i + 1)))
+            .Where(d => (cliente is null || d.Cliente.EndsWith($"({cliente})")) && (!soVencidos || d.Vencimento < hoje))
+            .ToList();
+        return Task.FromResult(new ResumoEmAberto(todos.Take(limite).ToList(), todos.Count,
+            todos.Sum(d => d.EmAberto), todos.Where(d => d.Vencimento < hoje).Sum(d => d.EmAberto)));
+    }
+
     public Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default) => Task.FromResult<DateOnly?>(Hoje);
 }

@@ -192,6 +192,17 @@ internal sealed class FakeVendasRepo : IVendasRepo
         return Task.FromResult(Carteira);
     }
 
+    public ResumoEmAberto EmAberto { get; set; } = new([], 0, 0, 0);
+    public (DateOnly Hoje, int Limite, string? Cliente, bool SoVencidos)? UltimoEmAberto { get; private set; }
+
+    public Task<ResumoEmAberto> EmAbertoAsync(
+        DateOnly hoje, int limite, string? cliente = null, bool soVencidos = false, CancellationToken ct = default)
+    {
+        UltimoEmAberto = (hoje, limite, cliente, soVencidos);
+        if (LancarExcecao is not null) throw LancarExcecao;
+        return Task.FromResult(EmAberto);
+    }
+
     public Task<DateOnly?> UltimaVendaAsync(CancellationToken ct = default) => Task.FromResult(UltimaVenda);
 }
 

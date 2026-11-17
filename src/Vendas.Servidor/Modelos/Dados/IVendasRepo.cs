@@ -70,6 +70,11 @@ public interface IVendasRepo
         DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null,
         CancellationToken cancellationToken = default);
 
+    // Documentos por pagar, os que vencem primeiro à frente. cliente: ID exato. soVencidos: só os vencidos antes de "hoje".
+    Task<ResumoEmAberto> EmAbertoAsync(
+        DateOnly hoje, int limite, string? cliente = null, bool soVencidos = false,
+        CancellationToken cancellationToken = default);
+
     // Data da venda mais recente que existe (null = sem vendas nenhumas).
     Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default);
 }

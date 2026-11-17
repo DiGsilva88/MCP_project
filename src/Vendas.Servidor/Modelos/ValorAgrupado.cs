@@ -30,6 +30,10 @@ public sealed record ResumoDocumentos(
 public sealed record CreditoListado(string DocumentoId, string TipoDocId, DateOnly DataDoc, string ClienteId, string Cliente, decimal Total);
 public sealed record PaginaCreditos(IReadOnlyList<CreditoListado> Itens, int TotalN, int TotalC);
 
+//documentos por pagar (mcp.ViewMCP_resp_aberto_cli). Documentos, Total e Vencido contam todos, não só os itens devolvidos
+public sealed record DocumentoEmAberto(string Cliente, string Documento, DateOnly? Emissao, DateOnly? Vencimento, decimal EmAberto);
+public sealed record ResumoEmAberto(IReadOnlyList<DocumentoEmAberto> Itens, int Documentos, decimal Total, decimal Vencido);
+
 //um documento com as suas linhas, sem NIF nem morada
 public sealed record LinhaDocumento(string ArtigoId, string Artigo, decimal Quantidade, decimal Iliquido, decimal Desconto, decimal Liquido, decimal Iva);
 public sealed record DetalheDocumento(string DocumentoId, string TipoDocId, DateOnly DataDoc, string ClienteId, string Cliente, IReadOnlyList<LinhaDocumento> Linhas);
