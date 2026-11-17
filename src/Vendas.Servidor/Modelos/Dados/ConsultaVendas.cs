@@ -14,6 +14,7 @@ internal static class ConsultaVendas
     // Nomes das views num só sítio. Todas as views do MCP vivem no schema mcp.
     private const string Vendas = "[mcp].[ViewMCP_vendas]";
     private const string Clientes = "[mcp].[ViewMCP_cliente]";
+    private const string EmAbertoView = "[mcp].[ViewMCP_resp_aberto_cli]";
 
     public static (string Sql, Action<SqlParameterCollection> Parametros) RankingPorCliente(
         DateOnly desde, DateOnly ate, string? cliente = null, IReadOnlyDictionary<Campo, string>? filtros = null)
@@ -400,6 +401,34 @@ internal static class ConsultaVendas
     }
 
     // Data da venda mais recente na view (sem período): diz até onde vão os dados quando um período vem vazio.
+    // Documentos por pagar. EntidadeID é o ClienteID da ficha (comparados como texto, como em ProcurarClientes).
+    // Contagem, total e vencido com OVER (): contam todos os documentos, não só o TOP.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) EmAberto(
+        DateOnly hoje, string? cliente = null, bool soVencidos = false)
+    {
+        var sql = $"""
+            SELECT TOP (@limite)
+                   CONCAT(COALESCE(c.[NomeCliente], '(cliente sem ficha)'), ' (', r.[EntidadeID], ')') AS Cliente,
+                   CONCAT(RTRIM(r.[TipoDocID]), ' ', r.[Ano], '/', r.[DocID]) AS Documento,
+                   r.[DataEmissao], r.[DataVencimento], r.Valor,
+                   COUNT(*)     OVER () AS Documentos,
+                   SUM(r.Valor) OVER () AS Total,
+                   SUM(CASE WHEN r.[DataVencimento] < @hoje THEN r.Valor ELSE 0 END) OVER () AS Vencido
+            FROM (SELECT *, CAST(COALESCE([RemanMoedaAdop], 0) AS decimal(18,2)) AS Valor FROM {EmAbertoView}) AS r
+            LEFT JOIN {Clientes} AS c ON CAST(c.[ClienteID] AS nvarchar(50)) = CAST(r.[EntidadeID] AS nvarchar(50))
+            WHERE 1 = 1
+              {(string.IsNullOrWhiteSpace(cliente) ? "" : "AND CAST(r.[EntidadeID] AS nvarchar(50)) = @cliente")}
+              {(soVencidos ? "AND r.[DataVencimento] < @hoje" : "")}
+            ORDER BY r.[DataVencimento], Documento;
+            """;
+
+        return (sql, p =>
+        {
+            p.Add("@hoje", SqlDbType.Date).Value = hoje.ToDateTime(TimeOnly.MinValue);
+            if (!string.IsNullOrWhiteSpace(cliente)) p.Add("@cliente", SqlDbType.NVarChar, 100).Value = cliente.Trim();
+        });
+    }
+
     public static (string Sql, Action<SqlParameterCollection> Parametros) UltimaVenda() =>
         ($"SELECT MAX([DataDoc]) FROM {Vendas};", _ => { }
     );

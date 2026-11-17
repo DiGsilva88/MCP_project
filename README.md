@@ -34,7 +34,7 @@ projeto_Mcp/
 │   │   │       ├── RepoSql.cs           Implementação em SQL Server (única — sem fallback em memória)
 │   │   │       ├── ConsultaClientes.cs  SQL das tools de clientes; só aqui se traduz Campo -> coluna SQL
 │   │   │       └── ConsultaVendas.cs    SQL da tool de vendas; só aqui se traduz DimensaoVenda -> coluna SQL
-│   │   └── sql/                     Scripts das views (schema mcp) e permissões, a correr por ordem (00–06)
+│   │   └── sql/                     Scripts das views (schema mcp) e permissões, a correr por ordem (00–07)
 │   └── Vendas.Agente/               Host local: Ollama (qwen3:4b-instruct) + servidor MCP, em consola ou browser
 │       ├── Program.cs               Lança o servidor, liga o modelo às tools, modos consola, menu e web
 │       ├── PoliticasSeguranca.cs    Regras de segurança (prompt de sistema), validação de argumentos e respostas
@@ -74,6 +74,7 @@ projeto_Mcp/
    | `consultar_documentos` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Só para a vista Faturação do painel (o `Vendas.Agente` não a oferece ao modelo): JSON com totais por `TipoDocID`, valor e documentos por mês e tipo (`DataDoc`), os últimos documentos (`DocumentoID`) e os créditos (`N` e `C`, até 5000). |
    | `consultar_creditos` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Só para a lista de créditos do painel: JSON com uma página de documentos `N` e `C` e os totais por tipo, com filtro opcional por vendedor. |
 | `consultar_documento` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para o nome) | Só para o painel do documento: JSON com cliente, linhas, IVA e totais de um documento. |
+| `consultar_em_aberto` | `ViewMCP_resp_aberto_cli` (+ `ViewMCP_cliente` para o nome) | Documentos por pagar: total em aberto, quanto está vencido e a lista (os que vencem primeiro à frente, com os dias de atraso). `cliente` (ID ou nome), `soVencidos=true`, `limite`. Texto pronto a mostrar, oferecida ao modelo. |
 | `consultar_carteira` | `ViewMCP_vendas` (+ `ViewMCP_cliente` para a zona) | Só para a vista Clientes do painel (o `Vendas.Agente` não a oferece ao modelo): JSON com zona, última compra, documentos, compras por mês e estado dos maiores clientes. Estado contado desde a última venda registada: Ativo até 60 dias, Em risco de 61 a 90, Perdido acima de 90. |
 
    **`consultar`** — `coluna` (mostrar/filtrar/contar), `valor` (filtro), `contar=true` (nº de clientes por valor, com percentagens), `cruzarCom`/`valorCruzado` (filtra também por outra coluna, de qualquer das views — ex.: contar por `Zona` só dos clientes com `Pagamento` = "30 dias"), `nomeComecaPor`, `limite` (1–100, por omissão 10) e `pagina`. Os filtros ignoram acentos e maiúsculas; quando um valor não existe, a tool devolve logo os valores existentes (até 30).

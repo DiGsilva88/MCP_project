@@ -289,6 +289,45 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         });
     }
 
+    // Sobre a view mcp.ViewMCP_resp_aberto_cli. Texto pronto a mostrar, como consultar_vendas.
+    [McpServerTool(Name = "consultar_em_aberto")]
+    [Description("Documentos por pagar (em aberto): dívidas, saldo em aberto, faturas vencidas ou por receber. " +
+        "cliente (ID ou nome): só esse cliente. soVencidos=true: só os que já passaram a data de vencimento. " +
+        "Devolve texto pronto a mostrar: total em aberto, quanto está vencido e a lista, os que vencem primeiro à frente.")]
+    public async Task<string> ConsultarEmAbertoAsync(
+        [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
+        [Description("true: só os documentos vencidos.")] bool soVencidos = false,
+        [Description("Máximo de documentos, 1 a 100.")] int limite = 10,
+        CancellationToken ct = default)
+    {
+        var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
+        limite = Math.Clamp(limite, 1, Respostas.Maxlinhas);
+
+        return await Respostas.ExecutarAsync(log, "consultar_em_aberto", soVencidos, async () =>
+        {
+            var (idCliente, rotulo, erro) = await Respostas.ResolverClienteAsync(repo, cliente, null, ct);
+            if (erro is not null) return erro;
+
+            var r = await repo.EmAbertoAsync(hoje, limite, idCliente, soVencidos, ct);
+            var quem = rotulo ?? "todos os clientes";
+            if (r.Documentos == 0)
+                return $"Sem documentos {(soVencidos ? "vencidos " : "")}em aberto ({quem}).";
+
+            var texto = new StringBuilder()
+                .AppendLine($"Em aberto{(soVencidos ? " e vencido" : "")}, {quem}, a {Data(hoje)}: {Euros(r.Total)} € em {r.Documentos} documentos; " +
+                            $"vencido: {Euros(r.Vencido)} €.");
+            foreach (var (d, i) in r.Itens.Select((d, i) => (d, i)))
+            {
+                var vence = d.Vencimento is not { } v ? "sem data de vencimento"
+                    : v < hoje ? $"venceu a {Data(v)} (há {hoje.DayNumber - v.DayNumber} dias)"
+                    : $"vence a {Data(v)}";
+                texto.AppendLine($"{i + 1}. {d.Documento} – {Euros(d.EmAberto)} €, {vence}{(idCliente is null ? $" – {d.Cliente}" : "")}");
+            }
+            if (r.Documentos > r.Itens.Count) texto.AppendLine($"Mostrados {r.Itens.Count} de {r.Documentos}.");
+            return texto.ToString();
+        });
+    }
+
     // Conta a partir da última compra registada e não de hoje: com os dados por atualizar, todos pareceriam perdidos.
     private static string? EstadoCliente(DateOnly? ultima, DateOnly? referencia)
     {

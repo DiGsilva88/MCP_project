@@ -57,6 +57,43 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task ConsultarEmAberto_ResolveCliente_EMostraTotalVencidoEDias()
+    {
+        var repo = new FakeVendasRepo
+        {
+            EmAberto = new([new("Casa Costa (1003)", "F 2026/12", new DateOnly(2026, 8, 1), new DateOnly(2026, 10, 5), 1234.5m),
+                            new("Casa Costa (1003)", "F 2026/40", new DateOnly(2026, 10, 1), new DateOnly(2026, 11, 30), 100m)], 3, 1534.5m, 1234.5m),
+        };
+        var sut = new VendasTools(repo, NullLogger<VendasTools>.Instance,
+            new RelogioFixo(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero)));
+
+        var texto = await sut.ConsultarEmAbertoAsync(cliente: "1003", limite: 2);
+
+        Assert.Equal((new DateOnly(2026, 10, 15), 2, "1003", false), repo.UltimoEmAberto);
+        Assert.Contains("1 534,50 € em 3 documentos; vencido: 1 234,50 €", texto);
+        Assert.Contains("1. F 2026/12 – 1 234,50 €, venceu a 05-10-2026 (há 10 dias)", texto);
+        Assert.Contains("2. F 2026/40 – 100,00 €, vence a 30-11-2026", texto);
+        Assert.Contains("Mostrados 2 de 3.", texto);
+        Assert.DoesNotContain("– Casa Costa", texto); // com um só cliente, o nome não se repete em cada linha
+    }
+
+    [Fact]
+    public async Task ConsultarEmAberto_ClienteInexistente_NaoVaiAoRepo()
+    {
+        var repo = new FakeVendasRepo { Clientes = _ => [] };
+
+        Assert.StartsWith("Cliente \"Zé\" não encontrado", await CriarSut(repo).ConsultarEmAbertoAsync(cliente: "Zé"));
+        Assert.Null(repo.UltimoEmAberto);
+    }
+
+    [Fact]
+    public async Task ConsultarEmAberto_SemDocumentos_DizQueNaoHa()
+    {
+        Assert.Equal("Sem documentos vencidos em aberto (todos os clientes).",
+            await CriarSut(new FakeVendasRepo()).ConsultarEmAbertoAsync(soVencidos: true));
+    }
+
+    [Fact]
     public async Task ConsultarCreditos_TipoForaDaLista_NaoVaiAoRepo()
     {
         var repo = new FakeVendasRepo();

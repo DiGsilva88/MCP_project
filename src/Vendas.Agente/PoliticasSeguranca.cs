@@ -273,6 +273,7 @@ public static class PoliticasSeguranca
           Nunca consultar com contar: isso conta clientes, não vendas.
         - Clientes sem compras, inativos ou "não compram há X": consultar_vendas com semVendas=true
           e o período (há mais de 90 dias: Ultimos90Dias; este ano: AnoAtual).
+        - Dívidas, em aberto, por pagar ou vencido: consultar_em_aberto (cliente= se disser um; vencidos: soVencidos=true).
 
         - NIF, email, telefone, morada, código postal, volume de vendas declarado e plafond:
           consultar_sensivel. Top por volume declarado na ficha (ou plafond): consultar_sensivel
