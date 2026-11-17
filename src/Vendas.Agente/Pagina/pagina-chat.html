@@ -3,89 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- 11/2026: só tons claros; as regras de modo escuro ficaram em "@media not all" (nunca se aplicam) -->
   <meta name="color-scheme" content="light">
-  <title>Assistente de vendas</title>
+  <title>Flow</title>
   <link rel="icon" href="data:,">
-  <!-- A Onest é a fonte do ecrã de entrada (título de 76px): carregada já, para não saltar quando chega -->
+  <!-- A Onest vem do próprio agente: os servidores RDS podem não ter acesso à internet -->
   <link rel="preload" href="/fonts/Onest-Variable.woff2" as="font" type="font/woff2" crossorigin>
-  <meta name="description" content="Pergunte em linguagem natural e consulte vendas, faturação, documentos, notas de crédito e carteira de clientes, com resultados em tabelas e gráficos.">
-
+  <meta name="description" content="Flow, o assistente de vendas: painel de vendas, faturação, clientes e artigos, e perguntas por palavras suas.">
   <style>
-/* CSS incluído diretamente no HTML para evitar problemas de cache. Só comentários com barra-asterisco: "//" não é comentário em CSS e anula a regra seguinte. */
-
+/* CSS incluído diretamente no HTML para evitar problemas de cache. Só comentários com barra-asterisco. */
 {{inclui:css/01-tokens.css}}
 {{inclui:css/02-base.css}}
-{{inclui:css/03-painel.css}}
-{{inclui:css/04-topo.css}}
-{{inclui:css/05-corpo.css}}
-{{inclui:css/06-zona-resposta.css}}
-{{inclui:css/07-folha-resposta.css}}
-{{inclui:css/08-correcoes-10-2026.css}}
-{{inclui:css/09-layout-compacto.css}}
-{{inclui:css/10-conversa-baloes.css}}
-{{inclui:css/11-grafico-circular.css}}
-{{inclui:css/12-dados-separadores.css}}
-{{inclui:css/13-conversa-flutuante.css}}
-{{inclui:css/14-escala-letra.css}}
-{{inclui:css/15-redesign-flow.css}}
-{{inclui:css/16-painel-lateral.css}}
-{{inclui:css/17-rodape.css}}
-{{inclui:css/18-movimento.css}}
-{{inclui:css/19-estilo-11-2026.css}}
-{{inclui:css/20-visual-ix.css}}
-{{inclui:css/21-responsividade-painel.css}}
-{{inclui:css/99-media.css}}
+{{inclui:css/03-estrutura.css}}
+{{inclui:css/04-componentes.css}}
+{{inclui:css/05-entrada.css}}
+{{inclui:css/06-flow.css}}
+{{inclui:css/07-resposta-impressao.css}}
   </style>
 </head>
 <body data-utilizador="{{UTILIZADOR}}" data-vendedor="{{VENDEDOR}}">
-  <!-- Já com --inicio: o browser pinta antes do script e o ecrã de boas-vindas saltava de largura (CLS 0,175) -->
-  <div class="chat-painel chat-painel--inicio">
-
-<!-- PROPOSTA D: o nome passa para o painel lateral -->
-
-    <div class="chat-corpo">
-{{inclui:html/01-painel-lateral.html}}
-
-{{inclui:html/02-zona-dados.html}}
-
-{{inclui:html/03-conversa.html}}
-
-{{inclui:html/04-botoes-flutuantes.html}}
-    </div>
-  </div>
-
-{{inclui:html/05-dialogo-email.html}}
-  <p class="flow-aviso" id="aviso" role="status" hidden></p>
-
-{{inclui:html/06-dialogo-documento.html}}
-
-{{inclui:html/07-dialogo-ficha.html}}
-
-{{inclui:html/08-dialogo-exportar.html}}
-
+{{inclui:html/01-entrada.html}}
+{{inclui:html/02-painel.html}}
+{{inclui:html/03-flutuantes.html}}
   <script>
-{{inclui:js/01-temas.js}}
-{{inclui:js/02-elementos-estado.js}}
+{{inclui:js/01-formatacao.js}}
+{{inclui:js/02-estado.js}}
 {{inclui:js/03-utilitarios.js}}
-{{inclui:js/04-estado-topo.js}}
+{{inclui:js/04-componentes.js}}
 {{inclui:js/05-leitura-respostas.js}}
-{{inclui:js/06-desenho-respostas.js}}
-{{inclui:js/07-graficos-png.js}}
-{{inclui:js/08-numeros-meses.js}}
-{{inclui:js/09-graficos-listas.js}}
-{{inclui:js/10-tabelas-fichas.js}}
-{{inclui:js/11-ecras-resposta.js}}
-{{inclui:js/12-resumo-dados.js}}
-{{inclui:js/13-painel-lateral.js}}
-{{inclui:js/14-faturacao-creditos.js}}
-{{inclui:js/15-resumo-html.js}}
-{{inclui:js/16-interacoes.js}}
-{{inclui:js/17-conversa.js}}
-{{inclui:js/18-painel-principal.js}}
-{{inclui:js/19-barra-temas.js}}
-{{inclui:js/20-perguntar.js}}
-{{inclui:js/21-eventos.js}}
+{{inclui:js/06-exportar.js}}
+{{inclui:js/07-respostas.js}}
+{{inclui:js/08-dados.js}}
+{{inclui:js/09-vistas.js}}
+{{inclui:js/10-paineis-laterais.js}}
+{{inclui:js/11-flow.js}}
+{{inclui:js/12-entrada.js}}
+{{inclui:js/13-app.js}}
   </script>
 </body>
 </html>

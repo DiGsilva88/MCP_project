@@ -31,5 +31,9 @@ jobs:
       - name: Test
         run: dotnet test Vendas.slnx --no-restore --configuration Release --filter "Categoria!=Integração"
 
+      # Formatação pt-PT, filtros, Guardados e exportar da página (node:test, sem dependências)
+      - name: Testes da página
+        run: node --test tests/pagina/*.test.js
+
 
         

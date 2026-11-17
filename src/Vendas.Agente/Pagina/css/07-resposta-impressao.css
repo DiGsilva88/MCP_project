@@ -1,0 +1,27 @@
+    /* =========================================================
+       Resposta do Flow aberta no painel principal, e impressão (Exportar PDF)
+       ========================================================= */
+    .aviso-dados { display: flex; gap: 10px; align-items: flex-start; margin-top: 14px; padding: 10px 12px; border-radius: var(--raio-controlo); background: var(--blue-mist); color: var(--ink-2); font-size: 13.5px; }
+    .aviso-dados svg { flex: none; margin-top: 2px; color: var(--blue); }
+    .destaque { margin-top: 14px; font-size: 15px; line-height: 1.5; max-width: 72ch; }
+    .resp-paragrafo { margin-top: 10px; color: var(--ink-2); line-height: 1.55; max-width: 72ch; white-space: pre-wrap; }
+    .ficha { display: grid; grid-template-columns: minmax(140px, auto) 1fr; }
+    .ficha dt, .ficha dd { padding: 10px 20px; border-top: 1px solid var(--line); }
+    .ficha dt { color: var(--ink-3); }
+    .ficha dt:first-of-type, .ficha dd:first-of-type { border-top: 0; }
+    .opcoes-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 20px 18px; }
+    .opcoes-chips .chip small { margin-left: 6px; color: var(--ink-3); }
+
+    @media print {
+      @page { margin: 14mm; }
+      body { font-size: 11pt; }
+      .app { display: block; height: auto; }
+      .rail, .topbar, .flow, .flow-abrir, .totop, .acoes, .fbar button, .entrada, .menu, .toast, .ferramentas, .sel-mes .btn,
+      .alerta-acoes, .ligacao, .paginas, .drawer-veu, .drawer-cab button, .drawer-pe { display: none !important; }
+      .principal { overflow: visible; padding: 0; }
+      .painel, .k { break-inside: avoid; }
+      /* Com um painel lateral aberto (pré-visualização de documento), só ele vai para o papel */
+      body.a-imprimir-drawer .app { display: none; }
+      body.a-imprimir-drawer .drawer { position: static; width: auto; border: 0; box-shadow: none; }
+      .drawer-corpo { overflow: visible; }
+    }

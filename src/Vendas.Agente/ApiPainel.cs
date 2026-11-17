@@ -5,6 +5,49 @@ namespace Vendas.Agente;
 
 public sealed record RespostaApi(int Estado, string Corpo, string Tipo = "application/json; charset=utf-8");
 
+// Os filtros transversais do painel, tal como a página os manda (?periodo=…&de=…&ate=…&cliente=…&zona=…&marca=…&tipodoc=…&comparar=nao).
+// Valem para todas as consultas: indicadores, tabelas e listas.
+public sealed record FiltrosPainel(string Periodo, string? De, string? Ate, string? Cliente, string[] Zonas, string[] Marcas, string[] Tipos, bool Comparar)
+{
+    private const int MaxValores = 30, MaxTexto = 100;
+    private static readonly Regex Tipo = new("^[A-Za-z0-9]{1,10}$", RegexOptions.CultureInvariant);
+    public static readonly FiltrosPainel Omissao = new("AnoAtual", null, null, null, [], [], [], true);
+
+    // null = pedido inválido (datas trocadas ou mal escritas, valores a mais). O período desconhecido volta ao ano atual.
+    public static FiltrosPainel? Ler(NameValueCollection q, DateOnly hoje)
+    {
+        static string[] Lista(NameValueCollection q, string k) => (q.GetValues(k) ?? []).Select(v => v.Trim()).Where(v => v.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var (de, ate) = (q["de"]?.Trim(), q["ate"]?.Trim());
+        if (string.IsNullOrEmpty(de) != string.IsNullOrEmpty(ate)) return null;
+        if (!string.IsNullOrEmpty(de))
+        {
+            if (!DateOnly.TryParseExact(de, "dd-MM-yyyy", out var d1) || !DateOnly.TryParseExact(ate, "dd-MM-yyyy", out var d2)
+                || d1 > d2 || d1.Year < 2000 || d2 > hoje.AddYears(1)) return null;
+        }
+        var cliente = q["cliente"]?.Trim();
+        var (zonas, marcas, tipos) = (Lista(q, "zona"), Lista(q, "marca"), Lista(q, "tipodoc"));
+        if (cliente?.Length > MaxTexto || new[] { zonas, marcas, tipos }.Any(l => l.Length > MaxValores || l.Any(v => v.Length > MaxTexto))
+            || tipos.Any(t => !Tipo.IsMatch(t))) return null;
+        return new(ApiPainel.Periodos.Contains(q["periodo"]) ? q["periodo"]! : "AnoAtual", string.IsNullOrEmpty(de) ? null : de, string.IsNullOrEmpty(ate) ? null : ate,
+            string.IsNullOrEmpty(cliente) ? null : cliente, zonas, marcas, tipos, q["comparar"] != "nao");
+    }
+
+    // Para a cache: dois pedidos com os mesmos filtros são o mesmo resumo
+    public string Chave => string.Join('|', Periodo, De, Ate, Cliente, string.Join(',', Zonas), string.Join(',', Marcas), string.Join(',', Tipos), Comparar);
+
+    // O período de todas as consultas: as datas De/Até ganham ao período
+    public Dictionary<string, object?> Janela() => De is null ? new() { ["periodo"] = Periodo } : new() { ["dataInicio"] = De, ["dataFim"] = Ate };
+
+    // Acrescenta os filtros aos argumentos de uma ferramenta. zonas/marcas=false: a lista de zonas (ou de marcas) mostra-as todas.
+    public void Aplicar(Dictionary<string, object?> argumentos, bool zonas = true, bool marcas = true)
+    {
+        if (Cliente is not null) argumentos["cliente"] = Cliente;
+        if (zonas && Zonas.Length > 0) argumentos["zonas"] = Zonas;
+        if (marcas && Marcas.Length > 0) argumentos["marcas"] = Marcas;
+        if (Tipos.Length > 0) argumentos["tiposDoc"] = Tipos;
+    }
+}
+
 // As rotas /api/ do painel, separadas do HttpListener para se poderem testar sem rede.
 // O perfil vem do servidor em cada pedido: o vendedor nunca é um parâmetro que o browser possa escolher.
 public sealed class ApiPainel(
@@ -68,6 +111,7 @@ public sealed class ApiPainel(
                 // shortcut: não se sabe onde o VB guarda o PDF, por isso é sempre 404 e a página usa a pré-visualização. Ligar aqui quando se souber.
                 ["api", "documentos", _, "pdf"] => Mensagem(404, "O PDF emitido não está disponível."),
                 ["api", "clientes", var id] => await ClienteAsync(Uri.UnescapeDataString(id), perfil, ct),
+                ["api", "clientes", var id, "briefing"] => await BriefingAsync(Uri.UnescapeDataString(id), perfil, ct),
                 _ => Mensagem(404, "Rota inexistente."),
             };
         }
@@ -82,21 +126,17 @@ public sealed class ApiPainel(
     {
         var tipo = q["tipo"];
         if (tipo is not (null or "N" or "C")) return PedidoInvalido;
-        var (pesquisa, cliente, zona) = (q["q"]?.Trim(), q["cliente"]?.Trim(), q["zona"]?.Trim());
-        if (pesquisa?.Length > MaxTexto || cliente?.Length > MaxTexto || zona?.Length > MaxTexto) return PedidoInvalido;
+        var pesquisa = q["q"]?.Trim();
+        if (pesquisa?.Length > MaxTexto || FiltrosPainel.Ler(q, DateOnly.FromDateTime(DateTime.Today)) is not { } f) return PedidoInvalido;
 
-        var argumentos = new Dictionary<string, object?>
-        {
-            ["periodo"] = Periodos.Contains(q["periodo"]) ? q["periodo"] : "AnoAtual",
-            ["pagina"] = int.TryParse(q["page"], out var pagina) && pagina > 0 ? pagina : 1,
-        };
+        var argumentos = f.Janela();
+        argumentos["pagina"] = int.TryParse(q["page"], out var pagina) && pagina > 0 ? pagina : 1;
+        f.Aplicar(argumentos);
         if (tipo is not null) argumentos["tipo"] = tipo;
         if (!string.IsNullOrEmpty(pesquisa)) argumentos["pesquisa"] = pesquisa;
-        if (!string.IsNullOrEmpty(cliente)) argumentos["cliente"] = cliente;
-        if (!string.IsNullOrEmpty(zona)) { argumentos["coluna"] = "Distrito"; argumentos["valor"] = zona; }
         if (perfil.Vendedor is not null) argumentos["vendedor"] = perfil.Vendedor;
 
-        var chave = string.Join('|', argumentos.Select(a => $"{a.Key}={a.Value}"));
+        var chave = string.Join('|', argumentos.Select(a => $"{a.Key}={(a.Value is string[] l ? string.Join(',', l) : a.Value)}"));
         lock (creditos)
         {
             foreach (var velha in creditos.Where(c => DateTime.UtcNow - c.Value.Feito > ValidadeCreditos).Select(c => c.Key).ToList())
@@ -122,6 +162,18 @@ public sealed class ApiPainel(
         if (!texto.StartsWith('{')) return Indisponivel;
         auditar(perfil, documento); // só o que foi mesmo aberto
         return new(200, texto);
+    }
+
+    // Briefing antes da visita: artigos que deixou de comprar, artigo mais comprado e documentos por pagar (consultar_briefing)
+    private async Task<RespostaApi> BriefingAsync(string id, Perfil perfil, CancellationToken ct)
+    {
+        if (id.Trim() is not { Length: > 0 and <= MaxTexto } cliente) return PedidoInvalido;
+        var argumentos = new Dictionary<string, object?> { ["cliente"] = cliente };
+        if (perfil.Vendedor is { } vendedor) argumentos["vendedor"] = vendedor;
+
+        var texto = await ferramenta("consultar_briefing", argumentos, ct);
+        if (texto.StartsWith("""{"erro":""")) return Mensagem(404, "Cliente não encontrado.");
+        return texto.StartsWith('{') ? new(200, texto) : Indisponivel;
     }
 
     private async Task<RespostaApi> ClienteAsync(string id, Perfil perfil, CancellationToken ct)

@@ -15,6 +15,63 @@ public class ConsultaVendasTests
 
     private static readonly DateOnly Desde = new(2024, 1, 1), Ate = new(2025, 1, 1);
 
+    private static FiltrosVenda Filtros(string[]? zonas = null, string[]? marcas = null, string[]? tipos = null) =>
+        FiltrosVenda.Criar(zonas, marcas, tipos).Filtros!;
+
+    [Fact]
+    public void FiltrosDoPainel_VariasZonasMarcasETipos_ChegamAoSqlComoParametros()
+    {
+        var f = Filtros(["Braga", "Porto'; DROP"], ["Bosch"], ["F", "V"]);
+        f[Campo.Vendedor] = "Ana";
+
+        var (sql, aplicar) = ConsultaVendas.DocumentosPorTipo(Desde, Ate, null, f);
+        var p = Aplicar(aplicar);
+
+        Assert.Contains("c.[Distrito] COLLATE Latin1_General_CI_AI IN (@zona0, @zona1)", sql);
+        Assert.Contains("[Marca] COLLATE Latin1_General_CI_AI IN (@marca0)", sql);
+        Assert.Contains("[TipoDocID] IN (@tipodoc0, @tipodoc1)", sql);
+        Assert.DoesNotContain("DROP", sql);                          // os valores só vão como parâmetro
+        Assert.Equal("Porto'; DROP", p["@zona1"].Value);
+        Assert.Equal("V", p["@tipodoc1"].Value);
+        Assert.Equal("Ana", p["@filtro0"].Value);                    // o vendedor do perfil continua a valer
+    }
+
+    [Fact]
+    public void FiltrosDoPainel_ZonaSemDados_SaoOsClientesSemDistrito()
+    {
+        var (sql, aplicar) = ConsultaVendas.RankingPorCliente(Desde, Ate, null, Filtros(["sem dados"]));
+
+        Assert.Contains("c.[Distrito] IS NULL", sql);
+        Assert.DoesNotContain("@zona0", sql);
+        Assert.False(Aplicar(aplicar).Contains("@zona0"));
+    }
+
+    [Fact]
+    public void FiltrosDoPainel_NaProcuraDeClientes_SoAsZonas()
+    {
+        // A ficha não tem Marca nem TipoDocID: com eles, a procura do cliente dava erro de SQL
+        var (sql, _) = ConsultaVendas.ProcurarClientes("Casa", Filtros(["Braga"], ["Bosch"], ["F"]));
+
+        Assert.Contains("@zona0", sql);
+        Assert.DoesNotContain("[Marca]", sql);
+        Assert.DoesNotContain("@tipodoc0", sql);
+    }
+
+    [Fact]
+    public void FiltrosDoPainel_ClientesSemVendas_RespeitamAsZonas()
+    {
+        var (sql, aplicar) = ConsultaVendas.ClientesSemVendas(Desde, Ate, Filtros(["Braga"]));
+
+        Assert.Contains("c.ClienteID IN (SELECT c.ClienteID", sql);
+        Assert.Equal("Braga", Aplicar(aplicar)["@zona0"].Value);
+    }
+
+    [Theory]
+    [InlineData(new[] { "F'" }, null)]                // tipo só com letras e números
+    [InlineData(null, 31)]                             // no máximo 30 valores
+    public void FiltrosVenda_RecusaValoresEstranhos(string[]? tipos, int? zonas) =>
+        Assert.Null(FiltrosVenda.Criar(zonas is { } n ? Enumerable.Range(0, n).Select(i => "Z" + i).ToArray() : null, null, tipos).Filtros);
+
     [Fact]
     public void PaginaCreditos_PaginaNoSqlEParametrizaAPesquisa()
     {

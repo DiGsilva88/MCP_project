@@ -1,38 +1,31 @@
     /* =========================================================
-       1. Tokens
+       Tokens do Flow (docs/ui): as únicas cores da página. Nenhum componente escreve cores à mão.
+       Só comentários com barra-asterisco: "//" não é comentário em CSS e anula a regra seguinte.
        ========================================================= */
     :root {
-      --navy: #0f1b3d;
-      --fundo: #eef1f6;        
-      --lateral: #f7f8fb;     
-      --cartao: #ffffff;
-      --texto: #16213a;
-      --suave: #4a5570;        
-      --nota: #566179;         
-      --borda: #d5dbe6;
-      --linha: #edf0f5;
-      --esqueleto: #d3dae6;    /* blocos "a carregar": a --linha é quase igual ao --fundo e não se via */
-      --marca: #1d46c0;
-      --marca-escura: #173a9e;
-      --marca-texto: #ffffff;
-      --selecionado: #dce4fa;  
-      --balao-eu: var(--marca);  /* balão de quem pergunta: o azul do topo */
-      --balao-eu-texto: var(--marca-texto);
-      --barra-fundo: #e6ebf5;
-      --aviso-fundo: #fff6e0;
-      --aviso-borda: #e8c26a;
-      --aviso-texto: #6b4a00;
-      --ok: #5be3a0;
-      --ocupado: #ffd27a;
-      --desligado: #ff9a8f;
-      --erro: #b42318;
-      --borda-forte: #b4becf;  /* eixos e tracejados */
-      --borda-cartao: #c3cbd8; /* contorno nítido dos cartões */
-      --anterior: #b9c6ea;     /* barras do ano anterior */
-      --anterior-linha: #7f93cc; 
-      --sobe: #0f6b3f; --sobe-fundo: #e2f4ea;
-      --desce: #a51b0f; --desce-fundo: #fde8e6;
-      --borda-controlo: #7a8599; 
-      --ligacao: #1d46c0;        
-      /* Gráfico circular: 6 cores por ordem fixa, validadas para daltonismo */
-      --serie-1: #2a78d6; --serie-2: #eb6834; --serie-3: #1baf7a; --serie-4: #eda100; --serie-5: #e87ba4; --serie-6: #6250d6;    }
+      --blue: #1F5BF5;        /* cor principal: botões primários, valores, subidas, ligações, seleção */
+      --blue-deep: #1443C9;   /* hover dos botões primários */
+      --blue-pale: #E4EBFF;   /* barras secundárias, bolha do utilizador, etiquetas, anel de foco */
+      --blue-mist: #F4F7FE;   /* fundos suaves: hover das linhas, mês selecionado, métricas do Flow */
+      --blue-soft: #9DB5FF;   /* terceira série (cartão do ecrã de entrada) */
+      --black: #000000;       /* texto principal, descidas, período ativo */
+      --ink-2: #3A404C;       /* texto secundário */
+      --ink-3: #6B7280;       /* texto auxiliar e rótulos de tabela; nunca texto principal */
+      --line: #DCE2ED;        /* contornos e separadores */
+      --white: #FFFFFF;
+      --error: #B42318;
+      --error-bg: #FEF3F2;
+      --branco-40: rgba(255, 255, 255, .4);               /* indicador a rodar sobre o botão azul */
+      --veu: rgba(0, 0, 0, .18);                         /* fundo escurecido dos painéis laterais */
+      --sombra: 0 14px 30px -14px rgba(20, 40, 90, .35);  /* menus, cartões flutuantes */
+      --sombra-drawer: -20px 0 40px -20px rgba(0, 0, 0, .2);
+
+      --letra: 'Onest', system-ui, sans-serif;
+      --raio-cartao: 12px;    /* cartões e painéis */
+      --raio-controlo: 10px;  /* botões e campos */
+      --raio-chip: 999px;     /* etiquetas e chips */
+
+      --menu-largura: 64px;
+      --topo-altura: 60px;
+      --flow-largura: 380px;
+    }

@@ -56,6 +56,10 @@ public static class Agendamentos
         catch (JsonException ex) { throw new InvalidDataException($"{ficheiro} está corrompido: corrija-o ou apague-o. {ex.Message}", ex); }
     }
 
+    // Os envios que esta pessoa agendou (o drawer "Agendar envio" lista-os e deixa cancelá-los). Sem os de outros: têm emails de outras pessoas.
+    public static List<Agendamento> DoCriador(IEnumerable<Agendamento> lista, string login) =>
+        lista.Where(a => login.Equals(a.Criador, StringComparison.OrdinalIgnoreCase)).ToList();
+
     private static readonly object Bloqueio = new();
 
     // Um agendamento por endereço: escolher de novo troca a frequência; "nenhum" deixa de enviar.

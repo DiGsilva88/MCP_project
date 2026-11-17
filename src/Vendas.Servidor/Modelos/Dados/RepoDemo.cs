@@ -162,5 +162,18 @@ public sealed class RepoDemo : IVendasRepo
             todos.Sum(d => d.EmAberto), todos.Where(d => d.Vencimento < hoje).Sum(d => d.EmAberto)));
     }
 
+    // Três artigos por cliente: dois comprados todos os meses e um que deixou de comprar há 4 meses.
+    public Task<IReadOnlyList<ArtigoCliente>> ArtigosDoClienteAsync(
+        string cliente, DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default)
+    {
+        if (!Clientes.Any(c => c.Id == cliente) || !Cumpre(cliente, filtros)) return Task.FromResult<IReadOnlyList<ArtigoCliente>>([]);
+        return Task.FromResult<IReadOnlyList<ArtigoCliente>>(
+        [
+            new("ART001", "Artigo de demonstração 1", 120m, 12, ate.AddDays(-3), 2400m),
+            new("ART002", "Artigo de demonstração 2", 60m, 12, ate.AddDays(-10), 900m),
+            new("ART003", "Artigo de demonstração 3", 32m, 8, ate.AddMonths(-4), 640m),
+        ]);
+    }
+
     public Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default) => Task.FromResult<DateOnly?>(Hoje);
 }
