@@ -351,8 +351,37 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
                 emAberto = new
                 {
                     documentos = aberto.Documentos, total = aberto.Total, vencido = aberto.Vencido,
+                    // Notas de crédito por abater, à parte (valor absoluto). comIva: o saldo por pagar inclui o IVA (verificado na BD).
+                    documentosCredito = aberto.DocumentosCredito, creditos = Math.Abs(aberto.Creditos), comIva = true,
                     itens = aberto.Itens.Select(d => new { documento = d.Documento, vencimento = d.Vencimento is { } v ? Data(v) : null, valor = d.EmAberto }),
                 },
+            });
+        });
+    }
+
+    // Só para os alertas personalizados do painel (o agente não a oferece ao modelo): faturas vencidas há mais de N dias.
+    // shortcut: só vêm os 100 mais antigos (Respostas.Maxlinhas); "truncado" diz quando há mais vencidos do que os devolvidos.
+    [McpServerTool(Name = "consultar_atrasos")]
+    [Description("Documentos por pagar vencidos há mais de N dias, em JSON: total, documentos e os mais antigos com os dias de atraso.")]
+    public async Task<string> ConsultarAtrasosAsync(
+        [Description("Dias de atraso, 1 a 3650.")] int dias = 60,
+        CancellationToken ct = default)
+    {
+        if (dias is < 1 or > 3650) return "dias tem de estar entre 1 e 3650.";
+        var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
+
+        return await Respostas.ExecutarAsync(log, "consultar_atrasos", dias, async () =>
+        {
+            var r = await repo.EmAbertoAsync(hoje, Respostas.Maxlinhas, null, true, ct);
+            // Só saldos por pagar: um crédito por abater (saldo negativo) com o vencimento passado não é uma fatura em atraso
+            var itens = r.Itens.Where(d => d.EmAberto > 0 && d.Vencimento is { } v && hoje.DayNumber - v.DayNumber > dias).ToList();
+            return JsonSerializer.Serialize(new
+            {
+                dias,
+                documentos = itens.Count,
+                total = itens.Sum(d => d.EmAberto),
+                truncado = r.Documentos > r.Itens.Count,
+                itens = itens.Select(d => new { cliente = d.Cliente, documento = d.Documento, vencimento = Data(d.Vencimento!.Value), dias = hoje.DayNumber - d.Vencimento!.Value.DayNumber, valor = d.EmAberto }),
             });
         });
     }
@@ -378,12 +407,16 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
 
             var r = await repo.EmAbertoAsync(hoje, limite, idCliente, soVencidos, ct);
             var quem = rotulo ?? "todos os clientes";
-            if (r.Documentos == 0)
+            if (r.Documentos == 0 && r.DocumentosCredito == 0)
                 return $"Sem documentos {(soVencidos ? "vencidos " : "")}em aberto ({quem}).";
 
+            // Valores com IVA: o saldo por pagar é o total do documento (verificado na BD). As notas de crédito por abater vão à parte.
+            var cabecalho = r.Documentos == 0
+                ? $"Em aberto, {quem}, a {Data(hoje)}: sem faturas por pagar."
+                : $"Em aberto{(soVencidos ? " e vencido" : "")}, {quem}, a {Data(hoje)}: {Euros(r.Total)} € em {r.Documentos} documentos; vencido: {Euros(r.Vencido)} €.";
             var texto = new StringBuilder()
-                .AppendLine($"Em aberto{(soVencidos ? " e vencido" : "")}, {quem}, a {Data(hoje)}: {Euros(r.Total)} € em {r.Documentos} documentos; " +
-                            $"vencido: {Euros(r.Vencido)} €.");
+                .AppendLine($"{cabecalho} Valores com IVA." +
+                            (r.DocumentosCredito > 0 ? $" Notas de crédito por abater: {Euros(Math.Abs(r.Creditos))} € em {r.DocumentosCredito} {(r.DocumentosCredito == 1 ? "documento" : "documentos")}." : ""));
             foreach (var (d, i) in r.Itens.Select((d, i) => (d, i)))
             {
                 var vence = d.Vencimento is not { } v ? "sem data de vencimento"

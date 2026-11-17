@@ -14,6 +14,14 @@ test('números do ecrã voltam a ser números (o Excel soma)', () => {
   assert.equal(celulaNumero(''), null);
 });
 
+test('decimais em ponto (o que o servidor escreve nos CSV) não perdem o ponto', () => {
+  assert.equal(celulaNumero('25.0'), 25);
+  assert.equal(celulaNumero('27.2'), 27.2);
+  assert.equal(celulaNumero('97.6%'), 97.6);
+  assert.equal(textoCsv([['Distrito', 'percentagem'], ['Lisboa', '25.0']]).slice(1), 'Distrito;percentagem\r\nLisboa;25');
+  assert.equal(celulaNumero('1.234,50 €'), 1234.5);   // milhares em ponto com vírgula decimal continuam a ler-se bem
+});
+
 test('CSV com ponto e vírgula, vírgula decimal e BOM', () => {
   const csv = textoCsv([['Cliente', 'Faturação (€)'], ['Casa; Costa', 1234.5], ['=SOMA(A1)', null]]);
   assert.ok(csv.startsWith('﻿'));

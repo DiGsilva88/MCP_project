@@ -39,6 +39,22 @@ public class PaginaChatTests
     }
 
     [Fact]
+    public void Html_TemOBotaoSair_EOEcraDeEntradaNaoFicaSaltadoParaSempre()
+    {
+        Assert.Contains("id=\"sair\"", Html);
+        Assert.Contains("aria-label=\"Sair\"", Html);
+        Assert.Contains("removeItem(LUGAR)", Html);                   // sair (e abrir de novo) apagam a marca de "já entrei"
+        Assert.Contains("getEntriesByType('navigation')", Html);      // só um reload salta a entrada
+    }
+
+    [Fact]
+    public void Briefing_DizQueAsFaturasPorPagarSaoComIvaEMostraOsCreditos()
+    {
+        Assert.Contains("com IVA", Html);                              // o saldo por pagar inclui o IVA (verificado na BD)
+        Assert.Contains("Notas de crédito por abater", Html);
+    }
+
+    [Fact]
     public void Css_SoOsTokensTemCores()
     {
         // Nenhum componente escreve cores à mão: só o 01-tokens.css tem hexadecimais e rgba

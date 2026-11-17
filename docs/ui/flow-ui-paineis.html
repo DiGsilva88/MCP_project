@@ -357,7 +357,7 @@ const VIEWS={};
 VIEWS.resumo={nome:'Resumo das vendas',icon:'home',
  sug:['Como correu agosto?','Qual foi a faturação por zona este ano?','Quanto faturámos no último trimestre?'],
  render(){return `
- <div class="head"><div><h1 tabindex="-1">Resumo das vendas</h1><p>Boa tarde, Diana.</p><p class="iva">Valores apresentados sem IVA.</p></div>
+ <div class="head"><div><h1 tabindex="-1">Resumo das vendas</h1><p>Boa tarde, {nome}.</p><p class="iva">Valores apresentados sem IVA.</p></div>
   <div class="ctrl">${seg(['Mês','Trimestre','Ano 2026'],'Ano 2026')}<button class="btn"><span data-i="download"></span>Exportar</button><button class="btn" data-schedule><span data-i="cal"></span>Agendar envio</button></div></div>
  <div class="kpis">${kpi(eur(2044643),'Faturação total',pct(6.3)+' face a 2025')}${kpi(int(34816),'Documentos',pct(3.8)+' face a 2025')}${kpi(eur2(58.73),'Valor médio',pct(2.4)+' face a 2025')}${kpi('233','Clientes ativos',pct(-4.1)+' face a 2025')}</div>
  <section class="panel"><div class="panel-h"><h2>Vendas por mês</h2><div class="legend"><span><i></i>2026</span><span><i class="o"></i>2025</span><span><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="3.5" fill="#fff" stroke="#000" stroke-width="1.5"/></svg>Setembro, parcial</span></div></div>

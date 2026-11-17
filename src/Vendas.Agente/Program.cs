@@ -136,8 +136,9 @@ IChatClient modelo = llm
         c.FunctionInvoker = async (ctx, ct) =>
         {
             var t = Stopwatch.StartNew();
-            // O filtro do perfil de vendedor é só do painel: o modelo não o escolhe (para filtrar por vendedor usa coluna/valor).
-            ctx.Arguments.Remove("vendedor");
+            // O filtro do perfil de vendedor e os filtros do painel (zonas, marcas, tipos de documento) são só do painel:
+            // o modelo não os escolhe (para filtrar por vendedor usa coluna/valor).
+            PoliticasSeguranca.RemoverSoDoPainel(ctx.Arguments);
             // Os argumentos da sensível trazem nomes de clientes: ficam fora da consola, como os resultados.
             // As recusas repetem o valor ("cliente=<nome> não está na pergunta"), por isso também.
             var sensivel = ctx.Function.Name == "consultar_sensivel";
@@ -390,7 +391,7 @@ async Task ModoWebAsync()
         return;
     }
     // O painel abre no resumo deste ano: começa já, enquanto o browser abre (a falha aparece no 1.º pedido).
-    var preCarregar = ResumoGuardadoAsync("AnoAtual", null, null, null);
+    var preCarregar = ResumoGuardadoAsync(FiltrosPainel.Omissao, null);
     Console.WriteLine($"Chat em {endereco} (Ctrl+C termina). As chamadas às ferramentas aparecem aqui.");
     Console.WriteLine(perfis is null ? $"Sem perfis.json: só {dono} tem acesso." : $"Acesso pelo perfis.json ({perfis.Count} utilizadores).");
     // Com endereço definido é uma instalação sem ninguém a olhar para este ecrã.
@@ -611,16 +612,19 @@ static async Task<string?> LerCorpoAsync(System.Net.HttpListenerRequest pedido, 
 // e os números são os da BD. Devolve os textos tal como a ferramenta os escreve; a página lê-os com o mesmo leitor do chat.
 async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, System.Net.HttpListenerResponse resposta, string? vendedor)
 {
-    var periodo = ApiPainel.Periodos.Contains(q["periodo"]) ? q["periodo"]! : "AnoAtual";
-    var cliente = q["cliente"]?.Trim() is { Length: > 0 and <= 100 } c ? c : null;
-    var zona = q["zona"]?.Trim() is { Length: > 0 and <= 100 } z ? z : null;
+    // Os filtros transversais (período ou datas, cliente, zonas, marcas, tipos de documento, comparar): chegam a todas as consultas
+    if (FiltrosPainel.Ler(q, DateOnly.FromDateTime(DateTime.Today)) is not { } f)
+    {
+        resposta.StatusCode = 400;
+        return;
+    }
     // Botão "Unidades" da vista Artigos: só a lista dos artigos, por unidades, pedida quando se carrega nele
     var porQuantidade = q["ordenar"] == "Quantidade";
 
     Dictionary<string, string> partes;
     try
     {
-        partes = await ResumoGuardadoAsync(periodo, cliente, zona, vendedor, porQuantidade);
+        partes = await ResumoGuardadoAsync(f, vendedor, porQuantidade);
     }
     catch (Exception ex)
     {
@@ -628,15 +632,15 @@ async Task ResumoAsync(System.Collections.Specialized.NameValueCollection q, Sys
         resposta.StatusCode = 500;
         return;
     }
-    Console.WriteLine($"[resumo {periodo}{(cliente is null ? "" : ", cliente")}{(zona is null ? "" : ", zona")}]"); // sem o nome: pode ser dado pessoal
+    Console.WriteLine($"[resumo {f.De ?? f.Periodo}{(f.Cliente is null ? "" : ", cliente")}{(f.Zonas.Length + f.Marcas.Length + f.Tipos.Length > 0 ? ", filtros" : "")}]"); // sem nomes: podem ser dados pessoais
     resposta.ContentType = "application/json; charset=utf-8";
     await resposta.OutputStream.WriteAsync(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(partes));
 }
 
 // O resumo da página, da cache (ver "resumos") ou montado agora. Uma falha não fica guardada: o pedido seguinte tenta de novo.
-Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cliente, string? zona, string? vendedor, bool artigosPorQuantidade = false)
+Task<Dictionary<string, string>> ResumoGuardadoAsync(FiltrosPainel f, string? vendedor, bool artigosPorQuantidade = false)
 {
-    var chave = $"{DateTime.Today:yyyyMMdd}|{periodo}|{cliente}|{zona}|{vendedor}|{artigosPorQuantidade}";
+    var chave = $"{DateTime.Today:yyyyMMdd}|{f.Chave}|{vendedor}|{artigosPorQuantidade}";
     var validade = TimeSpan.FromMinutes(10);
     lock (resumos)
     {
@@ -655,10 +659,10 @@ Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cli
             // Uma consulta presa à BD não pode deixar o painel à espera para sempre (conta depois da vez, não da fila).
             using var limite = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             // "Este mês" por mês: a ferramenta alargaria a AnoAtual (um mês só não é evolução); mes/ano mantêm os totais do mês.
-            var meses = periodo == "MesAtual"
+            var meses = f.De is null && f.Periodo == "MesAtual"
                 ? new Dictionary<string, object?> { ["mes"] = DateTime.Today.Month, ["ano"] = DateTime.Today.Year }
                 : [];
-            return await MontarResumoAsync(new() { ["periodo"] = periodo }, meses, cliente, zona, limite.Token, vendedor: vendedor, artigosPorQuantidade: artigosPorQuantidade);
+            return await MontarResumoAsync(f.Janela(), meses, f, limite.Token, vendedor: vendedor, artigosPorQuantidade: artigosPorQuantidade);
         }
         finally { montagens.Release(); }
     }
@@ -667,11 +671,14 @@ Task<Dictionary<string, string>> ResumoGuardadoAsync(string periodo, string? cli
 // As consultas do resumo, iguais na página e no email. janela: o período de todas (periodo, ou dataInicio e dataFim).
 // meses: argumentos a mais da evolução por mês; null = sem ela.
 async Task<Dictionary<string, string>> MontarResumoAsync(
-    Dictionary<string, object?> janela, Dictionary<string, object?>? meses, string? cliente, string? zona, CancellationToken ct, DateOnly? dia = null, string? vendedor = null,
+    Dictionary<string, object?> janela, Dictionary<string, object?>? meses, FiltrosPainel? filtros, CancellationToken ct, DateOnly? dia = null, string? vendedor = null,
     bool artigosPorQuantidade = false)
 {
-    // Só o email passa dia: continua com as zonas da ficha. No painel, "zona" é o distrito escolhido.
+    // Só o email passa dia: continua com as zonas da ficha. No painel, as zonas são os distritos escolhidos.
     var painel = dia is null;
+    var cliente = filtros?.Cliente;
+    // "Comparar com": o mesmo período do ano anterior (por omissão) ou sem comparação
+    var comparar = filtros?.Comparar ?? true;
 
     async Task<string> Texto(string ferramenta, Dictionary<string, object?> argumentos)
     {
@@ -679,19 +686,20 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
         return string.Concat(r.Content.OfType<TextContentBlock>().Select(b => b.Text));
     }
 
-    Task<string> Filtrada(string ferramenta, Dictionary<string, object?> argumentos, bool soDistrito = true)
+    // soDistrito/comMarcas=false: a lista de zonas (ou de marcas) mostra-as todas, com as escolhidas nos filtros
+    Task<string> Filtrada(string ferramenta, Dictionary<string, object?> argumentos, bool soDistrito = true, bool comMarcas = true)
     {
         // Quem já traz o seu periodo (os clientes parados: 90 dias) fica com ele.
-        if (!argumentos.ContainsKey("periodo"))
+        if (!argumentos.ContainsKey("periodo") && !argumentos.ContainsKey("dataInicio"))
             foreach (var (chave, valor) in janela) argumentos.TryAdd(chave, valor);
-        if (cliente is not null) argumentos["cliente"] = cliente;
-        if (soDistrito && zona is not null) { argumentos["coluna"] = "Distrito"; argumentos["valor"] = zona; }
+        filtros?.Aplicar(argumentos, soDistrito, comMarcas);
+        if (argumentos.ContainsKey("compararAnoAnterior")) argumentos["compararAnoAnterior"] = comparar;
         // Parâmetro próprio: o servidor nunca o troca nem o substitui, e o distrito continua a valer.
         if (vendedor is not null) argumentos["vendedor"] = vendedor;
         return Texto(ferramenta, argumentos);
     }
 
-    Task<string> Vendas(Dictionary<string, object?> argumentos, bool soDistrito = true) => Filtrada("consultar_vendas", argumentos, soDistrito);
+    Task<string> Vendas(Dictionary<string, object?> argumentos, bool soDistrito = true, bool comMarcas = true) => Filtrada("consultar_vendas", argumentos, soDistrito, comMarcas);
 
     // Só enriquece a vista Clientes: se falhar ou passar do tempo, o resto do painel carrega na mesma.
     static async Task<string> Opcional(Task<string> consulta)
@@ -716,12 +724,12 @@ async Task<Dictionary<string, string>> MontarResumoAsync(
         partes["documentos"] = Filtrada("consultar_documentos", new() { ["limite"] = 10 });
     // Cartão "Faturação por marca" da vista Artigos (o email não o usa). Marca e não família: na BD a família é quase toda "Familia Geral".
     if (painel)
-        partes["marcas"] = Vendas(new() { ["agrupar"] = "Marca", ["limite"] = 6, ["compararAnoAnterior"] = true });
+        partes["marcas"] = Vendas(new() { ["agrupar"] = "Marca", ["limite"] = 30, ["compararAnoAnterior"] = true }, comMarcas: false);
     // Só cliente: os rankings de zonas e clientes e os clientes parados não dizem nada sobre um cliente.
     if (cliente is null)
     {
         // Sem o filtro: o mosaico mostra sempre todos os distritos, com o escolhido em destaque.
-        partes["zonas"] = Vendas(new() { ["agrupar"] = painel ? "Distrito" : "Zona", ["limite"] = 8, ["compararAnoAnterior"] = true }, soDistrito: false);
+        partes["zonas"] = Vendas(new() { ["agrupar"] = painel ? "Distrito" : "Zona", ["limite"] = painel ? 30 : 8, ["compararAnoAnterior"] = true }, soDistrito: false);
         if (painel)
         {
             var porDistrito = new Dictionary<string, object?> { ["coluna"] = "Distrito", ["contar"] = true, ["limite"] = 100 };
@@ -792,7 +800,7 @@ async Task<int> EnviarResumosAsync()
         {
             using var limite = new CancellationTokenSource(TimeSpan.FromMinutes(2));
             var p = await MontarResumoAsync(
-                new() { ["dataInicio"] = $"{desde:dd-MM-yyyy}", ["dataFim"] = $"{ate.AddDays(-1):dd-MM-yyyy}" }, null, null, null, limite.Token, hoje);
+                new() { ["dataInicio"] = $"{desde:dd-MM-yyyy}", ["dataFim"] = $"{ate.AddDays(-1):dd-MM-yyyy}" }, null, null, limite.Token, hoje);
             corpo = Agendamentos.CorpoHtml($"Resumo de vendas: {intervalo}",
             [
                 ("Por zona", p["zonas"]), ("Melhores clientes", p["clientes"]), ("Melhores artigos", p["artigos"]),

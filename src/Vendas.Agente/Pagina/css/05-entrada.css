@@ -84,7 +84,7 @@
     }
     @media (max-width: 520px) {
       .ent-topo { flex-direction: column; align-items: flex-start; gap: 16px; }
-      .ent-logo svg { width: 90px; height: 48px; }
+      .ent-logo svg { width: 90px; height: 48px; overflow:visible; }
       .entrada h1 { font-size: 40px; }
       .ent-pergunta { padding-left: 18px; }
       .ent-pergunta input { font-size: 16px; }

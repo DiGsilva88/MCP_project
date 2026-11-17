@@ -33,7 +33,9 @@ public sealed record PaginaCreditos(IReadOnlyList<CreditoListado> Itens, int Tot
 //documentos por pagar (mcp.ViewMCP_resp_aberto_cli). Documentos, Total e Vencido contam todos, não só os itens devolvidos
 public sealed record ArtigoCliente(string ArtigoId, string Artigo, decimal Quantidade, int Meses, DateOnly? Ultima, decimal Valor);
 public sealed record DocumentoEmAberto(string Cliente, string Documento, DateOnly? Emissao, DateOnly? Vencimento, decimal EmAberto);
-public sealed record ResumoEmAberto(IReadOnlyList<DocumentoEmAberto> Itens, int Documentos, decimal Total, decimal Vencido);
+// Documentos/Total/Vencido são só das faturas por pagar (saldo positivo); as notas de crédito por abater vão à parte (Creditos é negativo).
+public sealed record ResumoEmAberto(IReadOnlyList<DocumentoEmAberto> Itens, int Documentos, decimal Total, decimal Vencido,
+    int DocumentosCredito = 0, decimal Creditos = 0);
 
 //um documento com as suas linhas, sem NIF nem morada
 public sealed record LinhaDocumento(string ArtigoId, string Artigo, decimal Quantidade, decimal Iliquido, decimal Desconto, decimal Liquido, decimal Iva);

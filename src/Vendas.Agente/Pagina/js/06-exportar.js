@@ -4,7 +4,14 @@
        ========================================================= */
     // "15 373,55 €" e "6,3%" -> número; o resto fica texto
     const NUMERO_TEXTO = /^[−-]?[\d\s  .]+(,\d+)?\s*(€|%)?$/;
-    const celulaNumero = v => typeof v === 'number' ? (isFinite(v) ? v : null) : NUMERO_TEXTO.test(String(v ?? '').trim()) && /\d/.test(v) ? fmt.numero(v) : null;
+    // O servidor escreve os CSV com ponto decimal ("25.0", "97.6%"); o que vem escrito em pt-PT tem espaços e vírgula
+    const DECIMAL_PONTO = /^-?\d+\.\d+%?$/;
+    const celulaNumero = v => {
+      if (typeof v === 'number') return isFinite(v) ? v : null;
+      const t = String(v ?? '').trim();
+      if (DECIMAL_PONTO.test(t)) return parseFloat(t);
+      return NUMERO_TEXTO.test(t) && /\d/.test(t) ? fmt.numero(t) : null;
+    };
 
     const nomeFicheiro = (titulo, extensao) =>
       `${semAcento(titulo || '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'vendas'}-${new Date().toISOString().slice(0, 10)}.${extensao}`;

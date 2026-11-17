@@ -185,6 +185,39 @@ public class ApiPainelTests
     }
 
     [Fact]
+    public async Task Atrasos_PerfilGeral_PassaOsDiasEDevolveOJson()
+    {
+        var t = new Tools("""{"dias":60,"documentos":0,"total":0,"truncado":false,"itens":[]}""");
+
+        var r = await t.Api().TratarAsync("/api/atrasos", Q(("dias", "60")), Todos);
+
+        Assert.Equal(200, r.Estado);
+        Assert.Equal(("consultar_atrasos", 60), (t.Chamadas[0].Nome, t.Chamadas[0].Args["dias"]));
+    }
+
+    [Fact]
+    public async Task Atrasos_Vendedor_403SemIrAFerramenta()
+    {
+        // As faturas por pagar não têm o vendedor do cliente: um vendedor veria as dos clientes dos outros
+        var t = new Tools("{}");
+
+        Assert.Equal(403, (await t.Api().TratarAsync("/api/atrasos", Q(("dias", "60")), Ana)).Estado);
+        Assert.Empty(t.Chamadas);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("abc")]
+    [InlineData("99999")]
+    public async Task Atrasos_DiasInvalidos_400(string dias)
+    {
+        var t = new Tools("{}");
+
+        Assert.Equal(400, (await t.Api().TratarAsync("/api/atrasos", Q(("dias", dias)), Todos)).Estado);
+        Assert.Empty(t.Chamadas);
+    }
+
+    [Fact]
     public async Task Briefing_PassaOVendedorDoPerfil_EDevolveOJson()
     {
         var t = new Tools("""{"cliente":"Casa (1003)","deixouDeComprar":[]}""");

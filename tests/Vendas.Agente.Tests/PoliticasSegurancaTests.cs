@@ -24,12 +24,28 @@ public class PoliticasSegurancaTests
         Assert.False(PoliticasSeguranca.RespostaSemFonte("Olá! Em que posso ajudar?", 0));
     }
 
+    [Fact]
+    public void RemoverSoDoPainel_TiraOVendedorEOsFiltrosDoPainel()
+    {
+        // O modelo vê estes parâmetros no esquema da consultar_vendas: não pode escolhê-los (filtrava sem ninguém pedir)
+        var args = new Dictionary<string, object?>
+        {
+            ["agrupar"] = "Artigo", ["periodo"] = "AnoAtual", ["vendedor"] = "Ana",
+            ["zonas"] = new[] { "Braga" }, ["marcas"] = new[] { "Bosch" }, ["tiposDoc"] = new[] { "F" },
+        };
+
+        PoliticasSeguranca.RemoverSoDoPainel(args);
+
+        Assert.Equal(["agrupar", "periodo"], args.Keys);
+    }
+
     [Theory]
     [InlineData("consultar_documentos", true)]
     [InlineData("consultar_carteira", true)]
     [InlineData("consultar_creditos", true)]
     [InlineData("consultar_documento", true)]
     [InlineData("consultar_briefing", true)]   // faturas por pagar e artigos de um cliente: só o painel, nunca o modelo
+    [InlineData("consultar_atrasos", true)]    // faturas em atraso de todos os clientes (alertas personalizados)
     [InlineData("consultar_vendas", false)]
     public void SoDoPainel_SoAsDeJson(string ferramenta, bool esperado) =>
         Assert.Equal(esperado, PoliticasSeguranca.SoDoPainel(ferramenta));

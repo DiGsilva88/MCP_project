@@ -123,6 +123,115 @@ public class VendasToolsTests
     }
 
     [Fact]
+    public async Task ConsultarEmAberto_MostraOsCreditosPorAbaterEDizQueOsValoresSaoComIva()
+    {
+        var repo = new FakeVendasRepo
+        {
+            EmAberto = new([new("Casa Costa (1003)", "F 2026/12", null, new DateOnly(2026, 10, 5), 1234.5m),
+                            new("Casa Costa (1003)", "N 2026/3", null, new DateOnly(2026, 10, 20), -40m)],
+                           1, 1234.5m, 1234.5m, 1, -40m),
+        };
+        var sut = new VendasTools(repo, NullLogger<VendasTools>.Instance, new RelogioFixo(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero)));
+
+        var texto = await sut.ConsultarEmAbertoAsync();
+
+        Assert.Contains("1 234,50 € em 1 documentos; vencido: 1 234,50 €", texto);
+        Assert.Contains("Valores com IVA", texto);                                  // o saldo por pagar inclui o IVA
+        Assert.Contains("Notas de crédito por abater: 40,00 € em 1 documento", texto);
+    }
+
+    [Fact]
+    public async Task ConsultarEmAberto_SoCreditos_NaoDizQueNaoHaNada()
+    {
+        var repo = new FakeVendasRepo { EmAberto = new([new("Casa (1)", "N 2026/3", null, new DateOnly(2026, 10, 20), -40m)], 0, 0m, 0m, 1, -40m) };
+
+        var texto = await CriarSut(repo).ConsultarEmAbertoAsync();
+
+        Assert.Contains("Notas de crédito por abater: 40,00 €", texto);
+    }
+
+    [Fact]
+    public async Task ConsultarBriefing_EmAbertoTrazOsCreditosEDizQueEComIva()
+    {
+        var repo = new FakeVendasRepo
+        {
+            UltimaVenda = new DateOnly(2026, 9, 4),
+            EmAberto = new([new("Casa Costa (1003)", "F 2026/12", null, new DateOnly(2026, 8, 1), 300m)], 2, 450m, 300m, 1, -40m),
+        };
+
+        using var d = System.Text.Json.JsonDocument.Parse(await CriarSut(repo).ConsultarBriefingAsync("1003"));
+
+        var a = d.RootElement.GetProperty("emAberto");
+        Assert.Equal(40m, a.GetProperty("creditos").GetDecimal());                  // valor absoluto, a página escreve "por abater"
+        Assert.Equal(1, a.GetProperty("documentosCredito").GetInt32());
+        Assert.True(a.GetProperty("comIva").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ConsultarAtrasos_SoOsComMaisDeNDiasVencidos_ComOsDiasDeAtraso()
+    {
+        var repo = new FakeVendasRepo
+        {
+            EmAberto = new([new("Casa Costa (1003)", "F 2026/1", null, new DateOnly(2026, 7, 1), 100m),     // 106 dias
+                            new("Café Exemplo (1002)", "F 2026/2", null, new DateOnly(2026, 9, 15), 50m)],    // 30 dias
+                           2, 150m, 150m),
+        };
+        var sut = new VendasTools(repo, NullLogger<VendasTools>.Instance, new RelogioFixo(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero)));
+
+        using var d = System.Text.Json.JsonDocument.Parse(await sut.ConsultarAtrasosAsync(dias: 60));
+
+        var r = d.RootElement;
+        Assert.True(repo.UltimoEmAberto!.Value.SoVencidos);
+        Assert.Equal(1, r.GetProperty("documentos").GetInt32());
+        Assert.Equal(100m, r.GetProperty("total").GetDecimal());
+        Assert.Equal(106, r.GetProperty("itens")[0].GetProperty("dias").GetInt32());
+        Assert.Equal("01-07-2026", r.GetProperty("itens")[0].GetProperty("vencimento").GetString());
+        Assert.False(r.GetProperty("truncado").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ConsultarAtrasos_UmCreditoVencidoNaoEUmaFaturaEmAtraso()
+    {
+        // Uma nota de crédito por abater (saldo negativo) com a data de vencimento passada não é uma fatura por pagar
+        var repo = new FakeVendasRepo
+        {
+            EmAberto = new([new("Casa Costa (1003)", "F 2026/1", null, new DateOnly(2026, 7, 1), 100m),       // 106 dias, por pagar
+                            new("Casa Costa (1003)", "N 2026/9", null, new DateOnly(2026, 5, 1), -40m)],      // 167 dias, crédito
+                           2, 60m, 60m),
+        };
+        var sut = new VendasTools(repo, NullLogger<VendasTools>.Instance, new RelogioFixo(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero)));
+
+        using var d = System.Text.Json.JsonDocument.Parse(await sut.ConsultarAtrasosAsync(dias: 60));
+
+        Assert.Equal(1, d.RootElement.GetProperty("documentos").GetInt32());
+        Assert.Equal(100m, d.RootElement.GetProperty("total").GetDecimal());
+        Assert.Equal("F 2026/1", d.RootElement.GetProperty("itens")[0].GetProperty("documento").GetString());
+    }
+
+    [Fact]
+    public async Task ConsultarAtrasos_ComMaisVencidosDoQueOsDevolvidos_DizQueEstaTruncado()
+    {
+        var repo = new FakeVendasRepo { EmAberto = new([new("Casa (1)", "F 2026/1", null, new DateOnly(2026, 1, 1), 10m)], 250, 2500m, 2500m) };
+
+        using var d = System.Text.Json.JsonDocument.Parse(await CriarSut(repo).ConsultarAtrasosAsync(dias: 30));
+
+        Assert.True(d.RootElement.GetProperty("truncado").GetBoolean());   // havia 250 vencidos e só vieram os mais antigos
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3651)]
+    public async Task ConsultarAtrasos_DiasForaDoIntervalo_DizOErroSemIrAoRepo(int dias)
+    {
+        var repo = new FakeVendasRepo();
+
+        var r = await CriarSut(repo).ConsultarAtrasosAsync(dias: dias);
+
+        Assert.Contains("entre 1 e 3650", r);
+        Assert.Null(repo.UltimoEmAberto);
+    }
+
+    [Fact]
     public async Task ConsultarEmAberto_ClienteInexistente_NaoVaiAoRepo()
     {
         var repo = new FakeVendasRepo { Clientes = _ => [] };

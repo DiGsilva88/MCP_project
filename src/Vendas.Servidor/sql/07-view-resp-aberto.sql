@@ -1,6 +1,10 @@
 -- 07 · VIEW mcp.ViewMCP_resp_aberto_cli (responsabilidades em aberto por cliente). Correr por blocos, depois de 01.
 -- A dbo.VGTS_RespAbertoCli é do ERP: NÃO usar ALTER SCHEMA ... TRANSFER, o ERP deixava de a encontrar em dbo.
 -- Em vez disso, uma view em mcp lê a original (como a 06 faz com a AnaVendArt).
+-- O que a view contém (verificado em 17/11/2026, ver 08b): só clientes (TipoTerceiro C, todos com ficha), sem saldos negativos.
+--   Aplicacao VND (área 10): F faturas, V faturas-recibo e N notas de crédito. Aplicacao GTS (área 0): R recibos (3 linhas, por confirmar).
+--   RemanMoedaAdop é o saldo por pagar COM IVA (bate com o total do documento nas vendas). As notas de crédito (N) vêm com o saldo POSITIVO:
+--   o sinal perdeu-se e a consulta do painel (ConsultaVendas.EmAberto) troca-o, para não as somar às faturas.
 USE [IAVSGIX];
 GO
 

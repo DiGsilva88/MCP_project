@@ -17,6 +17,8 @@ public class PreferenciasTests
     [Theory]
     [InlineData("""{"guardados":[],"alertas":[],"filtros":{}}""", true)]
     [InlineData("""{"guardados":[{"nome":"x"}]}""", true)]
+    [InlineData("""{"alertasPers":[{"id":"a1","nome":"Quedas"}]}""", true)]    // alertas personalizados
+    [InlineData("""{"alertasPers":"x"}""", false)]
     [InlineData("""{"outra":[]}""", false)]
     [InlineData("""{"guardados":"texto"}""", false)]
     [InlineData("""[]""", false)]

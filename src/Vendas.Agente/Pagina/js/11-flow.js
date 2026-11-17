@@ -27,6 +27,32 @@
       return { periodo, cliente };
     }
 
+    // "O que devo saber antes de visitar o cliente X?" -> o nome do cliente (ou null). Responde-se com o briefing do servidor:
+    // o modelo confundia esta pergunta com um pedido de dados do cliente e respondia sobre o email.
+    function intencaoBriefing(texto) {
+      const m = String(texto).match(/\b(?:antes de visitar|preparar (?:a )?visita (?:a|ao|de)|briefing d[oa])\s+(?:o\s+|a\s+)?(?:cliente\s+)?["“«]?(.+?)["”»]?\s*\??$/i);
+      return m && m[1].trim() ? m[1].trim() : null;
+    }
+    // Uma resposta que não passa pelo modelo (o chat mostra-a como as outras: Guardar resposta, Copiar, perguntas seguintes)
+    function responderLocal(pergunta, analise) {
+      const item = { id: Date.now(), pergunta, texto: [analise.titulo, ...analise.paragrafos].join('\n'), analise, local: true };
+      conversa.push(item);
+      abrirFlow(true);
+      desenharFlow(); rolarFlow();
+      anunciar('Resposta pronta.');
+      return item;
+    }
+    // O briefing do cliente pelo servidor; sem cliente encontrado (ou sem ligação) devolve null e a pergunta segue para o modelo
+    async function responderBriefing(pergunta, nome) {
+      try {
+        const r = await fetch(`/api/clientes/${encodeURIComponent(nome)}/briefing`);
+        if (!r.ok) return null;
+        const b = await r.json(), id = ((b.cliente || '').match(/\(([^()]+)\)\s*$/) || [])[1];
+        const c = ((app.dados && app.dados.carteira) || []).find(x => String(x.codigo) === String(id));
+        return responderLocal(pergunta, analiseBriefing(b, c, app.dados));
+      } catch (e) { console.error('Falha a obter o briefing:', e); return null; }
+    }
+
     // O Flow abre com a análise do último mês completo (só números do servidor)
     function analiseUltimoMes() {
       const D = app.dados, s = D && !D.erro ? D.serie : null;
@@ -56,7 +82,8 @@
       if (item.resumo) return `<div class="resp"><p>${esc(item.texto)}</p></div>`;
       const a = item.analise;
       return `<div class="resp">${a.titulo ? `<h2>${esc(a.titulo)}</h2>` : ''}
-        ${a.paragrafos.slice(0, 2).map(p => `<p class="resp-texto">${esc(p)}</p>`).join('')}
+        ${a.paragrafos.map(p => `<p class="resp-texto">${esc(p)}</p>`).join('')}
+        ${a.nota ? `<p class="painel-nota">${esc(a.nota)}.</p>` : ''}
         ${a.metricas.length ? `<div class="metricas">${a.metricas.map(m => `<div class="m"><div class="m-r">${esc(m.r)}</div><div class="m-v">${esc(m.v)}</div>${m.delta != null ? `<div class="k-nota">${faceA(m.delta, m.ano)}</div>` : ''}</div>`).join('')}</div>` : ''}
         ${a.avisos.map(t => `<p class="aviso-dados">${ic('info')}<span>${esc(t)}</span></p>`).join('')}
         ${a.opcoes.length ? `<div class="ferramentas" style="margin-top:12px">${a.opcoes.map(o => `<button type="button" class="chip" ${o.escrever ? `data-escrever="${esc(o.escrever)}"` : `data-perguntar="${esc(o.perguntar)}"`}>${esc(o.t)}${o.n != null ? ` <span class="muted">${o.n}</span>` : ''}</button>`).join('')}</div>` : ''}
@@ -83,7 +110,8 @@
       flowEnviar.classList.toggle('enviar--parar', !!emCurso);
       flowEnviar.setAttribute('aria-label', emCurso ? 'Parar a resposta' : 'Enviar pergunta');
       flowEnviar.innerHTML = ic(emCurso ? 'parar' : 'enviar');
-      flowCampo.disabled = app.vendedor;
+      // Enquanto responde a caixa fica bloqueada: o Enter não pode cancelar a resposta; só o botão Parar
+      flowCampo.disabled = app.vendedor || !!emCurso;
       flowEnviar.disabled = app.vendedor;
     }
     const rolarFlow = () => { flowCorpo.scrollTop = flowCorpo.scrollHeight; };
@@ -95,7 +123,9 @@
     }
     async function perguntar(texto, repetir = null) {
       texto = String(texto || '').replace(/\s+/g, ' ').trim();
-      if (!texto || emCurso || app.vendedor) return;
+      if (!texto || app.vendedor) return null;
+      // Uma pergunta durante outra não se perde em silêncio: diz-se porquê
+      if (emCurso) { aviso('Já há uma pergunta em curso. Espere pela resposta ou carregue em Parar.'); return null; }
       const pedido = intencaoResumo(texto);
       if (pedido && !repetir) {
         conversa.push({ id: Date.now(), pergunta: texto, resumo: pedido, texto: `Abri o resumo das vendas (${nomePeriodo(pedido.periodo).toLowerCase()}${pedido.cliente ? ', cliente ' + pedido.cliente : ''}) no painel.` });
@@ -105,6 +135,9 @@
         rolarFlow();
         return conversa[conversa.length - 1];
       }
+      // Briefing de um cliente: responde o servidor (os mesmos dados do painel), não o modelo
+      const nomeBriefing = repetir ? null : intencaoBriefing(texto);
+      if (nomeBriefing) { const feito = await responderBriefing(texto, nomeBriefing); if (feito) return feito; }
       if (repetir) conversa.splice(conversa.indexOf(repetir), 1);
       const item = { id: Date.now(), pergunta: texto, texto: '', erro: null, pendente: true, segundos: 0 };
       conversa.push(item);
@@ -207,11 +240,14 @@
     });
     document.getElementById('flow-form').addEventListener('submit', e => {
       e.preventDefault();
-      if (emCurso) { pararPergunta(); return; }
+      // Enter (ou o envio implícito) durante uma resposta não a cancela: só o clique no botão Parar, mais abaixo
+      if (emCurso) { aviso('Espere pela resposta ou carregue em Parar.'); return; }
       const t = flowCampo.value;
       flowCampo.value = '';
       perguntar(t);
     });
+    // O botão de enviar é o Parar enquanto responde; preventDefault: o clique não pode submeter o formulário
+    flowEnviar.addEventListener('click', e => { if (emCurso) { e.preventDefault(); pararPergunta(); } });
     flowAbrir.addEventListener('click', () => abrirFlow(!flowEl.classList.contains('aberto')));
     document.getElementById('flow-fechar').addEventListener('click', () => abrirFlow(false));
     flowEl.addEventListener('keydown', e => { if (e.key === 'Escape' && flowEl.classList.contains('aberto') && !drawer.aberto) abrirFlow(false); });
