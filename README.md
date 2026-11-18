@@ -250,6 +250,8 @@ Corre uma só instância central, que os utilizadores abrem no browser. Uma inst
 
 5. Arrancar `Vendas.Agente.exe --web` com o Agendador do Windows, ao iniciar o sistema e com essa conta. Com vários servidores RDS a aceder a um central, usar HTTPS.
 
+Atrás do IIS (proxy inverso com Windows Authentication no IIS): definir `VENDAS_PROXY_SEGREDO` (o IIS envia-o em `X-Proxy-Secret` e o login em `X-Remote-User`), `VENDAS_ENDERECO` em loopback (ex.: `http://localhost:5080/`) e `VENDAS_ENDERECO_PUBLICO` com o `https://` que o browser usa. Sem `VENDAS_PROXY_SEGREDO` nada muda. Ver [docs/IIS.md](docs/IIS.md).
+
 Um perfil de vendedor vê o painel e as listas filtrados (o filtro vai no parâmetro `vendedor` das ferramentas e soma-se ao distrito escolhido), mas não o chat nem o envio de resumos por email, que têm dados de todos os clientes: a página nem os mostra.
 - **Exportar**: no painel escolhem-se as secções que entram no CSV; o ficheiro respeita o período e os filtros aplicados.
 
