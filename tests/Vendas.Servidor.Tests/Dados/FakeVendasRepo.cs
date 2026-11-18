@@ -110,9 +110,10 @@ internal sealed class FakeVendasRepo : IVendasRepo
     public Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
-        DimensaoVenda? emCada = null, bool menores = false, CancellationToken ct = default)
+        DimensaoVenda? emCada = null, bool menores = false, string? artigo = null, CancellationToken ct = default)
     {
         UltimoCliente = cliente;
+        UltimoArtigo = artigo;
         UltimosFiltros = filtros;
         UltimaDimensao = dimensao;
         UltimoEmCada = emCada;
@@ -124,6 +125,7 @@ internal sealed class FakeVendasRepo : IVendasRepo
         return Ranking(desde, ate, limite);
     }
 
+    public string? UltimoArtigo { get; private set; }
     public bool? UltimoPorQuantidade { get; private set; }
     public DimensaoVenda? UltimoEmCada { get; private set; }
     public bool? UltimoMenores { get; private set; }

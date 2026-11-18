@@ -57,6 +57,22 @@ public class PoliticasSegurancaTests
     public void PodeIrParaCloud_SoRetiraADeDadosPessoais(string ferramenta, bool esperado) =>
         Assert.Equal(esperado, PoliticasSeguranca.PodeIrParaCloud(ferramenta));
 
+    // "Porque deixou o cliente X de comprar o artigo Y" é sobre vendas: o modelo pequeno recusava-a como fora do âmbito.
+    [Fact]
+    public void Regras_PerguntaDeCausaSobreClienteEArtigo_NaoEForaDoAmbito()
+    {
+        var regras = PoliticasSeguranca.Regras;
+
+        Assert.Contains("deixou de comprar", regras);
+        Assert.Contains("NÃO é fora do âmbito", regras);
+        Assert.Contains("artigo=<", regras);
+        Assert.Contains("não têm os motivos", regras);
+    }
+
+    [Fact]
+    public void ForaDoAmbito_DaUmExemploDeClienteEArtigo() =>
+        Assert.Contains("deixou de comprar", PoliticasSeguranca.ForaDoAmbito);
+
     [Fact]
     public void RespostaSemFonte_ForaDoAmbito_Passa() =>
         Assert.False(PoliticasSeguranca.RespostaSemFonte(PoliticasSeguranca.ForaDoAmbito, 0));
@@ -134,6 +150,16 @@ public class PoliticasSegurancaTests
     [InlineData("Clientes por zona sem localidade", "valor", "sem dados")] // valor especial da tool
     public void ValorInventado_ValorDaPergunta_Passa(string pergunta, string nome, string valor)
         => Assert.Null(PoliticasSeguranca.ValorInventado(pergunta, "", Args(nome, valor)));
+
+    [Fact]
+    public void ValorInventado_ArtigoDaPergunta_PassaEArtigoInventado_Recusa()
+    {
+        const string pergunta = "Porque deixou o cliente Rogério de comprar o óleo Syntus KN Extra?";
+
+        Assert.Null(PoliticasSeguranca.ValorInventado(pergunta, "", Args("artigo", "Syntus KN Extra")));
+        Assert.Equal("artigo=Filtro de ar não está na pergunta. Chama de novo sem esse filtro.",
+            PoliticasSeguranca.ValorInventado(pergunta, "", Args("artigo", "Filtro de ar")));
+    }
 
     [Fact]
     public void ValorInventado_FiltroQueNinguemPediu_Recusa()
@@ -247,5 +273,25 @@ public class PoliticasSegurancaTests
     {
         Assert.Equal("texto simples", PoliticasSeguranca.TextoDoResultado("texto simples"));
         Assert.Equal("", PoliticasSeguranca.TextoDoResultado(null));
+    }
+
+    [Fact]
+    public void ImagensDoResultado_ImagemNoContent_DevolveDataUrl()
+    {
+        var resultado = JsonSerializer.Deserialize<JsonElement>(
+            """{"content":[{"type":"image","data":"iVBORw==","mimeType":"image/png"},{"type":"text","text":"x"}]}""");
+
+        Assert.Equal(["data:image/png;base64,iVBORw=="], PoliticasSeguranca.ImagensDoResultado(resultado));
+    }
+
+    [Fact]
+    public void ImagensDoResultado_SoTextoOuOutroMime_DevolveVazio()
+    {
+        var soTexto = JsonSerializer.Deserialize<JsonElement>("""{"content":[{"type":"text","text":"x"}]}""");
+        var svg = JsonSerializer.Deserialize<JsonElement>("""{"content":[{"type":"image","data":"PHN2Zz4=","mimeType":"image/svg+xml"}]}""");
+
+        Assert.Empty(PoliticasSeguranca.ImagensDoResultado(soTexto));
+        Assert.Empty(PoliticasSeguranca.ImagensDoResultado(svg));
+        Assert.Empty(PoliticasSeguranca.ImagensDoResultado("texto"));
     }
 }

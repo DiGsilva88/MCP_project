@@ -78,9 +78,9 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     public async Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
-        DimensaoVenda? emCada = null, bool menores = false, CancellationToken cancellationToken = default)
+        DimensaoVenda? emCada = null, bool menores = false, string? artigo = null, CancellationToken cancellationToken = default)
     {
-        var (sql, parametros) = ConsultaVendas.RankingPorDimensao(dimensao, desde, ate, cliente, filtros, porQuantidade, emCada, menores);
+        var (sql, parametros) = ConsultaVendas.RankingPorDimensao(dimensao, desde, ate, cliente, filtros, porQuantidade, emCada, menores, artigo);
         return await LerAsync(sql, parametros, limite, LerValorAgrupado, cancellationToken);
     }
 

@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace Vendas.Agente;
@@ -28,5 +30,13 @@ public static class Perfis
         if (mapa is null) return login.Equals(dono, StringComparison.OrdinalIgnoreCase) ? new Perfil(login, null) : null;
         return !mapa.TryGetValue(login, out var vendedor) || string.IsNullOrWhiteSpace(vendedor) ? null
             : new Perfil(login, vendedor == VeTudo ? null : vendedor);
+    }
+
+    // Atrás do IIS o login chega num cabeçalho. Só vale vindo do proxy local que conhece o segredo: o resto é falsificável.
+    public static string? LoginDoProxy(string? cabecalhoUtilizador, string? cabecalhoSegredo, string? segredo, bool loopback)
+    {
+        if (!loopback || string.IsNullOrWhiteSpace(segredo) || string.IsNullOrWhiteSpace(cabecalhoUtilizador) || cabecalhoSegredo is null) return null;
+        return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(cabecalhoSegredo), Encoding.UTF8.GetBytes(segredo))
+            ? cabecalhoUtilizador.Trim() : null;
     }
 }

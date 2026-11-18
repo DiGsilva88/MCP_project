@@ -110,6 +110,7 @@ var caracteresFerramentas = 0; // texto devolvido pelas ferramentas na pergunta 
 string? textoDireto = null; // ranking mostrado tal como veio do servidor (ver PoliticasSeguranca.MostrarDireto)
 var perguntaAtual = ""; // os filtros do modelo têm de vir daqui ou de um resultado (ver PoliticasSeguranca.ValorInventado)
 var resultadosPergunta = new System.Text.StringBuilder();
+var imagensPergunta = new List<string>(); // gráficos das ferramentas: vão para a página, nunca para o modelo
 
 // Teto de texto das ferramentas por pergunta (~3 letras por token): regras + esquemas + isto cabem em NumCtx.
 // Acima disto o Ollama cortaria o início do prompt, que são as regras de segurança.
@@ -168,6 +169,7 @@ IChatClient modelo = llm
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var texto = PoliticasSeguranca.TextoDoResultado(resultado);
             resultadosPergunta.AppendLine(texto);
+            imagensPergunta.AddRange(PoliticasSeguranca.ImagensDoResultado(resultado));
             // dados pessoais (NIF, contactos) não ficam no ecrã/scrollback: só o tamanho
             var amostra = sensivel
                 ? $"({texto.Length} caracteres)"
@@ -272,7 +274,7 @@ while (true)
     Console.Write("> ");
     var pergunta = Console.ReadLine();
     if (string.IsNullOrWhiteSpace(pergunta)) break;
-    await ResponderAsync(pergunta, texto => { Console.Write(texto); return Task.CompletedTask; });
+    await ResponderAsync(pergunta, texto => { if (!texto.StartsWith('\u0001')) Console.Write(texto); return Task.CompletedTask; });
 }
 
 // Responde a uma pergunta; "escrever" recebe o texto à medida que pode ser mostrado (consola ou browser).
@@ -285,6 +287,7 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever, Cancella
     List<ChatMessage> historico = [new(ChatRole.System, Regras()), new(ChatRole.User, pergunta)];
     perguntaAtual = pergunta;
     resultadosPergunta.Clear();
+    imagensPergunta.Clear();
 
     var relogio = Stopwatch.StartNew();
     var partes = new List<ChatResponseUpdate>();
@@ -350,6 +353,9 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever, Cancella
         return;
     }
 
+    // Depois do texto: a página junta a imagem à resposta (aviso com \u0001, como a fila).
+    foreach (var imagem in imagensPergunta) await escrever($"\u0001imagem {imagem}\n");
+
     // Tokens lidos = soma dos pedidos desta pergunta (escolher a ferramenta + responder). Em CPU é o que mais pesa.
     var resposta = partes.ToChatResponse();
     Console.WriteLine();
@@ -368,13 +374,23 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever, Cancella
 async Task ModoWebAsync()
 {
     var enderecoFixo = Environment.GetEnvironmentVariable("VENDAS_ENDERECO");
+    // Atrás do IIS (modo proxy) o login vem do IIS e este processo só ouve em loopback.
+    var segredoProxy = Environment.GetEnvironmentVariable("VENDAS_PROXY_SEGREDO");
+    var proxy = !string.IsNullOrWhiteSpace(segredoProxy);
     // Fora deste PC só HTTPS: em HTTP os dados iam em claro na rede, e o browser não manda o Sec-Fetch-Site (o painel dava 403).
-    if (enderecoFixo is not null && !enderecoFixo.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+    if (!proxy && enderecoFixo is not null && !enderecoFixo.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
     {
         Console.Error.WriteLine("VENDAS_ENDERECO tem de começar por https:// (ver README). O painel não arrancou.");
         return;
     }
     var endereco = enderecoFixo ?? "http://localhost:5080/";
+    // O que o browser vê (https do IIS): é contra isto que se compara o Origin.
+    var enderecoPublico = Environment.GetEnvironmentVariable("VENDAS_ENDERECO_PUBLICO") ?? endereco;
+    if (proxy && (!Uri.TryCreate(endereco, UriKind.Absolute, out var escuta) || !escuta.IsLoopback || !enderecoPublico.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+    {
+        Console.Error.WriteLine("Com VENDAS_PROXY_SEGREDO, VENDAS_ENDERECO tem de ser loopback e VENDAS_ENDERECO_PUBLICO tem de começar por https://. O painel não arrancou.");
+        return;
+    }
     var perfis = Perfis.Ler(Path.Combine(pastaDados, "perfis.json"));
     var dono = $"{Environment.UserDomainName}\\{Environment.UserName}";
     const int MaxPergunta = 500;
@@ -382,10 +398,10 @@ async Task ModoWebAsync()
     using var servidor = new System.Net.HttpListener();
     servidor.Prefixes.Add(endereco);
     // O browser envia o login do Windows sozinho; quem não se autentica recebe 401 e nunca chega ao TratarAsync.
-    servidor.AuthenticationSchemes = System.Net.AuthenticationSchemes.IntegratedWindowsAuthentication;
+    servidor.AuthenticationSchemes = proxy ? System.Net.AuthenticationSchemes.Anonymous : System.Net.AuthenticationSchemes.IntegratedWindowsAuthentication;
     try { servidor.Start(); }
     // Já há um painel aberto neste PC (segundo clique no atalho ou no botão do VB6): mostra esse. Numa instalação com endereço, a falha tem de se ver.
-    catch (System.Net.HttpListenerException) when (enderecoFixo is null)
+    catch (System.Net.HttpListenerException) when (enderecoFixo is null && !proxy)
     {
         Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true });
         return;
@@ -395,7 +411,7 @@ async Task ModoWebAsync()
     Console.WriteLine($"Chat em {endereco} (Ctrl+C termina). As chamadas às ferramentas aparecem aqui.");
     Console.WriteLine(perfis is null ? $"Sem perfis.json: só {dono} tem acesso." : $"Acesso pelo perfis.json ({perfis.Count} utilizadores).");
     // Com endereço definido é uma instalação sem ninguém a olhar para este ecrã.
-    if (enderecoFixo is null) Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true });
+    if (enderecoFixo is null && !proxy) Process.Start(new ProcessStartInfo(endereco) { UseShellExecute = true });
 
     var umaPergunta = new SemaphoreSlim(1); // ResponderAsync usa estado partilhado (chamadas, textoDireto, perguntaAtual…)
     // Por pessoa: o Parar e uma pergunta nova de um utilizador não cancelam a de outro. Sem Dispose: Cancel() num CTS já descartado lançaria exceção.
@@ -420,7 +436,9 @@ async Task ModoWebAsync()
         var (pedido, resposta) = (ctx.Request, ctx.Response);
         try
         {
-            var perfil = Perfis.Resolver(ctx.User?.Identity?.Name, perfis, dono);
+            var perfil = Perfis.Resolver(proxy
+                ? Perfis.LoginDoProxy(pedido.Headers["X-Remote-User"], pedido.Headers["X-Proxy-Secret"], segredoProxy, System.Net.IPAddress.IsLoopback(pedido.RemoteEndPoint.Address))
+                : ctx.User?.Identity?.Name, perfis, dono);
             if (perfil is null)
             {
                 resposta.StatusCode = 403;
@@ -429,7 +447,7 @@ async Task ModoWebAsync()
                 return;
             }
             // Origem, Sec-Fetch-Site e perfil de vendedor, antes de qualquer rota (testado em ApiPainelTests)
-            if (ApiPainel.Recusa(pedido.HttpMethod, pedido.Url?.AbsolutePath ?? "", pedido.Headers["Origin"], pedido.Headers["Sec-Fetch-Site"], endereco, perfil.Vendedor is not null) is { } recusa)
+            if (ApiPainel.Recusa(pedido.HttpMethod, pedido.Url?.AbsolutePath ?? "", pedido.Headers["Origin"], pedido.Headers["Sec-Fetch-Site"], enderecoPublico, perfil.Vendedor is not null) is { } recusa)
             {
                 resposta.StatusCode = 403;
                 resposta.ContentType = "text/plain; charset=utf-8";
