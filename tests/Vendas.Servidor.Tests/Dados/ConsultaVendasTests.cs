@@ -154,6 +154,27 @@ public class ConsultaVendasTests
         Assert.Equal("1003", Aplicar(aplicar)["@cliente"].Value);
     }
 
+
+    [Fact]
+    public void RankingPorDimensao_ComArtigo_FiltraPeloIdOuPeloNomeSemWildcards()
+    {
+        var (sql, aplicar) = ConsultaVendas.RankingPorDimensao(DimensaoVenda.Mes, Desde, Ate, "1003", artigo: " Syntus 100% ");
+
+        Assert.Contains("CAST([ArtigoID] AS nvarchar(50)) = @artigo", sql);
+        Assert.Contains(@"[Artigo] COLLATE Latin1_General_CI_AI LIKE @artigoPadrao ESCAPE '\'", sql);
+        var p = Aplicar(aplicar);
+        Assert.Equal("Syntus 100%", p["@artigo"].Value);
+        Assert.Equal(@"%Syntus 100\%%", p["@artigoPadrao"].Value); // o % do utilizador não é wildcard
+    }
+
+    [Fact]
+    public void RankingPorDimensao_SemArtigo_NaoFiltraNemTemParametro()
+    {
+        var (sql, aplicar) = ConsultaVendas.RankingPorDimensao(DimensaoVenda.Mes, Desde, Ate);
+
+        Assert.DoesNotContain("@artigo", sql);
+        Assert.False(Aplicar(aplicar).Contains("@artigo"));
+    }
     [Fact]
     public void ProcurarClientes_IdOuInicioDoNomeSemWildcards()
     {

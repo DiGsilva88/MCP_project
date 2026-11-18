@@ -68,6 +68,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         [Description("true: compara cada linha com o mesmo período um ano antes (variação em %).")] bool compararAnoAnterior = false,
         [Description("Opcional: trimestre 1 a 4 (1 = janeiro a março). Com ano opcional. Tem prioridade sobre mes e periodo.")] int? trimestre = null,
         [Description("true: do menor para o maior (os que vendem menos).")] bool menores = false,
+        [Description("Opcional: só este artigo (ID ou parte do nome). Com cliente e agrupar=Mes: quando o cliente comprou e deixou de comprar o artigo.")] string? artigo = null,
         [Description("Só do painel, não usar. Vendas de um vendedor: coluna=Vendedor.")] string? vendedor = null,
         [Description("Só do painel, não usar.")] string[]? zonas = null,
         [Description("Só do painel, não usar.")] string[]? marcas = null,
@@ -97,6 +98,8 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         // O ranking por cliente e o "melhor em cada" só sabem do maior para o menor.
         if (menores && (agrupar == DimensaoVenda.Cliente || emCada is not null || semVendas))
             return "menores não se combina com agrupar=Cliente, emCada nem semVendas. Chama de novo sem menores.";
+        if (!string.IsNullOrWhiteSpace(artigo) && (agrupar == DimensaoVenda.Cliente || semVendas))
+            return "artigo não se combina com agrupar=Cliente nem semVendas. Chama de novo sem artigo, ou com agrupar=Mes (evolução do artigo).";
 
         var (filtros, erroFiltros) = FiltrosVenda.Criar(zonas, marcas, tiposDoc);
         if (filtros is null) return erroFiltros!;
@@ -119,7 +122,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
             return semVendas
                 ? await ListarSemVendasAsync(janela, limite, filtros, pedidos, ct)
-                : await ListarRankingAsync(agrupar, ordenar, emCada, compararAnoAnterior, menores, janela, limite, cliente, filtros, pedidos, ct);
+                : await ListarRankingAsync(agrupar, ordenar, emCada, compararAnoAnterior, menores, janela, limite, cliente, artigo, filtros, pedidos, ct);
         });
     }
 
@@ -509,7 +512,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
 
     private async Task<string> ListarRankingAsync(
         DimensaoVenda agrupar, OrdenarVenda ordenar, DimensaoVenda? emCada, bool compararAnoAnterior, bool menores, IntervaloVendas janela,
-        int limite, string? cliente, Dictionary<Campo, string> filtros, Dictionary<Campo, string> pedidos, CancellationToken ct)
+        int limite, string? cliente, string? artigo, Dictionary<Campo, string> filtros, Dictionary<Campo, string> pedidos, CancellationToken ct)
     {
         var (idCliente, rotuloCliente, erro) = await Respostas.ResolverClienteAsync(repo, cliente, filtros, ct);
         if (erro is not null) return erro;
@@ -518,7 +521,7 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         // Um método por view de origem: os clientes precisam do nome que vive na ViewMCP_cliente.
         Task<IReadOnlyList<ValorAgrupado>> Ranking(DateOnly desde, DateOnly ate, int maximo) => agrupar == DimensaoVenda.Cliente
             ? repo.RankingPorClienteAsync(desde, ate, maximo, idCliente, filtros, ct)
-            : repo.RankingPorDimensaoAsync(agrupar, desde, ate, maximo, idCliente, filtros, porQuantidade, emCada, menores, ct);
+            : repo.RankingPorDimensaoAsync(agrupar, desde, ate, maximo, idCliente, filtros, porQuantidade, emCada, menores, artigo, ct);
 
         var linhas = await Ranking(janela.Desde, janela.Ate, limite);
 
@@ -545,8 +548,10 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
             ? await repo.UltimaVendaAsync(ct)
             : null;
 
-        return FormatarRanking(agrupar, porQuantidade, emCada, janela, rotuloCliente, filtros, linhas, ultimaVenda, comparacao,
+        var texto = FormatarRanking(agrupar, porQuantidade, emCada, janela, rotuloCliente, filtros, linhas, ultimaVenda, comparacao,
             menores && !Dimensoes.Cronologica(agrupar));
+        // No fim, não no início: o agente reconhece o ranking pronto pelo começo do texto.
+        return string.IsNullOrWhiteSpace(artigo) ? texto : $"{texto.TrimEnd()}\n# Só o artigo \"{artigo.Trim()}\".";
     }
 
     // Com filtro da ficha, "sem resultados" pode querer dizer que o valor não existe (ex.: "Seixall").

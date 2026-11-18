@@ -18,6 +18,7 @@
     .m { padding: 12px; border-radius: var(--raio-controlo); background: var(--blue-mist); min-width: 0; }
     .m-r { font-size: 12.5px; color: var(--ink-3); }
     .m-v { margin-top: 6px; font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .resp-grafico { display: block; max-width: 100%; height: auto; margin-top: 12px; border-radius: 8px; }
     .resp-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     .resp-acoes .btn { padding: 6px 10px; font-size: 13px; }
     .resp-acoes .btn[aria-pressed="true"] { color: var(--blue); border-color: var(--blue-pale); }

@@ -39,6 +39,40 @@ public class VendasToolsTests
         Assert.Equal((new DateOnly(2026, 1, 1), new DateOnly(2026, 10, 29)), repo.UltimoPeriodo);
     }
 
+
+    [Fact]
+    public async Task ConsultarVendas_ComArtigo_PassaOArtigoAoRepo()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("2026-01", 10m, 1, 1, 10m, 1)] };
+
+        await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, artigo: "syntus");
+
+        Assert.Equal("syntus", repo.UltimoArtigo);
+    }
+
+    [Fact]
+    public async Task ConsultarVendas_ComArtigo_DizNoFimQueEstaFiltrado()
+    {
+        var repo = new FakeVendasRepo { Valores = [new("2026-01", 10m, 1, 1, 10m, 1)] };
+
+        var texto = await CriarSut(repo).ConsultarVendasAsync(DimensaoVenda.Mes, artigo: "syntus");
+
+        Assert.EndsWith("# Só o artigo \"syntus\".", texto.TrimEnd());
+    }
+
+    [Theory]
+    [InlineData(DimensaoVenda.Cliente, false)]
+    [InlineData(DimensaoVenda.Mes, true)]
+    public async Task ConsultarVendas_ArtigoComClienteOuSemVendas_Recusa(DimensaoVenda agrupar, bool semVendas)
+    {
+        var repo = new FakeVendasRepo();
+
+        var texto = await CriarSut(repo).ConsultarVendasAsync(agrupar, artigo: "syntus", semVendas: semVendas);
+
+        Assert.StartsWith("artigo não se combina com", texto);
+        Assert.Null(repo.UltimoArtigo);
+    }
+
     [Fact]
     public async Task ConsultarCreditos_PassaPaginaTipoPesquisa_EDevolveContadores()
     {

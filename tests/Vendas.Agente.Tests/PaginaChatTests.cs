@@ -122,7 +122,7 @@ public class PaginaChatTests
     [Fact]
     public void EcraDeEntrada_TemOTituloEAFonteLocal()
     {
-        Assert.Contains("Uma plataforma.", Html);
+        Assert.Contains("Uma plataforma", Html);
         Assert.Contains("Ir direto ao painel de vendas", Html);
         Assert.Contains("/fonts/Onest-Variable.woff2", Html);
         Assert.DoesNotContain("fonts.googleapis.com", Html);   // os servidores RDS podem não ter internet

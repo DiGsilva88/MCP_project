@@ -110,6 +110,7 @@ var caracteresFerramentas = 0; // texto devolvido pelas ferramentas na pergunta 
 string? textoDireto = null; // ranking mostrado tal como veio do servidor (ver PoliticasSeguranca.MostrarDireto)
 var perguntaAtual = ""; // os filtros do modelo têm de vir daqui ou de um resultado (ver PoliticasSeguranca.ValorInventado)
 var resultadosPergunta = new System.Text.StringBuilder();
+var imagensPergunta = new List<string>(); // gráficos das ferramentas: vão para a página, nunca para o modelo
 
 // Teto de texto das ferramentas por pergunta (~3 letras por token): regras + esquemas + isto cabem em NumCtx.
 // Acima disto o Ollama cortaria o início do prompt, que são as regras de segurança.
@@ -168,6 +169,7 @@ IChatClient modelo = llm
             var resultado = await ctx.Function.InvokeAsync(ctx.Arguments, ct);
             var texto = PoliticasSeguranca.TextoDoResultado(resultado);
             resultadosPergunta.AppendLine(texto);
+            imagensPergunta.AddRange(PoliticasSeguranca.ImagensDoResultado(resultado));
             // dados pessoais (NIF, contactos) não ficam no ecrã/scrollback: só o tamanho
             var amostra = sensivel
                 ? $"({texto.Length} caracteres)"
@@ -272,7 +274,7 @@ while (true)
     Console.Write("> ");
     var pergunta = Console.ReadLine();
     if (string.IsNullOrWhiteSpace(pergunta)) break;
-    await ResponderAsync(pergunta, texto => { Console.Write(texto); return Task.CompletedTask; });
+    await ResponderAsync(pergunta, texto => { if (!texto.StartsWith('\u0001')) Console.Write(texto); return Task.CompletedTask; });
 }
 
 // Responde a uma pergunta; "escrever" recebe o texto à medida que pode ser mostrado (consola ou browser).
@@ -285,6 +287,7 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever, Cancella
     List<ChatMessage> historico = [new(ChatRole.System, Regras()), new(ChatRole.User, pergunta)];
     perguntaAtual = pergunta;
     resultadosPergunta.Clear();
+    imagensPergunta.Clear();
 
     var relogio = Stopwatch.StartNew();
     var partes = new List<ChatResponseUpdate>();
@@ -349,6 +352,9 @@ async Task ResponderAsync(string pergunta, Func<string, Task> escrever, Cancella
         await escrever("Não foi possível obter uma resposta neste momento. Tente novamente.");
         return;
     }
+
+    // Depois do texto: a página junta a imagem à resposta (aviso com \u0001, como a fila).
+    foreach (var imagem in imagensPergunta) await escrever($"\u0001imagem {imagem}\n");
 
     // Tokens lidos = soma dos pedidos desta pergunta (escolher a ferramenta + responder). Em CPU é o que mais pesa.
     var resposta = partes.ToChatResponse();

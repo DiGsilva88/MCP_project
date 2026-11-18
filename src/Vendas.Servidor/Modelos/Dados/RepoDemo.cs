@@ -110,7 +110,7 @@ public sealed class RepoDemo : IVendasRepo
     public Task<IReadOnlyList<ValorAgrupado>> RankingPorDimensaoAsync(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, int limite, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false,
-        DimensaoVenda? emCada = null, bool menores = false, CancellationToken cancellationToken = default) =>
+        DimensaoVenda? emCada = null, bool menores = false, string? artigo = null, CancellationToken cancellationToken = default) =>
         Task.FromResult(Ranking(dimensao switch
         {
             DimensaoVenda.Mes => Meses(desde, ate),

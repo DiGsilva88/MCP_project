@@ -60,10 +60,10 @@ internal static class ConsultaVendas
     public static (string Sql, Action<SqlParameterCollection> Parametros) RankingPorDimensao(
         DimensaoVenda dimensao, DateOnly desde, DateOnly ate, string? cliente = null,
         IReadOnlyDictionary<Campo, string>? filtros = null, bool porQuantidade = false, DimensaoVenda? emCada = null,
-        bool menores = false)
+        bool menores = false, string? artigo = null)
     {
         var (ficha, aplicarFicha) = FiltroFicha(filtros);
-        var onde = Onde(cliente, ficha);
+        var onde = Onde(cliente, ficha, artigo);
 
         var (nome, agrupar) = Colunas(dimensao);
         // Meses e trimestres por ordem cronológica (do mais antigo ao mais recente); o resto do maior para o menor
@@ -83,7 +83,7 @@ internal static class ConsultaVendas
 
         if (emCada is { } grupo)
             return (MelhorEmCada(dimensao, grupo, porQuantidade, onde, aplicarFichaCliente),
-                    p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
+                    p => { Preencher(p, desde, ate, cliente, artigo); aplicarFicha(p); });
 
         // MAX(t.TotalDocumentos): a query tem GROUP BY e o total é igual em todas as linhas
         var sql = $"""
@@ -107,7 +107,7 @@ internal static class ConsultaVendas
             ORDER BY {ordem};
             """;
 
-        return (sql, p => { Preencher(p, desde, ate, cliente); aplicarFicha(p); });
+        return (sql, p => { Preencher(p, desde, ate, cliente, artigo); aplicarFicha(p); });
     }
 
     // O 1.º "dimensao" em cada "grupo" (ex.: o artigo mais vendido em cada distrito): soma por (grupo, item),
@@ -178,9 +178,14 @@ internal static class ConsultaVendas
     private static string FiltroCliente(string? cliente) =>
         string.IsNullOrWhiteSpace(cliente) ? "" : "AND CAST([ClienteID] AS nvarchar(50)) = @cliente";
 
-    // Período + cliente + filtro da ficha. É o mesmo WHERE no ranking e na contagem de documentos.
-    private static string Onde(string? cliente, string ficha) =>
-        $"WHERE [DataDoc] >= @desde AND [DataDoc] < @ate {FiltroCliente(cliente)} {ficha}";
+    // Só um artigo: pelo ID exato ou por parte do nome (sem acentos nem maiúsculas).
+    // shortcut: se o nome apanha vários artigos, somam-se; separar só se for preciso.
+    private static string FiltroArtigo(string? artigo) => string.IsNullOrWhiteSpace(artigo) ? "" :
+        @"AND (CAST([ArtigoID] AS nvarchar(50)) = @artigo OR [Artigo] COLLATE Latin1_General_CI_AI LIKE @artigoPadrao ESCAPE '\')";
+
+    // Período + cliente + artigo + filtro da ficha. É o mesmo WHERE no ranking e na contagem de documentos.
+    private static string Onde(string? cliente, string ficha, string? artigo = null) =>
+        $"WHERE [DataDoc] >= @desde AND [DataDoc] < @ate {FiltroCliente(cliente)} {FiltroArtigo(artigo)} {ficha}";
 
     // Só clientes com essa Localidade/Distrito/Zona/... (mesmo filtro da tool consultar).
     // Com FiltrosVenda (painel): também várias zonas e, nas consultas sobre as vendas (vendas=true), marcas e tipos de documento.
@@ -531,11 +536,16 @@ internal static class ConsultaVendas
     };
 
     //DateOnly -> DateTime à meia-noite é o formato que o SqlClient envia para uma coluna "date"
-    private static void Preencher(SqlParameterCollection parametros, DateOnly desde, DateOnly ate, string? cliente)
+    private static void Preencher(SqlParameterCollection parametros, DateOnly desde, DateOnly ate, string? cliente, string? artigo = null)
     {
         parametros.Add("@desde", SqlDbType.Date).Value = desde.ToDateTime(TimeOnly.MinValue);
         parametros.Add("@ate", SqlDbType.Date).Value = ate.ToDateTime(TimeOnly.MinValue);
         if (!string.IsNullOrWhiteSpace(cliente))
             parametros.Add("@cliente", SqlDbType.NVarChar, 100).Value = cliente.Trim();
+        if (!string.IsNullOrWhiteSpace(artigo))
+        {
+            parametros.Add("@artigo", SqlDbType.NVarChar, 100).Value = artigo.Trim();
+            parametros.Add("@artigoPadrao", SqlDbType.NVarChar, 210).Value = PadraoPesquisa(artigo);
+        }
     }
 }

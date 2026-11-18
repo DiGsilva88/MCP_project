@@ -75,6 +75,16 @@
       return `<div class="mais"><h3>Pode perguntar sobre ${esc(sep)}</h3>${lista.slice(0, 3).map(p => `<button type="button" data-perguntar="${esc(p)}"${emCurso ? ' disabled' : ''}>${esc(p)}</button>`).join('')}</div>`;
     }
 
+    // Gráficos do servidor: linhas "\u0001imagem data:image/png;base64,..." no fim do texto. Só PNG em base64 (o valor vai para um src).
+    function separarImagens(texto) {
+      const imagens = [];
+      const limpo = texto.replace(/\u0001imagem (\S*)\n?/g, (_, url) => {
+        if (/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(url)) imagens.push(url);
+        return '';
+      });
+      return { texto: limpo, imagens };
+    }
+
     function respostaHtml(item) {
       if (item.pendente) return `<p class="resp-espera" role="status"><span class="roda" aria-hidden="true"></span><span>${item.fila ? 'Na fila: há outra pergunta em curso. A sua começa a seguir.' : 'A consultar as vendas…'} ${item.segundos ? item.segundos + ' s' : ''}</span></p>`;
       if (item.erro) return `<div class="resp-erro" role="alert">${esc({ vazio: 'O Flow não devolveu resposta. Tente outra vez.', parado: 'Parou a resposta antes de terminar.', ligacao: 'Sem ligação ao servidor de vendas. Verifique a ligação e tente outra vez.' }[item.erro] || item.texto || 'Não foi possível obter a resposta. Tente outra vez ou reformule a pergunta.')}
@@ -83,6 +93,7 @@
       const a = item.analise;
       return `<div class="resp">${a.titulo ? `<h2>${esc(a.titulo)}</h2>` : ''}
         ${a.paragrafos.map(p => `<p class="resp-texto">${esc(p)}</p>`).join('')}
+        ${(item.imagens || []).map(url => `<img class="resp-grafico" src="${url}" alt="Gráfico: ${esc(a.paragrafos[0] || item.pergunta)}">`).join('')}
         ${a.nota ? `<p class="painel-nota">${esc(a.nota)}.</p>` : ''}
         ${a.metricas.length ? `<div class="metricas">${a.metricas.map(m => `<div class="m"><div class="m-r">${esc(m.r)}</div><div class="m-v">${esc(m.v)}</div>${m.delta != null ? `<div class="k-nota">${faceA(m.delta, m.ano)}</div>` : ''}</div>`).join('')}</div>` : ''}
         ${a.avisos.map(t => `<p class="aviso-dados">${ic('info')}<span>${esc(t)}</span></p>`).join('')}
@@ -157,6 +168,8 @@
           item.texto += parte;
         }
         item.texto += dec.decode();
+        // Os gráficos vêm no texto: tiram-se só no fim, porque uma imagem chega em vários blocos
+        ({ texto: item.texto, imagens: item.imagens } = separarImagens(item.texto));
         if (!item.texto.trim()) item.erro = 'vazio';
       } catch (e) {
         item.erro = e.name === 'AbortError' ? 'parado' : 'ligacao';
