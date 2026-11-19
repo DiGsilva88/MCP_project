@@ -9,7 +9,6 @@
   </svg>
   <span aria-hidden="true" style="color:var(--black)">FLOW</span>
 </div>
-      <p class="ent-fresco" id="ent-fresco" hidden><i aria-hidden="true"></i><span></span></p>
     </header>
     <main class="ent-grelha">
       <div>
@@ -23,12 +22,12 @@
         <p class="ent-msg" id="ent-msg" role="status" aria-live="polite"></p>
         <button type="button" class="ent-direto" id="ent-direto">Ir direto ao painel de vendas</button>
       </div>
-      <div class="ent-arte" id="ent-arte" hidden>
+      <div class="ent-arte" aria-label="Exemplo ilustrativo, sem dados reais" role="group">
         <div class="ent-fundo" aria-hidden="true"><svg viewBox="0 0 500 520" preserveAspectRatio="none" fill="none"><path d="M-20 360 C 80 360 90 200 190 200 S 300 380 380 330 S 470 120 540 160" stroke-width="2"/><circle cx="250" cy="260" r="170" stroke-width="1.5"/></svg></div>
-        <section class="ent-cartao ent-c1"><h2>Vendas por mês <small>últimos meses</small></h2>
-          <div class="ent-barras" id="ent-barras" aria-hidden="true"></div><div class="ent-meses" id="ent-meses" aria-hidden="true"></div>
-          <p class="ent-leg"><i aria-hidden="true"></i><span id="ent-media"></span></p></section>
-        <section class="ent-cartao ent-c2"><h2>Faturação por zona <small id="ent-periodo"></small></h2><div class="ent-donut" id="ent-donut"></div></section>
+        <section class="ent-cartao ent-c1"><h2>Vendas por mês <small>exemplo</small></h2>
+          <div class="ent-barras" aria-hidden="true"><span class="ent-media" style="bottom:60%"></span><i style="height:55%"></i><i style="height:62%"></i><i style="height:48%"></i><i style="height:71%"></i><i style="height:84%"></i><i class="parcial" style="height:40%"></i></div><div class="ent-meses" aria-hidden="true"><span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span></div>
+          <p class="ent-leg"><i aria-hidden="true"></i><span>Média</span></p></section>
+        <section class="ent-cartao ent-c2"><h2>Faturação por zona <small>exemplo</small></h2><div class="ent-donut"><svg width="96" height="96" viewBox="0 0 42 42" aria-hidden="true"><circle cx="21" cy="21" r="15.9" fill="none" class="ent-cor-4" stroke-width="6"/><circle cx="21" cy="21" r="15.9" fill="none" class="ent-cor-1" stroke-width="6" stroke-dasharray="42 58" stroke-dashoffset="25"/><circle cx="21" cy="21" r="15.9" fill="none" class="ent-cor-2" stroke-width="6" stroke-dasharray="27 73" stroke-dashoffset="-17"/><circle cx="21" cy="21" r="15.9" fill="none" class="ent-cor-3" stroke-width="6" stroke-dasharray="19 81" stroke-dashoffset="-44"/><circle cx="21" cy="21" r="15.9" fill="none" class="ent-cor-4" stroke-width="6" stroke-dasharray="12 88" stroke-dashoffset="-63"/></svg><ul><li><b><i class="ent-cor-1"></i>Zona A</b><span>42 %</span></li><li><b><i class="ent-cor-2"></i>Zona B</b><span>27 %</span></li><li><b><i class="ent-cor-3"></i>Zona C</b><span>19 %</span></li><li><b><i class="ent-cor-4"></i>Outras</b><span>12 %</span></li></ul></div></section>
       </div>
     </main>
     <footer class="ent-rodape"><span>Só leitura. O assistente não altera a base de dados.</span><span>© <span id="ent-ano"></span> Inforap. Todos os direitos reservados.</span></footer>

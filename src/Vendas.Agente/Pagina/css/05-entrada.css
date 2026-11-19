@@ -5,8 +5,6 @@
     .ent-topo { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 30px 48px 0; }
     .ent-logo { display: flex; flex-direction: column; align-items: center; gap: 6px; width: max-content; }
     .ent-logo span { font-size: 14px; font-weight: 600; letter-spacing: .38em; margin-right: -.38em; }
-    .ent-fresco { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); }
-    .ent-fresco i { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); display: block; }
     .ent-grelha {
       flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center;
       width: 100%; max-width: 1440px; margin: 0 auto; padding: 40px 48px 40px 96px;
@@ -90,5 +88,4 @@
       .ent-pergunta input { font-size: 16px; }
       .ent-pergunta button { min-width: 0; padding: 0 16px; }
       .ent-arte { display: none; }
-      .ent-fresco { font-size: 12.5px; }
     }

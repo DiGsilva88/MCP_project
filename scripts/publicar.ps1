@@ -11,4 +11,5 @@ dotnet publish (Join-Path $raiz 'src\Vendas.Servidor') -c Release -o (Join-Path 
 if ($LASTEXITCODE -ne 0) { throw 'Falhou a publicação do servidor.' }
 
 Copy-Item (Join-Path $PSScriptRoot 'Configurar.ps1'), (Join-Path $PSScriptRoot 'Configurar.cmd') $destino
+Copy-Item (Join-Path $raiz 'iis') (Join-Path $destino 'iis') -Recurse   # instalação em IIS (docs/IIS.md)
 Write-Host "Pacote pronto em $destino"

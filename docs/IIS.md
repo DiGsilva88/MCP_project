@@ -1,6 +1,6 @@
 # Flow (Vendas.Agente) em IIS — análise, arquitetura e passo a passo
 
-> Estado: **por validar num IIS real.** O guia e os scripts foram escritos a partir da análise do código; não foram executados em IIS/ARR/Kerberos. Nada neste pacote altera o repositório: a alteração de código necessária vai à parte, como *patch* de proposta (`codigo/proxy-iis.patch`).
+> Estado: **por validar num IIS real.** A alteração de código (modo proxy) já está no repositório, compila e tem testes. Os scripts de `iis\` passaram só a análise de sintaxe: não foram executados em IIS/ARR/Kerberos. O `Instalar-IIS.ps1` valida cada passo e pára no primeiro que falhe; o `Verificar-Flow.ps1` corre os testes do passo 7.
 
 ## 1. O que o projeto é (análise)
 
@@ -30,15 +30,15 @@ Vendas.Servidor.dll (MCP)  ──►  SQL Server (views do schema mcp)
 
 O VB6 **não entra nesta cadeia**: só abre o URL (secção 9).
 
-## 3. Alteração de código necessária (proposta, não aplicada)
+## 3. Alteração de código (já aplicada)
 
-Sem ela, o IIS só serve para HTTPS/DNS, e o agente recebe os pedidos sem identidade (401) ou com a identidade do proxy. O `codigo/proxy-iis.patch` (aplica-se limpo à versão analisada; **ainda não compilado**, porque o ambiente da análise não tem o SDK .NET) acrescenta um **modo proxy opt-in**, ligado por `VENDAS_PROXY_SEGREDO`. Sem essa variável, o comportamento é exatamente o atual.
+Sem ela, o IIS só serve para HTTPS/DNS, e o agente recebe os pedidos sem identidade (401) ou com a identidade do proxy. O **modo proxy opt-in**, ligado por `VENDAS_PROXY_SEGREDO`, está em `Program.cs` e `Perfis.cs`. Sem essa variável, o comportamento é exatamente o atual.
 
 - `Perfis.LoginDoProxy(...)`: aceita o login de `X-Remote-User` **só** se o pedido vem de loopback **e** `X-Proxy-Secret` coincide com o segredo (comparação em tempo constante). Caso contrário devolve `null` e o pedido recebe 403, como hoje.
 - Em modo proxy: o listener fica `Anonymous` (o Windows Auth é do IIS), só em `http://localhost:<porta>/`, não abre o browser, e `VENDAS_ENDERECO_PUBLICO` (HTTPS) passa a ser a referência da verificação de `Origin`.
-- Testes novos em `LoginDoProxyTests.cs` (segredo certo/errado/ausente, fora de loopback, sem utilizador, segredo não configurado).
+- Testes em `LoginDoProxyTests.cs` (segredo certo/errado/ausente, fora de loopback, sem utilizador, segredo não configurado).
 
-Quem aplicar: `git apply -p1 codigo/proxy-iis.patch`, depois `dotnet build Vendas.slnx -c Release --warnaserror` e `dotnet test Vendas.slnx -c Release --filter "Categoria!=Integração"`.
+Validar antes de publicar: `dotnet build Vendas.slnx -c Release --warnaserror` e `dotnet test Vendas.slnx -c Release --filter "Categoria!=Integração"`.
 
 ## 4. Pré-requisitos
 
@@ -72,7 +72,7 @@ No PC de desenvolvimento, na raiz do repositório:
 powershell -ExecutionPolicy Bypass -File scripts\publicar.ps1
 ```
 
-Copiar `pacote\Flow` para `C:\Flow\` no servidor (o servidor MCP fica em `C:\Flow\servidor\`).
+Copiar `pacote\Flow` para `C:\Flow\` no servidor (o servidor MCP fica em `C:\Flow\servidor\`, os scripts do IIS em `C:\Flow\iis\`). **Validar:** existem `C:\Flow\Vendas.Agente.exe`, `C:\Flow\servidor\Vendas.Servidor.dll` e `C:\Flow\iis\Instalar-IIS.ps1`. O `Configurar.cmd` do pacote é para postos, não se usa no servidor.
 
 ### Passo 2 — Conta de serviço, SQL e perfis
 
@@ -91,11 +91,7 @@ Read-Host "Password SQL" -AsSecureString | ConvertFrom-SecureString | Set-Conten
 
 ### Passo 3 — Arrancar o agente sempre (Agendador de Tarefas)
 
-1. Copiar `iis\Iniciar-Flow.cmd` para `C:\Flow\`, preencher `VENDAS_SQL` e `VENDAS_PROXY_SEGREDO` (o segredo vem do passo 5) e restringir o ficheiro (tem o segredo):
-
-   ```powershell
-   icacls C:\Flow\Iniciar-Flow.cmd /inheritance:r /grant:r "Administrators:F" "SYSTEM:F" "INFORAP\svc-flow:RX"
-   ```
+1. Fazer **antes** o passo 5: o `Instalar-IIS.ps1` copia `iis\Iniciar-Flow.cmd` para `C:\Flow\`, grava lá o segredo, o endereço público e a porta, e restringe as permissões (o ficheiro tem o segredo). Depois editar só a linha `VENDAS_SQL` (sem a palavra-passe).
 
 2. Criar a tarefa, ao iniciar o sistema, com reinício em caso de falha:
 
@@ -109,7 +105,8 @@ Read-Host "Password SQL" -AsSecureString | ConvertFrom-SecureString | Set-Conten
    Start-ScheduledTask -TaskName 'Flow (agente)'
    ```
 
-3. Confirmar que ouve só em loopback: `netstat -ano | findstr :5080` → `127.0.0.1:5080`. A porta **5080 não pode estar aberta na firewall**.
+3. O **email semanal/mensal** é outra tarefa agendada, `iis\Enviar-Resumo.cmd` (copiado pelo instalador): ver [RESUMO-EMAIL.md](RESUMO-EMAIL.md). Tem de correr na mesma conta.
+4. Confirmar que ouve só em loopback: `netstat -ano | findstr :5080` → `127.0.0.1:5080`. A porta **5080 não pode estar aberta na firewall**. Se não ouvir, `C:\Flow\flow.log` diz porquê (`dotnet` fora do PATH da conta, SQL, `sql.pwd` de outra conta).
 
 ### Passo 4 — Instalar URL Rewrite e ARR
 
@@ -117,15 +114,15 @@ Ver secção 4. Confirmar no IIS Manager que aparecem *Reescrita de URL* e *Appl
 
 ### Passo 5 — Criar o site (script ou à mão)
 
-**Com o script** (como Administrador; começar com `-WhatIf`):
+**Com o script** (como Administrador; começar com `-WhatIf`, que só chega ao fim com o IIS já instalado):
 
 ```powershell
-cd <pasta deste pacote>\iis
+cd C:\Flow\iis
 .\Instalar-IIS.ps1 -Nome flow.inforap.local -Thumbprint <thumbprint> -ContaPool INFORAP\svc-flow -WhatIf
 .\Instalar-IIS.ps1 -Nome flow.inforap.local -Thumbprint <thumbprint> -ContaPool INFORAP\svc-flow
 ```
 
-Faz: ativa Windows Authentication; liga o proxy ARR (**timeout 10 min** e **`responseBufferLimit=0`**, para o chat aparecer à medida que é gerado; **Host original não preservado**, senão o `HttpListener` dá 400); permite as variáveis `HTTP_X_REMOTE_USER` e `HTTP_X_PROXY_SECRET`; cria o pool (sem código gerido, conta de domínio) e o site em `C:\inetpub\flow` com binding HTTPS e certificado; escreve o `web.config` (regra de rewrite + segredo, com permissões restritas); Windows ON / Anónima OFF. No fim imprime o **segredo gerado** e os comandos do SPN.
+Cada passo imprime `OK` ou pára com `FALHOU: <motivo>`; repetir depois de corrigir é seguro (o que existe não é recriado, o segredo é reaproveitado). Valida, por ordem: funções do Windows, URL Rewrite e ARR, certificado (chave privada, validade, nome), DNS, pacote e .NET 10, segredo e `Iniciar-Flow.cmd`, proxy ARR, variáveis de servidor, pool, site e certificado no 443, autenticação, `web.config`, arranque e um teste de fumo. Faz: ativa Windows Authentication; liga o proxy ARR (**timeout 10 min** e **`responseBufferLimit=0`**, para o chat aparecer à medida que é gerado; **Host original não preservado**, senão o `HttpListener` dá 400); permite as variáveis `HTTP_X_REMOTE_USER` e `HTTP_X_PROXY_SECRET`; cria o pool (sem código gerido, conta de domínio) e o site em `C:\inetpub\flow` com binding HTTPS e certificado; escreve o `web.config` (regra de rewrite + segredo, com permissões restritas); Windows ON / Anónima OFF. O segredo não é impresso: fica só no `web.config` e no `Iniciar-Flow.cmd` (ambos restritos). No fim lembra o SPN, a tarefa e o teste.
 
 **À mão** (equivalente): *Sites → Adicionar Web Site* (pasta `C:\inetpub\flow`, HTTPS, nome do anfitrião, certificado) · pool *Sem código gerido* com a conta de domínio · *Autenticação*: Windows = Ativado, Anónima = Desativado · *Application Request Routing Cache → Server Proxy Settings*: Enable proxy, Time-out 600 s, Response buffer threshold = 0, Preserve client IP/Reverse rewrite host desligados · *Reescrita de URL → Ver variáveis de servidor* (nível servidor): adicionar `HTTP_X_REMOTE_USER` e `HTTP_X_PROXY_SECRET` · copiar `iis\web.config` para a pasta do site, substituindo `SEGREDO_PARTILHADO`.
 
@@ -147,6 +144,8 @@ setspn -X                      # procura SPN duplicados (um duplicado quebra o K
 
 ### Passo 7 — Verificação
 
+`.\Verificar-Flow.ps1 -Nome flow.inforap.local -Login INFORAP\diana.silva` corre os testes 1, 2, 3, 4 e o http, mais a porta 5080 só em loopback, e sai com 1 se algum falhar. Os restantes à mão:
+
 | # | Teste | Esperado |
 | --- | --- | --- |
 | 1 | No servidor: `curl.exe -i http://localhost:5080/` | **403** (sem cabeçalhos de identidade) |
@@ -162,7 +161,7 @@ setspn -X                      # procura SPN duplicados (um duplicado quebra o K
 
 - Atualizar versão: parar a tarefa (`Stop-ScheduledTask 'Flow (agente)'`), copiar o novo `pacote\Flow`, preservar `Iniciar-Flow.cmd`, arrancar. O site IIS não muda.
 - Alterou `perfis.json`: reiniciar a tarefa (é lido no arranque).
-- Logs do agente: redirecionar no `Iniciar-Flow.cmd` com `>> C:\Flow\flow.log 2>&1`; pedidos do IIS em `C:\inetpub\logs\LogFiles`.
+- Logs do agente: `C:\Flow\flow.log` (o `Iniciar-Flow.cmd` já redireciona para lá); pedidos do IIS em `C:\inetpub\logs\LogFiles`.
 
 ## 6. Segurança
 
@@ -192,7 +191,41 @@ setspn -X                      # procura SPN duplicados (um duplicado quebra o K
 
 **Rollback:** `Stop-Website Flow`, parar a tarefa, e continuar a usar o atalho "Inforap Flow" (`Vendas.Agente.exe --web`) sem `VENDAS_PROXY_SEGREDO`, como hoje.
 
-## 9. Integração com o VB6
+## 9. Ensaio local (um só PC, sem domínio)
+
+Valida o IIS, o ARR, o segredo e o chat a aparecer aos poucos. **Não** valida SPN, Kerberos, zona Intranet nem o login do domínio: isso só no servidor real. PowerShell como Administrador; instalar antes URL Rewrite e ARR (secção 4).
+
+1. **Pacote local:** `.\scripts\publicar.ps1` e `Copy-Item pacote\Flow C:\Flow -Recurse`.
+2. **Certificado autoassinado, confiado, e nome no `hosts`:**
+
+   ```powershell
+   $c = New-SelfSignedCertificate -DnsName flow.local -CertStoreLocation Cert:\LocalMachine\My -NotAfter (Get-Date).AddYears(1)
+   Export-Certificate $c -FilePath $env:TEMP\flow.cer | Out-Null
+   Import-Certificate $env:TEMP\flow.cer -CertStoreLocation Cert:\LocalMachine\Root | Out-Null   # senão o browser e o Verificar-Flow recusam
+   Add-Content C:\Windows\System32\drivers\etc\hosts "127.0.0.1 flow.local"
+   $c.Thumbprint
+   ```
+
+3. **Evitar o 401 do *loopback check*** (abrir `https://flow.local` no próprio PC, com um nome que não é o do computador):
+
+   ```powershell
+   New-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0 -Name BackConnectionHostNames -PropertyType MultiString -Value flow.local -Force
+   iisreset   # se continuar a dar 401, reiniciar o PC
+   ```
+
+4. **Instalar o IIS** com a conta do próprio utilizador no pool (o aviso de DNS pode ignorar-se neste ensaio):
+
+   ```powershell
+   cd C:\Flow\iis
+   .\Instalar-IIS.ps1 -Nome flow.local -Thumbprint <thumbprint> -ContaPool "$env:USERDOMAIN\$env:USERNAME" -WhatIf
+   .\Instalar-IIS.ps1 -Nome flow.local -Thumbprint <thumbprint> -ContaPool "$env:USERDOMAIN\$env:USERNAME"
+   ```
+
+5. **Agente à mão**, numa consola que fica aberta (para ver os erros), com a porta 5080 livre (parar outro `Vendas.Agente`): preencher `VENDAS_SQL` em `C:\Flow\Iniciar-Flow.cmd` (o `sql.pwd` tem de ser da mesma conta), criar `%LOCALAPPDATA%\Vendas\perfis.json` com o login, ter o Ollama a correr (ou `AGENTE_LLM=claude`) e correr `C:\Flow\Iniciar-Flow.cmd`.
+6. **Verificar:** `C:\Flow\iis\Verificar-Flow.ps1 -Nome flow.local -Login "$env:USERDOMAIN\$env:USERNAME"`; abrir `https://flow.local/` e fazer uma pergunta (a resposta tem de aparecer aos poucos).
+7. **Limpeza:** `Remove-Website Flow; Remove-WebAppPool Flow`; apagar o certificado de `LocalMachine\My` e `LocalMachine\Root`, a linha do `hosts` e o valor `BackConnectionHostNames`. O proxy do ARR fica ligado ao nível do servidor (inofensivo; desligar se a máquina for partilhada).
+
+## 10. Integração com o VB6
 
 Com o IIS, o botão do VB6 deixa de lançar o `Vendas.Agente.exe`: abre só o endereço do site (o agente já corre como tarefa). O browser envia o login Windows do utilizador ao IIS.
 

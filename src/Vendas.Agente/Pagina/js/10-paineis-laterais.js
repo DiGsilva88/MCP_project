@@ -45,7 +45,7 @@
       });
     }
     function aplicarFiltros(F, periodo = app.periodo) {
-      Object.assign(app, { filtros: F, periodo, mes: null, credPag: 0, pag: { artigos: 0, clientes: 0, marcas: 0, zonas: 0 } });
+      Object.assign(app, { filtros: F, periodo, mes: null, pag: { artigos: 0, clientes: 0, marcas: 0, zonas: 0 } });
       carregarResumo();
       guardarFiltrosPrefs();   // voltam na próxima sessão, por utilizador
     }
@@ -77,7 +77,6 @@
         drawer.fechar(false);
         responderLocal(`O que devo saber antes de visitar o cliente ${titulo}?`, analiseBriefing(briefing, c, D));
       });
-      el.addEventListener('click', e => { const b = e.target.closest('[data-perguntar-artigo]'); if (b) { drawer.fechar(false); perguntarFlow(`Porque é que o cliente ${titulo} deixou de comprar ${b.dataset.perguntarArtigo}?`); } });
       const aqui = () => n === pedidoBriefing && document.getElementById('b-parados');
       try {
         const r = await fetch(`/api/clientes/${encodeURIComponent(id)}/briefing`);
@@ -100,7 +99,7 @@
         document.getElementById('b-parados').innerHTML = b.deixouDeComprar.length
           ? `<ul class="factos" style="margin-top:8px">${b.deixouDeComprar.map(x => `<li><div><b style="font-weight:500">${esc(nomeProprio(x.artigo))}</b>
               <div class="muted" style="font-size:12.5px;margin-top:2px">Comprava ${esc(fmt.decimal(x.mediaMes, x.mediaMes % 1 ? 1 : 0))} por mês, em média. Última compra a ${esc(fmt.dataCurta(x.ultima))}.</div></div>
-              ${app.vendedor ? '' : `<button type="button" class="ligacao" data-perguntar-artigo="${esc(nomeProprio(x.artigo).toLowerCase())}">Perguntar</button>`}</li>`).join('')}</ul>`
+              </li>`).join('')}</ul>`
           : '<p class="muted" style="margin-top:8px">Continua a comprar os artigos habituais.</p>';
       } catch (e) {
         if (!aqui()) return;
@@ -119,7 +118,7 @@
       const n = ++pedidoDoc, numero = id.replace('-', ' ').replace(/-/g, '/');
       const el = drawer.abrir({ topo: 'Pré-visualização', largo: true, aoFechar: () => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); },
         html: `<h3 id="dr-t" tabindex="-1" class="so-leitor">Documento ${esc(numero)}</h3><div id="doc-corpo">${aCarregar('A carregar o documento…')}</div>`,
-        pe: `<button type="button" class="btn" data-fechar>Fechar</button><button type="button" class="btn" data-doc-pdf disabled>${ic('exportar')}Exportar PDF</button>${app.vendedor ? '' : `<button type="button" class="btn btn-pri" data-doc-flow disabled>${ic('flow')}Perguntar ao Flow</button>`}` });
+        pe: `<button type="button" class="btn" data-fechar>Fechar</button><button type="button" class="btn" data-doc-pdf disabled>${ic('exportar')}Exportar PDF</button>` });
       history.replaceState(null, '', '#' + id);
       el.querySelector('[data-fechar]').addEventListener('click', () => drawer.fechar());
       const corpo = () => n === pedidoDoc ? document.getElementById('doc-corpo') : null;
@@ -139,10 +138,9 @@
                 l.quantidade ? fmt.eur2(l.liquido / l.quantidade) : '—', fmt.eur2(l.liquido)] })) })}
             <ul class="folha-somas"><li><span>Total sem IVA</span><b class="num">${fmt.eur2(t.liquido)}</b></li><li><span>IVA</span><b class="num">${fmt.eur2(t.iva)}</b></li><li class="total"><span>Total</span><b class="num">${fmt.eur2(t.total)}</b></li></ul>
           </div><p class="nota-pe">Pré-visualização gerada a partir dos dados, não é o documento fiscal. Só se pode consultar.</p>`;
-        const pdf = el.querySelector('[data-doc-pdf]'), flow = el.querySelector('[data-doc-flow]');
+        const pdf = el.querySelector('[data-doc-pdf]');
         pdf.disabled = false;
         pdf.addEventListener('click', () => aviso(exportar('pdf', { titulo: d.documento }, true)));
-        if (flow) { flow.disabled = false; flow.addEventListener('click', () => { drawer.fechar(false); perguntarFlow(`O que comprou o cliente ${nomeProprio(d.cliente.nome)} no documento ${d.documento}?`); }); }
       } catch (e) {
         console.error('Falha a abrir o documento:', e);
         if (corpo()) corpo().innerHTML = comErro('Não foi possível abrir o documento. Tente outra vez.', '');

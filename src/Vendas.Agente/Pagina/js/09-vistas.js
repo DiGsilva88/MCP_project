@@ -195,29 +195,8 @@
         colunas: [{ t: 'Data' }, { t: 'Documento' }, { t: 'Cliente' }, { t: 'Valor', dir: true }],
         linhas: D.ultimosDocs.map(d => ({ attrs: `data-doc="${esc(docId(d.documento))}"`, rotulo: `Pré-visualizar ${d.documento}`,
           c: [esc(fmt.dataCurta(d.data)), `<span class="num">${esc(d.documento)}</span>${/^[NC]$/.test(d.tipo) ? ' <span class="tag tag-preta">Crédito</span>' : ''}`, esc(nomeProprio(d.cliente)), fmt.eur2(d.total)] })) }) });
-      html += painel({ titulo: 'Notas de crédito e créditos', corpo: '<div id="creditos-corpo"></div>' });
       return html;
     }
-    function desenharCreditos() {
-      const alvo = document.getElementById('creditos-corpo');
-      if (!alvo) return;
-      const chave = new URLSearchParams(consultaAtual()).toString();
-      if (creditos.chave !== chave) { Object.assign(creditos, { chave, dados: null }); app.credPag = 0; carregarCreditos(); }
-      if (creditos.erro) { alvo.innerHTML = '<div style="padding:0 20px 16px">' + comErro(ERRO_SIMPLES, 'data-repetir-creditos') + '</div>'; return; }
-      if (!creditos.dados) { alvo.innerHTML = aCarregar('A carregar os créditos…'); return; }
-      const { itens, contadores: c } = creditos.dados, total = app.credTipo === 'Todos' ? c.N + c.C : c[app.credTipo], pag = app.credPag, ultima = Math.max(0, Math.ceil(total / CRED_POR_PAGINA) - 1);
-      const focado = document.activeElement?.id === 'cred-q';
-      alvo.innerHTML = `<div class="ferramentas" style="margin:0;padding:14px 20px 4px"><label class="campo-procurar">${ic('procurar')}<input id="cred-q" value="${esc(app.credQ)}" placeholder="Número do documento ou cliente" aria-label="Procurar crédito" autocomplete="off"></label>
-          ${[['Todos', 'Todos', c.N + c.C], ['N', 'Notas de crédito (N)', c.N], ['C', 'Créditos (C)', c.C]].map(([k, t, n]) => `<button type="button" class="chip" data-cred-tipo="${k}" aria-pressed="${app.credTipo === k}">${t} <span class="muted">${fmt.inteiro(n)}</span></button>`).join('')}</div>` +
-        tabela({ vazio: app.credQ.trim() ? 'Nenhum crédito com esta pesquisa. Experimente só o número ou o início do nome do cliente.' : 'Nenhum resultado com os filtros atuais.',
-          colunas: [{ t: 'Data' }, { t: 'Documento' }, { t: 'Cliente' }, { t: 'Valor', dir: true }],
-          linhas: itens.map(x => ({ attrs: `data-doc="${esc(docId(x.documento))}"`, rotulo: `Pré-visualizar ${x.documento}`,
-            c: [esc(fmt.dataCurta(x.data)), `<span class="num">${esc(x.documento)}</span>`, esc(nomeProprio(x.cliente)), fmt.eur2(x.total)] })) }) +
-        (total > CRED_POR_PAGINA ? `<nav class="paginas" aria-label="Páginas de créditos"><span>${fmt.inteiro(pag * CRED_POR_PAGINA + 1)}–${fmt.inteiro(pag * CRED_POR_PAGINA + itens.length)} de ${fmt.inteiro(total)}</span>
-          <button type="button" class="btn" data-cred-pag="-1"${pag === 0 ? ' disabled' : ''}>Anterior</button><button type="button" class="btn" data-cred-pag="1"${pag >= ultima ? ' disabled' : ''}>Seguinte</button></nav>` : '');
-      if (focado) { const i = document.getElementById('cred-q'); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
-    }
-
     /* ---------- Artigos ---------- */
     function vistaArtigos() {
       const sub = `Artigos mais vendidos${emAno()}, por ${app.artMetrica === 'unidades' ? 'unidades' : 'faturação'}.`;
@@ -264,7 +243,7 @@
         colunas: [{ t: 'Zona' }, { t: 'Clientes', dir: true }, { t: 'Faturação', dir: true }, { t: '', oculto: 'Proporção', largura: '30%' }, { t: D.anoAnt ? 'Face a ' + D.anoAnt : 'Variação', dir: true }, { t: '', oculto: 'Ações' }],
         linhas: fz.itens.map(z => ({ attrs: z.sem ? '' : `data-filtrar-zona="${esc(z.id)}"`, rotulo: `Filtrar o painel pela zona ${z.nome}`,
           c: [esc(z.nome), fmt.inteiro(z.clientes), fmt.eur(z.fat), barra(z.fat / max * 100, z.variacao != null && z.variacao < QUEDA_FORTE), z.novo ? '<span class="muted">Nova</span>' : variacaoHtml(z.variacao),
-            !z.sem && z.variacao != null && z.variacao < QUEDA_FORTE ? `<button type="button" class="ligacao" data-perguntar="Porque caiu a faturação do distrito ${esc(z.nome)} face ao ano passado?">Perguntar</button>` : ''] })) }) + fz.rodape });
+            !z.sem && z.variacao != null && z.variacao < QUEDA_FORTE ? `<button type="button" class="ligacao" data-perguntar="Comparar as vendas do distrito ${esc(z.nome)} mês a mês com o ano passado">Perguntar</button>` : ''] })) }) + fz.rodape });
       if (D.localidades?.length) {
         const maxL = Math.max(1, ...D.localidades.map(l => l.num));
         html += painel({ titulo: 'Localidades com mais faturação', corpo: tabela({ colunas: [{ t: 'Localidade' }, { t: 'Faturação', dir: true }, { t: '', oculto: 'Proporção', largura: '30%' }, { t: D.anoAnt ? 'Face a ' + D.anoAnt : 'Variação', dir: true }],

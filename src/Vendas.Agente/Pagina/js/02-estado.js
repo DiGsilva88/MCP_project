@@ -130,7 +130,7 @@
         const ref = D.anoAnt ? `que em ${D.anoAnt}` : 'que no ano anterior', cli = (c, titulo, texto) => ({ id: id(c.codigo), tipo: 'clientes', icone: 'semClientes', cliente: c.codigo, nome: c.nome, titulo, texto, pergunta: `O que mudou nas compras do cliente ${np(c.nome)} este ano?` });
         let r = [];
         if (a.tipo === 'zona') r = (D.zonas || []).filter(z => !z.sem && z.variacao != null && z.variacao <= -L && (!a.zona || z.id.toLowerCase() === a.zona.toLowerCase()))
-          .map(z => ({ id: id(z.id), tipo: 'zonas', icone: 'descida', titulo: `${z.nome} caiu ${fmt.pct(Math.abs(z.variacao))}`, texto: `Faturou ${fmt.eur(z.fat)}, menos ${fmt.pct(Math.abs(z.variacao))} ${ref}.`, pergunta: `Porque caiu a faturação do distrito ${z.nome} face ao ano passado?` }));
+          .map(z => ({ id: id(z.id), tipo: 'zonas', icone: 'descida', titulo: `${z.nome} caiu ${fmt.pct(Math.abs(z.variacao))}`, texto: `Faturou ${fmt.eur(z.fat)}, menos ${fmt.pct(Math.abs(z.variacao))} ${ref}.`, pergunta: `Comparar as vendas do distrito ${z.nome} mês a mês com o ano passado` }));
         else if (a.tipo === 'sem') r = (D.carteira || []).filter(c => c.ultima && dias(c.ultima, D.ate) > L)
           .map(c => cli(c, `${np(c.nome)} sem compras`, `Última compra a ${fmt.dataLonga(c.ultima, true)}, há ${fmt.inteiro(dias(c.ultima, D.ate))} dias.`));
         else if (a.tipo === 'desvio') r = (D.carteira || []).filter(c => c.delta != null && c.delta <= -L)
