@@ -175,5 +175,11 @@ public sealed class RepoDemo : IVendasRepo
         ]);
     }
 
+    // Números fixos de demonstração: o mês atual tem 20 documentos e o do ano anterior 16.
+    public Task<IndicadoresMes> IndicadoresMesAsync(
+        DateOnly desde, DateOnly ate, DateOnly desdeAnt, DateOnly ateAnt, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default) =>
+        Task.FromResult(new IndicadoresMes(new(1200m, 20, 4), new(960m, 16, 3)));
+
     public Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default) => Task.FromResult<DateOnly?>(Hoje);
 }

@@ -7,6 +7,8 @@ cd /d "%~dp0"
 rem VENDAS_SQL sem a palavra-passe (vem do sql.pwd, cifrado com a conta que corre a tarefa)
 set VENDAS_SQL=PREENCHER: Server=tcp:servidor,1433;Database=IAVSGIX;User Id=mcpserver;Encrypt=True;TrustServerCertificate=True
 set VENDAS_PROXY_SEGREDO=PREENCHER
+rem Demonstracao sem Windows Auth (Instalar-IIS.ps1 -LinkAssinado): segredo que o Visual usa para assinar o link. Vazio = desligado.
+set VENDAS_LINK_SEGREDO=
 set VENDAS_ENDERECO=http://localhost:5080/
 set VENDAS_ENDERECO_PUBLICO=https://flow.inforap.local/
 

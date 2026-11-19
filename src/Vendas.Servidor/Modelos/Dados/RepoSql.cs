@@ -189,6 +189,17 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
             leitor.GetInt32(3), Data(leitor, 4), leitor.GetDecimal(5)), cancellationToken);
     }
 
+    public async Task<IndicadoresMes> IndicadoresMesAsync(
+        DateOnly desde, DateOnly ate, DateOnly desdeAnt, DateOnly ateAnt, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaVendas.IndicadoresMes(desde, ate, desdeAnt, ateAnt, cliente, filtros);
+        var linhas = await LerAsync(sql, parametros, 2,
+            leitor => (Periodo: leitor.GetInt32(0), Valor: new IndicadoresPeriodo(leitor.GetDecimal(1), leitor.GetInt32(2), leitor.GetInt32(3))), cancellationToken);
+        IndicadoresPeriodo De(int periodo) => linhas.FirstOrDefault(l => l.Periodo == periodo).Valor ?? new(0, 0, 0);
+        return new IndicadoresMes(De(1), De(2));
+    }
+
     public async Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default)
     {
         var (sql, parametros) = ConsultaVendas.UltimaVenda();

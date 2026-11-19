@@ -94,6 +94,25 @@ public class RepoSqlIntegracaoTests
     }
 
     [FactComBd]
+    public async Task IndicadoresMes_Agosto2026_BatemCertoComOMesmoMesDoAnoAnterior()
+    {
+        var r = await CriarRepo().IndicadoresMesAsync(new DateOnly(2026, 8, 1), new DateOnly(2026, 9, 1), new DateOnly(2025, 8, 1), new DateOnly(2025, 9, 1));
+
+        // Valores da BD de testes (consultar_vendas por mês): agosto de 2026 = 210 443,55 € e agosto de 2025 = 198 488,02 €
+        Assert.Equal(210443.55m, r.Atual.Faturacao);
+        Assert.Equal(198488.02m, r.Anterior.Faturacao);
+        Assert.True(r.Atual.Documentos > 0 && r.Atual.Clientes > 0 && r.Atual.Clientes <= r.Atual.Documentos);
+    }
+
+    [FactComBd]
+    public async Task IndicadoresMes_MesSemVendas_DaZeros()
+    {
+        var r = await CriarRepo().IndicadoresMesAsync(new DateOnly(2030, 1, 1), new DateOnly(2030, 2, 1), new DateOnly(2029, 1, 1), new DateOnly(2029, 2, 1));
+
+        Assert.Equal(new IndicadoresMes(new(0, 0, 0), new(0, 0, 0)), r);
+    }
+
+    [FactComBd]
     public async Task ClientesSemVendas_EUltimaVenda_Correm()
     {
         var repo = CriarRepo();

@@ -46,8 +46,8 @@
       while (max / passo < 2) passo /= 2;
       return { topo: Math.ceil(max / passo) * passo, passo };
     }
-    function graficoMeses({ meses, sel = -1, ultimaData = '', previsao = null, rotulo = 'Vendas por mês', interativo = true }) {
-      const W = 900, H = 250, L = 64, R = 24, T = 18, B = 34;
+    function graficoMeses({ meses, sel = -1, ultimaData = '', previsao = null, rotulo = 'Vendas por mês', interativo = true, W = 900, H = 250 }) {
+      const L = 64, R = 24, T = 18, B = 34;
       const nPrev = previsao ? previsao.valores.length : 0, n = meses.length + nPrev;
       const valores = [...meses.flatMap(x => [x.atual, x.anterior]), ...(previsao ? previsao.banda.flat() : [])].filter(v => v > 0);
       const { topo, passo } = escalaRedonda(Math.max(...valores, 0));
@@ -80,7 +80,7 @@
       });
       const rotuloMes = i => i < meses.length ? fmt.mesCurto(meses[i].m) + (meses[i].parcial ? '*' : '') : fmt.mesCurto(previsao.meses[i - meses.length]);
       for (let i = 0; i < n; i++) s += `<text class="g-mes${i === sel ? ' g-mes--sel' : ''}" x="${x(i)}" y="${H - 10}" text-anchor="middle">${rotuloMes(i)}</text>`;
-      if (interativo) meses.forEach((m, i) => { if (m.atual != null) s += `<rect class="g-zona" x="${x(i) - meio / 2}" y="${T}" width="${meio}" height="${H - T}" data-mes="${i}"><title>${MESES[m.m - 1]} ${m.a}</title></rect>`; });
+      if (interativo) meses.forEach((m, i) => { if (m.atual != null) s += `<rect class="g-zona" x="${x(i) - meio / 2}" y="${T}" width="${meio}" height="${H - T}" data-mes="${i}" tabindex="0" role="button" aria-pressed="${i === sel}" aria-label="${MESES[m.m - 1]} ${m.a}: ver os indicadores do mês"><title>${MESES[m.m - 1]} ${m.a}</title></rect>`; });
       // Descrição em texto: o que o gráfico mostra, para quem não o vê
       const desc = meses.filter(m => m.atual != null || m.anterior != null).map(m => `${MESES[m.m - 1]} ${m.a}: ${fmt.eur(m.atual)}${m.anterior != null ? `, ano anterior ${fmt.eur(m.anterior)}` : ''}${m.parcial ? ', mês incompleto' : ''}`)
         .concat(previsao ? previsao.valores.map((v, k) => `${previsao.meses[k] ? MESES[previsao.meses[k] - 1] : ''}: previsão ${fmt.eur(v)}, entre ${fmt.eur(previsao.banda[k][0])} e ${fmt.eur(previsao.banda[k][1])}`) : []).join('; ');

@@ -116,9 +116,9 @@
     let pedidoDoc = 0;
     async function abrirDocumento(id) {
       const n = ++pedidoDoc, numero = id.replace('-', ' ').replace(/-/g, '/');
-      const el = drawer.abrir({ topo: 'Pré-visualização', largo: true, aoFechar: () => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); },
+      const el = drawer.abrir({ topo: 'Artigos do documento', largo: true, aoFechar: () => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); },
         html: `<h3 id="dr-t" tabindex="-1" class="so-leitor">Documento ${esc(numero)}</h3><div id="doc-corpo">${aCarregar('A carregar o documento…')}</div>`,
-        pe: `<button type="button" class="btn" data-fechar>Fechar</button><button type="button" class="btn" data-doc-pdf disabled>${ic('exportar')}Exportar PDF</button>` });
+        pe: `<button type="button" class="btn" data-fechar>Fechar</button>` });
       history.replaceState(null, '', '#' + id);
       el.querySelector('[data-fechar]').addEventListener('click', () => drawer.fechar());
       const corpo = () => n === pedidoDoc ? document.getElementById('doc-corpo') : null;
@@ -127,20 +127,15 @@
         if (!corpo()) return;
         if (r.status === 404) { corpo().innerHTML = '<p class="muted">Este documento não existe ou não pertence à sua carteira.</p>'; return; }
         if (!r.ok) throw new Error('HTTP ' + r.status);
-        const d = await r.json(), t = d.totais;
+        const d = await r.json();
         if (!corpo()) return;
-        document.getElementById('dr-t').textContent = `${TIPOS_DOC[d.tipo] || 'Documento'} ${d.documento}`;
-        corpo().innerHTML = `<div class="folha">
-            <div class="folha-topo"><div><h3>${esc((TIPOS_DOC[d.tipo] || 'Documento').replace(/\s*\(.\)$/, ''))}</h3><div class="muted num" style="margin-top:6px;font-size:12.5px">N.º ${esc(d.documento)}<br>Data: ${esc(fmt.dataLonga(d.data, true))}</div></div><span style="color:var(--blue)">${logo()}</span></div>
-            <div class="folha-para"><span class="muted">Cliente</span><b style="font-weight:500">${esc(nomeProprio(d.cliente.nome))}</b><span class="muted">${esc(d.cliente.id)}</span></div>
-            ${tabela({ legenda: 'Linhas do documento', colunas: [{ t: 'Artigo' }, { t: 'Qtd.', dir: true }, { t: 'Preço', dir: true }, { t: 'Total', dir: true }],
-              linhas: d.linhas.map(l => ({ c: [`${esc(l.artigo)}<span class="celula-sub">${esc(l.artigoId)}</span>`, fmt.decimal(l.quantidade, Number.isInteger(l.quantidade) ? 0 : 2),
-                l.quantidade ? fmt.eur2(l.liquido / l.quantidade) : '—', fmt.eur2(l.liquido)] })) })}
-            <ul class="folha-somas"><li><span>Total sem IVA</span><b class="num">${fmt.eur2(t.liquido)}</b></li><li><span>IVA</span><b class="num">${fmt.eur2(t.iva)}</b></li><li class="total"><span>Total</span><b class="num">${fmt.eur2(t.total)}</b></li></ul>
-          </div><p class="nota-pe">Pré-visualização gerada a partir dos dados, não é o documento fiscal. Só se pode consultar.</p>`;
-        const pdf = el.querySelector('[data-doc-pdf]');
-        pdf.disabled = false;
-        pdf.addEventListener('click', () => aviso(exportar('pdf', { titulo: d.documento }, true)));
+        // Só a lista de artigos: sem tipo de documento, totais nem IVA (não é uma cópia do documento fiscal)
+        document.getElementById('dr-t').textContent = `Documento ${d.documento}`;
+        corpo().innerHTML = `<h3 class="num">${esc(d.documento)}</h3><p style="margin-top:6px">${esc(nomeProprio(d.cliente.nome))}</p>
+          ${tabela({ legenda: 'Artigos do documento', colunas: [{ t: 'Artigo' }, { t: 'Qtd.', dir: true }, { t: 'Preço', dir: true }, { t: 'Total', dir: true }],
+            linhas: d.linhas.map(l => ({ c: [`${esc(l.artigo)}<span class="celula-sub">${esc(l.artigoId)}</span>`, fmt.decimal(l.quantidade, Number.isInteger(l.quantidade) ? 0 : 2),
+              l.quantidade ? fmt.eur2(l.liquido / l.quantidade) : '—', fmt.eur2(l.liquido)] })) })}
+          <p class="nota-pe">Lista dos artigos, gerada a partir dos dados: não é o documento fiscal. Só se pode consultar.</p>`;
       } catch (e) {
         console.error('Falha a abrir o documento:', e);
         if (corpo()) corpo().innerHTML = comErro('Não foi possível abrir o documento. Tente outra vez.', '');

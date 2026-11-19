@@ -240,3 +240,134 @@ End Sub
 ```
 
 Se o VB6 estiver a lançar o `.exe` e a verificar a resposta, trocar por este `ShellExecute`; não há mais nada a mudar do lado do VB6.
+
+## 11. Demonstração remota: o Visual autentica (passo a passo)
+
+Para mostrar o Flow a clientes fora do domínio, por um endereço público (DynDNS + Let's Encrypt). **Não usa Windows Auth nem Kerberos/SPN**: quem autentica é o Visual, que abre o Flow com um link assinado. As secções 1 a 8 continuam válidas para o modo interno; esta substitui os passos 5 (autenticação), 6 (SPN) e 7 (verificação).
+
+> Estado: o código (agente, testes de assinatura e cookie) compila e passa os testes. Os scripts passaram só a análise de sintaxe e o `FlowLink.bas` não foi compilado em VB6. Nada correu ainda num IIS real: validar cada passo pela ordem abaixo.
+
+### Como funciona
+
+```text
+Visual (PC do cliente, utilizador já autenticado)
+   │  botão "Ligar o Flow": assina  login|validade(60 s)  com o segredo
+   ▼  abre  https://<nome>/?u=<login>&e=<validade>&s=<assinatura>
+IIS (Anónima, só HTTPS 443, encaminha)  ──►  agente (localhost:5080)
+                                             valida assinatura, validade e uso único
+                                             → cookie de sessão (8 h) → redireciona para /
+```
+
+- Sem link nem cookie válidos o agente responde **403**. O link é de **uso único** e vale **60 s** a contar do clique no botão (não da entrada no Visual); depois manda o cookie.
+- O `login` do link é procurado no `perfis.json`: o que o utilizador vê (tudo, ou só um vendedor) define-se aí.
+- O segredo (`VENDAS_LINK_SEGREDO`) só existe no `Iniciar-Flow.cmd` (restrito) e no Visual.
+
+### Passo 1 — Pré-requisitos no servidor
+
+1. Windows Server (ou Windows com IIS, para ensaiar), **.NET 10 Runtime** (`dotnet --list-runtimes`), **URL Rewrite 2.1** e **Application Request Routing 3.0** (secção 4).
+2. Nome público a apontar para o servidor (DynDNS): `joaqmendes.dyndns.org` ou outro. Usado em todos os passos como `<nome>`.
+3. **BD de demonstração** e login SQL só de leitura. Nunca a de produção.
+4. Router/firewall: porta **443** (e **80**, só durante a emissão e renovação do certificado) para o servidor. A **5080 nunca**.
+
+### Passo 2 — Pacote e dados
+
+1. No PC de desenvolvimento: `powershell -ExecutionPolicy Bypass -File scripts\publicar.ps1`; copiar `pacote\Flow` para `C:\Flow\` no servidor.
+2. Escolher a conta que corre o agente e o pool (conta local dedicada, ex. `SERVIDOR\svc-flow`; não precisa de ser de domínio). Nessa conta:
+
+   ```powershell
+   New-Item -ItemType Directory -Force "$env:LOCALAPPDATA\Vendas" | Out-Null
+   Read-Host "Password SQL" -AsSecureString | ConvertFrom-SecureString | Set-Content "$env:LOCALAPPDATA\Vendas\sql.pwd"
+   ```
+
+3. Criar `%LOCALAPPDATA%\Vendas\perfis.json` com **os logins que o Visual vai enviar** (cada um com o vendedor, ou `"*"`):
+
+   ```json
+   { "cliente\\ana": "*", "cliente\\rui": "João Silva" }
+   ```
+
+### Passo 3 — Certificado temporário e site IIS
+
+O `Instalar-IIS.ps1` exige um certificado para criar o site; o definitivo vem no passo 5.
+
+```powershell
+$c = New-SelfSignedCertificate -DnsName <nome> -CertStoreLocation Cert:\LocalMachine\My -NotAfter (Get-Date).AddMonths(3)
+cd C:\Flow\iis
+.\Instalar-IIS.ps1 -Nome <nome> -Thumbprint $c.Thumbprint -ContaPool SERVIDOR\svc-flow -LinkAssinado -WhatIf
+.\Instalar-IIS.ps1 -Nome <nome> -Thumbprint $c.Thumbprint -ContaPool SERVIDOR\svc-flow -LinkAssinado
+```
+
+O script (como Administrador) faz o proxy ARR, o pool, o site em HTTPS, a autenticação **Anónima**, o `web.config`, e gera o `VENDAS_LINK_SEGREDO` no `C:\Flow\Iniciar-Flow.cmd`. Pára no primeiro passo que falhe; repetir é seguro. Depois, editar em `Iniciar-Flow.cmd` só a linha `VENDAS_SQL` (sem a palavra-passe). O aviso de DNS ignora-se se o nome ainda não resolver aqui.
+
+### Passo 4 — Arrancar o agente
+
+Criar a tarefa agendada `Flow (agente)` com a conta `SERVIDOR\svc-flow` (secção 5, passo 3) e iniciá-la. Confirmar:
+
+- `netstat -ano | findstr :5080` mostra só `127.0.0.1:5080`;
+- `C:\Flow\flow.log` sem erros (se o agente recusar arrancar, o motivo está aí).
+
+### Passo 5 — Certificado Let's Encrypt (win-acme)
+
+1. Descarregar o win-acme (https://www.win-acme.com/), descompactar em `C:\win-acme`.
+2. Como Administrador: `cd C:\win-acme` e `.\wacs.exe`. Usar a opção **M — Create certificate (full options)** e escolher:
+   - alvo: *Manual input* → `<nome>`;
+   - validação: **Self-hosting** (o win-acme abre a porta 80 durante a validação; por isso o site Flow não tem binding na 80, e o 401 da autenticação não interfere);
+   - armazenamento: **Windows Certificate Store**, loja **My** (o `Instalar-IIS.ps1` procura em `LocalMachine\My`);
+   - instalação: **IIS** (atualiza o binding 443 do site Flow e agenda a renovação).
+3. Confirmar no IIS Manager (*Flow → Bindings*) o binding `https 443 <nome>` com o certificado novo, e apagar o autoassinado do passo 3.
+4. Se voltar a correr o `Instalar-IIS.ps1`, passar o thumbprint **novo** em `-Thumbprint` (o de `Get-ChildItem Cert:\LocalMachine\My`).
+
+### Passo 6 — Verificação no servidor
+
+```powershell
+.\Verificar-Flow.ps1 -Nome <nome> -Login "cliente\ana" -LinkAssinado
+```
+
+Testa: o agente só em loopback, 403 sem identidade, link válido (302), mesmo link segunda vez (403), link expirado (403), login trocado (403), cabeçalho forjado ignorado (403) e HTTP sem TLS. Os testes de links usam o nome público: do próprio servidor pode falhar a resolução (hairpin NAT); nesse caso correr de outra máquina ou pôr `<nome>` no `hosts` a apontar para 127.0.0.1.
+
+Manuais: abrir um link gerado (secção "Assinatura" abaixo) num browser e fazer uma pergunta no chat (a resposta aparece aos poucos); `auditoria.log` mostra `entrada por link` com o login e o IP.
+
+### Passo 7 — O botão no Visual
+
+1. Importar [FlowLink.bas](FlowLink.bas) no projeto VB6.
+2. Ligar o botão a `AbrirFlow "https://<nome>", <login do Visual>, <VENDAS_LINK_SEGREDO>`. O segredo lê-se de configuração do Visual, não fica em texto no código. O login tem de existir no `perfis.json` e ser ASCII.
+3. **Primeiro** comparar a assinatura do `.bas` com a do exemplo PowerShell abaixo, para o mesmo login e a mesma validade.
+4. O relógio do PC do cliente tem de estar certo (margem de uns segundos), porque o link vale 60 s.
+
+**Assinatura:** `s = HMAC-SHA256(chave = VENDAS_LINK_SEGREDO em texto UTF-8, mensagem = login & "|" & e)`, em hexadecimal **minúsculo**; `e` = validade em segundos Unix (UTC), no máximo 60 s à frente; `u` codificado em URL (`\` → `%5C`). Link de teste:
+
+```powershell
+$seg = '<VENDAS_LINK_SEGREDO>'; $u = 'cliente\ana'; $e = [DateTimeOffset]::UtcNow.AddSeconds(30).ToUnixTimeSeconds()
+$h = [Security.Cryptography.HMACSHA256]::new([Text.Encoding]::UTF8.GetBytes($seg))
+$s = -join ($h.ComputeHash([Text.Encoding]::UTF8.GetBytes("$u|$e")) | % { $_.ToString('x2') })
+"https://<nome>/?u=$([uri]::EscapeDataString($u))&e=$e&s=$s"   # abrir em menos de 30 s
+```
+
+### Passo 8 — Teste final, de fora da rede
+
+Do telemóvel (dados móveis): `https://<nome>/` sem link → mensagem de acesso negado (403). Depois, a partir do Visual, o botão abre o Flow já com o utilizador. Um segundo clique gera outro link; o link antigo, reaberto, dá 403.
+
+### Operação e fim da demonstração
+
+- **Rodar o segredo** (no fim, ou se foi visto por quem não devia): apagar o valor de `VENDAS_LINK_SEGREDO` em `Iniciar-Flow.cmd`, repetir o `Instalar-IIS.ps1 -LinkAssinado`, reiniciar a tarefa e atualizar o Visual. As sessões abertas caem (o cookie deixa de ser válido).
+- Alterou `perfis.json`: reiniciar a tarefa. Atualizar versão: secção 5, passo 8.
+- **Terminar a demo:** `Stop-Website Flow`, parar a tarefa e fechar o 80/443 no router.
+
+### Limites e segurança
+
+- Quem tiver o segredo entra como qualquer login: guardá-lo fora do repositório e usar um segredo por cliente quando possível.
+- O link é de uso único (o agente recusa a 2.ª utilização; a memória perde-se num reinício, mas o link já expirou), vale 60 s e fica nos logs do IIS. Cada entrada fica no `auditoria.log`.
+- O cookie dura 8 h e não é revogável individualmente: só rodando o segredo.
+- Neste modo o cabeçalho `X-Remote-User` é ignorado pelo agente.
+- Não há limite de tentativas falhadas (o HMAC de 256 bits não se adivinha). Se o site ficar muito tempo no ar, acrescentar uma regra no router/firewall.
+- Usar BD de demonstração, perfis com o mínimo necessário e, no modo Claude, um limite de custo.
+
+### Resolução de problemas (modo link)
+
+| Sintoma | Causa provável |
+| --- | --- |
+| 403 ao abrir o link do Visual | Login em falta no `perfis.json` (ou com maiúsculas/barra diferentes), segredo diferente entre o Visual e o `Iniciar-Flow.cmd`, relógio do PC desfasado, link já usado ou expirado. |
+| A assinatura do VB6 difere da do PowerShell | Mensagem diferente (`login|e`, sem espaços), segredo com espaço ou quebra de linha, `e` diferente, hex em maiúsculas. |
+| O agente não arranca e fala de `VENDAS_LINK_SEGREDO` | Falta o modo proxy (`VENDAS_PROXY_SEGREDO`) ou o segredo tem menos de 32 caracteres. |
+| win-acme falha a validar | Porta 80 ocupada ou fechada no router, DNS não aponta para o IP público, ou o site Flow tem binding na 80. |
+| `Instalar-IIS.ps1` não encontra o certificado | O win-acme guardou-o na loja `WebHosting`; repetir com a loja `My`. |
+| 502 | Agente parado (`Get-ScheduledTask 'Flow (agente)'`). Outros sintomas: secção 8. |

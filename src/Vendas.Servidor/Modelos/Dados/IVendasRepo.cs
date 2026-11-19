@@ -81,6 +81,11 @@ public interface IVendasRepo
         string cliente, DateOnly desde, DateOnly ate, IReadOnlyDictionary<Campo, string>? filtros = null,
         CancellationToken cancellationToken = default);
 
+    // Os 4 indicadores de [desde, ate[ e de [desdeAnt, ateAnt[ numa só consulta (o mês e o mesmo mês do ano anterior).
+    Task<IndicadoresMes> IndicadoresMesAsync(
+        DateOnly desde, DateOnly ate, DateOnly desdeAnt, DateOnly ateAnt, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default);
+
     // Data da venda mais recente que existe (null = sem vendas nenhumas).
     Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default);
 }

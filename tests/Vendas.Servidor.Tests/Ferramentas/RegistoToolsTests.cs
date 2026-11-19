@@ -31,6 +31,6 @@ public class RegistoToolsTests
             .OfType<string>()
             .ToHashSet();
 
-        Assert.Superset(new HashSet<string> { "consultar", "consultar_vendas", "consultar_sensivel", "consultar_documentos", "consultar_carteira", "consultar_creditos", "consultar_documento", "consultar_em_aberto" }, nomes);
+        Assert.Superset(new HashSet<string> { "consultar", "consultar_vendas", "consultar_sensivel", "consultar_documentos", "consultar_carteira", "consultar_creditos", "consultar_documento", "consultar_em_aberto", "consultar_indicadores_mes" }, nomes);
     }
 }

@@ -16,6 +16,66 @@ public class VendasToolsTests
         public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
     }
 
+    private static VendasTools SutEm(FakeVendasRepo repo, int ano, int mes, int dia) =>
+        new(repo, NullLogger<VendasTools>.Instance, new RelogioFixo(new DateTimeOffset(ano, mes, dia, 12, 0, 0, TimeSpan.Zero)));
+
+    [Fact]
+    public async Task IndicadoresMes_PedeOMesEOMesmoMesDoAnoAnteriorNumaSoConsulta()
+    {
+        var repo = new FakeVendasRepo { Indicadores = new(new(210444.55m, 3584, 233), new(198488.02m, 3350, 240)), UltimaVenda = new DateOnly(2026, 9, 4) };
+
+        using var d = System.Text.Json.JsonDocument.Parse(await SutEm(repo, 2026, 11, 19).ConsultarIndicadoresMesAsync(2026, 8));
+
+        Assert.Equal((new DateOnly(2026, 8, 1), new DateOnly(2026, 9, 1), new DateOnly(2025, 8, 1), new DateOnly(2025, 9, 1)),
+            (repo.UltimosIndicadores!.Value.Desde, repo.UltimosIndicadores.Value.Ate, repo.UltimosIndicadores.Value.DesdeAnt, repo.UltimosIndicadores.Value.AteAnt));
+        Assert.Equal(210444.55m, d.RootElement.GetProperty("atual").GetProperty("faturacao").GetDecimal());
+        Assert.Equal(3350, d.RootElement.GetProperty("anterior").GetProperty("documentos").GetInt32());
+        Assert.False(d.RootElement.GetProperty("incompleto").GetBoolean());
+    }
+
+    [Fact]
+    public async Task IndicadoresMes_MesQueAcabaAMeio_DizQueEIncompleto()
+    {
+        // Hoje é 19-11 mas a última venda da BD é de 04-09: setembro tem dados só até ao dia 4
+        var repo = new FakeVendasRepo { UltimaVenda = new DateOnly(2026, 9, 4) };
+
+        using var d = System.Text.Json.JsonDocument.Parse(await SutEm(repo, 2026, 11, 19).ConsultarIndicadoresMesAsync(2026, 9));
+
+        Assert.True(d.RootElement.GetProperty("incompleto").GetBoolean());
+        Assert.Equal("04-09-2026", d.RootElement.GetProperty("ate").GetString());
+    }
+
+    [Theory]
+    [InlineData(0, 2026)]
+    [InlineData(13, 2026)]
+    [InlineData(5, 1999)]
+    [InlineData(5, 2027)]
+    public async Task IndicadoresMes_MesOuAnoInvalido_DevolveErroSemIrAoRepo(int mes, int ano)
+    {
+        var repo = new FakeVendasRepo();
+
+        var r = await SutEm(repo, 2026, 11, 19).ConsultarIndicadoresMesAsync(ano, mes);
+
+        Assert.DoesNotContain("{", r);
+        Assert.Null(repo.UltimosIndicadores);
+    }
+
+    [Fact]
+    public async Task IndicadoresMes_FiltrosEDatasDoPainelChegamAoRepo()
+    {
+        var repo = new FakeVendasRepo();
+
+        await SutEm(repo, 2026, 11, 19).ConsultarIndicadoresMesAsync(2026, 8, zonas: ["Braga"], tiposDoc: ["F"], vendedor: "Ana", dataInicio: "10-08-2026", dataFim: "20-08-2026");
+
+        var u = repo.UltimosIndicadores!.Value;
+        var f = Assert.IsType<FiltrosVenda>(u.Filtros);
+        Assert.Equal(["Braga"], f.Zonas);
+        Assert.Equal(["F"], f.Tipos);
+        Assert.Equal("Ana", f[Campo.Vendedor]);
+        // O mês conta só de 10 a 20 de agosto, e o ano anterior nas mesmas datas
+        Assert.Equal((new DateOnly(2026, 8, 10), new DateOnly(2026, 8, 21), new DateOnly(2025, 8, 10), new DateOnly(2025, 8, 21)), (u.Desde, u.Ate, u.DesdeAnt, u.AteAnt));
+    }
+
     [Fact]
     public async Task Hoje_VemDoRelogioInjetado()
     {

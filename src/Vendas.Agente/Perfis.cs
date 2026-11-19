@@ -39,4 +39,30 @@ public static class Perfis
         return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(cabecalhoSegredo), Encoding.UTF8.GetBytes(segredo))
             ? cabecalhoUtilizador.Trim() : null;
     }
+
+    // Entrada pelo Visual (demonstração, sem Windows Auth): o VB6 assina "login|validade" com HMAC-SHA256 (segredo em texto, saída em hex minúsculo).
+    // shortcut: o link é reutilizável até expirar (poucos minutos); um nonce só se justifica se o link vier a circular fora do Visual.
+    public static string? LoginValido(string? login, string? validade, string? assinatura, string? segredo, DateTimeOffset agora, TimeSpan validadeMax)
+    {
+        if (string.IsNullOrWhiteSpace(segredo) || string.IsNullOrWhiteSpace(login) || assinatura is null || !long.TryParse(validade, out var exp)) return null;
+        var t = agora.ToUnixTimeSeconds();
+        if (exp < t || exp > t + (long)validadeMax.TotalSeconds) return null;
+        return CryptographicOperations.FixedTimeEquals(Encoding.UTF8.GetBytes(assinatura), Encoding.UTF8.GetBytes(Assinar(login, exp, segredo))) ? login : null;
+    }
+
+    static string Assinar(string login, long exp, string segredo) =>
+        Convert.ToHexStringLower(HMACSHA256.HashData(Encoding.UTF8.GetBytes(segredo), Encoding.UTF8.GetBytes($"{login}|{exp}")));
+
+    // Cookie de sessão que o agente emite depois do link: login escapado, validade e assinatura (o ':' nunca aparece no login escapado).
+    public static string CriarSessao(string login, DateTimeOffset validade, string segredo)
+    {
+        var exp = validade.ToUnixTimeSeconds();
+        return $"{Uri.EscapeDataString(login)}:{exp}:{Assinar(login, exp, segredo)}";
+    }
+
+    public static string? LoginDaSessao(string? cookie, string? segredo, DateTimeOffset agora, TimeSpan validadeMax)
+    {
+        var p = cookie?.Split(':');
+        return p is { Length: 3 } ? LoginValido(Uri.UnescapeDataString(p[0]), p[1], p[2], segredo, agora, validadeMax) : null;
+    }
 }

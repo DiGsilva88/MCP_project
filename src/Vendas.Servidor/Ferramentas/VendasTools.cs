@@ -174,6 +174,63 @@ public sealed class VendasTools(IVendasRepo repo, ILogger<VendasTools> log, Time
         });
     }
 
+    // Só para o cartão "Mês selecionado" do painel (o agente não a oferece ao modelo). O mês e o mesmo mês do ano anterior numa só consulta.
+    [McpServerTool(Name = "consultar_indicadores_mes")]
+    [Description("Só do painel: faturação, documentos e clientes ativos de um mês e do mesmo mês do ano anterior, em JSON.")]
+    public async Task<string> ConsultarIndicadoresMesAsync(
+        [Description("Ano com 4 dígitos.")] int ano,
+        [Description("Mês de 1 a 12.")] int mes,
+        [Description("Opcional: ID do cliente ou início do nome.")] string? cliente = null,
+        [Description("Opcional: coluna da ficha.")] Campo? coluna = null,
+        [Description("Valor dessa coluna.")] string? valor = null,
+        [Description("Opcional: só os clientes deste vendedor.")] string? vendedor = null,
+        [Description("Opcional: data inicial dd-MM-aaaa. Usar com dataFim: o mês conta só dentro destas datas.")] string? dataInicio = null,
+        [Description("Opcional: data final dd-MM-aaaa (incluída).")] string? dataFim = null,
+        [Description("Opcional: várias zonas (distritos).")] string[]? zonas = null,
+        [Description("Opcional: marcas.")] string[]? marcas = null,
+        [Description("Opcional: tipos de documento.")] string[]? tiposDoc = null,
+        CancellationToken ct = default)
+    {
+        var hoje = DateOnly.FromDateTime(tempo.GetLocalNow().DateTime);
+        var (atual, erroAtual) = Periodos.Resolver(Periodo.AnoAtual, mes, ano, null, null, hoje, null);
+        if (atual is not { } janela) return erroAtual!;
+        var (anterior, erroAnterior) = Periodos.Resolver(Periodo.AnoAtual, mes, ano - 1, null, null, hoje, null);
+        if (anterior is not { } janelaAnt) return erroAnterior!;
+
+        // Com datas De/Até no painel, o mês conta só dentro delas (e o ano anterior dentro das mesmas datas, um ano antes).
+        var (desde, ate, desdeAnt, ateAnt) = (janela.Desde, janela.Ate, janelaAnt.Desde, janelaAnt.Ate);
+        if (dataInicio is not null || dataFim is not null)
+        {
+            var (datas, erroDatas) = Periodos.Resolver(Periodo.AnoAtual, null, null, dataInicio, dataFim, hoje, null);
+            if (datas is not { } d) return erroDatas!;
+            (desde, ate) = (Max(desde, d.Desde), Min(ate, d.Ate));
+            (desdeAnt, ateAnt) = (Max(desdeAnt, d.Desde.AddYears(-1)), Min(ateAnt, d.Ate.AddYears(-1)));
+        }
+
+        var temValor = !string.IsNullOrWhiteSpace(valor);
+        if ((coluna is not null) != temValor) return "coluna e valor têm de ser usados juntos.";
+        var (filtros, erroFiltros) = FiltrosVenda.Criar(zonas, marcas, tiposDoc);
+        if (filtros is null) return erroFiltros!;
+        if (temValor) filtros[coluna!.Value] = valor!.Trim();
+        if (!string.IsNullOrWhiteSpace(vendedor)) filtros[Campo.Vendedor] = vendedor.Trim();
+
+        return await Respostas.ExecutarAsync(log, "consultar_indicadores_mes", $"{ano}-{mes:00}", async () =>
+        {
+            var (idCliente, _, erro) = await Respostas.ResolverClienteAsync(repo, cliente, filtros, ct);
+            if (erro is not null) return erro;
+
+            var r = await repo.IndicadoresMesAsync(desde, ate, desdeAnt, ateAnt, idCliente, filtros, ct);
+            static object P(IndicadoresPeriodo p) => new { faturacao = p.Faturacao, documentos = p.Documentos, clientes = p.Clientes };
+            // incompleto: o mês ainda não acabou, ou a última venda registada é anterior ao fim do mês (dados que acabam a meio)
+            var ultima = await repo.UltimaVendaAsync(ct);
+            var incompleto = janela.Ate > hoje || ultima is { } u && u.AddDays(1) < janela.Ate;
+            return JsonSerializer.Serialize(new { ano, mes, incompleto, ate = ultima is { } v ? Data(v) : null, atual = P(r.Atual), anterior = P(r.Anterior) });
+        });
+    }
+
+    private static DateOnly Max(DateOnly a, DateOnly b) => a > b ? a : b;
+    private static DateOnly Min(DateOnly a, DateOnly b) => a < b ? a : b;
+
     // Só para a lista de créditos do painel (o agente não a oferece ao modelo). Paginada no SQL.
     [McpServerTool(Name = "consultar_creditos")]
     [Description("Notas de crédito e créditos de um período, uma página em JSON, com os totais por tipo.")]
