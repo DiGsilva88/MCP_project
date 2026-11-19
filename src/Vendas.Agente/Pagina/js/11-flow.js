@@ -5,7 +5,7 @@
       resumo: ['Como correu o último mês?', 'Qual foi a faturação por zona este ano?', 'Quanto faturámos no último trimestre?'],
       alertas: ['Clientes que não compram há 90 dias?', 'Que zonas venderam menos que no ano passado?', 'Que artigos venderam menos que no ano passado?'],
       clientes: ['Que clientes compraram menos que no ano passado?', 'Quem são os 10 maiores clientes este ano?', 'Clientes que não compram há 90 dias?'],
-      faturacao: ['Quanto faturámos no último trimestre?', 'Quantas notas de crédito emitimos este ano?', 'Qual foi o ticket médio em cada mês deste ano?'],
+      faturacao: ['Quanto faturámos no último trimestre?', 'Como evoluíram as vendas mês a mês este ano?', 'Qual foi o ticket médio em cada mês deste ano?'],
       artigos: ['Quais os artigos mais vendidos no mês passado?', 'Que artigos venderam menos que no ano passado?', 'Que marca faturou mais este ano?'],
       zonas: ['Qual foi a faturação por zona este ano?', 'Que zona cresceu mais face ao ano passado?', 'Qual foi o artigo mais vendido em cada distrito?'],
       previsoes: ['Como evoluíram as vendas mês a mês este ano?', 'Como está a faturação deste ano face ao ano passado?', 'Que meses venderam menos este ano?'],

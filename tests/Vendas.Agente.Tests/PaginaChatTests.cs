@@ -104,7 +104,7 @@ public class PaginaChatTests
     [Fact]
     public void Js_LigaAsRotasDoServidor()
     {
-        foreach (var rota in new[] { "'/resumo?'", "'/api/creditos?'", "/api/clientes/${encodeURIComponent(id)}/briefing","'/api/documentos/'", "'/api/preferencias'", "'/preferencias'", "'/api/agendamentos'", "'/agendamentos'", "'/perguntar'", "'/parar'", "'/feedback'" })
+        foreach (var rota in new[] { "'/resumo?'", "/api/clientes/${encodeURIComponent(id)}/briefing","'/api/documentos/'", "'/api/preferencias'", "'/preferencias'", "'/api/agendamentos'", "'/agendamentos'", "'/perguntar'", "'/parar'", "'/feedback'" })
             Assert.Contains(rota, Html);
         Assert.Contains("não é o documento fiscal", Html);   // a pré-visualização nunca pode parecer o documento fiscal
     }

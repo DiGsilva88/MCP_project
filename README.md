@@ -12,7 +12,10 @@ O MCP é um protocolo baseado em JSON-RPC 2.0 que permite a um cliente de IA des
 projeto_Mcp/
 ├── Vendas.slnx                      Solution do .NET
 ├── inspector.json                   Config local do MCP Inspector (gitignored)
-├── .github/workflows/build.yml      CI: restore, build (--warnaserror) e testes unitários
+├── .github/workflows/build.yml      CI: restore, build (--warnaserror), testes .NET e testes da página (node)
+├── docs/                            IIS.md (instalação em IIS), RESUMO-EMAIL.md (email semanal/mensal)
+├── iis/                             Instalar-IIS.ps1, Verificar-Flow.ps1, web.config, Iniciar-Flow.cmd, Enviar-Resumo.cmd
+├── scripts/                         publicar.ps1 (gera pacote\Flow), Configurar.ps1/.cmd (posto), Testar-Manual.ps1
 ├── src/
 │   ├── Vendas.Servidor/             Servidor MCP
 │   │   ├── Program.cs               Ponto de entrada: host, DI, ligação ao SQL e servidor MCP
@@ -41,12 +44,13 @@ projeto_Mcp/
 │       ├── PaginaChat.cs            Lê a página do chat embebida no executável e junta as partes ({{inclui:...}})
 │       └── Pagina/
 │           ├── pagina-chat.html     Esqueleto da página do modo web: <style>, corpo e <script> com as inclusões, por ordem
-│           ├── css/                 Estilos por componente (01–21); todos os @media em 99-media.css, sempre no fim
-│           ├── html/                Partes do corpo: painel lateral, dados, conversa e diálogos
-│           └── js/                  Código da página por componente (01–21); 21-eventos.js tem de ficar em último
+│           ├── css/                 Estilos por componente (01–07: tokens, base, estrutura, componentes, entrada, flow, impressão)
+│           ├── html/                Partes do corpo: ecrã de entrada (01), painel (02) e elementos flutuantes (03)
+│           └── js/                  Código da página por componente (01–13); 13-app.js (arranque) tem de ficar em último
 └── tests/
     ├── Vendas.Servidor.Tests/       Testes das tools (repo falso), do SQL gerado, períodos e integração com a BD
-    └── Vendas.Agente.Tests/         Testes das políticas de segurança, agendamentos, feedback e página
+    ├── Vendas.Agente.Tests/         Testes das políticas de segurança, agendamentos, feedback, login do proxy e página
+    └── pagina/                      Testes da página em JavaScript (node --test, sem dependências)
 ```
 
 ## Como funciona
@@ -231,7 +235,9 @@ Sem `perfis.json`, cada pessoa só vê o painel que ela própria abriu (o login 
 
 1. `powershell -ExecutionPolicy Bypass -File scripts\publicar.ps1` gera `pacote\Flow`.
 2. Copiar essa pasta para o PC de quem testa, com o .NET 10 Runtime instalado.
-3. Fazer duplo clique em `Configurar.cmd`, uma vez por utilizador. Pede o servidor SQL e a palavra-passe e cria o atalho "Inforap Flow" no ambiente de trabalho.
+3. Fazer duplo clique em `Configurar.cmd`, uma vez por utilizador. Pede o servidor SQL e a palavra-passe e cria o atalho "Inforap Flow" no ambiente de trabalho. Para o assistente responder é preciso também o Ollama com o modelo (`ollama pull qwen3:4b-instruct`), ou a Claude (secção abaixo).
+
+O pacote leva também a pasta `iis\` (só para instalar num servidor IIS; num posto não se usa). Um instalador `.exe` único não existe: seria preciso publicar em modo *self-contained* (o agente lança hoje `dotnet Vendas.Servidor.dll`, em [Program.cs](src/Vendas.Agente/Program.cs)) e embrulhar a pasta num instalador, com o `sql.pwd` criado no primeiro arranque do utilizador (DPAPI).
 
 Clicar de novo no atalho com o painel aberto só abre o browser. Para fechar o painel, fecha-se a janela da consola.
 
@@ -250,7 +256,7 @@ Corre uma só instância central, que os utilizadores abrem no browser. Uma inst
 
 5. Arrancar `Vendas.Agente.exe --web` com o Agendador do Windows, ao iniciar o sistema e com essa conta. Com vários servidores RDS a aceder a um central, usar HTTPS.
 
-Atrás do IIS (proxy inverso com Windows Authentication no IIS): definir `VENDAS_PROXY_SEGREDO` (o IIS envia-o em `X-Proxy-Secret` e o login em `X-Remote-User`), `VENDAS_ENDERECO` em loopback (ex.: `http://localhost:5080/`) e `VENDAS_ENDERECO_PUBLICO` com o `https://` que o browser usa. Sem `VENDAS_PROXY_SEGREDO` nada muda. Ver [docs/IIS.md](docs/IIS.md).
+**Alternativa recomendada: IIS à frente do agente** (HTTPS e Windows Authentication no IIS, sem `netsh` nem certificado no agente). O guia completo, com scripts que validam cada passo, está em [docs/IIS.md](docs/IIS.md): `iis\Instalar-IIS.ps1` cria o site, `iis\Verificar-Flow.ps1` testa-o e o guia inclui um ensaio local num só PC. **Ainda por validar num IIS real.** Em resumo: definir `VENDAS_PROXY_SEGREDO` (o IIS envia-o em `X-Proxy-Secret` e o login em `X-Remote-User`), `VENDAS_ENDERECO` em loopback (ex.: `http://localhost:5080/`) e `VENDAS_ENDERECO_PUBLICO` com o `https://` que o browser usa. Sem `VENDAS_PROXY_SEGREDO` nada muda. O email semanal/mensal é uma tarefa à parte: [docs/RESUMO-EMAIL.md](docs/RESUMO-EMAIL.md).
 
 Um perfil de vendedor vê o painel e as listas filtrados (o filtro vai no parâmetro `vendedor` das ferramentas e soma-se ao distrito escolhido), mas não o chat nem o envio de resumos por email, que têm dados de todos os clientes: a página nem os mostra.
 - **Exportar**: no painel escolhem-se as secções que entram no CSV; o ficheiro respeita o período e os filtros aplicados.
@@ -290,6 +296,7 @@ schtasks /Create /TN "Vendas - resumo por email" /SC WEEKLY /D MON /ST 08:00 /TR
 - Para experimentar sem enviar: `$env:VENDAS_SMTP_PASTA = "C:\temp\emails"` grava os emails (`.eml`) nessa pasta (não precisa do `smtp.pwd`).
 - Testar já: `schtasks /Run /TN "Vendas - resumo por email"` (fora de uma segunda não há nada devido e sai com 0). Reenviar uma segunda que falhou: `Vendas.Agente.exe --enviar-resumo --dia 02-11-2026`. A tarefa fica como falhada (código 1) se faltar a configuração ou algum envio falhar; o motivo vai para a consola, nunca o endereço.
 - Por omissão a tarefa só corre com a sessão iniciada; para correr sempre, criar com `/RU <utilizador> /RP` (a mesma conta, para o DPAPI ler os `.pwd`).
+- A tarefa também precisa de `VENDAS_SQL` no ambiente dessa conta (arranca o servidor MCP) e tem de correr na **mesma conta que o agente**, senão não encontra o `agendamentos.json`. Checklist completa, riscos e ensaio: [docs/RESUMO-EMAIL.md](docs/RESUMO-EMAIL.md).
 
 ## Testar com o MCP Inspector
 
@@ -305,7 +312,7 @@ No Inspector: "List Tools" e invocar cada tool para validar a resposta.
 
 ## Testes
 
-Os mesmos passos da CI (`.github/workflows/build.yml`), a correr antes de cada commit:
+Os mesmos passos da CI (`.github/workflows/build.yml`), a correr antes de cada commit (a CI corre ainda `node --test tests/pagina/*.test.js`):
 
 ```powershell
 dotnet restore Vendas.slnx

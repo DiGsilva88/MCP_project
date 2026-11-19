@@ -24,10 +24,8 @@
     function redesenhar(focar = false) {
       const foco = !focar && document.activeElement && principal.contains(document.activeElement) ? seletorDe(document.activeElement) : null;
       principal.innerHTML = app.resposta ? vistaResposta() : VISTAS[app.separador]();
-      if (app.separador === 'faturacao' && !app.resposta && app.dados && !app.dados.erro) desenharCreditos();
       document.title = 'Flow · ' + (app.resposta ? 'Resposta do Flow' : nomeSeparador(app.separador));
       desenharMenu();
-      if (!entrada.hidden) desenharArteEntrada();
       if (!conversa.length) desenharFlow();
       if (focar) { principal.scrollTop = 0; totop.classList.remove('on'); principal.querySelector('h1')?.focus({ preventScroll: true }); }
       else if (foco) principal.querySelector(foco)?.focus({ preventScroll: true });
@@ -139,9 +137,6 @@
       else if (d.verTodos) { app.ver[d.verTodos] = !app.ver[d.verTodos]; app.pag[d.verTodos] = 0; redesenhar(); principal.querySelector(`[data-ver-todos="${d.verTodos}"]`)?.focus({ preventScroll: true }); }
       else if (d.pag) { const [k, passo] = d.pag.split('|'); app.pag[k] = Math.max(0, (app.pag[k] || 0) + +passo); redesenhar(); }
       else if (d.estadoCli) { app.cliEstado = d.estadoCli; app.pag.clientes = 0; principal.querySelectorAll('[data-estado-cli]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); document.getElementById('cli-tabela').innerHTML = tabelaClientes(app.dados); }
-      else if (d.credTipo) { Object.assign(app, { credTipo: d.credTipo, credPag: 0 }); carregarCreditos(); }
-      else if (d.credPag) { app.credPag += +d.credPag; carregarCreditos(); }
-      else if ('repetirCreditos' in d) { creditos.erro = false; carregarCreditos(); desenharCreditos(); }
       else if (d.metricaArt) { app.artMetrica = d.metricaArt; app.pag.artigos = 0; if (d.metricaArt === 'unidades') carregarArtigosQtd(); redesenhar(); }
       else if (d.filtrarZona) { aplicarFiltros({ ...app.filtros, zonas: [d.filtrarZona] }); aviso(`Painel filtrado pela zona ${nomeZona(d.filtrarZona)}.`); }
       else if (d.cenario) { app.cenario = d.cenario; redesenhar(); }
@@ -169,10 +164,8 @@
         abas[(i + (e.key === 'ArrowRight' ? 1 : abas.length - 1)) % abas.length].click();
       }
     });
-    let esperaCred;
     principal.addEventListener('input', e => {
       if (e.target.id === 'cli-q') { app.cliQ = e.target.value; app.pag.clientes = 0; document.getElementById('cli-tabela').innerHTML = tabelaClientes(app.dados); }
-      if (e.target.id === 'cred-q') { Object.assign(app, { credQ: e.target.value, credPag: 0 }); clearTimeout(esperaCred); esperaCred = setTimeout(carregarCreditos, 250); }   // cada letra seria uma consulta
     });
     principal.addEventListener('scroll', () => totop.classList.toggle('on', principal.scrollTop > 80));
     totop.addEventListener('click', () => {
@@ -205,7 +198,6 @@
       document.querySelector('.app').inert = true;
       entCampo.value = '';
       estadoEntrada('');
-      desenharArteEntrada();
       entCampo.focus({ preventScroll: true });
     });
     window.addEventListener('hashchange', () => { const id = location.hash.slice(1); if (DOC_ID.test(id)) abrirDocumento(id); });

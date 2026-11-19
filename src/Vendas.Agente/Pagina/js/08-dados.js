@@ -11,7 +11,7 @@
       resposta: null,           // resposta do Flow aberta no painel principal
       // estado de cada separador
       mes: null, cliEstado: 'todos', cliQ: '', alertaAba: 'recebidos', alertaFiltro: 'todos', guardFiltro: 'todos',
-      artMetrica: 'valor', cenario: 'provavel', credTipo: 'Todos', credQ: '', credPag: 0,
+      artMetrica: 'valor', cenario: 'provavel',
       // listas longas: "Ver todos" aberto ou não, e a página de cada uma (ver fatiaLista)
       ver: { artigos: false, marcas: false, zonas: false }, pag: { artigos: 0, clientes: 0, marcas: 0, zonas: 0 }
     };
@@ -138,7 +138,7 @@
       const menos = i => `menos ${fmt.pct(Math.abs(i.delta))} que no mesmo período de ${anoAnt}`;
       const alertas = rm.avisos.map(a => ({ id: idAlerta('dados', a), tipo: 'dados', icone: 'info', titulo: 'Dados incompletos', texto: maiuscula(a), pergunta: '' }));
       quebras(app.filtros.zonas.length ? zonasReais.filter(z => app.filtros.zonas.includes(z.nome)) : zonasReais).forEach(z => alertas.push({ id: idAlerta('distrito', z.nome), tipo: 'zonas', regra: 'distrito', delta: z.delta, icone: 'descida', zona: z.nome,
-        titulo: `${nomeZona(z.nome)} caiu ${fmt.pct(Math.abs(z.delta))}`, texto: `Faturou ${fmt.eur(z.num)}, ${menos(z)}.`, pergunta: `Porque caiu a faturação do distrito ${nomeZona(z.nome)} face ao ano passado?` }));
+        titulo: `${nomeZona(z.nome)} caiu ${fmt.pct(Math.abs(z.delta))}`, texto: `Faturou ${fmt.eur(z.num)}, ${menos(z)}.`, pergunta: `Comparar as vendas do distrito ${nomeZona(z.nome)} mês a mês com o ano passado` }));
       quebras(artigos).forEach(a => alertas.push({ id: idAlerta('artigo', a.nome), tipo: 'artigos', regra: 'artigo', delta: a.delta, icone: 'descida',
         titulo: `${a.nome} caiu ${fmt.pct(Math.abs(a.delta))}`, texto: `Vendeu ${fmt.eur(a.num)}, ${menos(a)}.`, pergunta: app.filtros.cliente ? '' : 'Comparar as vendas por artigo com o ano passado' }));
       quebras(positivos(j.clientes).slice(0, 10)).forEach(c => alertas.push({ id: idAlerta('cliente', c.nome), tipo: 'clientes', regra: 'cliente', delta: c.delta, icone: 'descida', cliente: c.codigo || c.nome, nome: c.nome,
@@ -191,25 +191,6 @@
     function marcarAlertasVistos() {
       alertasAtivos(app.dados).forEach(a => alertasVistos.add(a.id));
       try { sessionStorage.setItem(ALERTAS_VISTOS, JSON.stringify([...alertasVistos])); } catch { }
-    }
-
-    /* ---------- Notas de crédito e créditos (lista paginada no servidor) ---------- */
-    const CRED_POR_PAGINA = 15;
-    const creditos = { dados: null, erro: false, chave: null, pedidos: 0 };
-    async function carregarCreditos() {
-      const n = ++creditos.pedidos, q = new URLSearchParams([...consultaAtual(), ['page', app.credPag + 1]]);
-      if (app.credTipo !== 'Todos') q.set('tipo', app.credTipo);
-      if (app.credQ.trim()) q.set('q', app.credQ.trim());
-      try {
-        const j = await pedirJson('/api/creditos?' + q);
-        if (n !== creditos.pedidos) return;
-        Object.assign(creditos, { dados: j, erro: false });
-      } catch (e) {
-        if (n !== creditos.pedidos) return;
-        console.error('Falha a carregar os créditos:', e);
-        creditos.erro = true;
-      }
-      if (app.separador === 'faturacao' && !app.resposta) desenharCreditos();
     }
 
     // "N 10/2026/1034675" -> "N-10-2026-1034675" (o id das rotas /api/documentos/)
