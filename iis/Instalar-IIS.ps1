@@ -102,9 +102,11 @@ if (-not $WhatIfPreference) {
     Restringir $cmd
     if ($texto -match 'VENDAS_SQL=PREENCHER') { Write-Warning "Edite $cmd e preencha a linha VENDAS_SQL (o segredo e o endereço já estão certos)." }
 }
-Validar ((Get-Content $cmd -Raw).Contains("VENDAS_PROXY_SEGREDO=$Segredo")) 'segredo gravado no Iniciar-Flow.cmd' 'o segredo não ficou no Iniciar-Flow.cmd'
-if ($LinkAssinado) { Validar ((Get-Content $cmd -Raw).Contains("VENDAS_LINK_SEGREDO=$SegredoLink")) 'segredo do link gravado no Iniciar-Flow.cmd' 'o segredo do link não ficou no Iniciar-Flow.cmd (o modelo é antigo? falta a linha set VENDAS_LINK_SEGREDO=)' }
-Validar ((Get-Acl $cmd).Access.Count -eq 3) 'Iniciar-Flow.cmd só legível por Administrators, SYSTEM e a conta de serviço' 'permissões do Iniciar-Flow.cmd inesperadas'
+if (-not $WhatIfPreference) {   # em -WhatIf o ficheiro não foi copiado: não há nada para ler
+    Validar ((Get-Content $cmd -Raw).Contains("VENDAS_PROXY_SEGREDO=$Segredo")) 'segredo gravado no Iniciar-Flow.cmd' 'o segredo não ficou no Iniciar-Flow.cmd'
+    if ($LinkAssinado) { Validar ((Get-Content $cmd -Raw).Contains("VENDAS_LINK_SEGREDO=$SegredoLink")) 'segredo do link gravado no Iniciar-Flow.cmd' 'o segredo do link não ficou no Iniciar-Flow.cmd (o modelo é antigo? falta a linha set VENDAS_LINK_SEGREDO=)' }
+    Validar ((Get-Acl $cmd).Access.Count -eq 3) 'Iniciar-Flow.cmd só legível por Administrators, SYSTEM e a conta de serviço' 'permissões do Iniciar-Flow.cmd inesperadas'
+}
 
 Passo 'Proxy do ARR (timeout 10 min, sem buffer, Host não preservado)'
 $proxy = 'system.webServer/proxy'
@@ -178,8 +180,10 @@ $lido = $null
 if (Test-Path $webConfig) { try { $lido = [xml](Get-Content $webConfig -Raw) } catch { } }
 Validar ($null -ne $lido) 'web.config é XML válido' 'o web.config não é XML válido'
 Validar (-not $WhatIfPreference -and $lido.OuterXml.Contains($Segredo) -and $lido.OuterXml.Contains("localhost:$Porta/")) 'segredo e porta iguais aos do Iniciar-Flow.cmd' 'segredo ou porta em falta no web.config'
-Validar ((Get-Acl $webConfig).Access.Count -eq 3) 'web.config só legível por Administrators, SYSTEM e a conta de serviço' 'permissões do web.config inesperadas'
-Validar ((Get-WebConfigurationProperty -PSPath "IIS:\Sites\$Site" -Filter 'system.webServer/rewrite/rules/rule' -Name name) -eq 'Flow') 'o IIS lê a regra "Flow"' 'o IIS não lê a regra do web.config (URL Rewrite instalado?)'
+if (-not $WhatIfPreference) {   # em -WhatIf o web.config e o site não existem
+    Validar ((Get-Acl $webConfig).Access.Count -eq 3) 'web.config só legível por Administrators, SYSTEM e a conta de serviço' 'permissões do web.config inesperadas'
+    Validar ((Get-WebConfigurationProperty -PSPath "IIS:\Sites\$Site" -Filter 'system.webServer/rewrite/rules/rule' -Name name) -eq 'Flow') 'o IIS lê a regra "Flow"' 'o IIS não lê a regra do web.config (URL Rewrite instalado?)'
+}
 
 Passo 'Arrancar pool e site'
 if ((Get-WebAppPoolState $Site).Value -ne 'Started') { Start-WebAppPool $Site }

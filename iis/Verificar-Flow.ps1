@@ -26,7 +26,8 @@ Teste 'segredo lido do Iniciar-Flow.cmd' ($segredo.Length -ge 32) 'preencha-o (I
 
 $ouve = @(Get-NetTCPConnection -LocalPort $Porta -State Listen -ErrorAction SilentlyContinue)
 Teste "o agente ouve na porta $Porta" ($ouve.Count -gt 0) 'a tarefa "Flow (agente)" está a correr? Veja flow.log'
-Teste "a porta $Porta só em loopback" (@($ouve | Where-Object { $_.LocalAddress -notin '127.0.0.1', '::1' }).Count -eq 0) 'VENDAS_ENDERECO tem de ser http://localhost'
+# O HttpListener usa o HTTP.sys, que reserva a porta em 0.0.0.0 mas só responde a pedidos para localhost: não é falha. O que protege é a firewall.
+if (@($ouve | Where-Object { $_.LocalAddress -notin '127.0.0.1', '::1' }).Count -gt 0) { Write-Host "AVISO  a porta $Porta aparece em todas as interfaces (HTTP.sys): normal. Confirme que a firewall não tem regra de entrada para ela e que de outro PC não liga." -ForegroundColor Yellow }
 
 $r = Pedir "http://localhost:$Porta/"
 Teste '1  agente sem cabeçalhos de identidade -> 403' ($r.Estado -eq 403) "recebeu $($r.Estado)"
