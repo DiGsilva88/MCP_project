@@ -46,6 +46,7 @@ public class PoliticasSegurancaTests
     [InlineData("consultar_documento", true)]
     [InlineData("consultar_briefing", true)]   // faturas por pagar e artigos de um cliente: só o painel, nunca o modelo
     [InlineData("consultar_atrasos", true)]    // faturas em atraso de todos os clientes (alertas personalizados)
+    [InlineData("consultar_indicadores_mes", true)] // cartão "Mês selecionado": só o painel
     [InlineData("consultar_vendas", false)]
     public void SoDoPainel_SoAsDeJson(string ferramenta, bool esperado) =>
         Assert.Equal(esperado, PoliticasSeguranca.SoDoPainel(ferramenta));

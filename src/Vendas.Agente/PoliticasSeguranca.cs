@@ -205,7 +205,7 @@ public static class PoliticasSeguranca
         foreach (var nome in ArgumentosSoDoPainel) argumentos.Remove(nome);
     }
 
-    public static bool SoDoPainel(string ferramenta) => ferramenta is "consultar_documentos" or "consultar_carteira" or "consultar_creditos" or "consultar_documento" or "consultar_briefing" or "consultar_atrasos";
+    public static bool SoDoPainel(string ferramenta) => ferramenta is "consultar_documentos" or "consultar_carteira" or "consultar_creditos" or "consultar_documento" or "consultar_briefing" or "consultar_atrasos" or "consultar_indicadores_mes";
 
     // O McpClientTool devolve o CallToolResult serializado; o texto está em content[].text.
     public static string TextoDoResultado(object? resultado) =>

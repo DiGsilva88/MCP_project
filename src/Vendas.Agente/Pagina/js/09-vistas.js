@@ -62,18 +62,18 @@
     const melhor = (itens, f = i => i.delta) => itens.filter(i => f(i) != null).sort((a, b) => f(b) - f(a));
 
     /* ---------- Resumo das vendas ---------- */
-    function mesPorOmissao(ms) {
-      const i = ms.findLastIndex(x => x.atual != null && !x.parcial);
-      return i >= 0 ? i : ms.findLastIndex(x => x.atual != null);
-    }
-    function faixaMes(s, i) {
+    // Cartão "Mês selecionado": os 4 indicadores do mês, do servidor (/api/mes), com os filtros do painel
+    function cartaoMes(s, i) {
       const x = s.meses[i];
       if (!x) return '';
-      const nome = `${MESES[x.m - 1]} ${x.a}`, ultima = fmt.lerData(app.dados.ate);
-      const outro = x.parcial ? `Só até dia ${ultima && ultima.m === x.m && ultima.a === x.a ? ultima.d : '…'}. Comparar quando o mês fechar.`
-        : s.anoAnt && x.anterior != null ? `${esc(s.anoAnt)}: ${fmt.eur(x.anterior)} · ${variacaoHtml(x.delta)}` : '';
-      return `<div class="sel-mes" aria-live="polite"><span class="sel-mes-t">${esc(nome)}</span><span class="sel-mes-v">${fmt.eur(x.atual)}</span><span class="sel-mes-o">${outro}</span>
-        <button type="button" class="btn btn-pri" data-perguntar="Como correram as vendas em ${MESES[x.m - 1].toLowerCase()} de ${x.a}${s.anoAnt ? ` face a ${MESES[x.m - 1].toLowerCase()} de ${esc(s.anoAnt)}` : ''}?">${ic('flow')}Perguntar ao Flow sobre ${MESES[x.m - 1].toLowerCase()}</button></div>`;
+      const nome = MESES[x.m - 1], reg = indicadoresMes.get(chaveMes(x.a, x.m));
+      const espera = () => indicadores([['Faturação'], ['Documentos'], ['Valor médio'], ['Clientes ativos']].map(([rotulo]) => ({ valor: '0', rotulo, nota: 'x' }))).replace(/class="k"/g, 'class="k k-espera"').replace('class="kpis"', 'class="mes-grelha" aria-busy="true"');
+      const corpo = !reg || reg.estado === 'a-carregar' ? espera()
+        : reg.estado === 'erro' ? '<div class="mes-erro" role="alert"><p>Não foi possível carregar os dados deste mês.</p><button type="button" class="btn" data-repetir-mes>Tentar outra vez</button></div>'
+        : indicadores(blocosMes(reg.dados, x.parcial || reg.dados.incompleto)).replace('class="kpis"', 'class="mes-grelha"');
+      return `<section class="painel mes-cartao" aria-labelledby="mes-t"><span class="mes-rotulo">Mês selecionado</span><h2 id="mes-t" aria-live="polite">${esc(nome)} ${x.a}</h2>${corpo}
+        <p class="mes-ajuda">Clique noutro mês do gráfico para ver os indicadores desse mês.</p>
+        <button type="button" class="btn btn-pri" data-perguntar="Como correu ${nome.toLowerCase()} de ${x.a}?">${ic('flow')}Perguntar ao Flow sobre ${nome.toLowerCase()}</button></section>`;
     }
     function vistaResumo() {
       const sub = `${ola()}${primeiroNome() ? ', ' + primeiroNome() : ''}.`;
@@ -88,8 +88,8 @@
       if (s && s.meses.length > 1) {
         if (app.mes == null || !s.meses[app.mes] || s.meses[app.mes].atual == null) app.mes = mesPorOmissao(s.meses);
         const parcial = s.meses.find(x => x.parcial);
-        html += painel({ titulo: 'Vendas por mês', extra: `<div class="legenda"><span><i></i>${s.anoAtual}</span>${s.anoAnt ? `<span><i class="ant"></i>${esc(s.anoAnt)}</span>` : ''}${parcial ? `<span><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>${MESES[parcial.m - 1]}, parcial</span>` : ''}</div>`,
-          corpo: graficoMeses({ meses: s.meses, sel: app.mes, ultimaData: D.ate }) + faixaMes(s, app.mes) });
+        html += '<div class="mes-linha">' + painel({ titulo: 'Vendas por mês', extra: `<div class="legenda"><span><i></i>${s.anoAtual}</span>${s.anoAnt ? `<span><i class="ant"></i>${esc(s.anoAnt)}</span>` : ''}${parcial ? `<span><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>${MESES[parcial.m - 1].slice(0, 3)}., parcial</span>` : ''}</div>`,
+          corpo: graficoMeses({ meses: s.meses, sel: app.mes, ultimaData: D.ate, W: 640, H: 270 }) }) + cartaoMes(s, app.mes) + '</div>';
       }
       const top = (D.clientes || []).slice(0, 4), alertas = alertasAtivos(D);
       html += `<div class="dois">${painel({ titulo: 'Principais clientes', extra: '<button type="button" class="ligacao" data-ir="clientes">Ver todos</button>',
@@ -179,7 +179,7 @@
 
     /* ---------- Faturação ---------- */
     function vistaFaturacao() {
-      const sub = `Documentos emitidos${emAno()}. Clique num documento para o pré-visualizar.`;
+      const sub = `Documentos emitidos${emAno()}. Clique num documento para ver os seus artigos.`;
       const espera = semDados('Faturação', sub);
       if (espera) return espera;
       const D = app.dados, K = D.kpis, f = D.faturacao, ultimo = D.ultimosDocs?.[0];
@@ -192,9 +192,10 @@
         colunas: [{ t: 'Tipo' }, { t: 'Documentos', dir: true }, { t: 'Faturação', dir: true }, { t: 'Peso na faturação', largura: '36%' }],
         linhas: D.tiposDoc.map(t => ({ c: [esc(t.nome), fmt.inteiro(t.docs), fmt.eur(t.valor), barra(Math.abs(t.valor) / Math.max(1, f.bruto) * 100, t.valor < 0)] })) }) });
       if (D.ultimosDocs) html += painel({ titulo: 'Últimos documentos', extra: ultimo ? `<span class="painel-nota">Até ${esc(fmt.dataLonga(ultimo.data))}.</span>` : '', corpo: tabela({
-        colunas: [{ t: 'Data' }, { t: 'Documento' }, { t: 'Cliente' }, { t: 'Valor', dir: true }],
-        linhas: D.ultimosDocs.map(d => ({ attrs: `data-doc="${esc(docId(d.documento))}"`, rotulo: `Pré-visualizar ${d.documento}`,
-          c: [esc(fmt.dataCurta(d.data)), `<span class="num">${esc(d.documento)}</span>${/^[NC]$/.test(d.tipo) ? ' <span class="tag tag-preta">Crédito</span>' : ''}`, esc(nomeProprio(d.cliente)), fmt.eur2(d.total)] })) }) });
+        colunas: [{ t: 'Data' }, { t: 'Documento' }, { t: 'Cliente' }, { t: 'Valor', dir: true }, { t: '', oculto: 'Artigos' }],
+        linhas: D.ultimosDocs.map(d => ({ attrs: `data-doc="${esc(docId(d.documento))}"`, rotulo: `Ver os artigos do documento ${d.documento}`,
+          c: [esc(fmt.dataCurta(d.data)), `<span class="num">${esc(d.documento)}</span>${/^[NC]$/.test(d.tipo) ? ' <span class="tag tag-preta">Crédito</span>' : ''}`, esc(nomeProprio(d.cliente)), fmt.eur2(d.total),
+            `<button type="button" class="ligacao" data-doc="${esc(docId(d.documento))}" aria-label="Ver os artigos do documento ${esc(d.documento)} de ${esc(nomeProprio(d.cliente))}">Ver mais</button>`] })) }) });
       return html;
     }
     /* ---------- Artigos ---------- */
@@ -254,6 +255,22 @@
 
     /* ---------- Previsões ---------- */
     const CENARIOS = [['conservadora', 'Conservadora'], ['provavel', 'Provável'], ['otimista', 'Otimista']];
+    // Cartão "Mês em curso" das Previsões: quanto do mês previsto já está faturado e se o ritmo chega. Só existe quando o mês incompleto
+    // é o primeiro mês previsto. Conta dias de calendário até à última venda (não há dias úteis nos dados).
+    function cartaoMesEmCurso(D, alvo, previsto) {
+      const m = D.serie?.meses.find(x => x.parcial && x.atual != null);
+      if (!m || alvo.a !== m.a || alvo.m !== m.m || !(previsto > 0)) return '';
+      const u = fmt.lerData(D.ate), dia = u && u.a === m.a && u.m === m.m ? u.d : null, dias = new Date(m.a, m.m, 0).getDate(), nome = MESES[m.m - 1];
+      const linha = (rotulo, texto, pct) => `<div class="mes-prog"><div class="mes-prog-l"><span>${rotulo}</span><b class="num">${texto}</b></div>${barra(pct)}</div>`;
+      const blocos = dia ? [
+        { valor: fmt.eur(m.atual / dia * dias), rotulo: 'Fecho ao ritmo atual', nota: `${variacaoHtml((m.atual / dia * dias - previsto) / previsto * 100)} face ao previsto` },
+        ...(dia < dias ? [{ valor: fmt.eur((previsto - m.atual) / (dias - dia)), rotulo: 'Por dia para cumprir', nota: `Até agora: ${fmt.eur(m.atual / dia)} por dia` }] : [])] : [];
+      return `<section class="painel mes-cartao" aria-labelledby="mes-t"><span class="mes-rotulo">Mês em curso</span><h2 id="mes-t">${esc(nome)} ${m.a}</h2>
+        <div class="mes-progs">${linha('Faturado', `${fmt.eur(m.atual)} de ${fmt.eur(previsto)}`, m.atual / previsto * 100)}${dia ? linha('Dias decorridos', `${dia} de ${dias}`, dia / dias * 100) : ''}</div>
+        ${blocos.length ? indicadores(blocos).replace('class="kpis"', 'class="mes-grelha"') : ''}
+        ${dia && dia < dias ? `<p class="mes-ajuda">Ainda só passaram ${dia} dias de ${dias}: o ritmo pode mudar bastante.</p>` : '<p class="mes-ajuda"></p>'}
+        <button type="button" class="btn btn-pri" data-perguntar="${esc(nome)} vai cumprir a previsão?">${ic('flow')}Perguntar ao Flow sobre ${nome.toLowerCase()}</button></section>`;
+    }
     function vistaPrevisoes() {
       const sub = 'Estimativa para os próximos 3 meses, a partir da tendência dos últimos 6 meses completos.';
       const o = { periodo: true, extra: seg(CENARIOS, app.cenario, 'data-cenario', 'Cenário') };
@@ -262,16 +279,16 @@
       const D = app.dados, P = D.previsao;
       if (!P) return cabecalho('Previsões', sub, o) + `<p class="estado" role="status">${esc(D.semPrevisao)}</p>`;
       const fut = P.futuros, v = f => f[app.cenario], soma = fut.reduce((s, f) => s + v(f), 0), ult = P.reais.at(-1);
-      const top = fut.reduce((a, b) => v(b) > v(a) ? b : a);
+      const top = fut.reduce((a, b) => v(b) > v(a) ? b : a), emCurso = cartaoMesEmCurso(D, fut[0], v(fut[0]));
       return cabecalho('Previsões', sub, o) + indicadores([
         { valor: fmt.eur(soma), rotulo: 'Previsão para os próximos 3 meses', nota: `Entre ${fmt.eur(fut.reduce((s, f) => s + f.conservadora, 0))} e ${fmt.eur(fut.reduce((s, f) => s + f.otimista, 0))}` },
         { valor: fmt.eur(v(fut[0])), rotulo: `${MESES[fut[0].m - 1]} previsto`, nota: `Entre ${fmt.eur(fut[0].conservadora)} e ${fmt.eur(fut[0].otimista)}` },
         { valor: fmt.eur(ult.atual), rotulo: 'Último mês completo', nota: `${MESES[ult.m - 1]} ${ult.a}` },
         { valor: MESES[top.m - 1], rotulo: 'Melhor mês previsto', nota: fmt.eur(v(top)), nome: true }]) +
-        painel({ titulo: 'Vendas e previsão por mês', extra: `<div class="legenda"><span><i></i>Real</span><span><i class="prev"></i>Previsão (${esc(CENARIOS.find(c => c[0] === app.cenario)[1].toLowerCase())})</span><span><i class="banda"></i>Intervalo provável</span>${P.reais.some(x => x.anterior != null) ? `<span><i class="ant"></i>${esc(D.anoAnt)}</span>` : ''}</div>`,
-          corpo: graficoMeses({ meses: P.reais.map(x => ({ ...x, parcial: false })), interativo: false, rotulo: 'Vendas e previsão por mês',
+        (emCurso ? '<div class="mes-linha">' : '') + painel({ titulo: 'Vendas e previsão por mês', extra: `<div class="legenda"><span><i></i>Real</span><span><i class="prev"></i>Previsão (${esc(CENARIOS.find(c => c[0] === app.cenario)[1].toLowerCase())})</span><span><i class="banda"></i>Intervalo provável</span>${P.reais.some(x => x.anterior != null) ? `<span><i class="ant"></i>${esc(D.anoAnt)}</span>` : ''}</div>`,
+          corpo: graficoMeses({ meses: P.reais.map(x => ({ ...x, parcial: false })), interativo: false, W: emCurso ? 640 : 900, H: emCurso ? 270 : 250, rotulo: 'Vendas e previsão por mês',
             previsao: { valores: fut.map(v), banda: fut.map(f => [f.conservadora, f.otimista]), meses: fut.map(f => f.m) } }) +
-            '<div class="sel-mes"><span class="sel-mes-o">A área azul clara é o intervalo provável. A previsão atualiza quando o mês em curso fechar.</span></div>' });
+            '<div class="sel-mes"><span class="sel-mes-o">A área azul clara é o intervalo provável. A previsão atualiza quando o mês em curso fechar.</span></div>' }) + emCurso + (emCurso ? '</div>' : '');
     }
 
     /* ---------- Guardados ---------- */

@@ -189,6 +189,17 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
             leitor.GetInt32(3), Data(leitor, 4), leitor.GetDecimal(5)), cancellationToken);
     }
 
+    public async Task<IndicadoresMes> IndicadoresMesAsync(
+        DateOnly desde, DateOnly ate, DateOnly desdeAnt, DateOnly ateAnt, string? cliente = null,
+        IReadOnlyDictionary<Campo, string>? filtros = null, CancellationToken cancellationToken = default)
+    {
+        var (sql, parametros) = ConsultaVendas.IndicadoresMes(desde, ate, desdeAnt, ateAnt, cliente, filtros);
+        var linhas = await LerAsync(sql, parametros, 2,
+            leitor => (Periodo: leitor.GetInt32(0), Valor: new IndicadoresPeriodo(leitor.GetDecimal(1), leitor.GetInt32(2), leitor.GetInt32(3))), cancellationToken);
+        IndicadoresPeriodo De(int periodo) => linhas.FirstOrDefault(l => l.Periodo == periodo).Valor ?? new(0, 0, 0);
+        return new IndicadoresMes(De(1), De(2));
+    }
+
     public async Task<DateOnly?> UltimaVendaAsync(CancellationToken cancellationToken = default)
     {
         var (sql, parametros) = ConsultaVendas.UltimaVenda();
@@ -198,6 +209,10 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     // DataDoc pode ser date ou datetime na view: Convert aceita os dois.
     private static DateOnly? Data(SqlDataReader leitor, int i)
         => leitor.IsDBNull(i) ? null : DateOnly.FromDateTime(Convert.ToDateTime(leitor.GetValue(i), CultureInfo.InvariantCulture));
+
+    // 120 s e não os 30 s por omissão: com a máquina ocupada as consultas do resumo passavam os 30 s e o painel inteiro falhava.
+    // shortcut: valor único para todas as consultas; tornar configurável se alguma vier a precisar de mais.
+    internal static SqlCommand NovoComando(string sql, SqlConnection ligacaoSql) => new(sql, ligacaoSql) { CommandTimeout = 120 };
 
     // Faz o trabalho repetitivo, igual em todas as consultas.
     // "await using" fecha a ligação sozinha, mesmo que haja erro.
@@ -209,7 +224,7 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         CancellationToken cancellationToken)
     {
         await using var ligacaoSql = new SqlConnection(ligacao);
-        await using var cmd = new SqlCommand(sql, ligacaoSql);
+        await using var cmd = NovoComando(sql, ligacaoSql);
         parametros(cmd.Parameters);
         cmd.Parameters.Add("@limite", SqlDbType.Int).Value = limite;
 

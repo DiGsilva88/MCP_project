@@ -185,6 +185,52 @@ public class ApiPainelTests
     }
 
     [Fact]
+    public async Task Mes_PassaAnoMesEFiltrosEODevolveOJson()
+    {
+        var t = new Tools("""{"ano":2026,"mes":8}""");
+
+        var r = await t.Api().TratarAsync("/api/mes", Q(("ano", "2026"), ("mes", "8"), ("zona", "Braga"), ("tipodoc", "F"), ("cliente", "1001")), Ana);
+
+        Assert.Equal(200, r.Estado);
+        var (nome, args) = t.Chamadas.Single();
+        Assert.Equal("consultar_indicadores_mes", nome);
+        Assert.Equal((2026, 8, "1001", "Ana"), ((int)args["ano"]!, (int)args["mes"]!, (string)args["cliente"]!, (string)args["vendedor"]!));
+        Assert.Equal(["Braga"], (string[])args["zonas"]!);
+        Assert.Equal(["F"], (string[])args["tiposDoc"]!);
+    }
+
+    [Fact]
+    public async Task Mes_DatasDoPainelViramDataInicioEDataFim()
+    {
+        var t = new Tools("{}");
+
+        await t.Api().TratarAsync("/api/mes", Q(("ano", "2026"), ("mes", "8"), ("de", "01-08-2026"), ("ate", "15-08-2026")), Todos);
+
+        Assert.Equal(("01-08-2026", "15-08-2026"), ((string)t.Chamadas[0].Args["dataInicio"]!, (string)t.Chamadas[0].Args["dataFim"]!));
+        Assert.False(t.Chamadas[0].Args.ContainsKey("vendedor")); // o vendedor só vem do perfil
+    }
+
+    [Theory]
+    [InlineData("x", "8")]
+    [InlineData("2026", "13")]
+    [InlineData("1999", "8")]
+    public async Task Mes_PedidoInvalido_400SemIrAFerramenta(string ano, string mes)
+    {
+        var t = new Tools("{}");
+
+        Assert.Equal(400, (await t.Api().TratarAsync("/api/mes", Q(("ano", ano), ("mes", mes)), Todos)).Estado);
+        Assert.Empty(t.Chamadas);
+    }
+
+    [Fact]
+    public async Task Mes_ErroDaFerramenta_502()
+    {
+        var t = new Tools("ano tem de ser de 2000 a 2026.");
+
+        Assert.Equal(502, (await t.Api().TratarAsync("/api/mes", Q(("ano", "2026"), ("mes", "8")), Todos)).Estado);
+    }
+
+    [Fact]
     public async Task Atrasos_PerfilGeral_PassaOsDiasEDevolveOJson()
     {
         var t = new Tools("""{"dias":60,"documentos":0,"total":0,"truncado":false,"itens":[]}""");

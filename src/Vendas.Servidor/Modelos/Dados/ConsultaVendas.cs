@@ -507,6 +507,31 @@ internal static class ConsultaVendas
         });
     }
 
+    // Um só varrimento para os dois períodos. Periodo 1 = atual, 2 = anterior; só a Faturação soma, o resto conta distintos.
+    public static (string Sql, Action<SqlParameterCollection> Parametros) IndicadoresMes(
+        DateOnly desde, DateOnly ate, DateOnly desdeAnt, DateOnly ateAnt, string? cliente, IReadOnlyDictionary<Campo, string>? filtros)
+    {
+        var (ficha, aplicarFicha) = FiltroFicha(filtros);
+        var sql = $"""
+            SELECT p.Periodo,
+                   COALESCE(SUM([ValorLiquido]), 0) AS Valor,
+                   COUNT(DISTINCT [DocumentoID])    AS Documentos,
+                   COUNT(DISTINCT [ClienteID])      AS Clientes
+            FROM   {Vendas}
+            CROSS APPLY (SELECT CASE WHEN [DataDoc] >= @desde AND [DataDoc] < @ate THEN 1
+                                     WHEN [DataDoc] >= @desdeAnt AND [DataDoc] < @ateAnt THEN 2 END AS Periodo) AS p
+            WHERE  p.Periodo IS NOT NULL {FiltroCliente(cliente)} {ficha}
+            GROUP BY p.Periodo;
+            """;
+        return (sql, p =>
+        {
+            Preencher(p, desde, ate, cliente);
+            p.Add("@desdeAnt", SqlDbType.Date).Value = desdeAnt.ToDateTime(TimeOnly.MinValue);
+            p.Add("@ateAnt", SqlDbType.Date).Value = ateAnt.ToDateTime(TimeOnly.MinValue);
+            aplicarFicha(p);
+        });
+    }
+
     public static (string Sql, Action<SqlParameterCollection> Parametros) UltimaVenda() =>
         ($"SELECT MAX([DataDoc]) FROM {Vendas};", _ => { }
     );

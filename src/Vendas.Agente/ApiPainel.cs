@@ -113,6 +113,7 @@ public sealed class ApiPainel(
                 ["api", "clientes", var id] => await ClienteAsync(Uri.UnescapeDataString(id), perfil, ct),
                 ["api", "clientes", var id, "briefing"] => await BriefingAsync(Uri.UnescapeDataString(id), perfil, ct),
                 ["api", "atrasos"] => await AtrasosAsync(q, perfil, ct),
+                ["api", "mes"] => await MesAsync(q, perfil, ct),
                 _ => Mensagem(404, "Rota inexistente."),
             };
         }
@@ -163,6 +164,22 @@ public sealed class ApiPainel(
         if (!texto.StartsWith('{')) return Indisponivel;
         auditar(perfil, documento); // só o que foi mesmo aberto
         return new(200, texto);
+    }
+
+    // Cartão "Mês selecionado": os 4 indicadores do mês e do mesmo mês do ano anterior, com os filtros do painel (consultar_indicadores_mes).
+    // Sem estado no servidor: o mês escolhido vive na página de cada utilizador.
+    private async Task<RespostaApi> MesAsync(NameValueCollection q, Perfil perfil, CancellationToken ct)
+    {
+        if (!int.TryParse(q["ano"], out var ano) || !int.TryParse(q["mes"], out var mes) || mes is < 1 or > 12 || ano is < 2000 or > 2100) return PedidoInvalido;
+        if (FiltrosPainel.Ler(q, DateOnly.FromDateTime(DateTime.Today)) is not { } f) return PedidoInvalido;
+
+        var argumentos = new Dictionary<string, object?> { ["ano"] = ano, ["mes"] = mes };
+        if (f.De is not null) (argumentos["dataInicio"], argumentos["dataFim"]) = (f.De, f.Ate);
+        f.Aplicar(argumentos);
+        if (perfil.Vendedor is { } vendedor) argumentos["vendedor"] = vendedor;
+
+        var texto = await ferramenta("consultar_indicadores_mes", argumentos, ct);
+        return texto.StartsWith('{') ? new(200, texto) : Indisponivel;
     }
 
     // Faturas vencidas há mais de N dias (alerta personalizado "Fatura em atraso"). As faturas por pagar não trazem o vendedor do cliente:

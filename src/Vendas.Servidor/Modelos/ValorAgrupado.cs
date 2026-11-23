@@ -26,6 +26,10 @@ public sealed record ResumoDocumentos(
     IReadOnlyList<DocumentosPorTipo> Tipos, IReadOnlyList<DocumentosPorMes> Meses, IReadOnlyList<DocumentoEmitido> Ultimos,
     IReadOnlyList<DocumentoEmitido> Creditos);
 
+// Cartão "Mês selecionado" do painel: os mesmos 4 números de um período. Clientes = clientes distintos com pelo menos uma venda.
+public sealed record IndicadoresPeriodo(decimal Faturacao, int Documentos, int Clientes);
+public sealed record IndicadoresMes(IndicadoresPeriodo Atual, IndicadoresPeriodo Anterior);
+
 //lista paginada de notas de crédito e créditos. totalN/totalC contam todos os que cumprem a pesquisa, não só a página
 public sealed record CreditoListado(string DocumentoId, string TipoDocId, DateOnly DataDoc, string ClienteId, string Cliente, decimal Total);
 public sealed record PaginaCreditos(IReadOnlyList<CreditoListado> Itens, int TotalN, int TotalC);

@@ -10,7 +10,8 @@ param(
     [string]$Pasta = 'C:\Flow',                    # onde está o agente
     [string]$Site = 'Flow',
     [int]$Porta = 5080,
-    [ValidatePattern('^[0-9a-f]{32,}$')][string]$Segredo   # omitido: reaproveita o do web.config ou gera um
+    [ValidatePattern('^[0-9a-f]{32,}$')][string]$Segredo,  # omitido: reaproveita o do web.config ou gera um
+    [switch]$LinkAssinado                                  # demonstração: o Visual autentica e assina o link; IIS em Anónima (sem Kerberos/SPN)
 )
 $ErrorActionPreference = 'Stop'
 $apphost = 'MACHINE/WEBROOT/APPHOST'
@@ -78,12 +79,17 @@ $webConfig = Join-Path $raiz 'web.config'
 if (-not $Segredo -and (Test-Path $webConfig)) {
     $Segredo = [regex]::Match((Get-Content $webConfig -Raw), 'HTTP_X_PROXY_SECRET" value="([0-9a-f]{32,})"').Groups[1].Value
 }
-if (-not $Segredo) {
+function NovoSegredo {
     $bytes = New-Object byte[] 32
     [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
-    $Segredo = ($bytes | ForEach-Object { $_.ToString('x2') }) -join ''
+    ($bytes | ForEach-Object { $_.ToString('x2') }) -join ''
 }
+if (-not $Segredo) { $Segredo = NovoSegredo }
 $cmd = Join-Path $Pasta 'Iniciar-Flow.cmd'
+if ($LinkAssinado) {   # reaproveita o segredo do link já gravado (o Visual já o tem)
+    $SegredoLink = if (Test-Path $cmd) { [regex]::Match((Get-Content $cmd -Raw), 'VENDAS_LINK_SEGREDO=([0-9a-f]{32,})').Groups[1].Value }
+    if (-not $SegredoLink) { $SegredoLink = NovoSegredo }
+}
 if (-not (Test-Path $cmd)) { Copy-Item (Join-Path $PSScriptRoot 'Iniciar-Flow.cmd') $cmd }
 $resumo = Join-Path $Pasta 'Enviar-Resumo.cmd'   # sem segredo: lê o VENDAS_SQL do Iniciar-Flow.cmd
 if (-not (Test-Path $resumo)) { Copy-Item (Join-Path $PSScriptRoot 'Enviar-Resumo.cmd') $resumo }
@@ -91,12 +97,16 @@ if (-not $WhatIfPreference) {
     $texto = (Get-Content $cmd -Raw) -replace '(?m)^set VENDAS_PROXY_SEGREDO=.*$', "set VENDAS_PROXY_SEGREDO=$Segredo" `
         -replace '(?m)^set VENDAS_ENDERECO_PUBLICO=.*$', "set VENDAS_ENDERECO_PUBLICO=https://$Nome/" `
         -replace '(?m)^set VENDAS_ENDERECO=.*$', "set VENDAS_ENDERECO=http://localhost:$Porta/"
+    if ($LinkAssinado) { $texto = $texto -replace '(?m)^set VENDAS_LINK_SEGREDO=.*$', "set VENDAS_LINK_SEGREDO=$SegredoLink" }
     Set-Content $cmd $texto -Encoding ASCII -NoNewline
     Restringir $cmd
     if ($texto -match 'VENDAS_SQL=PREENCHER') { Write-Warning "Edite $cmd e preencha a linha VENDAS_SQL (o segredo e o endereço já estão certos)." }
 }
-Validar ((Get-Content $cmd -Raw).Contains("VENDAS_PROXY_SEGREDO=$Segredo")) 'segredo gravado no Iniciar-Flow.cmd' 'o segredo não ficou no Iniciar-Flow.cmd'
-Validar ((Get-Acl $cmd).Access.Count -eq 3) 'Iniciar-Flow.cmd só legível por Administrators, SYSTEM e a conta de serviço' 'permissões do Iniciar-Flow.cmd inesperadas'
+if (-not $WhatIfPreference) {   # em -WhatIf o ficheiro não foi copiado: não há nada para ler
+    Validar ((Get-Content $cmd -Raw).Contains("VENDAS_PROXY_SEGREDO=$Segredo")) 'segredo gravado no Iniciar-Flow.cmd' 'o segredo não ficou no Iniciar-Flow.cmd'
+    if ($LinkAssinado) { Validar ((Get-Content $cmd -Raw).Contains("VENDAS_LINK_SEGREDO=$SegredoLink")) 'segredo do link gravado no Iniciar-Flow.cmd' 'o segredo do link não ficou no Iniciar-Flow.cmd (o modelo é antigo? falta a linha set VENDAS_LINK_SEGREDO=)' }
+    Validar ((Get-Acl $cmd).Access.Count -eq 3) 'Iniciar-Flow.cmd só legível por Administrators, SYSTEM e a conta de serviço' 'permissões do Iniciar-Flow.cmd inesperadas'
+}
 
 Passo 'Proxy do ARR (timeout 10 min, sem buffer, Host não preservado)'
 $proxy = 'system.webServer/proxy'
@@ -143,8 +153,14 @@ $ligacao = Get-WebBinding -Name $Site -Protocol https
 Validar ($ligacao.bindingInformation -like "*:443:$Nome") "binding https $Nome:443" 'o site não tem o binding https esperado'
 Validar ((Get-Item 'IIS:\SslBindings\0.0.0.0!443').Thumbprint -eq $Thumbprint) 'certificado ligado ao 443' 'o certificado não ficou ligado ao 443'
 
-Passo 'Autenticação: Windows ligada, Anónima desligada (no applicationHost, o web.config não a pode alterar)'
 $auth = 'system.webServer/security/authentication'
+if ($LinkAssinado) {
+    Passo 'Autenticação: Anónima ligada, Windows desligada (quem autentica é o Visual; o agente só aceita links assinados)'
+    Set-WebConfigurationProperty -PSPath $apphost -Location $Site -Filter "$auth/windowsAuthentication" -Name enabled -Value $false
+    Set-WebConfigurationProperty -PSPath $apphost -Location $Site -Filter "$auth/anonymousAuthentication" -Name enabled -Value $true
+    Validar ((Ler "$auth/anonymousAuthentication" enabled $Site) -eq $true) 'Anónima ligada' 'a autenticação anónima não ficou ligada'
+} else {
+Passo 'Autenticação: Windows ligada, Anónima desligada (no applicationHost, o web.config não a pode alterar)'
 Set-WebConfigurationProperty -PSPath $apphost -Location $Site -Filter "$auth/windowsAuthentication" -Name enabled -Value $true
 Set-WebConfigurationProperty -PSPath $apphost -Location $Site -Filter "$auth/windowsAuthentication" -Name useKernelMode -Value $true
 Set-WebConfigurationProperty -PSPath $apphost -Location $Site -Filter "$auth/windowsAuthentication" -Name useAppPoolCredentials -Value $true
@@ -152,6 +168,7 @@ Set-WebConfigurationProperty -PSPath $apphost -Location $Site -Filter "$auth/ano
 Validar ((Ler "$auth/windowsAuthentication" enabled $Site) -eq $true) 'Windows Authentication ligada' 'Windows Authentication não ficou ligada'
 Validar ((Ler "$auth/windowsAuthentication" useAppPoolCredentials $Site) -eq $true) 'modo kernel com credenciais do pool (Kerberos com o SPN na conta do pool)' 'useAppPoolCredentials não ficou ligado'
 Validar ((Ler "$auth/anonymousAuthentication" enabled $Site) -eq $false) 'Anónima desligada' 'a autenticação anónima continua ligada'
+}
 
 Passo 'web.config do site (regra de rewrite e segredo)'
 if (-not $WhatIfPreference) {
@@ -163,8 +180,10 @@ $lido = $null
 if (Test-Path $webConfig) { try { $lido = [xml](Get-Content $webConfig -Raw) } catch { } }
 Validar ($null -ne $lido) 'web.config é XML válido' 'o web.config não é XML válido'
 Validar (-not $WhatIfPreference -and $lido.OuterXml.Contains($Segredo) -and $lido.OuterXml.Contains("localhost:$Porta/")) 'segredo e porta iguais aos do Iniciar-Flow.cmd' 'segredo ou porta em falta no web.config'
-Validar ((Get-Acl $webConfig).Access.Count -eq 3) 'web.config só legível por Administrators, SYSTEM e a conta de serviço' 'permissões do web.config inesperadas'
-Validar ((Get-WebConfigurationProperty -PSPath "IIS:\Sites\$Site" -Filter 'system.webServer/rewrite/rules/rule' -Name name) -eq 'Flow') 'o IIS lê a regra "Flow"' 'o IIS não lê a regra do web.config (URL Rewrite instalado?)'
+if (-not $WhatIfPreference) {   # em -WhatIf o web.config e o site não existem
+    Validar ((Get-Acl $webConfig).Access.Count -eq 3) 'web.config só legível por Administrators, SYSTEM e a conta de serviço' 'permissões do web.config inesperadas'
+    Validar ((Get-WebConfigurationProperty -PSPath "IIS:\Sites\$Site" -Filter 'system.webServer/rewrite/rules/rule' -Name name) -eq 'Flow') 'o IIS lê a regra "Flow"' 'o IIS não lê a regra do web.config (URL Rewrite instalado?)'
+}
 
 Passo 'Arrancar pool e site'
 if ((Get-WebAppPoolState $Site).Value -ne 'Started') { Start-WebAppPool $Site }
@@ -187,6 +206,7 @@ if (-not $WhatIfPreference) {
 }
 
 Write-Host "`nIIS pronto. Faltam (fora deste script):" -ForegroundColor Yellow
-Write-Host "  1. SPN, num controlador de domínio:  setspn -S HTTP/$Nome $ContaPool   e   setspn -X (duplicados)"
+if ($LinkAssinado) { Write-Host "  1. Dar ao Visual o segredo do link (linha VENDAS_LINK_SEGREDO de $cmd); não há SPN. Ver docs\IIS.md secção 11." }
+else { Write-Host "  1. SPN, num controlador de domínio:  setspn -S HTTP/$Nome $ContaPool   e   setspn -X (duplicados)" }
 Write-Host "  2. Tarefa agendada 'Flow (agente)' com $cmd (docs\IIS.md passo 3), e perfis.json."
 Write-Host "  3. Firewall: a porta $Porta não pode estar aberta. Depois: .\Verificar-Flow.ps1 -Nome $Nome -Login <DOMINIO\utilizador>"

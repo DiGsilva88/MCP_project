@@ -128,7 +128,8 @@
       else if (d.perguntar) perguntarFlow(d.perguntar);
       else if (d.cliente) abrirBriefing(d.cliente, d.nome);
       else if (d.doc) abrirDocumento(d.doc);
-      else if (d.mes) { app.mes = +d.mes; redesenhar(); principal.querySelector('[data-grafico]')?.focus({ preventScroll: true }); }
+      else if (d.mes) { app.mes = +d.mes; carregarMes(); redesenhar(); }
+      else if ('repetirMes' in d) { carregarMes(); redesenhar(); }
       else if (d.abaAlertas) { app.alertaAba = d.abaAlertas; redesenhar(); principal.querySelector(`[data-aba-alertas="${d.abaAlertas}"]`)?.focus(); }
       else if (d.filtroAlertas) { app.alertaFiltro = d.filtroAlertas; redesenhar(); }
       else if (d.novoAlerta) abrirCriarAlerta({ tipo: d.novoAlerta });
@@ -152,9 +153,11 @@
       const linha = e.target.closest('tr.clicavel');
       if (linha && e.target === linha && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); linha.click(); return; }
       // Gráfico: as setas escolhem o mês anterior ou o seguinte
-      if (e.target.matches('[data-grafico]') && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && app.dados?.serie) {
+      if (e.target.matches('[data-mes]') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); return; }
+      if (e.target.closest('[data-grafico]') && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && app.dados?.serie) {
         e.preventDefault();
         app.mes = mesVizinho(app.dados.serie.meses, app.mes, e.key === 'ArrowRight' ? 1 : -1);
+        carregarMes();
         redesenhar();
         principal.querySelector('[data-grafico]').focus({ preventScroll: true });
       }

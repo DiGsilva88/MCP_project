@@ -51,7 +51,7 @@
       }
       app.aCarregar = false;
       const bom = !!app.dados && !app.dados.erro;
-      if (bom) atualizarUltimos();
+      if (bom) { atualizarUltimos(); prepararMes(); }
       redesenhar();
       if (bom) carregarAtrasos();
     }
@@ -70,6 +70,50 @@
       }
       D.artQtdPedido = false;
       if (app.dados === D) redesenhar();
+    }
+
+    /* ---------- Resumo: o mês selecionado ---------- */
+    // Incompleto: o mês a decorrer, ou aquele onde acabam os dados (a última venda é antes do fim do mês). Só pelo relógio, um mês
+    // que ficou a meio na BD aparecia como completo e o gráfico mostrava uma queda que não existiu.
+    function mesIncompleto(m, a, ate, hoje = new Date()) {
+      if (a === hoje.getFullYear() && m === hoje.getMonth() + 1) return true;
+      const u = fmt.lerData(ate);
+      return !!u && u.a === a && u.m === m && u.d < new Date(a, m, 0).getDate();
+    }
+    // O mês que se abre por omissão: o último completo (se não houver nenhum, o último com vendas)
+    function mesPorOmissao(ms) {
+      const i = ms.findLastIndex(x => x.atual != null && !x.parcial);
+      return i >= 0 ? i : ms.findLastIndex(x => x.atual != null);
+    }
+    // Os 4 blocos do cartão (M = resposta de /api/mes). Mês em curso: sem comparação. Ano anterior a zero ou sem dados: "Sem dados de <ano>".
+    function blocosMes(M, incompleto) {
+      const { atual: a, anterior: p } = M, ano = M.ano - 1;
+      const medio = x => x.documentos > 0 ? x.faturacao / x.documentos : null;
+      const nota = (v, ant) => incompleto ? 'Mês em curso' : v == null ? '' : !(ant > 0) ? `Sem dados de ${ano}` : faceA((v - ant) / ant * 100, ano);
+      return [
+        { valor: fmt.eur(a.faturacao), rotulo: 'Faturação', nota: nota(a.faturacao, p.faturacao) },
+        { valor: fmt.inteiro(a.documentos), rotulo: 'Documentos', nota: nota(a.documentos, p.documentos) },
+        { valor: fmt.eur2(medio(a)), rotulo: 'Valor médio', nota: nota(medio(a), medio(p)) },
+        { valor: fmt.inteiro(a.clientes), rotulo: 'Clientes ativos', nota: nota(a.clientes, p.clientes) }];
+    }
+    // Um pedido ao servidor por mês e filtros (o período Mês/Trimestre/Ano não conta: o cartão é sempre de um mês). Estado só deste browser.
+    const indicadoresMes = new Map();
+    const chaveMes = (a, m) => new URLSearchParams([['ano', a], ['mes', m], ...consultaAtual().filter(([k]) => k !== 'periodo' && k !== 'comparar')]).toString();
+    async function carregarMes() {
+      const x = app.dados?.serie?.meses[app.mes];
+      if (!x) return;
+      const chave = chaveMes(x.a, x.m);
+      if (['ok', 'a-carregar'].includes(indicadoresMes.get(chave)?.estado)) return;
+      indicadoresMes.set(chave, { estado: 'a-carregar' });
+      try { indicadoresMes.set(chave, { estado: 'ok', dados: await pedirJson('/api/mes?' + chave) }); }
+      catch (e) { console.error('Falha a carregar os indicadores do mês:', e); indicadoresMes.set(chave, { estado: 'erro' }); }
+      if (app.separador === 'resumo' && !app.resposta) redesenhar();
+    }
+    function prepararMes() {
+      const ms = app.dados?.serie?.meses;
+      if (!ms || ms.length < 2) return;
+      if (app.mes == null || !ms[app.mes] || ms[app.mes].atual == null) app.mes = mesPorOmissao(ms);
+      carregarMes();
     }
 
     // Fonte única dos números da Faturação: N corrige F e C corrige V (já vêm negativos)
@@ -93,8 +137,6 @@
       const rm = lerLista(textoMeses), serie = lerSerie(rm), meses = serie ? serie.meses : [];
       const anoAnt = (facto(rm, /^comparado com/i)[0].match(/(\d{4})$/) || [])[1] || null;
       const total = num(rm.resumo, /total\s+(-?[\d\s.,  ]+?)\s*€/), delta = num(facto(rm, /^comparado com/i)[1], /\(([+\-−]?[\d,]+)%\)/);
-      const agora = x => x.a === hoje.getFullYear() && x.m === hoje.getMonth() + 1;
-      meses.forEach(x => { if (x.atual != null && agora(x)) x.parcial = true; });
       const rc = j.clientes ? lerLista(j.clientes) : null, ativos = rc ? num(rc.resumo, /em\s+([\d\s  ]+?)\s+clientes/) : null;
       const positivos = texto => lerLista(texto || '').itens.filter(i => i.num > 0);
       const umAnoAntes = r => r ? facto(r, /^um ano antes/i)[1] : '';
@@ -102,6 +144,9 @@
       let docs = null, carteira = null;
       try { docs = JSON.parse(j.documentos || 'null'); } catch { }
       try { carteira = JSON.parse(j.carteira || 'null'); } catch { }
+      // "Dados até": a última venda registada na BD (consultar_documentos); nunca a data de hoje
+      const ate = (docs && docs.ultimaVenda) || (textoMeses.match(/[uú]ltima venda registada[^\d]*(\d{2}-\d{2}-\d{4})/) || [])[1] || '';
+      meses.forEach(x => { if (x.atual != null && mesIncompleto(x.m, x.a, ate, hoje)) x.parcial = true; });
       const fichaCarteira = new Map((carteira ? carteira.clientes : []).map(c => [String(c.id).trim(), c]));
 
       const kpis = {
@@ -148,8 +193,7 @@
 
       return {
         serie, anoAnt, total, kpis, previsao, semPrevisao, alertas, parados,
-        // "Dados até": a última venda registada na BD (consultar_documentos); nunca a data de hoje
-        ate: (docs && docs.ultimaVenda) || (textoMeses.match(/[uú]ltima venda registada[^\d]*(\d{2}-\d{2}-\d{4})/) || [])[1] || '',
+        ate,
         cliente: (linha1.match(/cliente "([^"]+)"/) || [])[1] || null,
         datas: (linha1.match(/\((\d{2}-\d{2}-\d{4}) a (\d{2}-\d{2}-\d{4})/) || []).slice(1),
         artigos, artigosTodos, artigosTotal: +((j.artigos || '').match(/Mostro \d+ de (\d+)/) || [])[1] || null,

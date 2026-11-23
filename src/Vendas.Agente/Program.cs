@@ -391,6 +391,19 @@ async Task ModoWebAsync()
         Console.Error.WriteLine("Com VENDAS_PROXY_SEGREDO, VENDAS_ENDERECO tem de ser loopback e VENDAS_ENDERECO_PUBLICO tem de começar por https://. O painel não arrancou.");
         return;
     }
+    // Demonstração: o Visual autentica e abre /?u=&e=&s= (IIS em Anónima); o agente troca o link por um cookie de sessão.
+    // Substitui a identidade do IIS: com isto ligado o cabeçalho X-Remote-User é ignorado (o IIS não o limpa se o LOGON_USER vier vazio).
+    var segredoLink = Environment.GetEnvironmentVariable("VENDAS_LINK_SEGREDO");
+    var link = !string.IsNullOrWhiteSpace(segredoLink);
+    if (link && (!proxy || segredoLink!.Length < 32))
+    {
+        Console.Error.WriteLine("VENDAS_LINK_SEGREDO só funciona em modo proxy e tem de ter 32 ou mais caracteres. O painel não arrancou.");
+        return;
+    }
+    // Link de uso único e de 1 minuto: o Visual gera-o no clique; copiado por outra pessoa, só serve se for gasto antes (e então o utilizador vê a falha).
+    var validadeLink = TimeSpan.FromMinutes(1);
+    var linksUsados = new System.Collections.Concurrent.ConcurrentDictionary<string, long>(); // assinatura -> validade
+    var validadeSessao = TimeSpan.FromHours(8);
     var perfis = Perfis.Ler(Path.Combine(pastaDados, "perfis.json"));
     var dono = $"{Environment.UserDomainName}\\{Environment.UserName}";
     const int MaxPergunta = 500;
@@ -436,9 +449,30 @@ async Task ModoWebAsync()
         var (pedido, resposta) = (ctx.Request, ctx.Response);
         try
         {
-            var perfil = Perfis.Resolver(proxy
+            string? login;
+            if (link)
+            {
+                var agora = DateTimeOffset.UtcNow;
+                if (pedido.HttpMethod == "GET" && pedido.Url?.AbsolutePath == "/" && pedido.QueryString["s"] is not null)
+                {
+                    // Link do Visual válido: cookie de sessão e redireciona para / (sem a assinatura no URL). Inválido: cai no 403 abaixo.
+                    foreach (var antigo in linksUsados.Where(l => l.Value < agora.ToUnixTimeSeconds()).Select(l => l.Key)) linksUsados.TryRemove(antigo, out _);
+                    if (Perfis.LoginValido(pedido.QueryString["u"], pedido.QueryString["e"], pedido.QueryString["s"], segredoLink, agora, validadeLink) is { } entrou
+                        && linksUsados.TryAdd(pedido.QueryString["s"]!, long.Parse(pedido.QueryString["e"]!)))   // TryAdd falha à 2.ª utilização
+                    {
+                        Auditar(entrou, $"entrada por link (IP {pedido.Headers["X-Forwarded-For"] ?? pedido.RemoteEndPoint.Address.ToString()})");
+                        resposta.Headers["Set-Cookie"] = $"flow_sessao={Perfis.CriarSessao(entrou, agora + validadeSessao, segredoLink!)}; Path=/; Max-Age={(int)validadeSessao.TotalSeconds}; HttpOnly; Secure; SameSite=Lax";
+                        resposta.Redirect("/");
+                        return;
+                    }
+                    login = null;
+                }
+                else login = Perfis.LoginDaSessao(pedido.Cookies["flow_sessao"]?.Value, segredoLink, agora, validadeSessao);
+            }
+            else login = proxy
                 ? Perfis.LoginDoProxy(pedido.Headers["X-Remote-User"], pedido.Headers["X-Proxy-Secret"], segredoProxy, System.Net.IPAddress.IsLoopback(pedido.RemoteEndPoint.Address))
-                : ctx.User?.Identity?.Name, perfis, dono);
+                : ctx.User?.Identity?.Name;
+            var perfil = Perfis.Resolver(login, perfis, dono);
             if (perfil is null)
             {
                 resposta.StatusCode = 403;
