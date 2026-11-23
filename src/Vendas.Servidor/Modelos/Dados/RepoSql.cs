@@ -210,6 +210,10 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
     private static DateOnly? Data(SqlDataReader leitor, int i)
         => leitor.IsDBNull(i) ? null : DateOnly.FromDateTime(Convert.ToDateTime(leitor.GetValue(i), CultureInfo.InvariantCulture));
 
+    // 120 s e não os 30 s por omissão: com a máquina ocupada as consultas do resumo passavam os 30 s e o painel inteiro falhava.
+    // shortcut: valor único para todas as consultas; tornar configurável se alguma vier a precisar de mais.
+    internal static SqlCommand NovoComando(string sql, SqlConnection ligacaoSql) => new(sql, ligacaoSql) { CommandTimeout = 120 };
+
     // Faz o trabalho repetitivo, igual em todas as consultas.
     // "await using" fecha a ligação sozinha, mesmo que haja erro.
     private async Task<List<T>> LerAsync<T>(
@@ -220,7 +224,7 @@ public sealed class RepoSql(string ligacao) : IVendasRepo
         CancellationToken cancellationToken)
     {
         await using var ligacaoSql = new SqlConnection(ligacao);
-        await using var cmd = new SqlCommand(sql, ligacaoSql);
+        await using var cmd = NovoComando(sql, ligacaoSql);
         parametros(cmd.Parameters);
         cmd.Parameters.Add("@limite", SqlDbType.Int).Value = limite;
 

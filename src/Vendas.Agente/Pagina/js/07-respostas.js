@@ -228,6 +228,27 @@
 
     // O briefing de um cliente (consultar_briefing) como resposta do Flow, sem passar pelo modelo. b: o JSON do servidor;
     // c: a linha do cliente na carteira do painel (pode faltar); D: os dados do painel (só para o ano anterior).
+    // "Como correu <mês>?": os 4 indicadores do mês e a comparação com o mesmo mês do ano anterior (M = resposta de /api/mes), sem o modelo.
+    function analiseMes(M) {
+      const mes = MESES[M.mes - 1], mesMin = mes.toLowerCase(), ano = M.ano, anoAnt = ano - 1, { atual: a, anterior: p } = M;
+      const vazia = { avisos: [], opcoes: [], painel: null, nota: '', linhas: null, sugestoes: [] };
+      if (!(a.faturacao > 0) && !(a.documentos > 0))
+        return { titulo: `${mes} ${ano}`, paragrafos: [`Não há vendas registadas em ${mesMin} de ${ano}.`], metricas: [], ...vazia };
+      const medio = x => x.documentos > 0 ? x.faturacao / x.documentos : null;
+      const delta = (v, ant) => !M.incompleto && v != null && ant > 0 ? (v - ant) / ant * 100 : null;
+      const metricas = [['Faturação', fmt.eur(a.faturacao), delta(a.faturacao, p.faturacao)], ['Documentos', fmt.inteiro(a.documentos), delta(a.documentos, p.documentos)],
+        ['Valor médio', fmt.eur2(medio(a)), delta(medio(a), medio(p))], ['Clientes ativos', fmt.inteiro(a.clientes), delta(a.clientes, p.clientes)]]
+        .map(([r, v, d]) => ({ r, v, ...(d != null ? { delta: d, ano: String(anoAnt) } : {}) }));
+      const d0 = metricas[0].delta;
+      const faturacao = M.incompleto ? `${mes} de ${ano} vai em ${fmt.eur(a.faturacao)}.`
+        : `${mes} de ${ano} fechou com ${fmt.eur(a.faturacao)}${d0 != null ? `, ${d0 >= 0 ? 'mais' : 'menos'} ${fmt.pct(Math.abs(d0))} que em ${mesMin} de ${anoAnt}` : ''}.`;
+      const avisos = M.incompleto ? ['Mês em curso: os valores são parciais e não são comparados com o ano anterior.']
+        : !(p.faturacao > 0) ? [`Sem dados de ${anoAnt} para comparar.`] : [];
+      return { titulo: `${mes} ${ano}`, metricas, ...vazia, avisos,
+        paragrafos: [faturacao, `${fmt.inteiro(a.documentos)} documentos${medio(a) != null ? `, valor médio de ${fmt.eur2(medio(a))}` : ''} e ${fmt.inteiro(a.clientes)} clientes ativos.`],
+        linhas: [['Indicador', 'Valor'], ...metricas.map(m => [m.r, m.v])] };
+    }
+
     function analiseBriefing(b, c, D) {
       const nome = nomeProprio(String(b.cliente || '').replace(/\s*\([^()]*\)\s*$/, '')) || 'o cliente';
       const a = b.emAberto || {}, parados = b.deixouDeComprar || [], paragrafos = [], metricas = [];

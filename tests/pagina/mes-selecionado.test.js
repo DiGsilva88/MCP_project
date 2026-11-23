@@ -72,7 +72,7 @@ test('mês incompleto: as 4 notas dizem "Mês em curso"', () => {
   assert.deepEqual(b.map(x => x.nota), Array(4).fill('Mês em curso'));
 });
 
-test('o cartão: rótulo, título, grelha, ajuda e botão que pergunta "Como correu agosto?"', () => {
+test('o cartão: rótulo, título, grelha, ajuda e botão que pergunta "Como correu agosto de 2026?"', () => {
   const p = painel('app.mes = 2;');
   p.ver(`indicadoresMes.set(chaveMes(2026, 8), { estado: 'ok', dados: ${JSON.stringify(AGOSTO())} })`);
   const html = p.ver('vistaResumo()');
@@ -80,7 +80,7 @@ test('o cartão: rótulo, título, grelha, ajuda e botão que pergunta "Como cor
   assert.match(html, /Agosto 2026/);
   assert.equal((html.match(/class="k"/g) || []).length, 8);         // 4 do topo + 4 do mês
   assert.match(html, /Clique noutro mês do gráfico para ver os indicadores desse mês\./);
-  assert.match(html, /data-perguntar="Como correu agosto\?"[^>]*>.*Perguntar ao Flow sobre agosto/s);
+  assert.match(html, /data-perguntar="Como correu agosto de 2026\?"[^>]*>.*Perguntar ao Flow sobre agosto/s);
   assert.doesNotMatch(html, /sel-mes/);                             // a faixa por baixo do gráfico desapareceu
 });
 

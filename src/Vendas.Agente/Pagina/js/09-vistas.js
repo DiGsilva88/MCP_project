@@ -73,7 +73,7 @@
         : indicadores(blocosMes(reg.dados, x.parcial || reg.dados.incompleto)).replace('class="kpis"', 'class="mes-grelha"');
       return `<section class="painel mes-cartao" aria-labelledby="mes-t"><span class="mes-rotulo">Mês selecionado</span><h2 id="mes-t" aria-live="polite">${esc(nome)} ${x.a}</h2>${corpo}
         <p class="mes-ajuda">Clique noutro mês do gráfico para ver os indicadores desse mês.</p>
-        <button type="button" class="btn btn-pri" data-perguntar="Como correu ${nome.toLowerCase()}?">${ic('flow')}Perguntar ao Flow sobre ${nome.toLowerCase()}</button></section>`;
+        <button type="button" class="btn btn-pri" data-perguntar="Como correu ${nome.toLowerCase()} de ${x.a}?">${ic('flow')}Perguntar ao Flow sobre ${nome.toLowerCase()}</button></section>`;
     }
     function vistaResumo() {
       const sub = `${ola()}${primeiroNome() ? ', ' + primeiroNome() : ''}.`;

@@ -33,6 +33,23 @@
       const m = String(texto).match(/\b(?:antes de visitar|preparar (?:a )?visita (?:a|ao|de)|briefing d[oa])\s+(?:o\s+|a\s+)?(?:cliente\s+)?["“«]?(.+?)["”»]?\s*\??$/i);
       return m && m[1].trim() ? m[1].trim() : null;
     }
+    // "Como correu setembro?" / "... de 2026?" (o botão do cartão do mês) -> { a, m }; sem ano, a ocorrência mais recente do mês.
+    // Responde-se com os indicadores do servidor (os do cartão): em CPU o modelo levava minutos para o mesmo resultado.
+    // "O último mês" (a sugestão do Resumo) é o último mês completo dos dados, como no cartão; sem dados, o mês anterior do calendário.
+    function ultimoMes(hoje) {
+      const ms = app.dados && !app.dados.erro ? app.dados.serie?.meses : null, i = ms ? ms.findLastIndex(x => x.atual != null && !x.parcial) : -1;
+      if (i >= 0) return { a: ms[i].a, m: ms[i].m };
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+      return { a: d.getFullYear(), m: d.getMonth() + 1 };
+    }
+    function intencaoMes(texto, hoje = new Date()) {
+      const t = semAcento(String(texto));
+      if (/^\s*como correu\s+(?:o\s+)?(?:ultimo mes|mes passado|mes anterior)\s*\??\s*$/.test(t)) return ultimoMes(hoje);
+      const m = t.match(/^\s*como correu\s+(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)(?:\s+de\s+(20\d\d))?\s*\??\s*$/);
+      if (!m) return null;
+      const mes = MESES.findIndex(x => semAcento(x) === m[1]) + 1;
+      return { a: m[2] ? Number(m[2]) : mes <= hoje.getMonth() + 1 ? hoje.getFullYear() : hoje.getFullYear() - 1, m: mes };
+    }
     // Uma resposta que não passa pelo modelo (o chat mostra-a como as outras: Guardar resposta, Copiar, perguntas seguintes)
     function responderLocal(pergunta, analise) {
       const item = { id: Date.now(), pergunta, texto: [analise.titulo, ...analise.paragrafos].join('\n'), analise, local: true };
@@ -41,6 +58,13 @@
       desenharFlow(); rolarFlow();
       anunciar('Resposta pronta.');
       return item;
+    }
+    // Os indicadores do mês pelo servidor (da cache do cartão, se já lá estão); se falhar devolve null e a pergunta segue para o modelo
+    async function responderMes(pergunta, { a, m }) {
+      try {
+        const chave = chaveMes(a, m), reg = indicadoresMes.get(chave);
+        return responderLocal(pergunta, analiseMes(reg?.estado === 'ok' ? reg.dados : await pedirJson('/api/mes?' + chave)));
+      } catch (e) { console.error('Falha a obter os indicadores do mês:', e); return null; }
     }
     // O briefing do cliente pelo servidor; sem cliente encontrado (ou sem ligação) devolve null e a pergunta segue para o modelo
     async function responderBriefing(pergunta, nome) {
@@ -85,8 +109,16 @@
       return { texto: limpo, imagens };
     }
 
+    // O que a espera diz. O modelo local, em CPU, pode levar minutos: passados 20 s avisa-se, em vez de só contar segundos.
+    const ESPERA_LENTA = 20;
+    function textoEspera(item) {
+      const s = item.segundos ? ` ${item.segundos} s` : '';
+      if (item.fila) return 'Na fila: há outra pergunta em curso. A sua começa a seguir.' + s;
+      return (item.segundos >= ESPERA_LENTA ? 'O assistente está a demorar mais do que o normal; pode levar alguns minutos.' : 'A consultar as vendas…') + s;
+    }
+
     function respostaHtml(item) {
-      if (item.pendente) return `<p class="resp-espera" role="status"><span class="roda" aria-hidden="true"></span><span>${item.fila ? 'Na fila: há outra pergunta em curso. A sua começa a seguir.' : 'A consultar as vendas…'} ${item.segundos ? item.segundos + ' s' : ''}</span></p>`;
+      if (item.pendente) return `<p class="resp-espera" role="status"><span class="roda" aria-hidden="true"></span><span>${textoEspera(item)}</span></p>`;
       if (item.erro) return `<div class="resp-erro" role="alert">${esc({ vazio: 'O Flow não devolveu resposta. Tente outra vez.', parado: 'Parou a resposta antes de terminar.', ligacao: 'Sem ligação ao servidor de vendas. Verifique a ligação e tente outra vez.' }[item.erro] || item.texto || 'Não foi possível obter a resposta. Tente outra vez ou reformule a pergunta.')}
         <button type="button" data-repetir-pergunta="${item.id}">Tentar outra vez</button></div>`;
       if (item.resumo) return `<div class="resp"><p>${esc(item.texto)}</p></div>`;
@@ -149,12 +181,15 @@
       // Briefing de um cliente: responde o servidor (os mesmos dados do painel), não o modelo
       const nomeBriefing = repetir ? null : intencaoBriefing(texto);
       if (nomeBriefing) { const feito = await responderBriefing(texto, nomeBriefing); if (feito) return feito; }
+      // "Como correu <mês>?": os indicadores do servidor, sem o modelo
+      const mes = repetir ? null : intencaoMes(texto);
+      if (mes) { const feito = await responderMes(texto, mes); if (feito) return feito; }
       if (repetir) conversa.splice(conversa.indexOf(repetir), 1);
       const item = { id: Date.now(), pergunta: texto, texto: '', erro: null, pendente: true, segundos: 0 };
       conversa.push(item);
       const controlo = new AbortController(), inicio = Date.now();
       emCurso = { item, controlo };
-      const relogio = setInterval(() => { item.segundos = Math.round((Date.now() - inicio) / 1000); const s = flowCorpo.querySelector('.resp-espera span:last-child'); if (s) s.textContent = `${item.fila ? 'Na fila: há outra pergunta em curso. A sua começa a seguir.' : 'A consultar as vendas…'} ${item.segundos} s`; }, 1000);
+      const relogio = setInterval(() => { item.segundos = Math.round((Date.now() - inicio) / 1000); const s = flowCorpo.querySelector('.resp-espera span:last-child'); if (s) s.textContent = textoEspera(item); }, 1000);
       desenharFlow(); rolarFlow();
       try {
         const r = await fetch('/perguntar', { method: 'POST', body: texto, signal: controlo.signal });
